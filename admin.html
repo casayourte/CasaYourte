@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>CasaYourte · Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..700,0..100,0..1&family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#181614; --ink2:#221E1A; --ink3:#2C2722; --line:#3B342C;
+  --wool:#EFE8DA; --dim:#A89E8C; --blond:#DCA96B; --burg:#7A2C3C;
+  --ok:#4E7D5C; --bad:#8E3A46;
+  --disp:"Fraunces",Georgia,serif; --body:"Instrument Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+  --safe: env(safe-area-inset-bottom, 0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--ink);color:var(--wool);font-family:var(--body);
+  font-size:16px;line-height:1.5;overscroll-behavior-y:contain}
+h1,h2{font-family:var(--disp);font-weight:400;margin:0;line-height:1.1;
+  font-variation-settings:"SOFT" 30,"WONK" 1}
+button,input,select,textarea{font-family:inherit;font-size:16px;color:inherit}
+button{cursor:pointer}
+.mono{font-family:var(--mono);font-size:.66rem;letter-spacing:.13em;text-transform:uppercase}
+.hide{display:none!important}
+
+/* ---- chrome ---- */
+header{position:sticky;top:0;z-index:20;background:var(--ink);border-bottom:1px solid var(--line);
+  padding:.7rem 1rem;display:flex;align-items:center;gap:.6rem}
+header .t{font-family:var(--disp);letter-spacing:.14em;font-size:.9rem;font-weight:600;flex:1;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header .t b{color:var(--blond);font-weight:600}
+.icon{background:none;border:1px solid var(--line);color:var(--dim);border-radius:6px;
+  width:2.4rem;height:2.4rem;display:grid;place-items:center;font-size:1.1rem;flex:none}
+.icon:active{border-color:var(--blond);color:var(--wool)}
+main{padding:1rem 1rem calc(6rem + var(--safe))}
+
+/* ---- forms ---- */
+label{display:block;margin-bottom:1rem}
+label .k{font-family:var(--mono);font-size:.6rem;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--blond);display:block;margin-bottom:.4rem}
+input,select,textarea{width:100%;background:var(--ink2);border:1px solid var(--line);
+  border-radius:6px;padding:.75rem;color:var(--wool)}
+input:focus,select,textarea:focus{outline:2px solid var(--blond);outline-offset:1px}
+textarea{min-height:4.5rem;resize:vertical}
+.btn{display:block;width:100%;padding:.95rem;border-radius:6px;border:1px solid var(--line);
+  background:var(--ink2);color:var(--wool);font-family:var(--mono);font-size:.68rem;
+  letter-spacing:.13em;text-transform:uppercase}
+.btn.p{background:var(--blond);border-color:var(--blond);color:var(--ink);font-weight:500}
+.btn.d{border-color:var(--bad);color:#E9A8B0}
+.btn:disabled{opacity:.45}
+.row{display:flex;gap:.5rem}
+.row .btn{flex:1}
+
+/* ---- lists ---- */
+.card{background:var(--ink2);border:1px solid var(--line);border-radius:8px;
+  padding:.9rem;margin-bottom:.7rem;display:flex;gap:.8rem;align-items:center}
+.card .grow{flex:1;min-width:0}
+.card h2{font-size:1.05rem;margin-bottom:.2rem}
+.card .sub{font-size:.8rem;color:var(--dim)}
+.card .n{font-family:var(--mono);font-size:.62rem;color:var(--blond);flex:none}
+
+/* ---- photo grid ---- */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.6rem}
+.ph{position:relative;background:var(--ink2);border:1px solid var(--line);border-radius:8px;
+  overflow:hidden}
+.ph img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover}
+.ph .bar{display:flex;align-items:center;gap:.25rem;padding:.35rem}
+.ph .bar button{flex:1;background:none;border:0;color:var(--dim);font-size:1rem;padding:.3rem;
+  border-radius:4px}
+.ph .bar button:active{background:var(--ink3);color:var(--wool)}
+.ph .pos{font-family:var(--mono);font-size:.58rem;color:var(--blond);padding:0 .3rem}
+.ph .et{position:absolute;top:.3rem;left:.3rem;font-family:var(--mono);font-size:.52rem;
+  letter-spacing:.08em;background:rgba(24,22,20,.85);padding:.18rem .35rem;border-radius:3px;
+  color:var(--wool);max-width:calc(100% - .6rem);overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap}
+.ph.off img{opacity:.35}
+.ph .flag{position:absolute;top:.3rem;right:.3rem;font-size:.7rem;background:rgba(24,22,20,.85);
+  border-radius:3px;padding:.1rem .3rem}
+
+/* ---- upload dock ---- */
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--ink2);
+  border-top:1px solid var(--line);padding:.7rem 1rem calc(.7rem + var(--safe));
+  display:flex;gap:.5rem;align-items:center}
+.dock select{flex:1;min-width:0}
+.dock .btn{width:auto;flex:none;padding:.85rem 1rem}
+
+/* ---- progress ---- */
+#prog{position:fixed;inset:0;z-index:50;background:rgba(12,10,8,.93);display:grid;
+  place-items:center;padding:1.5rem}
+#prog .box{width:100%;max-width:22rem;text-align:center}
+#prog .pct{font-family:var(--disp);font-size:3rem;color:var(--blond)}
+#prog .track{height:3px;background:var(--line);border-radius:2px;overflow:hidden;margin:1rem 0}
+#prog .fill{height:100%;background:var(--blond);width:0;transition:width .25s}
+#prog .log{font-family:var(--mono);font-size:.6rem;color:var(--dim);text-align:left;
+  max-height:9rem;overflow:auto;white-space:pre-wrap;line-height:1.7}
+
+/* ---- toast ---- */
+#toast{position:fixed;left:1rem;right:1rem;bottom:calc(5.5rem + var(--safe));z-index:60;
+  background:var(--blond);color:var(--ink);border-radius:6px;padding:.7rem .9rem;
+  font-family:var(--mono);font-size:.62rem;letter-spacing:.08em;text-align:center;
+  opacity:0;transition:opacity .3s;pointer-events:none}
+#toast.on{opacity:1}
+#toast.bad{background:var(--bad);color:#fff}
+.empty{text-align:center;color:var(--dim);padding:3rem 1rem;font-size:.92rem}
+.note{background:var(--ink2);border-left:3px solid var(--blond);padding:.7rem .8rem;
+  font-size:.85rem;color:var(--dim);border-radius:0 6px 6px 0;margin-bottom:1.2rem}
+</style>
+</head>
+<body>
+
+<header>
+  <button class="icon hide" id="back" aria-label="Volver">‹</button>
+  <span class="t">Casa<b>Yourte</b> · Álbumes</span>
+  <button class="icon hide" id="out" aria-label="Salir">⏻</button>
+</header>
+
+<main>
+  <!-- LOGIN -->
+  <section id="v-login">
+    <h1 style="font-size:1.6rem;margin-bottom:.4rem">Entrar</h1>
+    <p class="note">Sólo la cuenta de CasaYourte puede cargar y ordenar fotos. Cualquiera puede
+    ver los álbumes publicados, nadie más puede escribirlos.</p>
+    <label><span class="k">Mail</span>
+      <input id="mail" type="email" inputmode="email" autocomplete="username" placeholder="casayourte@gmail.com"></label>
+    <label><span class="k">Contraseña</span>
+      <input id="pass" type="password" autocomplete="current-password"></label>
+    <button class="btn p" id="in">Entrar</button>
+    <div style="height:1.4rem"></div>
+    <details>
+      <summary class="mono" style="color:var(--blond);padding:.6rem 0">Fui invitado y no tengo cuenta</summary>
+      <div style="padding-top:.8rem">
+        <p class="note">Usá el <b>mismo mail</b> con el que te invitaron y elegí una
+        contraseña tuya. Nadie más la va a conocer.</p>
+        <label><span class="k">Nombre</span><input id="r-nombre" placeholder="Cómo te llamás"></label>
+        <label><span class="k">Mail invitado</span>
+          <input id="r-mail" type="email" inputmode="email" autocomplete="username"></label>
+        <label><span class="k">Contraseña nueva</span>
+          <input id="r-pass" type="password" autocomplete="new-password" placeholder="mínimo 6 caracteres"></label>
+        <button class="btn" id="r-crear">Crear mi cuenta</button>
+      </div>
+    </details>
+  </section>
+
+  <!-- ALBUM LIST -->
+  <section id="v-list" class="hide">
+    <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:1rem">
+      <h1 style="font-size:1.5rem;flex:1">Álbumes</h1>
+      <button class="icon hide" id="go-users" aria-label="Usuarios">👥</button>
+    </div>
+    <p class="mono hide" id="quien" style="color:var(--dim);margin:-.6rem 0 1rem"></p>
+    <div id="albums"></div>
+    <details style="margin-top:1.5rem">
+      <summary class="mono" style="color:var(--blond);padding:.6rem 0">+ Álbum nuevo</summary>
+      <div style="padding-top:.8rem">
+        <label><span class="k">Tipo</span>
+          <select id="n-tipo">
+            <option value="obra">Obra</option>
+            <option value="detalle">Detalle de pieza</option>
+            <option value="producto">Producto</option>
+            <option value="taller">Taller</option>
+          </select></label>
+        <label><span class="k">Nombre visible</span>
+          <input id="n-titulo" placeholder="Christine 7 m"></label>
+        <label><span class="k">Identificador</span>
+          <input id="n-slug" placeholder="2024-christine-7m" autocapitalize="none" spellcheck="false">
+        </label>
+        <p class="note" style="margin-bottom:.8rem">Para obras: <b>año-lugar-diámetro</b>.
+        Minúsculas, sin acentos ni espacios. No se puede cambiar después.</p>
+        <button class="btn" id="n-crear">Crear álbum</button>
+      </div>
+    </details>
+  </section>
+
+  <!-- USUARIOS -->
+  <section id="v-users" class="hide">
+    <h1 style="font-size:1.5rem;margin-bottom:.3rem">Usuarios</h1>
+    <p class="mono" id="u-sub" style="color:var(--dim);margin:0 0 1.2rem"></p>
+    <div id="users"></div>
+
+    <h2 style="font-size:1.1rem;margin:1.8rem 0 .6rem">Invitaciones pendientes</h2>
+    <div id="invits"></div>
+
+    <details style="margin-top:1.5rem">
+      <summary class="mono" style="color:var(--blond);padding:.6rem 0">+ Invitar a alguien</summary>
+      <div style="padding-top:.8rem">
+        <label><span class="k">Mail</span>
+          <input id="i-mail" type="email" inputmode="email" autocapitalize="none" spellcheck="false"></label>
+        <label><span class="k">Rol</span><select id="i-rol"></select></label>
+        <p class="note" id="i-desc"></p>
+        <button class="btn" id="i-crear">Crear invitación</button>
+        <div style="height:.5rem"></div>
+        <p class="note" style="margin:0">Después mandale el enlace del panel por WhatsApp y
+        que entre con <b>Fui invitado y no tengo cuenta</b>. La contraseña la elige ella.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- ALBUM DETAIL -->
+  <section id="v-album" class="hide">
+    <h1 id="a-titulo" style="font-size:1.45rem"></h1>
+    <p class="mono" id="a-sub" style="color:var(--dim);margin:.4rem 0 1.2rem"></p>
+    <div class="grid" id="fotos"></div>
+    <div class="empty hide" id="a-vacio">Todavía no hay fotos.<br>Elegí la etapa abajo y agregá.</div>
+  </section>
+
+  <!-- PHOTO EDIT -->
+  <section id="v-foto" class="hide">
+    <img id="f-img" style="width:100%;border-radius:8px;margin-bottom:1rem" alt="">
+    <label><span class="k">Etapa</span><select id="f-etapa"></select></label>
+    <label><span class="k">Texto alternativo · español</span><input id="f-alt-es"></label>
+    <label><span class="k">Texto alternativo · francés</span><input id="f-alt-fr"></label>
+    <label><span class="k">Leyenda · español</span><textarea id="f-cap-es"></textarea></label>
+    <label><span class="k">Leyenda · francés</span><textarea id="f-cap-fr"></textarea></label>
+    <label style="display:flex;gap:.6rem;align-items:center">
+      <input type="checkbox" id="f-usar" style="width:auto">
+      <span style="font-size:.9rem">Usar en el catálogo público</span></label>
+    <label style="display:flex;gap:.6rem;align-items:center">
+      <input type="checkbox" id="f-personas" style="width:auto">
+      <span style="font-size:.9rem">Hay gente identificable</span></label>
+    <p class="note">Si hay gente identificable hace falta su autorización antes de publicar.</p>
+    <button class="btn p" id="f-guardar">Guardar</button>
+    <div style="height:.5rem"></div>
+    <button class="btn d" id="f-quitar">Quitar del álbum</button>
+  </section>
+</main>
+
+<!-- UPLOAD DOCK -->
+<div class="dock hide" id="dock">
+  <select id="d-etapa" aria-label="Etapa"></select>
+  <button class="btn p" id="d-add">+ Fotos</button>
+  <input type="file" id="file" accept="image/*" multiple class="hide">
+</div>
+
+<div id="prog" class="hide"><div class="box">
+  <div class="pct" id="p-pct">0%</div>
+  <div class="mono" id="p-txt" style="color:var(--dim)">preparando</div>
+  <div class="track"><div class="fill" id="p-fill"></div></div>
+  <div class="log" id="p-log"></div>
+</div></div>
+
+<div id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+         signOut, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc,
+         deleteDoc, query, orderBy, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+/* ===================== CONFIGURACIÓN ===================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyDDD_xvpC4I_ec2OZymyDqVsm1K0ISTr4Q",
+  authDomain: "casayourte-mauro.firebaseapp.com",
+  projectId: "casayourte-mauro",
+  storageBucket: "casayourte-mauro.firebasestorage.app",
+  messagingSenderId: "716760879314",
+  appId: "1:716760879314:web:33aef72fb525eb57931d0b"
+};
+
+const CLOUD = "kbjqcnpa";
+// Nombre del unsigned upload preset creado en el panel de Cloudinary.
+// Ver FIREBASE-SETUP.md paso 4.
+const PRESET = "casayourte_movil";
+
+const MAX_ANCHO = 2400;
+const CALIDAD = 0.82;
+
+// Roles y qué puede hacer cada uno. Debe coincidir con las Security Rules.
+const ROLES = {
+  admin:     { n: "Administrador", d: "Todo, incluido usuarios y publicar" },
+  editor:    { n: "Editor",        d: "Textos del sitio y álbumes. No publica ni toca usuarios" },
+  fotografo: { n: "Fotógrafo",     d: "Sólo subir y ordenar fotos" },
+};
+
+// Las 16 etapas. Mismo orden que el cálculo de horas y el manual. No renumerar.
+const ETAPAS = ["01-terreno-y-apoyos","02-taller-piezas","03-plancher","04-trei",
+  "05-anillo-periferico","06-toono","07-techo-triangulos","08-perchas",
+  "09-lonas-y-costura","10-aislacion","11-aberturas-y-umbrales","12-skydome",
+  "13-terminada-exterior","14-terminada-interior","15-equipo-y-obra","16-desmontaje"];
+
+/* ===================== ESTADO ===================== */
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const $ = (id) => document.getElementById(id);
+let album = null, fotos = [], foto = null;
+
+const slug = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()
+  .replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
+
+function toast(m, bad) {
+  const t = $("toast");
+  t.textContent = m; t.className = "on" + (bad ? " bad" : "");
+  clearTimeout(t._h); t._h = setTimeout(() => t.className = "", 3200);
+}
+
+function ver(v) {
+  ["login","list","users","album","foto"].forEach(x => $("v-"+x).classList.toggle("hide", x !== v));
+  $("dock").classList.toggle("hide", v !== "album" || !puede("fotos"));
+  $("back").classList.toggle("hide", v === "login" || v === "list");
+  $("out").classList.toggle("hide", v === "login");
+  window.scrollTo(0, 0);
+}
+
+/* ===================== PERMISOS ===================== */
+// Espejo de las Security Rules. Acá sólo se oculta lo que no corresponde;
+// lo que de verdad impide escribir son las reglas del servidor.
+let yo = null;
+const puede = (q) => {
+  if (!yo || !yo.activo) return false;
+  if (yo.rol === "admin") return true;
+  if (yo.rol === "editor") return q !== "usuarios" && q !== "publicar";
+  if (yo.rol === "fotografo") return q === "fotos" || q === "albumes";
+  return false;
+};
+
+/* ===================== AUTENTICACIÓN ===================== */
+$("in").addEventListener("click", async () => {
+  const b = $("in"); b.disabled = true; b.textContent = "Entrando…";
+  try {
+    await signInWithEmailAndPassword(auth, $("mail").value.trim(), $("pass").value);
+  } catch (e) {
+    toast(e.code === "auth/invalid-credential" ? "Mail o contraseña incorrectos" : e.code, true);
+  } finally { b.disabled = false; b.textContent = "Entrar"; }
+});
+$("out").addEventListener("click", () => { yo = null; signOut(auth); });
+
+// Alta por invitación: la persona crea su propia cuenta y el sistema le pone
+// el rol que dejó el administrador. Nadie maneja contraseñas ajenas.
+$("r-crear").addEventListener("click", async () => {
+  const nombre = $("r-nombre").value.trim();
+  const mail = $("r-mail").value.trim().toLowerCase();
+  const pass = $("r-pass").value;
+  if (!nombre || !mail || pass.length < 6)
+    return toast("Faltan datos, o la contraseña es muy corta", true);
+  const b = $("r-crear"); b.disabled = true; b.textContent = "Creando…";
+  try {
+    const inv = await getDoc(doc(db, "invitaciones", mail));
+    if (!inv.exists()) throw new Error("No hay ninguna invitación para ese mail");
+    const rol = inv.data().rol;
+    const cred = await createUserWithEmailAndPassword(auth, mail, pass);
+    await setDoc(doc(db, "usuarios", cred.user.uid), {
+      email: mail, nombre, rol, activo: true, creado: serverTimestamp(),
+    });
+    await deleteDoc(doc(db, "invitaciones", mail)).catch(() => {});
+    toast("Cuenta creada");
+  } catch (e) {
+    const m = { "auth/email-already-in-use": "Ese mail ya tiene cuenta. Entrá con tu contraseña",
+                "auth/weak-password": "La contraseña es muy corta",
+                "auth/invalid-email": "El mail no es válido" }[e.code];
+    toast(m || e.message, true);
+  } finally { b.disabled = false; b.textContent = "Crear mi cuenta"; }
+});
+
+onAuthStateChanged(auth, async (u) => {
+  if (!u) { yo = null; ver("login"); return; }
+  try {
+    const d = await getDoc(doc(db, "usuarios", u.uid));
+    if (!d.exists()) {
+      toast("Tu cuenta existe pero no tiene permisos asignados", true);
+      await signOut(auth); return;
+    }
+    yo = { uid: u.uid, ...d.data() };
+    if (!yo.activo) {
+      toast("Tu acceso está suspendido", true);
+      yo = null; await signOut(auth); return;
+    }
+    $("quien").textContent = `${yo.nombre || yo.email} · ${ROLES[yo.rol]?.n || yo.rol}`;
+    $("quien").classList.remove("hide");
+    $("go-users").classList.toggle("hide", !puede("usuarios"));
+    document.querySelector("#v-list details").classList.toggle("hide", !puede("albumes"));
+    cargarAlbumes(); ver("list");
+  } catch (e) {
+    toast("No se pudo verificar el permiso: " + (e.code || e.message), true);
+    await signOut(auth);
+  }
+});
+
+$("go-users").addEventListener("click", () => { ver("users"); cargarUsuarios(); });
+
+$("back").addEventListener("click", () => {
+  if (!$("v-foto").classList.contains("hide")) pintarAlbum();
+  else { album = null; ver("list"); }
+});
+
+/* ===================== USUARIOS ===================== */
+function opcionesRol(sel, actual) {
+  sel.innerHTML = "";
+  for (const [k, v] of Object.entries(ROLES)) {
+    const o = document.createElement("option");
+    o.value = k; o.textContent = v.n; if (k === actual) o.selected = true;
+    sel.appendChild(o);
+  }
+}
+opcionesRol($("i-rol"), "editor");
+const descRol = () => { $("i-desc").textContent = ROLES[$("i-rol").value].d; };
+$("i-rol").addEventListener("change", descRol); descRol();
+
+async function cargarUsuarios() {
+  const cu = $("users"), ci = $("invits");
+  cu.innerHTML = '<p class="empty">Cargando…</p>'; ci.innerHTML = "";
+  try {
+    const snap = await getDocs(collection(db, "usuarios"));
+    cu.innerHTML = "";
+    let activos = 0;
+    snap.forEach(d => {
+      const u = { uid: d.id, ...d.data() };
+      if (u.activo) activos++;
+      const propio = u.uid === yo.uid;
+      const el = document.createElement("div");
+      el.className = "card";
+      el.style.flexWrap = "wrap";
+      el.innerHTML =
+        `<div class="grow"><h2></h2><div class="sub"></div></div>
+         <div style="display:flex;gap:.4rem;align-items:center;width:100%;margin-top:.5rem">
+           <select style="flex:1"></select>
+           <button class="btn" style="width:auto;padding:.6rem .8rem"></button>
+         </div>`;
+      el.querySelector("h2").textContent = (u.nombre || u.email) + (propio ? " · vos" : "");
+      el.querySelector(".sub").textContent = u.email + (u.activo ? "" : " · suspendido");
+      const sel = el.querySelector("select");
+      opcionesRol(sel, u.rol);
+      sel.disabled = propio;
+      sel.addEventListener("change", async () => {
+        try {
+          await updateDoc(doc(db, "usuarios", u.uid), { rol: sel.value });
+          toast("Rol actualizado");
+        } catch (e) { toast(e.code || "No se pudo cambiar", true); sel.value = u.rol; }
+      });
+      const b = el.querySelector("button");
+      b.textContent = u.activo ? "Suspender" : "Reactivar";
+      if (u.activo) b.classList.add("d");
+      b.disabled = propio;
+      b.addEventListener("click", async () => {
+        try {
+          await updateDoc(doc(db, "usuarios", u.uid), { activo: !u.activo });
+          toast(u.activo ? "Acceso suspendido" : "Acceso reactivado");
+          cargarUsuarios();
+        } catch (e) { toast(e.code || "No se pudo", true); }
+      });
+      cu.appendChild(el);
+    });
+    $("u-sub").textContent = `${snap.size} usuarios · ${activos} activos`;
+
+    const inv = await getDocs(collection(db, "invitaciones"));
+    if (inv.empty) { ci.innerHTML = '<p class="empty" style="padding:1.2rem">Ninguna pendiente.</p>'; }
+    inv.forEach(d => {
+      const i = { mail: d.id, ...d.data() };
+      const el = document.createElement("div");
+      el.className = "card";
+      el.innerHTML = `<div class="grow"><h2></h2><div class="sub"></div></div>
+                      <button class="btn d" style="width:auto;padding:.6rem .8rem">Anular</button>`;
+      el.querySelector("h2").textContent = i.mail;
+      el.querySelector(".sub").textContent = ROLES[i.rol]?.n || i.rol;
+      el.querySelector("button").addEventListener("click", async () => {
+        try { await deleteDoc(doc(db, "invitaciones", i.mail)); toast("Invitación anulada"); cargarUsuarios(); }
+        catch (e) { toast(e.code || "No se pudo", true); }
+      });
+      ci.appendChild(el);
+    });
+  } catch (e) {
+    cu.innerHTML = `<p class="empty">No se pudieron leer los usuarios.<br>${e.code || e.message}</p>`;
+  }
+}
+
+$("i-crear").addEventListener("click", async () => {
+  const mail = $("i-mail").value.trim().toLowerCase();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) return toast("Mail inválido", true);
+  try {
+    await setDoc(doc(db, "invitaciones", mail),
+      { rol: $("i-rol").value, creado: serverTimestamp(), creadoPor: yo.email });
+    $("i-mail").value = ""; toast("Invitación creada"); cargarUsuarios();
+  } catch (e) { toast(e.code || "No se pudo crear", true); }
+});
+
+/* ===================== ÁLBUMES ===================== */
+async function cargarAlbumes() {
+  const cont = $("albums"); cont.innerHTML = '<p class="empty">Cargando…</p>';
+  try {
+    const snap = await getDocs(query(collection(db, "albums"), orderBy("__name__", "desc")));
+    if (snap.empty) { cont.innerHTML = '<p class="empty">Todavía no hay álbumes.<br>Creá el primero abajo.</p>'; return; }
+    cont.innerHTML = "";
+    snap.forEach(d => {
+      const a = { id: d.id, ...d.data() };
+      const el = document.createElement("div");
+      el.className = "card";
+      el.innerHTML = `<div class="grow"><h2></h2><div class="sub"></div></div>
+                      <span class="n">${a.total || 0} fotos</span>
+                      <button class="icon">›</button>`;
+      el.querySelector("h2").textContent = a.titulo || a.id;
+      el.querySelector(".sub").textContent = `${a.tipo || "obra"} · ${a.id}`;
+      el.addEventListener("click", () => abrir(a));
+      cont.appendChild(el);
+    });
+  } catch (e) { cont.innerHTML = `<p class="empty">No se pudieron leer los álbumes.<br>${e.code || e.message}</p>`; }
+}
+
+$("n-titulo").addEventListener("input", (e) => {
+  if (!$("n-slug").dataset.tocado) $("n-slug").value = slug(e.target.value);
+});
+$("n-slug").addEventListener("input", (e) => { e.target.dataset.tocado = "1"; });
+
+$("n-crear").addEventListener("click", async () => {
+  const id = slug($("n-slug").value), titulo = $("n-titulo").value.trim(), tipo = $("n-tipo").value;
+  if (!id || !titulo) return toast("Falta el nombre o el identificador", true);
+  if (tipo === "obra" && !/^\d{4}-[a-z0-9-]+$/.test(id))
+    return toast("Para obras: año-lugar-diámetro", true);
+  try {
+    await setDoc(doc(db, "albums", id), { titulo, tipo, total: 0, creado: serverTimestamp() }, { merge: true });
+    $("n-titulo").value = ""; $("n-slug").value = ""; delete $("n-slug").dataset.tocado;
+    toast("Álbum creado"); cargarAlbumes();
+  } catch (e) { toast(e.code || "Error al crear", true); }
+});
+
+function opcionesEtapa(sel, tipo) {
+  sel.innerHTML = "";
+  const lista = tipo === "obra" ? ETAPAS : ["general"];
+  lista.forEach(e => {
+    const o = document.createElement("option");
+    o.value = e; o.textContent = e.replace(/^\d+-/, "").replace(/-/g, " ");
+    sel.appendChild(o);
+  });
+}
+
+async function abrir(a) {
+  album = a;
+  $("a-titulo").textContent = a.titulo || a.id;
+  opcionesEtapa($("d-etapa"), a.tipo);
+  opcionesEtapa($("f-etapa"), a.tipo);
+  ver("album");
+  await cargarFotos();
+}
+
+async function cargarFotos() {
+  const snap = await getDocs(query(collection(db, "albums", album.id, "fotos"), orderBy("orden")));
+  fotos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  pintarAlbum();
+}
+
+function pintarAlbum() {
+  ver("album");
+  const g = $("fotos"); g.innerHTML = "";
+  $("a-vacio").classList.toggle("hide", fotos.length > 0);
+  $("a-sub").textContent = `${fotos.length} fotos · ${fotos.filter(f => f.usar).length} en el catálogo`;
+  fotos.forEach((f, i) => {
+    const el = document.createElement("div");
+    el.className = "ph" + (f.usar ? "" : " off");
+    el.innerHTML =
+      `<img loading="lazy" alt="">
+       <span class="et"></span>
+       ${f.personas ? '<span class="flag" title="Gente identificable">👤</span>' : ""}
+       <div class="bar">
+         <button data-a="up" aria-label="Subir">↑</button>
+         <span class="pos">${String(i + 1).padStart(2, "0")}</span>
+         <button data-a="down" aria-label="Bajar">↓</button>
+         <button data-a="edit" aria-label="Editar">✎</button>
+       </div>`;
+    el.querySelector("img").src = urlCloud(f.public_id, 400);
+    el.querySelector(".et").textContent = (f.etapa || "").replace(/^\d+-/, "").replace(/-/g, " ");
+    el.querySelector('[data-a="up"]').addEventListener("click", () => mover(i, -1));
+    el.querySelector('[data-a="down"]').addEventListener("click", () => mover(i, 1));
+    el.querySelector('[data-a="edit"]').addEventListener("click", () => editar(f));
+    el.querySelector("img").addEventListener("click", () => editar(f));
+    g.appendChild(el);
+  });
+}
+
+const urlCloud = (id, w) =>
+  `https://res.cloudinary.com/${CLOUD}/image/upload/f_auto,q_auto,w_${w},c_limit/${id}`;
+
+async function mover(i, d) {
+  const j = i + d;
+  if (j < 0 || j >= fotos.length) return;
+  const a = fotos[i], b = fotos[j];
+  [a.orden, b.orden] = [b.orden, a.orden];
+  fotos.sort((x, y) => x.orden - y.orden);
+  pintarAlbum();
+  try {
+    await Promise.all([
+      updateDoc(doc(db, "albums", album.id, "fotos", a.id), { orden: a.orden }),
+      updateDoc(doc(db, "albums", album.id, "fotos", b.id), { orden: b.orden }),
+    ]);
+  } catch (e) { toast("No se pudo guardar el orden", true); }
+}
+
+/* ===================== EDITAR FOTO ===================== */
+function editar(f) {
+  foto = f;
+  $("f-img").src = urlCloud(f.public_id, 900);
+  opcionesEtapa($("f-etapa"), album.tipo);
+  $("f-etapa").value = f.etapa || $("f-etapa").options[0].value;
+  $("f-alt-es").value = f.alt_es || ""; $("f-alt-fr").value = f.alt_fr || "";
+  $("f-cap-es").value = f.cap_es || ""; $("f-cap-fr").value = f.cap_fr || "";
+  $("f-usar").checked = !!f.usar; $("f-personas").checked = !!f.personas;
+  ver("foto");
+}
+
+$("f-guardar").addEventListener("click", async () => {
+  const d = {
+    etapa: $("f-etapa").value,
+    alt_es: $("f-alt-es").value.trim(), alt_fr: $("f-alt-fr").value.trim(),
+    cap_es: $("f-cap-es").value.trim(), cap_fr: $("f-cap-fr").value.trim(),
+    usar: $("f-usar").checked, personas: $("f-personas").checked,
+  };
+  try {
+    await updateDoc(doc(db, "albums", album.id, "fotos", foto.id), d);
+    Object.assign(foto, d); toast("Guardado"); pintarAlbum();
+  } catch (e) { toast(e.code || "Error al guardar", true); }
+});
+
+$("f-quitar").addEventListener("click", async () => {
+  if (!confirm("Quitar esta foto del álbum?\n\nEl archivo queda en Cloudinary, sólo sale del álbum.")) return;
+  try {
+    await deleteDoc(doc(db, "albums", album.id, "fotos", foto.id));
+    fotos = fotos.filter(x => x.id !== foto.id);
+    await updateDoc(doc(db, "albums", album.id), { total: fotos.length });
+    toast("Quitada"); pintarAlbum();
+  } catch (e) { toast(e.code || "Error", true); }
+});
+
+/* ===================== SUBIR ===================== */
+$("d-add").addEventListener("click", () => $("file").click());
+$("file").addEventListener("change", (e) => {
+  const f = [...e.target.files]; e.target.value = "";
+  if (f.length) subir(f);
+});
+
+// Reduce en el celular antes de subir. Sin esto, veinte fotos de cámara son
+// más de 80 MB de datos móviles.
+async function reducir(file) {
+  let bmp;
+  try { bmp = await createImageBitmap(file, { imageOrientation: "from-image" }); }
+  catch { bmp = await createImageBitmap(file); }
+  const esc = Math.min(1, MAX_ANCHO / Math.max(bmp.width, bmp.height));
+  const w = Math.round(bmp.width * esc), h = Math.round(bmp.height * esc);
+  const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+  cv.getContext("2d").drawImage(bmp, 0, 0, w, h);
+  bmp.close?.();
+  const blob = await new Promise(r => cv.toBlob(r, "image/jpeg", CALIDAD));
+  return { blob, w, h };
+}
+
+async function subir(files) {
+  const etapa = $("d-etapa").value;
+  const carpeta = album.tipo === "obra"
+    ? `casayourte/obras/${album.id}/${etapa}`
+    : `casayourte/${album.tipo}s/${album.id}`;
+  const tags = ["app", `album:${album.id}`, `tipo:${album.tipo}`, `etapa:${etapa}`];
+
+  $("prog").classList.remove("hide");
+  const log = $("p-log"); log.textContent = "";
+  const paso = (m) => { log.textContent += m + "\n"; log.scrollTop = log.scrollHeight; };
+  let orden = fotos.length ? Math.max(...fotos.map(f => f.orden || 0)) : 0;
+  let ok = 0, mal = 0;
+
+  for (let i = 0; i < files.length; i++) {
+    const pct = Math.round(i / files.length * 100);
+    $("p-pct").textContent = pct + "%"; $("p-fill").style.width = pct + "%";
+    $("p-txt").textContent = `${i + 1} de ${files.length}`;
+    try {
+      const { blob, w, h } = await reducir(files[i]);
+      const fd = new FormData();
+      fd.append("file", blob);
+      fd.append("upload_preset", PRESET);
+      fd.append("folder", carpeta);
+      fd.append("tags", tags.join(","));
+      const r = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD}/image/upload`,
+        { method: "POST", body: fd });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error?.message || "Cloudinary rechazó la subida");
+
+      orden += 10;
+      const nueva = {
+        public_id: j.public_id, ancho: j.width, alto: j.height, bytes: j.bytes,
+        etapa, orden, usar: false, personas: false,
+        alt_es: "", alt_fr: "", cap_es: "", cap_fr: "", creado: serverTimestamp(),
+      };
+      const ref = await addDoc(collection(db, "albums", album.id, "fotos"), nueva);
+      fotos.push({ id: ref.id, ...nueva });
+      ok++;
+      paso(`✓ ${(files[i].size / 1048576).toFixed(1)}MB → ${(blob.size / 1048576).toFixed(2)}MB  ${w}×${h}`);
+    } catch (err) {
+      mal++; paso(`✗ ${files[i].name}: ${err.message}`);
+    }
+  }
+
+  $("p-pct").textContent = "100%"; $("p-fill").style.width = "100%";
+  $("p-txt").textContent = `${ok} subidas${mal ? ` · ${mal} con error` : ""}`;
+  try { await updateDoc(doc(db, "albums", album.id), { total: fotos.length }); } catch {}
+  fotos.sort((a, b) => a.orden - b.orden);
+  setTimeout(() => { $("prog").classList.add("hide"); pintarAlbum();
+    toast(mal ? `${ok} subidas, ${mal} fallaron` : `${ok} fotos subidas`, !!mal); }, mal ? 2600 : 900);
+}
+</script>
+</body>
+</html>

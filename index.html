@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CasaYourte · Yurtas de estructura · Mauro Gastaldello</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..800,0..100,0..1;1,9..144,300..800,0..100,0..1&family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#181614;
+  --ink-2:#242019;
+  --burg:#7A2C3C;
+  --burg-lo:#5C1F2C;
+  --blond:#DCA96B;
+  --wool:#EFE8DA;
+  --wool-2:#E2D9C7;
+  --moss:#5A6A5F;
+  --disp:"Fraunces",Georgia,serif;
+  --body:"Instrument Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+  --pad:clamp(1.25rem,5vw,5.5rem);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--ink);color:var(--wool);
+  font-family:var(--body);font-size:clamp(1rem,.55vw + .9rem,1.09rem);
+  line-height:1.6;font-weight:400;
+}
+h1,h2,h3,h4{font-family:var(--disp);font-weight:500;
+  font-variation-settings:"SOFT" 22,"WONK" 1;line-height:1.02;margin:0;
+  letter-spacing:-.015em;}
+p{margin:0 0 1em}
+img{display:block;width:100%;height:100%;object-fit:cover}
+a{color:inherit}
+
+/* ---------- utility ---------- */
+.mono{font-family:var(--mono);font-size:.66rem;letter-spacing:.15em;text-transform:uppercase}
+.eyebrow{font-family:var(--mono);font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--blond);display:block;margin-bottom:1.6rem}
+.eyebrow::before{content:"";display:inline-block;width:1.6rem;height:1px;
+  background:var(--blond);vertical-align:.32em;margin-right:.7rem}
+.wrap{padding:clamp(4rem,9vw,8rem) var(--pad)}
+.lede{font-size:clamp(1.1rem,1.1vw + .85rem,1.35rem);line-height:1.5;max-width:38ch;color:var(--wool)}
+.small{font-size:.86rem;line-height:1.55;color:#b7ae9d}
+
+/* ---------- lattice signature ---------- */
+.trei{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.trei line{stroke:var(--blond);stroke-width:1.15;opacity:.42;
+  stroke-dasharray:var(--len);stroke-dashoffset:var(--len);
+  animation:weave 1.5s cubic-bezier(.22,.7,.2,1) forwards;animation-delay:var(--d)}
+@keyframes weave{to{stroke-dashoffset:0}}
+.band{height:74px;overflow:hidden;position:relative;border-block:1px solid #35302a;background:var(--ink-2)}
+.band svg line{stroke:var(--moss);stroke-width:1;opacity:.55;animation:none;stroke-dashoffset:0}
+
+/* ---------- hero ---------- */
+.hero-media{position:absolute;inset:0;z-index:0;overflow:hidden;background:#0C0A08}
+.hero-media video{width:100%;height:100%;object-fit:cover;display:block}
+.hero-media .scrim{position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(12,10,8,.82) 0%,rgba(12,10,8,.42) 38%,rgba(12,10,8,.88) 100%)}
+header.hero .trei{z-index:1}
+header.hero .trei line{opacity:.2}
+@media(prefers-reduced-motion:reduce){.hero-media video{display:none}}
+header.hero{position:relative;min-height:min(100svh,860px);display:flex;flex-direction:column;
+  justify-content:space-between;padding:clamp(1.1rem,3vw,2.2rem) var(--pad) clamp(2.5rem,6vw,4rem);
+  background:radial-gradient(120% 95% at 78% 8%,#2C2318 0%,var(--ink) 58%);overflow:hidden}
+.topbar{position:relative;z-index:3;display:flex;justify-content:space-between;
+  align-items:center;gap:1rem;flex-wrap:wrap}
+.mark{font-family:var(--disp);font-size:1.02rem;letter-spacing:.3em;font-weight:600;
+  text-transform:uppercase}
+.mark span{color:var(--blond)}
+.mark{display:flex;align-items:center;gap:.55rem}
+.logo{width:34px;height:34px;opacity:.92;flex:none}
+.mark{text-transform:none;letter-spacing:.16em}
+.lang{display:flex;gap:0;border:1px solid #4a4238;border-radius:999px;overflow:hidden}
+.lang button{font-family:var(--mono);font-size:.63rem;letter-spacing:.16em;
+  background:none;border:0;color:#a89e8c;padding:.5rem .85rem;cursor:pointer;text-transform:uppercase}
+.lang button[aria-pressed="true"]{background:var(--blond);color:var(--ink)}
+.lang button:focus-visible{outline:2px solid var(--blond);outline-offset:2px}
+.hero-body{position:relative;z-index:3;max-width:22ch}
+h1{font-size:clamp(3rem,10.5vw,7.4rem);font-weight:300;
+  font-variation-settings:"SOFT" 40,"WONK" 1}
+h1 em{font-style:italic;color:var(--blond);font-weight:400}
+.hero-meta{position:relative;z-index:3;display:flex;gap:clamp(1.2rem,4vw,3.5rem);
+  flex-wrap:wrap;border-top:1px solid #3b342c;padding-top:1.4rem;margin-top:2.5rem}
+.hero-meta div{max-width:24ch}
+.hero-meta .k{color:var(--blond);display:block;margin-bottom:.35rem}
+.hero-meta .v{font-size:.92rem;color:#cfc6b4}
+
+/* ---------- full bleed ---------- */
+.bleed{position:relative;height:clamp(320px,60vh,660px)}
+.bleed img{filter:saturate(.94)}
+.bleed figcaption{position:absolute;left:var(--pad);bottom:1.5rem;right:var(--pad);
+  color:var(--wool);text-shadow:0 1px 14px rgba(0,0,0,.85)}
+
+/* ---------- idea ---------- */
+.idea-h{font-size:clamp(1.9rem,5vw,3.4rem);max-width:30ch;font-weight:300;
+  font-variation-settings:"SOFT" 40,"WONK" 1}
+.idea-h em{font-style:italic;color:var(--blond)}
+.idea-cols{margin-top:clamp(2rem,4vw,3rem);display:grid;gap:1.4rem;max-width:78ch}
+.idea-cols p{font-size:1rem;line-height:1.62;color:#c2b9a7}
+.idea-k{margin-top:clamp(2rem,4vw,2.8rem);padding-top:1.4rem;border-top:1px solid #3b342c;
+  font-family:var(--disp);font-style:italic;font-weight:300;color:var(--blond);
+  font-size:clamp(1.2rem,2.6vw,1.75rem);line-height:1.28;max-width:34ch;
+  font-variation-settings:"SOFT" 45,"WONK" 1}
+@media(min-width:900px){.idea-cols{grid-template-columns:1fr 1fr;gap:1.4rem 2.6rem}
+  .idea-cols p:first-child{grid-column:1/-1;font-size:1.08rem;color:var(--wool);max-width:52ch}}
+
+/* ---------- proceso ---------- */
+.proc{margin:clamp(2.2rem,5vw,3.4rem) 0 0}
+.proc-stage{position:relative;aspect-ratio:16/9;overflow:hidden;background:#0E0C0A;
+  border:1px solid #35302a}
+.proc-stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+  opacity:0;transition:opacity .8s ease}
+.proc-stage img.on{opacity:1}
+.proc-bar{display:flex;gap:3px;margin-top:.5rem}
+.proc-bar i{flex:1;height:2px;background:#3b342c;cursor:pointer;transition:background .3s}
+.proc-bar i.on{background:var(--blond)}
+.proc-cap{display:flex;gap:.8rem;align-items:baseline;margin-top:.9rem;min-height:2.6em}
+.proc-n{color:var(--blond);flex:none;padding-top:.15rem}
+.proc-t{font-size:.95rem;color:#c2b9a7;line-height:1.45}
+.proc-ctl{display:flex;gap:.4rem;margin-top:.6rem}
+.proc-ctl button{font-family:var(--mono);font-size:.62rem;letter-spacing:.12em;
+  text-transform:uppercase;background:none;border:1px solid #4a4238;color:#a89e8c;
+  padding:.4rem .7rem;border-radius:2px;cursor:pointer;min-width:2.4rem}
+.proc-ctl button:hover{border-color:var(--blond);color:var(--wool)}
+@media(prefers-reduced-motion:reduce){.proc-stage img{transition:none}}
+
+/* ---------- trajectory ---------- */
+.paper{background:var(--wool);color:var(--ink)}
+.paper .eyebrow{color:var(--burg)}
+.paper .eyebrow::before{background:var(--burg)}
+.paper .small{color:#5f574a}
+.steps{margin-top:clamp(2.5rem,6vw,4rem);display:grid;gap:clamp(2rem,4vw,3rem)}
+.step{display:grid;grid-template-columns:1fr;gap:1.2rem;
+  padding-top:1.6rem;border-top:1px solid #cfc4ae}
+.step-fig{aspect-ratio:4/3;overflow:hidden;background:#d8cebb}
+.step h3{font-size:clamp(1.35rem,2.4vw,1.9rem);margin-bottom:.55rem}
+.step .yr{font-family:var(--mono);font-size:.66rem;letter-spacing:.18em;color:var(--burg);
+  display:block;margin-bottom:.7rem}
+.step p{font-size:.95rem;color:#443d33;margin:0}
+@media(min-width:760px){
+  .step{grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:clamp(1.5rem,4vw,3rem);align-items:start}
+  .step:nth-child(even) .step-fig{order:2}
+}
+
+/* ---------- differentials ---------- */
+.diffs{margin-top:clamp(2.5rem,6vw,4rem);display:grid;gap:1px;background:#35302a;
+  border:1px solid #35302a}
+.diff{background:var(--ink-2);padding:clamp(1.4rem,3vw,2.2rem)}
+.diff-fig{aspect-ratio:16/10;overflow:hidden;margin:-.4rem -.4rem 1.4rem;background:#111}
+.diff h3{font-size:clamp(1.15rem,1.9vw,1.5rem);margin-bottom:.7rem}
+.diff .spec{font-family:var(--mono);font-size:.64rem;letter-spacing:.14em;color:var(--blond);
+  display:block;margin-bottom:1rem;text-transform:uppercase}
+.diff p{font-size:.92rem;color:#c2b9a7;margin:0}
+@media(min-width:720px){.diffs{grid-template-columns:1fr 1fr}}
+@media(min-width:1100px){.diffs{grid-template-columns:repeat(3,1fr)}}
+
+/* ---------- interior ---------- */
+.intgrid{margin-top:clamp(2.5rem,6vw,4rem);display:grid;gap:clamp(1.2rem,3vw,2rem)}
+.int-main{margin:0;aspect-ratio:3/4;overflow:hidden;background:#d8cebb}
+.int-side{display:flex;flex-direction:column;gap:.8rem}
+.int-sm{margin:0;aspect-ratio:16/9;overflow:hidden;background:#d8cebb}
+.int-side .small{margin:0 0 .6rem}
+@media(min-width:820px){.intgrid{grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);align-items:start}}
+
+/* ---------- offer ---------- */
+.offer{background:var(--burg-lo);color:var(--wool)}
+.offer .eyebrow{color:var(--blond)}
+.lines{margin-top:clamp(2.5rem,6vw,4rem);display:grid;gap:1.5rem}
+.line{border:1px solid #8B4354;background:#6C2637;padding:clamp(1.4rem,3vw,2.1rem);
+  display:flex;flex-direction:column;gap:.9rem}
+.line-no{font-family:var(--mono);font-size:.64rem;letter-spacing:.2em;color:var(--blond)}
+.line h3{font-size:clamp(1.25rem,2.1vw,1.6rem)}
+.line p{font-size:.93rem;color:#e8d9dd;margin:0}
+.line ul{margin:0;padding-left:1.1rem;font-size:.88rem;color:#e0cdd2}
+.line li{margin-bottom:.35rem}
+.line .tag{margin-top:auto;padding-top:.9rem;border-top:1px solid #8B4354;
+  font-family:var(--mono);font-size:.63rem;letter-spacing:.13em;color:var(--blond);text-transform:uppercase}
+@media(min-width:820px){.lines{grid-template-columns:1fr 1fr}}
+
+/* ---------- two column prose ---------- */
+.duo{display:grid;gap:clamp(2rem,5vw,4rem);align-items:center}
+.duo-fig{aspect-ratio:5/4;overflow:hidden;background:#111}
+@media(min-width:860px){.duo{grid-template-columns:1.05fr .95fr}}
+.quote{font-family:var(--disp);font-size:clamp(1.4rem,3vw,2.15rem);line-height:1.22;
+  font-style:italic;font-weight:300;color:var(--blond);margin:0 0 1.6rem;
+  font-variation-settings:"SOFT" 45,"WONK" 1}
+
+/* ---------- table ---------- */
+.tbl{margin-top:2.5rem;width:100%;border-collapse:collapse;font-size:.9rem}
+.tbl th,.tbl td{text-align:left;padding:.85rem .8rem;border-bottom:1px solid #cfc4ae}
+.tbl th{font-family:var(--mono);font-size:.62rem;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--burg);font-weight:500}
+.tbl td:first-child{font-weight:600}
+.tbl .num{font-family:var(--mono);font-size:.84rem}
+
+/* ---------- contact ---------- */
+.cta{display:flex;gap:.7rem;justify-content:center;flex-wrap:wrap;margin-top:2rem}
+.cta-b{font-family:var(--mono);font-size:.68rem;letter-spacing:.13em;text-transform:uppercase;
+ text-decoration:none;border:1px solid #4B443A;color:var(--wool);padding:.85rem 1.3rem;border-radius:2px}
+.cta-b.primary{background:var(--blond);border-color:var(--blond);color:var(--ink);font-weight:500}
+.cta-b:hover{border-color:var(--blond)}
+.contact{background:var(--ink-2);text-align:center}
+.contact h2{font-size:clamp(2rem,6vw,4rem);font-weight:300;margin-bottom:1.5rem;
+  font-variation-settings:"SOFT" 40,"WONK" 1}
+.contact .rows{display:inline-grid;gap:.5rem;text-align:left;margin-top:1.5rem}
+.contact .rows div{display:grid;grid-template-columns:8rem 1fr;gap:1rem;
+  border-bottom:1px solid #3b342c;padding-bottom:.5rem}
+.contact .rows .k{font-family:var(--mono);font-size:.63rem;letter-spacing:.15em;
+  color:var(--blond);text-transform:uppercase;padding-top:.3rem}
+.foot{padding:1.6rem var(--pad);border-top:1px solid #35302a;display:flex;
+  justify-content:space-between;gap:1rem;flex-wrap:wrap;color:#8d8474}
+
+.reveal{opacity:0;transform:translateY(18px)}
+.reveal.in{opacity:1;transform:none;transition:opacity .8s ease,transform .8s cubic-bezier(.2,.7,.2,1)}
+@media(prefers-reduced-motion:reduce){
+  .trei line{animation:none;stroke-dashoffset:0}
+  .reveal,.reveal.in{opacity:1;transform:none;transition:none}
+}
+:focus-visible{outline:2px solid var(--blond);outline-offset:3px}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-media" aria-hidden="true">
+    <video autoplay muted loop playsinline preload="metadata" poster="assets/banner.jpg">
+      <source src="assets/banner.mp4" type="assets/mp4">
+    </video>
+    <div class="scrim"></div>
+  </div>
+  <svg class="trei" data-lattice preserveAspectRatio="none" aria-hidden="true"></svg>
+
+  <div class="topbar">
+    <div class="mark"><img class="logo" src="assets/logo.png" alt="" width="34" height="34">Casa<span>Yourte</span></div>
+    <div class="lang" role="group" aria-label="Idioma / Langue">
+      <button type="button" data-set="es" aria-pressed="true">Español</button>
+      <button type="button" data-set="fr" aria-pressed="false">Français</button>
+    </div>
+  </div>
+
+  <div class="hero-body">
+    <span class="eyebrow" data-i="hero.eyebrow"></span>
+    <h1><span data-i="hero.t1"></span> <em data-i="hero.t2"></em></h1>
+    <p class="lede" style="margin-top:1.8rem" data-i="hero.lede"></p>
+  </div>
+
+  <div class="hero-meta">
+    <div><span class="mono k" data-i="hero.k1"></span><span class="v" data-i="hero.v1"></span></div>
+    <div><span class="mono k" data-i="hero.k2"></span><span class="v" data-i="hero.v2"></span></div>
+    <div><span class="mono k" data-i="hero.k3"></span><span class="v" data-i="hero.v3"></span></div>
+  </div>
+</header>
+
+<figure class="bleed" style="margin:0">
+  <img data-slot="hero" src="assets/hero.jpg" alt="">
+  <figcaption class="mono" data-i="cap.hero"></figcaption>
+</figure>
+
+<!-- IDEA -->
+<section class="wrap idea-sec">
+  <span class="eyebrow" data-i="id.eyebrow"></span>
+  <h2 class="idea-h" data-i="id.title"></h2>
+  <div class="idea-cols">
+    <p data-i="id.b1"></p>
+    <p data-i="id.b2"></p>
+    <p data-i="id.b3"></p>
+  </div>
+  <p class="idea-k" data-i="id.k"></p>
+</section>
+
+<!-- PROCESO -->
+<section class="wrap proc-sec">
+  <span class="eyebrow" data-i="pr.eyebrow"></span>
+  <h2 style="font-size:clamp(2rem,5.5vw,3.6rem);max-width:26ch" data-i="pr.title"></h2>
+  <p class="lede" style="margin-top:1.5rem;color:#c2b9a7" data-i="pr.lede"></p>
+
+  <figure class="proc" id="proc">
+    <div class="proc-stage" id="proc-stage"></div>
+    <div class="proc-bar" id="proc-bar"></div>
+    <figcaption class="proc-cap">
+      <span class="mono proc-n" id="proc-n"></span>
+      <span class="proc-t" id="proc-t"></span>
+    </figcaption>
+    <div class="proc-ctl">
+      <button type="button" data-act="prev" aria-label="Anterior">&lsaquo;</button>
+      <button type="button" data-act="toggle" id="proc-toggle">Pausa</button>
+      <button type="button" data-act="next" aria-label="Siguiente">&rsaquo;</button>
+    </div>
+  </figure>
+</section>
+
+<div class="band"><svg data-lattice-static preserveAspectRatio="none" aria-hidden="true"></svg></div>
+
+<!-- TRAJECTORY -->
+<section class="wrap paper">
+  <span class="eyebrow" data-i="traj.eyebrow"></span>
+  <h2 style="font-size:clamp(2rem,5.5vw,3.6rem);max-width:24ch" data-i="traj.title"></h2>
+  <p class="lede" style="margin-top:1.5rem;color:#4b443a" data-i="traj.lede"></p>
+
+  <div class="steps">
+    <article class="step reveal">
+      <div class="step-fig"><img data-slot="traj1" src="assets/traj1.jpg" alt="" loading="lazy" decoding="async"></div>
+      <div><span class="yr" data-i="s1.yr"></span><h3 data-i="s1.t"></h3><p data-i="s1.b"></p></div>
+    </article>
+    <article class="step reveal">
+      <div class="step-fig"><img data-slot="traj2" src="assets/traj2.jpg" alt="" loading="lazy" decoding="async"></div>
+      <div><span class="yr" data-i="s2.yr"></span><h3 data-i="s2.t"></h3><p data-i="s2.b"></p></div>
+    </article>
+    <article class="step reveal">
+      <div class="step-fig"><img data-slot="traj3" src="assets/traj3.jpg" alt="" loading="lazy" decoding="async"></div>
+      <div><span class="yr" data-i="s3.yr"></span><h3 data-i="s3.t"></h3><p data-i="s3.b"></p></div>
+    </article>
+    <article class="step reveal">
+      <div class="step-fig"><img data-slot="traj4" src="assets/traj4.jpg" alt="" loading="lazy" decoding="async"></div>
+      <div><span class="yr" data-i="s4.yr"></span><h3 data-i="s4.t"></h3><p data-i="s4.b"></p></div>
+    </article>
+    <article class="step reveal">
+      <div class="step-fig"><img data-slot="traj5" src="assets/traj5.jpg" alt="" loading="lazy" decoding="async"></div>
+      <div><span class="yr" data-i="s5.yr"></span><h3 data-i="s5.t"></h3><p data-i="s5.b"></p></div>
+    </article>
+  </div>
+</section>
+
+<!-- DIFFERENTIALS -->
+<section class="wrap">
+  <span class="eyebrow" data-i="dif.eyebrow"></span>
+  <h2 style="font-size:clamp(2rem,5.5vw,3.6rem);max-width:26ch" data-i="dif.title"></h2>
+  <p class="lede" style="margin-top:1.5rem;color:#c2b9a7" data-i="dif.lede"></p>
+
+  <div class="diffs">
+    <article class="diff reveal">
+      <div class="diff-fig"><img data-slot="dif1" src="assets/dif1.jpg" alt="" loading="lazy" decoding="async"></div>
+      <span class="spec" data-i="d1.s"></span><h3 data-i="d1.t"></h3><p data-i="d1.b"></p>
+    </article>
+    <article class="diff reveal">
+      <div class="diff-fig"><img data-slot="dif2" src="assets/dif2.jpg" alt="" loading="lazy" decoding="async"></div>
+      <span class="spec" data-i="d2.s"></span><h3 data-i="d2.t"></h3><p data-i="d2.b"></p>
+    </article>
+    <article class="diff reveal">
+      <div class="diff-fig"><img data-slot="dif3" src="assets/dif3.jpg" alt="" loading="lazy" decoding="async"></div>
+      <span class="spec" data-i="d3.s"></span><h3 data-i="d3.t"></h3><p data-i="d3.b"></p>
+    </article>
+    <article class="diff reveal">
+      <div class="diff-fig"><img data-slot="dif4" src="assets/dif4.jpg" alt="" loading="lazy" decoding="async"></div>
+      <span class="spec" data-i="d4.s"></span><h3 data-i="d4.t"></h3><p data-i="d4.b"></p>
+    </article>
+    <article class="diff reveal">
+      <div class="diff-fig"><img data-slot="dif5" src="assets/dif5.jpg" alt="" loading="lazy" decoding="async"></div>
+      <span class="spec" data-i="d5.s"></span><h3 data-i="d5.t"></h3><p data-i="d5.b"></p>
+    </article>
+    <article class="diff reveal">
+      <div class="diff-fig"><img data-slot="dif6" src="assets/dif6.jpg" alt="" loading="lazy" decoding="async"></div>
+      <span class="spec" data-i="d6.s"></span><h3 data-i="d6.t"></h3><p data-i="d6.b"></p>
+    </article>
+    <article class="diff reveal">
+      <div class="diff-fig"><img data-slot="dif7" src="assets/dif7.jpg" alt="" loading="lazy" decoding="async"></div>
+      <span class="spec" data-i="d7.s"></span><h3 data-i="d7.t"></h3><p data-i="d7.b"></p>
+    </article>
+    <article class="diff reveal">
+      <div class="diff-fig"><img data-slot="dif8" src="assets/dif8.jpg" alt="" loading="lazy" decoding="async"></div>
+      <span class="spec" data-i="d8.s"></span><h3 data-i="d8.t"></h3><p data-i="d8.b"></p>
+    </article>
+  </div>
+</section>
+
+<!-- INTERIOR -->
+<section class="wrap paper">
+  <span class="eyebrow" data-i="in.eyebrow"></span>
+  <h2 style="font-size:clamp(2rem,5.5vw,3.6rem);max-width:26ch" data-i="in.title"></h2>
+  <p class="lede" style="margin-top:1.5rem;color:#4b443a" data-i="in.lede"></p>
+  <div class="intgrid">
+    <figure class="int-main"><img data-slot="int1" src="assets/int1.jpg" alt="" loading="lazy" decoding="async"></figure>
+    <div class="int-side">
+      <figure class="int-sm"><img data-slot="int2" src="assets/int2.jpg" alt="" loading="lazy" decoding="async"></figure>
+      <p class="small" data-i="in.c1"></p>
+      <figure class="int-sm"><img data-slot="int3" src="assets/int3.jpg" alt="" loading="lazy" decoding="async"></figure>
+      <p class="small" data-i="in.c2"></p>
+    </div>
+  </div>
+</section>
+
+<!-- OFFER -->
+<section class="wrap offer">
+  <span class="eyebrow" data-i="of.eyebrow"></span>
+  <h2 style="font-size:clamp(2rem,5.5vw,3.6rem);max-width:24ch" data-i="of.title"></h2>
+  <p class="lede" style="margin-top:1.5rem;color:#e8d9dd" data-i="of.lede"></p>
+
+  <div class="lines">
+    <article class="line reveal">
+      <span class="line-no" data-i="o1.n"></span><h3 data-i="o1.t"></h3>
+      <p data-i="o1.b"></p><ul data-list="o1.l"></ul><span class="tag" data-i="o1.g"></span>
+    </article>
+    <article class="line reveal">
+      <span class="line-no" data-i="o2.n"></span><h3 data-i="o2.t"></h3>
+      <p data-i="o2.b"></p><ul data-list="o2.l"></ul><span class="tag" data-i="o2.g"></span>
+    </article>
+    <article class="line reveal">
+      <span class="line-no" data-i="o3.n"></span><h3 data-i="o3.t"></h3>
+      <p data-i="o3.b"></p><ul data-list="o3.l"></ul><span class="tag" data-i="o3.g"></span>
+    </article>
+    <article class="line reveal">
+      <span class="line-no" data-i="o4.n"></span><h3 data-i="o4.t"></h3>
+      <p data-i="o4.b"></p><ul data-list="o4.l"></ul><span class="tag" data-i="o4.g"></span>
+    </article>
+  </div>
+</section>
+
+<!-- CO-CONSTRUCTION -->
+<section class="wrap">
+  <div class="duo">
+    <div>
+      <span class="eyebrow" data-i="co.eyebrow"></span>
+      <p class="quote" data-i="co.quote"></p>
+      <p style="color:#c2b9a7" data-i="co.b1"></p>
+      <p style="color:#c2b9a7" data-i="co.b2"></p>
+      <p class="small" data-i="co.b3"></p>
+    </div>
+    <div class="duo-fig"><img data-slot="co" src="assets/co.jpg" alt="" loading="lazy" decoding="async"></div>
+  </div>
+</section>
+
+<div class="band"><svg data-lattice-static preserveAspectRatio="none" aria-hidden="true"></svg></div>
+
+<!-- WORKSHOP -->
+<section class="wrap paper">
+  <div class="duo">
+    <div class="duo-fig"><img data-slot="ws" src="assets/ws.jpg" alt="" loading="lazy" decoding="async"></div>
+    <div>
+      <span class="eyebrow" data-i="ws.eyebrow"></span>
+      <h2 style="font-size:clamp(1.8rem,4.5vw,3rem);max-width:22ch" data-i="ws.title"></h2>
+      <p style="margin-top:1.3rem;color:#4b443a" data-i="ws.b1"></p>
+      <p style="color:#4b443a" data-i="ws.b2"></p>
+    </div>
+  </div>
+
+  <h3 style="margin-top:clamp(3rem,7vw,5rem);font-size:clamp(1.4rem,3vw,2rem)" data-i="ficha.title"></h3>
+  <table class="tbl">
+    <thead><tr>
+      <th data-i="ficha.h1"></th><th data-i="ficha.h2"></th>
+      <th data-i="ficha.h3"></th><th data-i="ficha.h4"></th>
+    </tr></thead>
+    <tbody data-rows="ficha.rows"></tbody>
+  </table>
+  <p class="small" style="margin-top:1.2rem;max-width:60ch" data-i="ficha.note"></p>
+</section>
+
+<!-- CONTACT -->
+<section class="wrap contact">
+  <svg class="trei" data-lattice preserveAspectRatio="none" aria-hidden="true" style="opacity:.5"></svg>
+  <div style="position:relative;z-index:2">
+    <span class="eyebrow" style="display:inline-block" data-i="ct.eyebrow"></span>
+    <h2 data-i="ct.title"></h2>
+    <p class="lede" style="margin:0 auto;color:#c2b9a7;text-align:center;max-width:44ch" data-i="ct.b"></p>
+    <div class="cta">
+      <a class="cta-b primary" href="https://wa.me/59899696333"><span data-i="ct.wa"></span></a>
+      <a class="cta-b" href="mailto:casayourte@gmail.com">casayourte@gmail.com</a>
+    </div>
+    <div class="rows">
+      <div><span class="k">Mauro</span><span>Mauro Gastaldello</span></div>
+      <div><span class="k">WhatsApp</span><span>+598 99 696 333</span></div>
+      <div><span class="k" data-i="ct.k3"></span><span data-i="ct.v3"></span></div>
+      <div><span class="k" data-i="ct.k4"></span><span data-i="ct.v4"></span></div>
+    </div>
+  </div>
+</section>
+
+<div class="foot">
+  <span class="mono" style="display:flex;align-items:center;gap:.5rem"><img class="logo" src="assets/logo.png" alt="" width="20" height="20">CasaYourte · Mauro Gastaldello y familia</span>
+  <span class="mono" data-i="foot.r"></span>
+</div>
+
+<script>
+/* ---------- content ---------- */
+const T = {
+es:{
+ "hero.eyebrow":"Uruguay · Argentina · Brasil",
+ "hero.t1":"Yurtas que se","hero.t2":"calculan.",
+ "hero.lede":"Seis años de trabajo con yurtas en familia, entre Uruguay y Francia, con constructores, autoconstructores, arquitectos e ingenieros del rubro. Cada pieza dibujada, calculada y cortada antes de llegar al terreno.",
+ "hero.k1":"Diámetros","hero.v1":"De 2 a 12 metros, a medida",
+ "hero.k2":"Probado","hero.v2":"Aro central en eucalipto: 4 años y 2 desmontajes sin deformación",
+ "hero.k3":"Base","hero.v3":"Uruguay · ocho años de vida y obra en Francia",
+"in.eyebrow":"El interior",
+ "in.title":"La estructura no se esconde: es la arquitectura.",
+ "in.lede":"En una yurta de catálogo el techo se tapa. Acá la primera capa triangulada queda a la vista, y con las aberturas vidriadas integradas al trei la luz entra por los costados y por arriba. Es lo que no se puede explicar con una ficha técnica.",
+ "in.c1":"El toono desde abajo: la capa triangulada, el anillo del skydome y el trei a 60° en el mismo plano de lectura.",
+ "in.c2":"De noche, con la iluminación perimetral del skydome, la geometría del techo se vuelve el espectáculo. Para alojamiento turístico, esto es el producto.",
+ "cap.hero":"Último proyecto · yurta terminada con deck perimetral curvo, anexo acoplado y grandes aberturas vidriadas",
+
+ "id.eyebrow":"La idea",
+ "id.title":"Una yurta no se vuelve desmontable: <em>ya lo era</em>. Lo que agregamos es todo lo demás.",
+ "id.b1":"La yurta viene de un pueblo nómade. Es desmontable por origen, como una carpa: eso no es una prestación que se le añada, es su naturaleza. Lo que cambió en Europa fue el habitante, no la estructura: gente que no se muda, pero que quiere poder desarmar.",
+ "id.b2":"Y ahí aparece el sentido real de poder desarmar cuando no sos nómade: construir con poco impacto sobre el territorio. Una yurta no cimenta, no excava, no impermeabiliza el suelo. Se apoya, se habita, y el día que se va el terreno vuelve a lo que era. Es una manera de construir que respeta el ecosistema en el que se instala en lugar de transformarlo.",
+ "id.b3":"El problema es que casi siempre se paga ese respeto con incomodidad. Nuestro trabajo va en la dirección opuesta: llevar la capacidad mecánica y la eficiencia térmica de la estructura hasta donde da, sin que pierda la esencia. Piso aislado, doble techo ventilado, doble anillo que une piso y muros, aberturas que escurren el agua. Lo más parecido a una casa que se pueda desarmar.",
+ "id.k":"Lo mejor de la yurta y lo mejor de una casa, en la misma estructura. Eso es CasaYourte.",
+"pr.eyebrow":"El proceso",
+ "pr.title":"Doce momentos de una obra, en orden.",
+ "pr.lede":"Del taller a la yurta habitada, con lo que hace cada pieza. Cada elemento está calculado y cortado antes de llegar al terreno: lo que se ve en obra es armado, no improvisación.",
+ "pr.c1":"Taller: fabricación del anillo periférico. La yurta lleva dos anillos completos, uno en el perímetro del piso y otro en la parte alta del trei.",
+ "pr.c2":"El anillo periférico ensamblado dentro de la estructura del piso, antes del aislante y de la capa de madera que lo cubre.",
+ "pr.c3":"Fijación del anillo periférico superior: abulonado al trei y unido con escuadras metálicas al anillo que va en el piso.",
+ "pr.c4":"Fabricación del aro central. Las ranuras son canales de ventilación de la lona exterior: dejan salir el aire caliente y evitan la condensación.",
+ "pr.c5":"Instalación del aro central y los triángulos estructurales, que impiden la rotación del aro central respecto del perimetral.",
+ "pr.c6":"Costura en terreno del aislante de PET. Su resistencia a la tracción permite una capa integral que no se desplaza sobre el cono del techo.",
+ "pr.c7":"Colocación de la lona sobre el cono del techo.",
+ "pr.c8":"El doble techo cerrado, con el alero sobre los muros.",
+ "pr.c9":"Umbrales de puertas y ventanas: piezas únicas que recogen el escurrimiento de los montantes y lo llevan afuera del piso.",
+ "pr.c10":"Trabajo de a dos en el borde del piso. Nada de esto se hace solo.",
+ "pr.c11":"Vista interior con la tapa que cierra el aro central y bloquea los rayos ultravioleta en los momentos de más calor.",
+ "pr.c12":"La yurta habitada, con el deck perimetral y el anexo.",
+ "traj.eyebrow":"Trayectoria","traj.title":"Cada yurta nos enseñó algo que la siguiente ya trae resuelto.",
+ "traj.lede":"No es una línea de productos. Es una secuencia de problemas resueltos, uno por obra, junto a otros constructores, autoconstructores, clientes, arquitectos e ingenieros dedicados a este modo de vida. Fue una experiencia intensa y en ella pusimos la mayor parte de nuestra energía profesional.",
+ "s1.yr":"Primera yurta","s1.t":"La forma tradicional","s1.b":"Trei a 45° atado con cuerdas, perchas sin desborde, piso cortado recto al ras del chasis. Aprendimos dónde estaban los límites: la pared empujaba hacia adentro y el agua bajaba por la tela.",
+ "s2.yr":"Primer desarrollo","s2.t":"Del nudo al bulón","s2.b":"Trei abulonado con medida exacta entre chasis. Toono con caras a 30°, skydome de doble pared con gato y elásticos. El cable pasa a trabajar en el borde superior de la pared.",
+ "s3.yr":"Desborde de perchas","s3.t":"El techo empieza a proteger la pared","s3.b":"Primer ensayo de perchas con desborde: el cable trabaja en el borde de las perchas y la carga se reparte simétrica. El alero desvía el agua lejos de la tela. Apertura del skydome por triple gato: más seguridad y orientación elegible.",
+ "s4.yr":"Tierra y paja","s4.t":"Anillo periférico y circulación de aire","s4.b":"Primer proyecto de yurta en tierra y paja. Reforzamos con anillo periférico, ampliamos el desborde de techo y abrimos una cámara para que el aire circule entre la tela exterior y la aislación.",
+ "s5.yr":"Última generación","s5.t":"Doble techo y primera capa triangulada","s5.b":"Doble techo con lámina de aire y alero de 50 cm, trei cerrado sobre anillo periférico, y la primera capa de techo en estructura triangular en lugar de radial. El anillo periférico se ensambla en el lugar y se desarma en seis partes para el transporte, en una yurta de siete metros.",
+
+ "dif.eyebrow":"Diferencial técnico","dif.title":"Seis decisiones que separan esto de una yurta de catálogo.",
+ "dif.lede":"Ninguna es estética. Cada una salió de un problema concreto en obra y cambia cómo la estructura resiste, respira y se desarma.",
+ "d1.s":"Trei · 60° en lugar de 45°","d1.t":"La pared empuja menos","d1.b":"Abriendo el rombo del trei a 60° baja la tensión de la pared hacia el interior y la estructura queda más estable frente a la carga vertical. El trei va abulonado y se fija al piso por una madera que sigue el perímetro.",
+ "d2.s":"Doble anillo periférico","d2.t":"El piso y los muros pasan a ser un solo cuerpo","d2.b":"No es un anillo, son dos: uno completo en todo el perímetro del piso y otro en la parte alta del trei. El superior va abulonado al trei y unido con escuadras metálicas al anillo del piso, que queda dentro de la estructura, bajo el aislante y la capa de madera. Piso y muros dejan de ser dos piezas apoyadas y forman una estructura sólida. En una yurta de siete metros cada anillo se compone de seis piezas, fabricadas en taller y ensambladas en el lugar.",
+ "d3.s":"Primera capa · triángulos estructurales","d3.t":"El aro central no puede girar","d3.b":"En lugar de radios, la primera capa se arma en triángulos, y su función es precisa: impedir la rotación del aro central respecto del aro perimetral. De paso dan apoyo a las perchas radiales de la segunda capa y suben la resistencia mecánica del conjunto.",
+ "d4.s":"Doble techo · alero 50 cm","d4.t":"Una lámina de aire ventilada","d4.b":"Entre el Tyvek y la lona exterior queda una lámina de aire en movimiento. El aro central lleva canales de ventilación tallados que dejan salir el aire caliente acumulado y evitan la condensación. Además habilita un alero grande sobre las paredes: la aislación termina en el borde del muro y la capa superior se extiende todo lo que se quiera.",
+ "d5.s":"Plancher modular","d5.t":"Piso que llega listo y se atornilla","d5.b":"Módulos calculados por diámetro, apoyados sobre puntos de nivel, cerrados con sargentos y atornillados cada 60 cm en zigzag. El corte final del perímetro se traza con compás desde el centro real de la estructura.",
+ "d6.s":"Aislación · PET reciclado","d6.t":"Una capa integral que no se desplaza","d6.b":"El PET se elige por su resistencia mecánica a la tracción: cosido en terreno forma una capa entera y estable sobre el cono del techo, que no se corre una vez colocada. Y no es nutritivo ni atrae roedores ni polilla, algo decisivo en una estructura que queda montada años en el campo. Mejor las botellas en los muros que en el mar.",
+
+ "d7.s":"Umbrales de aberturas","d7.t":"El agua sale por fuera del piso","d7.b":"Cada puerta y cada ventana lleva un umbral hecho de una sola pieza de madera, que recoge el escurrimiento de los montantes y lo lleva hacia afuera de la estructura del piso. Es el punto por donde una yurta se arruina con los años, y acá está resuelto con carpintería.",
+ "d8.s":"Tapa del aro central","d8.t":"Se cierra contra el sol","d8.b":"El agujero central se cierra con una tapa desde el interior, bloqueando la entrada de rayos ultravioleta en los momentos de más calor. En clima subtropical eso no es un accesorio: es la diferencia entre un espacio habitable y un invernadero al mediodía.",
+ "of.eyebrow":"Qué ofrecemos hoy","of.title":"Cuatro maneras de empezar, según lo que necesites.",
+ "of.lede":"El taller en Uruguay arranca con maquinaria manual y va sumando máquinas. Por eso hoy vendemos primero lo que ya podemos hacer con excelencia: telas, planos y conocimiento.",
+ "o1.n":"Línea 01","o1.t":"Lonas y telas a medida","o1.b":"Fabricamos en taller propio con nuestras máquinas de coser. Cortamos y cosemos según tus medidas reales, no según un catálogo.",
+ "o1.l":["Cubiertas de yurta: techo, muros, doble capa","Reemplazo de telas para domos geodésicos y carpas safari","Telas interiores y forros de aislación","Envío a Uruguay, Argentina y Brasil"],
+ "o1.g":"Disponible ya · presupuesto sobre medidas",
+ "o2.n":"Línea 02","o2.t":"Autoconstrucción: planos y acompañamiento","o2.b":"Te entregamos el despiece completo y te acompañamos mientras la construís. Seis años de cálculo y de obra, sin que tengas que repetir nuestros errores.",
+ "o2.l":["Planos y despiece pieza por pieza para tu diámetro","Lista de materiales y volúmenes de madera","Manual de montaje ilustrado","Acompañamiento a distancia durante la obra"],
+ "o2.g":"Disponible ya · a distancia en toda la región",
+ "o3.n":"Línea 03","o3.t":"Yurta completa","o3.b":"Estructura calculada, fabricada y montada. Se define por etapas para adaptarse a tu presupuesto y a nuestra capacidad de taller.",
+ "o3.l":["Estructura sola: trei, toono, perchas, anillo periférico","+ piso modular aislado","+ telas y aislación completas","+ opciones: doble techo, skydome orientable, salida de estufa, aberturas"],
+ "o3.g":"Por etapas · consultar plazos",
+ "o4.n":"Línea 04","o4.t":"Montaje y formación","o4.b":"Vamos a tu terreno. No a trabajar para vos, sino a construir con vos y con quien quieras convocar. Y si querés aprender el oficio, la obra es la escuela.",
+ "o4.l":["Asistencia técnica de montaje en obra","Obra-taller abierta como formación paga","Transferencia del método a carpinterías locales","Viajamos a Argentina y Brasil"],
+ "o4.g":"Con desplazamiento · agenda por temporada",
+
+ "co.eyebrow":"Co-construcción","co.quote":"La contribución empieza en el corazón.",
+ "co.b1":"Vamos a tu terreno, probablemente en familia y con nuestros hijos, y eso cambia el clima de la obra. No es sólo hacer un trabajo para vos: es compartir una experiencia. Haremos lo mejor que podamos para guiarte, pero el resultado va a ser fruto de un trabajo colectivo con vos y con tu gente.",
+ "co.b2":"Queremos que cada uno encuentre su lugar, y que pueda no aceptar una tarea que no se siente capaz de hacer ni un riesgo que no quiere tomar. Los desafíos del trabajo en altura o de ciertas máquinas no son para todos, y está bien. Que todos los saberes que cada uno trae encuentren la confianza para compartirse, aunque sea tocar música al lado o sostener una escalera cuarenta y cinco minutos.",
+ "co.b3":"Si hace buen tiempo todo sale más fácil. Si no, puede ser muy intenso. No nos olvidemos de reír.",
+
+ "ws.eyebrow":"Taller y showroom","ws.title":"Una yurta armada sobre el techo del taller.",
+ "ws.b1":"El taller en Uruguay no es sólo el lugar donde se fabrica. Sobre su techo montamos nuestra propia yurta como espacio de exhibición y salón de eventos: se puede entrar, tocar la madera, subir al toono y ver cómo se desarma.",
+ "ws.b2":"Es la manera más honesta de mostrar un producto que no se explica bien en una foto. Quien quiere una yurta necesita estar dentro de una.",
+ "ficha.title":"Rango y referencias",
+ "ficha.h1":"Diámetro","ficha.h2":"Superficie","ficha.h3":"Uso habitual","ficha.h4":"Precio",
+ "ficha.rows":[
+   ["4 m","12,6 m²","Alojamiento de 2 personas · glamping","A consultar"],
+   ["6 m","28,3 m²","Alojamiento familiar · cabaña","A consultar"],
+   ["7 m","38,5 m²","Vivienda · salón pequeño","A consultar"],
+   ["9 m","63,6 m²","Salón · espacio colectivo","A consultar"],
+   ["2–12 m","—","A medida, sobre pedido","A consultar"]
+ ],
+ "ficha.note":"Los diámetros de referencia son los que tenemos calculados y listos para cotizar rápido. Fuera de esa lista trabajamos igual, de 2 a 12 metros, con un plazo mayor de diseño.",
+
+ "ct.eyebrow":"Hablemos","ct.title":"Contanos qué querés construir.",
+ "ct.b":"Si tenés un terreno, un proyecto de glamping o simplemente una idea, escribinos. La primera conversación siempre es sobre el lugar y el clima, no sobre el precio.",
+ "ct.k3":"Taller","ct.v3":"Uruguay · dirección a confirmar",
+ "ct.k4":"Cobertura","ct.v4":"Uruguay, Argentina y Brasil",
+ "ct.wa":"Escribinos por WhatsApp",
+ "foot.r":"Mauro Gastaldello y familia"
+},
+fr:{
+ "hero.eyebrow":"Uruguay · Argentine · Brésil",
+ "hero.t1":"Des yourtes qui se","hero.t2":"calculent.",
+ "hero.lede":"Six ans de travail sur les yourtes en famille, entre l'Uruguay et la France, avec des constructeurs, des auto-constructeurs, des architectes et des ingénieurs du métier. Chaque pièce dessinée, calculée et coupée avant d'arriver sur le terrain.",
+ "hero.k1":"Diamètres","hero.v1":"De 2 à 12 mètres, sur mesure",
+ "hero.k2":"Éprouvé","hero.v2":"Anneau central en eucalyptus : 4 ans et 2 démontages sans déformation",
+ "hero.k3":"Base","hero.v3":"Uruguay · huit ans de vie et de chantiers en France",
+"in.eyebrow":"L'intérieur",
+ "in.title":"La structure ne se cache pas : elle est l'architecture.",
+ "in.lede":"Dans une yourte de catalogue, le toit est masqué. Ici la première couche triangulée reste visible, et avec les ouvertures vitrées intégrées au trei la lumière entre par les côtés et par le haut. C'est ce qu'aucune fiche technique ne sait expliquer.",
+ "in.c1":"Le toono vu d'en bas : la couche triangulée, l'anneau du skydome et le trei à 60° dans un même plan de lecture.",
+ "in.c2":"De nuit, avec l'éclairage périphérique du skydome, la géométrie du toit devient le spectacle. Pour l'hébergement touristique, c'est cela le produit.",
+ "cap.hero":"Dernier projet · yourte terminée avec terrasse périphérique courbe, annexe accolée et grandes ouvertures vitrées",
+
+ "id.eyebrow":"L'idée",
+ "id.title":"Une yourte ne devient pas démontable : <em>elle l'était déjà</em>. Nous ajoutons tout le reste.",
+ "id.b1":"La yourte vient d'un peuple nomade. Elle est démontable d'origine, comme une tente : ce n'est pas une prestation ajoutée, c'est sa nature. Ce qui a changé en Europe, c'est l'habitant, pas la structure : des gens qui ne se déplacent pas, mais qui veulent pouvoir démonter.",
+ "id.b2":"C'est là qu'apparaît le vrai sens de pouvoir démonter quand on n'est pas nomade : construire avec peu d'impact sur le territoire. Une yourte ne coule pas de fondations, ne creuse pas, n'imperméabilise pas le sol. Elle se pose, on l'habite, et le jour où elle part le terrain redevient ce qu'il était. C'est une façon de construire qui respecte l'écosystème où elle s'installe au lieu de le transformer.",
+ "id.b3":"Le problème est qu'on paie presque toujours ce respect par de l'inconfort. Notre travail va dans l'autre sens : pousser la capacité mécanique et l'efficacité thermique aussi loin que possible, sans perdre l'essence. Plancher isolé, double toit ventilé, double anneau qui lie plancher et murs, ouvertures qui évacuent l'eau. Ce qui ressemble le plus à une maison, en démontable.",
+ "id.k":"Le meilleur de la yourte et le meilleur d'une maison, dans la même structure. C'est CasaYourte.",
+"pr.eyebrow":"Le chantier",
+ "pr.title":"Douze moments d'un chantier, dans l'ordre.",
+ "pr.lede":"De l'atelier à la yourte habitée, avec le rôle de chaque pièce. Tout est calculé et coupé avant d'arriver sur le terrain : ce qui se passe sur le chantier est un assemblage, pas une improvisation.",
+ "pr.c1":"Atelier : fabrication de l'anneau périphérique. La yourte en compte deux complets, un au périmètre du plancher et un en haut du trei.",
+ "pr.c2":"L'anneau périphérique assemblé dans la structure du plancher, avant l'isolant et la couche de bois qui le recouvre.",
+ "pr.c3":"Fixation de l'anneau périphérique supérieur : boulonné au trei et relié par équerres métalliques à l'anneau du plancher.",
+ "pr.c4":"Fabrication de l'anneau central. Les rainures sont les canaux de ventilation de la toile extérieure : elles évacuent l'air chaud et évitent la condensation.",
+ "pr.c5":"Installation de l'anneau central et des triangles structurels, qui empêchent la rotation de l'anneau central par rapport au périphérique.",
+ "pr.c6":"Couture sur place de l'isolant PET. Sa résistance à la traction permet une couche intégrale qui ne se déplace pas sur le cône du toit.",
+ "pr.c7":"Pose de la toile sur le cône du toit.",
+ "pr.c8":"Le double toit fermé, avec le débord sur les murs.",
+ "pr.c9":"Seuils de portes et fenêtres : pièces uniques qui recueillent le ruissellement des montants et le conduisent hors du plancher.",
+ "pr.c10":"Travail à deux au bord du plancher. Rien de tout cela ne se fait seul.",
+ "pr.c11":"Vue intérieure avec le couvercle qui ferme l'anneau central et bloque les rayons ultraviolets aux heures les plus chaudes.",
+ "pr.c12":"La yourte habitée, avec la terrasse périphérique et l'annexe.",
+ "traj.eyebrow":"Parcours","traj.title":"Chaque yourte nous a appris ce que la suivante apporte déjà résolu.",
+ "traj.lede":"Ce n'est pas une gamme de produits. C'est une suite de problèmes résolus, un par chantier, aux côtés d'autres constructeurs, d'auto-constructeurs, de clients, d'architectes et d'ingénieurs dédiés à ce mode de vie. Une expérience intense, où nous avons mis l'essentiel de notre énergie professionnelle.",
+ "s1.yr":"Première yourte","s1.t":"La forme traditionnelle","s1.b":"Trei à 45° attaché par cordes, perches sans débord, plancher coupé droit au niveau du châssis. Nous avons appris où étaient les limites : le mur poussait vers l'intérieur et l'eau descendait le long de la toile.",
+ "s2.yr":"Premier développement","s2.t":"Du nœud au boulon","s2.b":"Trei boulonné, mesure exacte entre châssis. Toono avec faces à 30°, skydome double paroi avec vérin et élastiques. Le câble passe à travailler sur le bord supérieur du mur.",
+ "s3.yr":"Débord de perches","s3.t":"Le toit commence à protéger le mur","s3.b":"Premier essai de perches avec débord : le câble travaille au bord des perches et la charge se répartit symétriquement. La visière écarte l'eau de la toile. Ouverture du skydome par triple vérin : plus de sécurité et orientation au choix.",
+ "s4.yr":"Terre et paille","s4.t":"Anneau périphérique et circulation d'air","s4.b":"Premier projet de yourte en terre et paille. Renfort par anneau périphérique, débord de toit élargi, et une lame d'air ouverte pour que l'air circule entre la toile extérieure et l'isolation.",
+ "s5.yr":"Dernière génération","s5.t":"Double toit et première couche triangulée","s5.b":"Double toit avec lame d'air et débord de 50 cm, trei bouclé sur anneau périphérique, et première couche de toit en structure triangulaire au lieu de radiale. L'anneau périphérique s'assemble sur place et se démonte en six parties pour le transport, sur une yourte de sept mètres.",
+
+ "dif.eyebrow":"Différentiel technique","dif.title":"Six décisions qui séparent ceci d'une yourte de catalogue.",
+ "dif.lede":"Aucune n'est esthétique. Chacune est née d'un problème concret sur chantier et change la façon dont la structure résiste, respire et se démonte.",
+ "d1.s":"Trei · 60° au lieu de 45°","d1.t":"Le mur pousse moins","d1.b":"En ouvrant le losange du trei à 60°, la tension du mur vers l'intérieur diminue et la structure devient plus stable face à la charge verticale. Le trei est boulonné et fixé au plancher par un bois qui suit le périmètre.",
+ "d2.s":"Double anneau périphérique","d2.t":"Le plancher et les murs deviennent un seul corps","d2.b":"Ce n'est pas un anneau mais deux : un complet sur tout le périmètre du plancher et un autre en haut du trei. Le supérieur est boulonné au trei et relié par des équerres métalliques à l'anneau du plancher, qui reste dans la structure, sous l'isolant et la couche de bois. Plancher et murs cessent d'être deux pièces posées et forment une structure solide. Sur une yourte de sept mètres, chaque anneau se compose de six pièces, fabriquées en atelier et assemblées sur place.",
+ "d3.s":"Première couche · triangles structurels","d3.t":"L'anneau central ne peut plus tourner","d3.b":"Au lieu de rayons, la première couche est montée en triangles, avec une fonction précise : empêcher la rotation de l'anneau central par rapport à l'anneau périphérique. Ils soutiennent au passage les perches radiales de la deuxième couche et augmentent la résistance mécanique de l'ensemble.",
+ "d4.s":"Double toit · débord 50 cm","d4.t":"Une lame d'air ventilée","d4.b":"Entre le Tyvek et la toile extérieure subsiste une lame d'air en mouvement. L'anneau central porte des canaux de ventilation taillés qui évacuent l'air chaud et évitent la condensation. Cela permet aussi un grand débord sur les murs : l'isolation se termine au bord du mur et la couche supérieure s'étend autant qu'on le souhaite.",
+ "d5.s":"Plancher modulaire","d5.t":"Un plancher qui arrive prêt et se visse","d5.b":"Modules calculés par diamètre, posés sur des points de niveau, fermés au serre-joint et vissés tous les 60 cm en zigzag. La coupe finale du périmètre se trace au compas depuis le centre réel de la structure.",
+ "d6.s":"Isolation · PET recyclé","d6.t":"Une couche intégrale qui ne bouge pas","d6.b":"Le PET est choisi pour sa résistance mécanique à la traction : cousu sur place, il forme une couche entière et stable sur le cône du toit, qui ne se déplace plus une fois posée. Et il n'est ni nutritif ni attractif pour les rongeurs ou les mites, ce qui est décisif pour une structure qui reste montée des années. Mieux vaut les bouteilles sur nos murs que dans la mer.",
+
+ "d7.s":"Seuils des ouvertures","d7.t":"L'eau sort au-delà du plancher","d7.b":"Chaque porte et chaque fenêtre reçoit un seuil taillé dans une seule pièce de bois, qui recueille le ruissellement des montants et le conduit hors de la structure du plancher. C'est le point par lequel une yourte s'abîme avec les années, et il est résolu ici par la charpente.",
+ "d8.s":"Couvercle de l'anneau central","d8.t":"Il se ferme contre le soleil","d8.b":"Le trou central se ferme de l'intérieur par un couvercle qui bloque les rayons ultraviolets aux heures les plus chaudes. Sous climat subtropical ce n'est pas un accessoire : c'est la différence entre un espace habitable et une serre à midi.",
+ "of.eyebrow":"Ce que nous proposons","of.title":"Quatre manières de commencer, selon votre besoin.",
+ "of.lede":"L'atelier en Uruguay démarre avec de l'outillage manuel et s'équipe progressivement. Nous vendons donc d'abord ce que nous savons déjà faire avec excellence : les toiles, les plans et le savoir-faire.",
+ "o1.n":"Ligne 01","o1.t":"Toiles sur mesure","o1.b":"Fabriquées dans notre atelier avec nos propres machines à coudre. Coupées et cousues selon vos mesures réelles, pas selon un catalogue.",
+ "o1.l":["Couvertures de yourte : toit, murs, double couche","Remplacement de toiles pour dômes géodésiques et tentes safari","Toiles intérieures et doublures d'isolation","Expédition en Uruguay, Argentine et Brésil"],
+ "o1.g":"Disponible maintenant · devis sur mesures",
+ "o2.n":"Ligne 02","o2.t":"Auto-construction : plans et accompagnement","o2.b":"Nous livrons le plan de découpe complet et nous vous accompagnons pendant que vous construisez. Six ans de calculs et de chantiers, sans avoir à répéter nos erreurs.",
+ "o2.l":["Plans et découpe pièce par pièce pour votre diamètre","Liste de matériaux et volumes de bois","Manuel de montage illustré","Accompagnement à distance pendant le chantier"],
+ "o2.g":"Disponible maintenant · à distance dans toute la région",
+ "o3.n":"Ligne 03","o3.t":"Yourte complète","o3.b":"Structure calculée, fabriquée et montée. Définie par étapes pour s'adapter à votre budget et à notre capacité d'atelier.",
+ "o3.l":["Structure seule : trei, toono, perches, anneau périphérique","+ plancher modulaire isolé","+ toiles et isolation complètes","+ options : double toit, skydome orientable, sortie de poêle, ouvertures"],
+ "o3.g":"Par étapes · délais à consulter",
+ "o4.n":"Ligne 04","o4.t":"Montage et formation","o4.b":"Nous venons sur votre terrain. Non pas travailler pour vous, mais construire avec vous et avec ceux que vous invitez. Et si vous voulez apprendre le métier, le chantier est l'école.",
+ "o4.l":["Assistance technique au montage sur chantier","Chantier-atelier ouvert comme formation payante","Transfert de la méthode à des menuiseries locales","Nous nous déplaçons en Argentine et au Brésil"],
+ "o4.g":"Avec déplacement · agenda par saison",
+
+ "co.eyebrow":"Co-construction","co.quote":"La contribution commence dans le cœur.",
+ "co.b1":"Nous venons chez vous, probablement en famille avec nos enfants, et cela change l'atmosphère du chantier. Il ne s'agit pas seulement de faire un travail pour vous : nous partageons une expérience. Nous ferons de notre mieux pour vous guider, mais le résultat sera le fruit d'un travail collectif avec vous et vos proches.",
+ "co.b2":"Nous souhaitons que chacun trouve sa place, et puisse refuser une tâche qu'il ne se sent pas capable d'accomplir ou un risque qu'il ne veut pas prendre. Les défis du travail en hauteur ou de certaines machines ne sont pas pour tout le monde, et c'est très bien ainsi. Que tous les savoirs que chacun apporte trouvent la confiance pour être partagés, même si c'est jouer de la musique à côté ou tenir un escabeau pendant quarante-cinq minutes.",
+ "co.b3":"S'il fait beau, tout se passera plus facilement. Sinon, cela peut être très intense. N'oublions pas de rire.",
+
+ "ws.eyebrow":"Atelier et showroom","ws.title":"Une yourte montée sur le toit de l'atelier.",
+ "ws.b1":"L'atelier en Uruguay n'est pas seulement le lieu de fabrication. Sur son toit nous montons notre propre yourte comme espace d'exposition et salle d'événements : on peut y entrer, toucher le bois, monter au toono et voir comment elle se démonte.",
+ "ws.b2":"C'est la manière la plus honnête de montrer un produit qui s'explique mal en photo. Qui veut une yourte a besoin d'être à l'intérieur d'une yourte.",
+ "ficha.title":"Gamme et références",
+ "ficha.h1":"Diamètre","ficha.h2":"Surface","ficha.h3":"Usage courant","ficha.h4":"Prix",
+ "ficha.rows":[
+   ["4 m","12,6 m²","Hébergement 2 personnes · glamping","Sur demande"],
+   ["6 m","28,3 m²","Hébergement familial · cabane","Sur demande"],
+   ["7 m","38,5 m²","Habitation · petite salle","Sur demande"],
+   ["9 m","63,6 m²","Salle · espace collectif","Sur demande"],
+   ["2–12 m","—","Sur mesure, sur commande","Sur demande"]
+ ],
+ "ficha.note":"Les diamètres de référence sont ceux que nous avons calculés et prêts à chiffrer rapidement. En dehors de cette liste nous travaillons de la même façon, de 2 à 12 mètres, avec un délai de conception plus long.",
+
+ "ct.eyebrow":"Parlons-en","ct.title":"Dites-nous ce que vous voulez construire.",
+ "ct.b":"Si vous avez un terrain, un projet de glamping ou simplement une idée, écrivez-nous. La première conversation porte toujours sur le lieu et le climat, jamais sur le prix.",
+ "ct.k3":"Atelier","ct.v3":"Uruguay · adresse à confirmer",
+ "ct.k4":"Couverture","ct.v4":"Uruguay, Argentine et Brésil",
+ "ct.wa":"Écrivez-nous sur WhatsApp",
+ "foot.r":"Mauro Gastaldello et sa famille"
+}};
+
+/* ---------- render ---------- */
+function paint(lang){
+  const d=T[lang];
+  document.documentElement.lang=lang;
+  document.querySelectorAll("[data-i]").forEach(el=>{
+    const v=d[el.dataset.i]; if(v===undefined) return;
+    if(/<em>/.test(v)) el.innerHTML=v; else el.textContent=v;
+  });
+  document.querySelectorAll("[data-list]").forEach(ul=>{
+    ul.innerHTML=""; (d[ul.dataset.list]||[]).forEach(t=>{
+      const li=document.createElement("li"); li.textContent=t; ul.appendChild(li);
+    });
+  });
+  document.querySelectorAll("[data-rows]").forEach(tb=>{
+    tb.innerHTML=""; (d[tb.dataset.rows]||[]).forEach(r=>{
+      const tr=document.createElement("tr");
+      r.forEach((c,i)=>{const td=document.createElement("td");
+        if(i===0||i===1) td.className="num"; td.textContent=c; tr.appendChild(td);});
+      tb.appendChild(tr);
+    });
+  });
+  document.querySelectorAll(".lang button").forEach(b=>
+    b.setAttribute("aria-pressed", String(b.dataset.set===lang)));
+}
+document.querySelectorAll(".lang button").forEach(b=>
+  b.addEventListener("click",()=>paint(b.dataset.set)));
+paint("es");
+
+/* ---------- trei lattice: two families of laths at 60° between them ---------- */
+function lattice(svg,{gap=64,animate=true}={}){
+  const r=svg.getBoundingClientRect();
+  const W=Math.max(r.width,320), H=Math.max(r.height,120);
+  svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
+  const tan=Math.tan(30*Math.PI/180);   // ±30° from vertical = 60° apex
+  const dx=H*tan, ns="http://www.w3.org/2000/svg";
+  let i=0, frag=document.createDocumentFragment();
+  for(const dir of [1,-1]){
+    for(let x=-Math.abs(dx)-gap; x<W+Math.abs(dx)+gap; x+=gap){
+      const x1=x, x2=x+dir*dx;
+      const l=document.createElementNS(ns,"line");
+      l.setAttribute("x1",x1); l.setAttribute("y1",0);
+      l.setAttribute("x2",x2); l.setAttribute("y2",H);
+      const len=Math.hypot(x2-x1,H);
+      l.style.setProperty("--len",len);
+      if(animate) l.style.setProperty("--d",(0.15+(i%26)*0.045)+"s");
+      frag.appendChild(l); i++;
+    }
+  }
+  svg.replaceChildren(frag);
+}
+function drawAll(){
+  document.querySelectorAll("[data-lattice]").forEach(s=>lattice(s,{gap:78}));
+  document.querySelectorAll("[data-lattice-static]").forEach(s=>lattice(s,{gap:46,animate:false}));
+}
+drawAll();
+let rt; addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(drawAll,220)});
+
+const PROC_SRC=["assets/p01.jpg","assets/p02.jpg","assets/p03.jpg","assets/p04.jpg","assets/p05.jpg","assets/p06.jpg","assets/p07.jpg","assets/p08.jpg","assets/p09.jpg","assets/p10.jpg","assets/p11.jpg","assets/p12.jpg"];
+/* ================= PROCESO ================= */
+(function(){
+  const stage=document.getElementById("proc-stage");
+  if(!stage) return;
+  const N=12, SRC=i=>PROC_SRC[i-1];
+  const bar=document.getElementById("proc-bar");
+  const imgs=[], ticks=[];
+  for(let i=1;i<=N;i++){
+    const im=document.createElement("img");
+    im.dataset.src=SRC(i); im.alt=""; im.decoding="async";
+    stage.appendChild(im); imgs.push(im);
+    const t=document.createElement("i"); t.dataset.go=i-1; bar.appendChild(t); ticks.push(t);
+  }
+  let cur=0, timer=null, playing=true;
+  function load(i){ const im=imgs[i]; if(im && !im.src && im.dataset.src) im.src=im.dataset.src; }
+  function show(i){
+    cur=(i+N)%N;
+    imgs.forEach((im,k)=>im.classList.toggle("on",k===cur));
+    ticks.forEach((t,k)=>t.classList.toggle("on",k===cur));
+    document.getElementById("proc-n").textContent=String(cur+1).padStart(2,"0")+" / "+N;
+    const d=T[document.documentElement.lang];
+    document.getElementById("proc-t").textContent=d["pr.c"+(cur+1)]||"";
+    load(cur); load((cur+1)%N); load((cur-1+N)%N);
+  }
+  function start(){ stop(); playing=true; timer=setInterval(()=>show(cur+1),3200);
+    document.getElementById("proc-toggle").textContent="Pausa"; }
+  function stop(){ if(timer) clearInterval(timer); timer=null; playing=false;
+    document.getElementById("proc-toggle").textContent="Seguir"; }
+  document.querySelector(".proc-ctl").addEventListener("click",e=>{
+    const b=e.target.closest("button"); if(!b) return;
+    const a=b.dataset.act;
+    if(a==="next"){ show(cur+1); if(playing) start(); }
+    if(a==="prev"){ show(cur-1); if(playing) start(); }
+    if(a==="toggle"){ playing?stop():start(); }
+  });
+  bar.addEventListener("click",e=>{ const t=e.target.closest("i"); if(!t) return;
+    show(+t.dataset.go); if(playing) start(); });
+  // only run while visible, and keep captions in sync with the language toggle
+  const io=new IntersectionObserver(es=>es.forEach(e=>{
+    if(e.isIntersecting){ if(playing && !timer) start(); } else { if(timer){clearInterval(timer);timer=null;} }
+  }),{threshold:.25});
+  io.observe(document.getElementById("proc"));
+  const _p=paint; paint=function(l){ _p(l); show(cur); };
+  show(0);
+})();
+
+/* ---------- reveal ---------- */
+const io=new IntersectionObserver(es=>es.forEach(e=>{
+  if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}
+}),{rootMargin:"0px 0px -8% 0px"});
+document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
+</script>
+<script id="state" type="application/json"></script>
+<style>
+#tb{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:200;
+ display:flex;gap:.35rem;background:#111;border:1px solid #4a4238;border-radius:999px;
+ padding:.35rem;box-shadow:0 10px 34px rgba(0,0,0,.5);flex-wrap:wrap;max-width:94vw;justify-content:center}
+#tb button{font-family:var(--mono);font-size:.58rem;letter-spacing:.11em;text-transform:uppercase;
+ background:none;border:0;color:#bdb4a2;padding:.45rem .7rem;border-radius:999px;cursor:pointer;white-space:nowrap}
+#tb button:hover{color:#fff;background:#262119}
+#tb button.on{background:var(--blond);color:#181614;font-weight:500}
+#tb .sep{width:1px;background:#3b342c;margin:.25rem .1rem}
+body.edit [data-i],body.edit [data-list] li,body.edit [data-rows] td{
+ outline:1px dashed rgba(220,169,107,.45);outline-offset:3px;border-radius:2px}
+body.edit [contenteditable]:focus{outline:2px solid var(--blond);background:rgba(255,255,255,.07)}
+body.edit .paper [contenteditable]:focus{background:rgba(0,0,0,.05)}
+.imgwrap{position:relative}
+.imgbtn{position:absolute;top:.5rem;right:.5rem;z-index:6;font-family:var(--mono);
+ font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;background:rgba(24,22,20,.9);
+ color:#EFE8DA;border:1px solid #6b6152;border-radius:2px;padding:.3rem .5rem;cursor:pointer;display:none}
+.imgalt{position:absolute;left:0;right:0;bottom:0;z-index:6;font-family:var(--mono);
+ font-size:.56rem;letter-spacing:.06em;background:rgba(24,22,20,.86);color:#EFE8DA;
+ padding:.35rem .5rem;display:none;text-transform:none}
+body.edit .imgbtn,body.edit .imgalt{display:block}
+.imgalt:empty::before{content:"texto alternativo (alt) para la web";color:#8d8474;font-style:italic}
+#tb button.send.hot{background:#7A2C3C;color:#fff}
+#tb button.send b{font-weight:500}
+#send{position:fixed;inset:0;z-index:300;background:rgba(12,10,9,.78);
+ display:flex;align-items:center;justify-content:center;padding:1.2rem}
+#send[hidden]{display:none}
+.send-card{background:#1F1B17;border:1px solid #4B443A;max-width:30rem;width:100%;
+ padding:1.6rem;border-radius:3px}
+.send-card h3{font-family:var(--disp);color:var(--wool);font-size:1.35rem;margin:0 0 .8rem}
+.send-p{font-size:.9rem;color:#bdb4a2;margin:0 0 1rem}
+#send-list{margin:0 0 1.3rem;padding-left:1.1rem;font-family:var(--mono);font-size:.7rem;
+ color:var(--blond);letter-spacing:.05em}
+#send-list li{margin-bottom:.3rem}
+.send-btns{display:flex;gap:.5rem;flex-wrap:wrap}
+.send-b{font-family:var(--mono);font-size:.6rem;letter-spacing:.11em;text-transform:uppercase;
+ text-decoration:none;border:1px solid #4B443A;background:none;color:#d6cdbb;
+ padding:.6rem .85rem;border-radius:2px;cursor:pointer}
+.send-b.primary{background:var(--blond);border-color:var(--blond);color:var(--ink);font-weight:500}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:76px;z-index:210;
+ background:var(--blond);color:#181614;font-family:var(--mono);font-size:.6rem;
+ letter-spacing:.1em;text-transform:uppercase;padding:.55rem .9rem;border-radius:2px;
+ opacity:0;transition:opacity .3s;pointer-events:none}
+#toast.show{opacity:1}
+@media print{#tb,#toast,.imgbtn,.imgalt{display:none!important}}
+</style>
+<script>
+/* ================= EDITOR LAYER ================= */
+let ALT = {};
+const CHANGED = {img:new Set(), text:false};
+const SLOTS = ["hero","traj1","traj2","traj3","traj4","traj5",
+               "dif1","dif2","dif3","dif4","dif5","dif6","dif7","dif8",
+               "int1","int2","int3","co","ws"];
+
+/* --- restore saved state --- */
+(function restore(){
+  const raw=document.getElementById("state").textContent.trim();
+  if(!raw) return;
+  try{ const s=JSON.parse(raw);
+    if(s.T){ for(const l of ["es","fr"]) if(s.T[l]) Object.assign(T[l], s.T[l]); }
+    if(s.ALT) ALT=s.ALT;
+  }catch(e){ console.warn("estado ilegible",e); }
+})();
+
+/* --- wrap every slot image so it can host controls --- */
+document.querySelectorAll("img[data-slot]").forEach(img=>{
+  const slot=img.dataset.slot, host=img.parentElement;
+  host.classList.add("imgwrap");
+  const b=document.createElement("button");
+  b.type="button"; b.className="imgbtn"; b.dataset.for=slot; b.textContent="Cambiar imagen";
+  const a=document.createElement("div");
+  a.className="imgalt"; a.contentEditable="true"; a.dataset.alt=slot;
+  a.textContent = ALT[slot] || img.getAttribute("alt") || "";
+  host.append(b,a);
+  img.alt = ALT[slot] || "";
+});
+
+/* --- edit mode --- */
+let EDIT=false;
+function applyEdit(){
+  document.querySelectorAll("[data-i]").forEach(el=>el.contentEditable=EDIT);
+  document.querySelectorAll("[data-list] li,[data-rows] td").forEach(el=>el.contentEditable=EDIT);
+  document.body.classList.toggle("edit",EDIT);
+}
+const _paint=paint;
+paint=function(l){ _paint(l); if(EDIT) applyEdit(); };
+
+/* --- write edits back into the dictionary --- */
+document.addEventListener("input",e=>{
+  if(!EDIT) return;
+  const lang=document.documentElement.lang, d=T[lang], el=e.target;
+  CHANGED.text=true; badge();
+  if(el.dataset && el.dataset.i){ d[el.dataset.i]=el.textContent; return; }
+  if(el.dataset && el.dataset.alt){
+    const s=el.dataset.alt; ALT[s]=el.textContent.trim();
+    const im=document.querySelector('img[data-slot="'+s+'"]'); if(im) im.alt=ALT[s];
+    return;
+  }
+  const li=el.closest("li"), ul=li&&li.closest("[data-list]");
+  if(ul){ d[ul.dataset.list]=[...ul.children].map(x=>x.textContent); return; }
+  const td=el.closest("td"), tb=td&&td.closest("[data-rows]");
+  if(tb){ d[tb.dataset.rows]=[...tb.rows].map(r=>[...r.cells].map(c=>c.textContent)); }
+},true);
+
+/* --- image replacement, downscaled --- */
+document.addEventListener("click",e=>{
+  const b=e.target.closest(".imgbtn"); if(!b) return;
+  const inp=document.createElement("input");
+  inp.type="file"; inp.accept="image/*";
+  inp.addEventListener("change",()=>{
+    const f=inp.files&&inp.files[0]; if(!f) return;
+    const fr=new FileReader();
+    fr.onload=()=>{
+      const im=new Image();
+      im.onload=()=>{
+        const M=1500, sc=Math.min(1,M/Math.max(im.width,im.height));
+        const cv=document.createElement("canvas");
+        cv.width=Math.round(im.width*sc); cv.height=Math.round(im.height*sc);
+        cv.getContext("2d").drawImage(im,0,0,cv.width,cv.height);
+        const target=document.querySelector('img[data-slot="'+b.dataset.for+'"]');
+        target.src=cv.toDataURL("image/jpeg",0.82);
+        CHANGED.img.add(b.dataset.for); badge();
+        toast("Vista previa lista · falta enviarla a Mauro");
+      };
+      im.src=fr.result;
+    };
+    fr.readAsDataURL(f);
+  });
+  inp.click();
+});
+
+/* --- helpers --- */
+function toast(m){const t=document.getElementById("toast");t.textContent=m;
+  t.classList.add("show");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),2600);}
+function dl(blob,name){const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);a.download=name;a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),5000);}
+function stamp(){const d=new Date(),p=n=>String(n).padStart(2,"0");
+  return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+"-"+p(d.getHours())+p(d.getMinutes());}
+
+/* --- toolbar --- */
+const tb=document.createElement("div"); tb.id="tb";
+tb.innerHTML='<button type="button" id="e-edit">Editar</button><span class="sep"></span>'+
+ '<button type="button" id="e-send" class="send">Preparar envío<b id="e-badge"></b></button>'+
+ '<button type="button" id="e-json">Solo textos</button>'+
+ '<button type="button" id="e-imgs">Todas las imágenes</button>';
+document.body.append(tb);
+const tt=document.createElement("div"); tt.id="toast"; document.body.append(tt);
+
+document.getElementById("e-edit").addEventListener("click",ev=>{
+  EDIT=!EDIT; applyEdit(); ev.target.classList.toggle("on",EDIT);
+  ev.target.textContent = EDIT?"Ver como cliente":"Editar";
+  toast(EDIT?"Modo edición · hacé clic en cualquier texto":"Modo cliente");
+});
+
+
+document.getElementById("e-json").addEventListener("click",()=>{
+  const out={
+    proyecto:"YURTOUR · La Yourtecasa",
+    version:stamp(),
+    idiomas:["es","fr"],
+    textos:T,
+    imagenes:SLOTS.map(s=>({slot:s,archivo:s+".jpg",alt:ALT[s]||""}))
+  };
+  dl(new Blob([JSON.stringify(out,null,2)],{type:"application/json"}),
+     "contenido-yurtour-"+stamp()+".json");
+  toast("contenido.json listo para el desarrollador");
+});
+
+
+/* ---------- pendientes + envío ---------- */
+function badge(){
+  const n=(CHANGED.text?1:0)+CHANGED.img.size;
+  const b=document.getElementById("e-badge"); if(!b) return;
+  b.textContent = n? " ("+n+")" : "";
+  document.getElementById("e-send").classList.toggle("hot", n>0);
+}
+
+const panel=document.createElement("div"); panel.id="send"; panel.hidden=true;
+panel.innerHTML=
+ '<div class="send-card">'+
+ '<h3>Cambios listos para enviar</h3>'+
+ '<p class="send-p">Estos archivos se van a descargar a tu dispositivo. Mandáselos a Mauro '+
+ 'y él los registra en el sitio. Vos no tenés que tocar nada más.</p>'+
+ '<ul id="send-list"></ul>'+
+ '<div class="send-btns">'+
+ '<a id="send-wa" class="send-b primary" href="#" target="_blank" rel="noopener">Avisar por WhatsApp</a>'+
+ '<a id="send-mail" class="send-b" href="#">Abrir el mail</a>'+
+ '<button type="button" id="send-close" class="send-b">Cerrar</button>'+
+ '</div></div>';
+document.body.append(panel);
+
+document.getElementById("send-close").addEventListener("click",()=>panel.hidden=true);
+panel.addEventListener("click",e=>{ if(e.target===panel) panel.hidden=true; });
+
+document.getElementById("e-send").addEventListener("click",async()=>{
+  const list=document.getElementById("send-list"); list.innerHTML="";
+  if(!CHANGED.text && !CHANGED.img.size){
+    toast("Todavía no hay cambios · apretá Editar primero"); return;
+  }
+  const files=[];
+  if(CHANGED.text){ files.push("contenido.json"); }
+  CHANGED.img.forEach(s=>files.push(s+".jpg"));
+  files.forEach(f=>{ const li=document.createElement("li"); li.textContent=f; list.appendChild(li); });
+
+  const msg="Hola Mauro, te mando cambios del catálogo: "+files.join(", ");
+  document.getElementById("send-wa").href="https://wa.me/59899696333?text="+encodeURIComponent(msg);
+  document.getElementById("send-mail").href="mailto:casayourte@gmail.com"+
+    "?subject="+encodeURIComponent("Cambios del catálogo YURTOUR")+
+    "&body="+encodeURIComponent(msg+"\n\n(adjuntar los archivos descargados)");
+  panel.hidden=false;
+
+  if(CHANGED.text){
+    const out={proyecto:"YURTOUR · La Yourtecasa",version:stamp(),idiomas:["es","fr"],textos:T,
+      imagenes:SLOTS.map(s=>({slot:s,archivo:"assets/"+s+".jpg",alt:ALT[s]||""}))};
+    dl(new Blob([JSON.stringify(out,null,2)],{type:"application/json"}),"contenido.json");
+    await new Promise(r=>setTimeout(r,350));
+  }
+  for(const s of CHANGED.img){
+    const im=document.querySelector('img[data-slot="'+s+'"]');
+    try{ const r=await fetch(im.src); dl(await r.blob(), s+".jpg"); }catch(err){ console.warn(s,err); }
+    await new Promise(r=>setTimeout(r,350));
+  }
+});
+badge();
+
+document.getElementById("e-imgs").addEventListener("click",async()=>{
+  toast("Descargando "+SLOTS.length+" imágenes…");
+  for(const s of SLOTS){
+    const im=document.querySelector('img[data-slot="'+s+'"]'); if(!im) continue;
+    try{ const r=await fetch(im.src); dl(await r.blob(), s+".jpg"); }
+    catch(err){ console.warn(s,err); }
+    await new Promise(r=>setTimeout(r,320));
+  }
+  toast("Imágenes exportadas con el nombre de cada slot");
+});
+</script>
+
+
+<script>
+(async function(){
+  try{
+    const r=await fetch("contenido.json",{cache:"no-store"}); if(!r.ok) throw 0;
+    const j=await r.json();
+    if(j.textos){ for(const l of ["es","fr"]) if(j.textos[l]) Object.assign(T[l], j.textos[l]); }
+    if(Array.isArray(j.imagenes)) j.imagenes.forEach(o=>{
+      if(o.alt){ ALT[o.slot]=o.alt;
+        const im=document.querySelector('img[data-slot="'+o.slot+'"]'); if(im) im.alt=o.alt;
+        const a=document.querySelector('[data-alt="'+o.slot+'"]'); if(a) a.textContent=o.alt; }
+    });
+    paint(document.documentElement.lang);
+  }catch(e){}
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- quién es quién ----------
+    // Se lee el documento usuarios/{uid} para saber el rol. Los permisos son
+    // datos, no reglas: se cambian desde el panel sin republicar esto.
+
+    function yo() {
+      return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data;
+    }
+    function logueado() {
+      return request.auth != null
+             && exists(/databases/$(database)/documents/usuarios/$(request.auth.uid));
+    }
+    function activo() {
+      return logueado() && yo().activo == true;
+    }
+    function admin() {
+      return activo() && yo().rol == 'admin';
+    }
+    function editor() {
+      return activo() && yo().rol in ['admin', 'editor'];
+    }
+    function fotografo() {
+      return activo() && yo().rol in ['admin', 'editor', 'fotografo'];
+    }
+
+    // ---------- usuarios ----------
+    match /usuarios/{uid} {
+
+      // Cada uno puede leer su propio documento. El administrador, todos.
+      allow read: if request.auth != null && (request.auth.uid == uid || admin());
+
+      // Alta por invitación: sólo podés crear TU propio documento, con TU mail,
+      // si existe una invitación para ese mail, y con EL ROL QUE DICE LA
+      // INVITACIÓN. Esto es lo que impide que alguien se ponga admin a sí mismo.
+      allow create: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.email == request.auth.token.email.lower()
+        && request.resource.data.activo == true
+        && exists(/databases/$(database)/documents/invitaciones/$(request.auth.token.email.lower()))
+        && request.resource.data.rol ==
+           get(/databases/$(database)/documents/invitaciones/$(request.auth.token.email.lower())).data.rol;
+
+      // Sólo el administrador cambia roles y suspende. Y no puede cambiarse el
+      // rol ni suspenderse a sí mismo: evita quedarse afuera por accidente.
+      allow update: if admin()
+        && (uid != request.auth.uid
+            || (request.resource.data.rol == resource.data.rol
+                && request.resource.data.activo == resource.data.activo));
+
+      allow delete: if admin() && uid != request.auth.uid;
+    }
+
+    // ---------- invitaciones ----------
+    // El id del documento es el mail invitado, en minúsculas.
+    match /invitaciones/{mail} {
+      // La persona invitada necesita poder leer la suya antes de tener permisos.
+      allow read: if admin()
+                  || (request.auth != null && request.auth.token.email.lower() == mail);
+      allow create, update: if admin();
+      // Se borra sola al usarse, o la anula el administrador.
+      allow delete: if admin()
+                    || (request.auth != null && request.auth.token.email.lower() == mail);
+    }
+
+    // ---------- álbumes y fotos ----------
+    match /albums/{album} {
+      allow read: if true;                 // público: alimenta el sitio
+      allow create, update, delete: if editor();
+
+      match /fotos/{foto} {
+        allow read: if true;
+        allow create, update, delete: if fotografo();
+      }
+    }
+
+    // ---------- textos del sitio ----------
+    match /sitio/{doc} {
+      allow read: if true;
+      allow write: if editor();
+    }
+
+    // ---------- lo publicado ----------
+    // Sólo el administrador pasa un borrador a publicado.
+    match /publicado/{doc} {
+      allow read: if true;
+      allow write: if admin();
+    }
+
+    // ---------- todo lo demás, cerrado ----------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
