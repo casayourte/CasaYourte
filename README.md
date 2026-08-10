@@ -8,13 +8,26 @@ Catálogo bilingüe y panel de administración. Sitio estático, sin build ni se
 ## Archivos
 
 ```
-index.html        el catálogo público
-admin.html        el panel: álbumes, fotos y usuarios
-contenido.json    los 130 textos en español y francés
-REGLAS.txt        las reglas de seguridad de Firestore, para copiar y pegar
-assets/           las 34 imágenes y el video, todo en una sola carpeta
-README.md         este archivo
+index.html            el catálogo público
+admin.html            el panel: álbumes, fotos y usuarios
+firebase-init.js      único punto de contacto con Firebase
+nucleo.js             lo común del panel: Atrás, avisos, imágenes, permisos
+sw.js                 service worker: hace que el panel funcione sin señal
+manifest.json         hace la app instalable
+icono-192.png · icono-512.png · apple-touch-icon.png
+contenido.json        los 130 textos en español y francés
+REGLAS.txt            las reglas de seguridad de Firestore, para copiar y pegar
+assets/               las 34 imágenes y el video, todo en una sola carpeta
+README.md             este archivo
+GUIA-ANDROID.md       configuración paso a paso desde el celular
 ```
+
+**El panel se instala como app.** Abrilo, recargá una vez con señal, y en Chrome:
+menú ⋮ → Agregar a la pantalla principal.
+
+**Al cambiar cualquiera de los archivos de la lista `SHELL` de `sw.js`, hay que subir la
+`VERSION` que está arriba en ese archivo.** Si no, un teléfono que ya instaló la app puede
+seguir sirviendo una mezcla de archivos viejos y nuevos.
 
 Una sola carpeta a propósito: subir carpetas anidadas desde el celular es innecesariamente
 molesto.

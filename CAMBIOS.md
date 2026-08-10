@@ -1,58 +1,91 @@
-# Qué subir · 10 de agosto de 2026
+# Qué subir · panel instalable · 10 de agosto de 2026
 
-Este zip es **el repositorio completo**, tal como tiene que quedar. Todo se sube desde el
-navegador del celular. **No hay nada que instalar.**
+Todo desde el navegador del celular. **Nada que instalar.**
 
-## Si ya subiste los archivos antes
+## Archivos NUEVOS · 7
 
-Cambiaron **cuatro**. Los demás están iguales y no hace falta tocarlos.
+Van a la **raíz** del repositorio.
+
+| Archivo | Qué es |
+|---|---|
+| `firebase-init.js` | único punto de contacto con Firebase. SDK 12.16.0, caché persistente, alta de cuentas por app secundaria |
+| `nucleo.js` | lo común: pila del botón Atrás, avisos, elección y subida de imágenes, URLs de Cloudinary, permisos |
+| `sw.js` | service worker: red primero, respaldo en caché sin señal |
+| `manifest.json` | hace la app instalable |
+| `icono-192.png` | icono de la app |
+| `icono-512.png` | icono grande, recortable |
+| `apple-touch-icon.png` | icono para iPhone |
+
+## Archivos que se REEMPLAZAN · 3
 
 | Archivo | Qué cambió |
 |---|---|
-| `admin.html` | arreglo del error al listar álbumes, campos de año/diámetro/lugar, y el diagnóstico 🩺 |
-| `GUIA-ANDROID.md` | sale la parte de Termux; entra la tabla de "todo desde el navegador" |
-| `README.md` | aclara que no hay herramientas de escritorio |
+| `admin.html` | usa `firebase-init.js` y `nucleo.js`, se instala, alta directa de usuarios, cámara o galería, Atrás de Android, sello de versión |
+| `README.md` | lista los archivos nuevos |
 | `CAMBIOS.md` | este archivo |
 
-**`assets/` no cambió.** No toques esa carpeta: son 34 archivos y 5 MB.
+**`index.html`, `contenido.json`, `REGLAS.txt`, `GUIA-ANDROID.md` y `assets/` NO cambian.**
+El sitio público queda exactamente como está.
 
-Cómo reemplazar uno: abrilo en GitHub → menú ⋮ → **Delete file** → *Commit*. Después
-**Add file → Upload files** con el nuevo.
+## Cómo subirlo, desde el celular
 
-## Si es la primera vez
+1. En GitHub, **Add file → Upload files**.
+2. Seleccioná los **10 archivos** de la raíz de este zip: los 7 nuevos más
+   `admin.html`, `README.md` y `CAMBIOS.md`.
+3. Commit: `panel instalable`.
 
-Seguí `GUIA-ANDROID.md`, que va paso a paso. En resumen:
+Los que ya existían se sobrescriben solos al subir uno con el mismo nombre: **no hace
+falta borrarlos primero**.
 
-1. **Add file → Upload files** con los seis archivos de la raíz:
-   `index.html`, `admin.html`, `contenido.json`, `README.md`, `REGLAS.txt`, `GUIA-ANDROID.md`
-2. **Add file → Create new file**, nombre `assets/.gitkeep`, contenido vacío, *Commit*.
-   Al escribir la barra, GitHub crea la carpeta.
-3. Entrá a `assets/` y **Add file → Upload files** con los 34 archivos. Si el celular se
-   traba, en dos tandas.
-4. **Settings → Pages** → *Deploy from a branch* → `main` → `/ (root)` → *Save*.
+**No abras la carpeta `assets/`.** No cambió nada ahí.
 
-## Todo lo demás se configura en el navegador
+## Instalar la app
 
-| Qué | Dónde | Guía |
-|---|---|---|
-| Dominio autorizado | consola de Firebase → Authentication → Settings | paso C1 |
-| Reglas de seguridad | consola de Firebase → Firestore → Reglas | paso C3, pegar `REGLAS.txt` |
-| Preset de subida | panel de Cloudinary → Settings → Upload | paso D |
-| Verificar que todo ande | el panel, botón 🩺 | paso E0 |
+1. Abrí `https://casayourte.github.io/CasaYourte/admin.html`
+2. Recargá una vez, con señal, para que se registre el service worker.
+3. Menú ⋮ de Chrome → **Agregar a la pantalla principal** → *Instalar*.
+4. Se abre sin barra de direcciones, con el logo como icono.
 
-## Lo que se retiró
+Para comprobarlo: entrá al panel y tocá **🩺 → Probar todo**. La última fila dice si está
+corriendo como app instalada.
 
-Existían unos scripts de Node en una carpeta `media/` para cargar fotos en lote desde una
-computadora. **Se retiraron:** necesitaban terminal y npm, y nunca se pudieron correr. Lo
-que hacían lo hace el panel desde el celular.
+## Qué cambia al usarlo
 
-También salió de la guía la sección de Termux, por la misma razón.
+**Se instala.** Pantalla completa, unos 120 píxeles más de alto útil, icono propio.
 
-## Direcciones
+**El botón Atrás de Android funciona.** Cierra la capa abierta —una foto, la lista de
+usuarios, el diagnóstico— en lugar de salir de la aplicación. Con la app instalada no hay
+barra de direcciones, así que esto pasa de cómodo a necesario.
 
-```
-Sitio:  https://casayourte.github.io/CasaYourte/
-Panel:  https://casayourte.github.io/CasaYourte/admin.html
-```
+**Al agregar fotos pregunta cámara o galería.** Antes abría un solo selector y en algunos
+teléfonos no ofrecía la cámara.
 
-Con C y Y mayúsculas: la dirección distingue.
+**Podés crear cuentas directamente.** Nombre, mail, contraseña y rol, y la cuenta queda
+lista. Tu sesión no se toca: la creación pasa por una instancia secundaria de Firebase.
+La invitación sigue existiendo para quien prefiera elegir su propia clave.
+
+**Hay "Olvidé mi contraseña"** en la pantalla de entrada, así no tenés que administrar
+claves ajenas.
+
+**Funciona sin señal.** El panel abre y muestra lo último leído. Subir fotos necesita
+conexión y lo avisa.
+
+**Abajo del nombre aparece la versión del código** que está corriendo. Sirve para saber si
+subiste el archivo o no: si dice `nucleo-1`, la subida funcionó.
+
+**La cantidad de fotos ya no se guarda**, se cuenta al leer. Antes se guardaba en tres
+lugares distintos y se iba a desincronizar.
+
+## Si algo no anda
+
+| Síntoma | Causa |
+|---|---|
+| Pantalla en blanco al abrir el panel | falta subir `firebase-init.js` o `nucleo.js` |
+| No aparece la opción de instalar | recargá una vez con señal; el service worker se registra en la primera visita |
+| No dice la versión abajo del nombre | `admin.html` viejo: volvé a subirlo |
+| "Falta el manifest" en 🩺 | falta subir `manifest.json` |
+| Iconos en blanco | faltan los tres `.png` |
+
+Al subir una versión nueva de cualquiera de estos archivos hay que **subir también la
+`VERSION` que está arriba en `sw.js`**, o los teléfonos que ya instalaron la app pueden
+seguir sirviendo una mezcla de archivos viejos y nuevos.

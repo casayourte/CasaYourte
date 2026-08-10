@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <title>CasaYourte · Panel</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#181614">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="icon" href="./icono-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..700,0..100,0..1&family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -14,6 +20,7 @@
   --disp:"Fraunces",Georgia,serif; --body:"Instrument Sans",system-ui,sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,monospace;
   --safe: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--ink);color:var(--wool);font-family:var(--body);
@@ -27,7 +34,7 @@ button{cursor:pointer}
 
 /* ---- chrome ---- */
 header{position:sticky;top:0;z-index:20;background:var(--ink);border-bottom:1px solid var(--line);
-  padding:.7rem 1rem;display:flex;align-items:center;gap:.6rem}
+  padding:calc(.7rem + var(--safe-top)) 1rem .7rem;display:flex;align-items:center;gap:.6rem}
 header .t{font-family:var(--disp);letter-spacing:.14em;font-size:.9rem;font-weight:600;flex:1;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 header .t b{color:var(--blond);font-weight:600}
@@ -104,6 +111,27 @@ textarea{min-height:4.5rem;resize:vertical}
   box-shadow:0 6px 26px rgba(0,0,0,.5)}
 #toast.on{opacity:1}
 #toast.bad{background:var(--bad);color:#fff}
+/* --- de nucleo.js --- */
+#cy-toast{position:fixed;left:1rem;right:1rem;bottom:calc(5.5rem + var(--safe));z-index:400;
+  background:var(--blond);color:var(--ink);border-radius:6px;padding:.75rem .9rem;
+  font-size:.85rem;line-height:1.4;text-align:center;opacity:0;transition:opacity .3s;
+  pointer-events:none;box-shadow:0 6px 26px rgba(0,0,0,.5)}
+#cy-toast.on{opacity:1}
+#cy-toast.malo{background:var(--bad);color:#fff}
+.cy-hoja{position:fixed;inset:0;width:100%;height:100%;max-width:100%;max-height:100%;
+  border:0;padding:0;background:rgba(12,10,8,.8);display:flex;align-items:flex-end;
+  justify-content:center}
+.cy-hoja::backdrop{background:rgba(12,10,8,.6)}
+.cy-hoja-caja{background:var(--ink2);border:1px solid var(--line);border-bottom:0;
+  border-radius:14px 14px 0 0;width:min(440px,100%);
+  padding:1rem 1rem calc(1rem + var(--safe))}
+.cy-hoja-tit{font-family:var(--disp);font-size:1.1rem;text-align:center;margin-bottom:.9rem;
+  color:var(--wool)}
+.cy-hoja-b{display:block;width:100%;text-align:left;background:var(--ink3);
+  border:1px solid var(--line);border-radius:10px;padding:.95rem 1rem;color:var(--wool);
+  font-size:.95rem;margin-bottom:.5rem}
+.cy-hoja-x{display:block;width:100%;background:none;border:0;color:var(--dim);
+  padding:.8rem;font-size:.9rem}
 .empty{text-align:center;color:var(--dim);padding:3rem 1rem;font-size:.92rem}
 .note{background:var(--ink2);border-left:3px solid var(--blond);padding:.7rem .8rem;
   font-size:.85rem;color:var(--dim);border-radius:0 6px 6px 0;margin-bottom:1.2rem}
@@ -128,6 +156,7 @@ textarea{min-height:4.5rem;resize:vertical}
     <label><span class="k">Contraseña</span>
       <input id="pass" type="password" autocomplete="current-password"></label>
     <button class="btn p" id="in">Entrar</button>
+    <button class="btn" id="olvide" style="margin-top:.5rem">Olvidé mi contraseña</button>
     <div style="height:1.4rem"></div>
     <details>
       <summary class="mono" style="color:var(--blond);padding:.6rem 0">Fui invitado y no tengo cuenta</summary>
@@ -194,6 +223,22 @@ textarea{min-height:4.5rem;resize:vertical}
     <div id="invits"></div>
 
     <details style="margin-top:1.5rem">
+      <summary class="mono" style="color:var(--blond);padding:.6rem 0">+ Crear una cuenta</summary>
+      <div style="padding-top:.8rem">
+        <p class="note">Le creás la cuenta con una contraseña que le pasás vos. Tu sesión no
+        se toca. Ella la puede cambiar después con <b>Olvidé mi contraseña</b>.</p>
+        <label><span class="k">Nombre</span><input id="a-nombre" placeholder="Florencia"></label>
+        <label><span class="k">Mail</span>
+          <input id="a-mail" type="email" inputmode="email" autocapitalize="none" spellcheck="false"></label>
+        <label><span class="k">Contraseña inicial</span>
+          <input id="a-pass" type="text" autocomplete="off" placeholder="mínimo 6 caracteres"></label>
+        <label><span class="k">Rol</span><select id="a-rol"></select></label>
+        <p class="note" id="a-desc"></p>
+        <button class="btn p" id="a-crear">Crear la cuenta</button>
+      </div>
+    </details>
+
+    <details style="margin-top:.8rem">
       <summary class="mono" style="color:var(--blond);padding:.6rem 0">+ Invitar a alguien</summary>
       <div style="padding-top:.8rem">
         <label><span class="k">Mail</span>
@@ -263,38 +308,20 @@ textarea{min-height:4.5rem;resize:vertical}
 <div id="toast"></div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
-         signOut, onAuthStateChanged }
-  from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
-import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc,
-         deleteDoc, serverTimestamp }
-  from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+// Regla §3.1: gstatic sólo en firebase-init.js.
+import { db, auth, firebaseConfig, crearCuentaAuth,
+         collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc,
+         deleteDoc, serverTimestamp,
+         onAuthStateChanged, signInWithEmailAndPassword, signOut,
+         sendPasswordResetEmail } from "./firebase-init.js";
+import { CY } from "./nucleo.js";
 
 /* ===================== CONFIGURACIÓN ===================== */
-const firebaseConfig = {
-  apiKey: "AIzaSyDDD_xvpC4I_ec2OZymyDqVsm1K0ISTr4Q",
-  authDomain: "casayourte-mauro.firebaseapp.com",
-  projectId: "casayourte-mauro",
-  storageBucket: "casayourte-mauro.firebasestorage.app",
-  messagingSenderId: "716760879314",
-  appId: "1:716760879314:web:33aef72fb525eb57931d0b"
-};
+const CLOUD = CY.CLOUDINARY.cloud;
+const PRESET = CY.CLOUDINARY.preset;
 
-const CLOUD = "kbjqcnpa";
-// Nombre del unsigned upload preset creado en el panel de Cloudinary.
-// Ver FIREBASE-SETUP.md paso 4.
-const PRESET = "casayourte_movil";
-
-const MAX_ANCHO = 2400;
-const CALIDAD = 0.82;
-
-// Roles y qué puede hacer cada uno. Debe coincidir con las Security Rules.
-const ROLES = {
-  admin:     { n: "Administrador", d: "Todo, incluido usuarios y publicar" },
-  editor:    { n: "Editor",        d: "Textos del sitio y álbumes. No publica ni toca usuarios" },
-  fotografo: { n: "Fotógrafo",     d: "Sólo subir y ordenar fotos" },
-};
+// Los roles viven en nucleo.js: tienen que coincidir con las reglas.
+const ROLES = CY.ROLES;
 
 // Las 16 etapas. Mismo orden que el cálculo de horas y el manual. No renumerar.
 const ETAPAS = ["01-terreno-y-apoyos","02-taller-piezas","03-plancher","04-trei",
@@ -303,46 +330,22 @@ const ETAPAS = ["01-terreno-y-apoyos","02-taller-piezas","03-plancher","04-trei"
   "13-terminada-exterior","14-terminada-interior","15-equipo-y-obra","16-desmontaje"];
 
 /* ===================== ESTADO ===================== */
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
 const $ = (id) => document.getElementById(id);
 let album = null, fotos = [], foto = null;
 
-const slug = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()
-  .replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
+const slug = CY.slug;
 
-// Traduce los códigos de Firestore a algo accionable desde el celular,
-// donde no se puede abrir la consola del navegador.
-function explicar(e) {
-  const c = e?.code || "";
-  const t = {
-    "permission-denied":
-      "Permiso denegado. Revisá que tu documento en usuarios tenga activo: true y el rol correcto, y que las reglas estén publicadas.",
-    "failed-precondition":
-      "La consulta necesitaba un índice. Si ves esto con esta versión, avisame: no debería pasar.",
-    "unavailable":
-      "Sin conexión con Firestore. Probá de nuevo con mejor señal.",
-    "unauthenticated":
-      "La sesión caducó. Salí y volvé a entrar.",
-    "not-found":
-      "No se encontró el documento.",
-    "invalid-argument":
-      "Algún dato tiene un formato que Firestore no acepta.",
-    "resource-exhausted":
-      "Se agotó la cuota gratuita de Firestore por hoy.",
-  }[c];
-  if (t) return t;
-  if (/api.*not.*enabled|Cloud Firestore API/i.test(e?.message || ""))
-    return "La base de Firestore no está creada todavía. Creala en la consola de Firebase.";
-  return c || e?.message || "Error desconocido";
-}
+const explicar = CY.explicar;
+const toast = CY.aviso;
 
-function toast(m, bad) {
-  const t = $("toast");
-  t.textContent = m; t.className = "on" + (bad ? " bad" : "");
-  clearTimeout(t._h); t._h = setTimeout(() => t.className = "", m.length > 60 ? 7000 : 3200);
+// Cada vista que no es la lista se registra como capa: el botón Atrás de
+// Android vuelve a la anterior en lugar de salir de la aplicación.
+let _cerrarVista = null;
+
+function irA(v, alVolver) {
+  if (_cerrarVista) { const c = _cerrarVista; _cerrarVista = null; c(); }
+  ver(v);
+  _cerrarVista = CY.capaAtras(() => { _cerrarVista = null; (alVolver || (() => ver("list")))(); });
 }
 
 function ver(v) {
@@ -376,6 +379,15 @@ $("in").addEventListener("click", async () => {
 });
 $("out").addEventListener("click", () => { yo = null; signOut(auth); });
 
+$("olvide").addEventListener("click", async () => {
+  const mail = $("mail").value.trim().toLowerCase();
+  if (!mail) return toast("Escribí tu mail arriba y volvé a tocar", true);
+  try {
+    await sendPasswordResetEmail(auth, mail);
+    toast("Te mandamos un mail para poner una contraseña nueva. Revisá el correo no deseado.");
+  } catch (e) { toast(CY.explicar(e), true); }
+});
+
 // Alta por invitación: la persona crea su propia cuenta y el sistema le pone
 // el rol que dejó el administrador. Nadie maneja contraseñas ajenas.
 $("r-crear").addEventListener("click", async () => {
@@ -403,6 +415,10 @@ $("r-crear").addEventListener("click", async () => {
   } finally { b.disabled = false; b.textContent = "Crear mi cuenta"; }
 });
 
+// PWA: el service worker se registra sólo desde el panel. Un visitante del
+// sitio público que nunca abre esto no recibe ningún service worker.
+CY.registrarSW();
+
 onAuthStateChanged(auth, async (u) => {
   if (!u) { yo = null; ver("login"); return; }
   try {
@@ -416,7 +432,8 @@ onAuthStateChanged(auth, async (u) => {
       toast("Tu acceso está suspendido", true);
       yo = null; await signOut(auth); return;
     }
-    $("quien").textContent = `${yo.nombre || yo.email} · ${ROLES[yo.rol]?.n || yo.rol}`;
+    $("quien").textContent = `${yo.nombre || yo.email} · ${ROLES[yo.rol]?.n || yo.rol}`
+      + `  ·  ${CY.VERSION}${CY.instalada() ? " · instalada" : ""}`;
     $("quien").classList.remove("hide");
     $("go-users").classList.toggle("hide", !puede("usuarios"));
     document.querySelector("#v-list details").classList.toggle("hide", !puede("albumes"));
@@ -427,8 +444,8 @@ onAuthStateChanged(auth, async (u) => {
   }
 });
 
-$("go-users").addEventListener("click", () => { ver("users"); cargarUsuarios(); });
-$("go-diag").addEventListener("click", () => { ver("diag"); $("dg-out").innerHTML = ""; });
+$("go-users").addEventListener("click", () => { irA("users"); cargarUsuarios(); });
+$("go-diag").addEventListener("click", () => { irA("diag"); $("dg-out").innerHTML = ""; });
 
 /* ===================== DIAGNÓSTICO ===================== */
 $("dg-run").addEventListener("click", async () => {
@@ -480,7 +497,7 @@ $("dg-run").addEventListener("click", async () => {
   f = fila("Escribir en Firestore");
   try {
     const ref = doc(db, "albums", "__prueba__");
-    await setDoc(ref, { titulo: "prueba", tipo: "obra", total: 0 });
+    await setDoc(ref, { titulo: "prueba", tipo: "obra" });
     await deleteDoc(ref);
     f.ok("Escritura y borrado correctos");
   } catch (e) { f.mal(explicar(e)); }
@@ -508,11 +525,23 @@ $("dg-run").addEventListener("click", async () => {
     }
   } catch (e) { f.mal("No se pudo contactar Cloudinary: " + e.message); }
 
+  // 6 · app instalable
+  f = fila("App instalable");
+  try {
+    const reg = await navigator.serviceWorker.getRegistration();
+    const man = document.querySelector('link[rel="manifest"]');
+    if (!man) f.mal("Falta el manifest.json en la página.");
+    else if (!reg) f.mal("El service worker no está registrado. Recargá la página una vez con señal.");
+    else if (CY.instalada()) f.ok("Corriendo como app instalada.");
+    else f.ok("Lista para instalar. En Chrome: menú ⋮ → Agregar a la pantalla principal.");
+  } catch (e) { f.mal("No se pudo verificar: " + e.message); }
+
   b.disabled = false; b.textContent = "Probar de nuevo";
 });
 
 $("back").addEventListener("click", () => {
-  if (!$("v-foto").classList.contains("hide")) pintarAlbum();
+  // Mismo camino que el Atrás de Android: una sola pila (§3.3).
+  if (_cerrarVista) { const c = _cerrarVista; _cerrarVista = null; c(); }
   else { album = null; ver("list"); }
 });
 
@@ -596,6 +625,36 @@ async function cargarUsuarios() {
   }
 }
 
+opcionesRol($("a-rol"), "editor");
+const descAlta = () => { $("a-desc").textContent = ROLES[$("a-rol").value].d; };
+$("a-rol").addEventListener("change", descAlta); descAlta();
+
+// Alta directa. Usa una app secundaria de Firebase (ver firebase-init.js):
+// createUserWithEmailAndPassword loguea a la cuenta nueva en la instancia
+// donde corre, así que hacerlo en la principal expulsaría al admin de su
+// propia sesión.
+$("a-crear").addEventListener("click", async () => {
+  const nombre = $("a-nombre").value.trim();
+  const mail = $("a-mail").value.trim().toLowerCase();
+  const pass = $("a-pass").value;
+  const rol = $("a-rol").value;
+  if (!nombre) return toast("Falta el nombre", true);
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) return toast("Mail inválido", true);
+  if (pass.length < 6) return toast("La contraseña necesita al menos 6 caracteres", true);
+  const b = $("a-crear"); b.disabled = true; b.textContent = "Creando…";
+  try {
+    const uid = await crearCuentaAuth(mail, pass);
+    await setDoc(doc(db, "usuarios", uid), {
+      email: mail, nombre, rol, activo: true,
+      creado: serverTimestamp(), creadoPor: yo.email,
+    });
+    ["a-nombre","a-mail","a-pass"].forEach(k => { $(k).value = ""; });
+    toast(`Cuenta creada para ${nombre}. Pasale el mail y la contraseña.`);
+    cargarUsuarios();
+  } catch (e) { toast(CY.explicar(e), true); }
+  finally { b.disabled = false; b.textContent = "Crear la cuenta"; }
+});
+
 $("i-crear").addEventListener("click", async () => {
   const mail = $("i-mail").value.trim().toLowerCase();
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) return toast("Mail inválido", true);
@@ -621,13 +680,17 @@ async function cargarAlbumes() {
       const el = document.createElement("div");
       el.className = "card";
       el.innerHTML = `<div class="grow"><h2></h2><div class="sub"></div></div>
-                      <span class="n">${a.total || 0} fotos</span>
+                      <span class="n">…</span>
                       <button class="icon">›</button>`;
       el.querySelector("h2").textContent = a.titulo || a.id;
       el.querySelector(".sub").textContent =
         [a.tipo || "obra", a.anio, a.diametro, a.lugar].filter(Boolean).join(" · ");
       el.addEventListener("click", () => abrir(a));
       cont.appendChild(el);
+      // La cantidad se deriva al leer, no se guarda (Libro 1 §1.4).
+      getDocs(collection(db, "albums", a.id, "fotos"))
+        .then(s2 => { el.querySelector(".n").textContent = s2.size + " fotos"; })
+        .catch(() => { el.querySelector(".n").textContent = "—"; });
     });
   } catch (e) {
     cont.innerHTML = `<p class="empty">No se pudieron leer los álbumes.<br>${explicar(e)}</p>`;
@@ -648,7 +711,7 @@ $("n-crear").addEventListener("click", async () => {
   const titulo = $("n-titulo").value.trim(), tipo = $("n-tipo").value;
   if (!titulo) return toast("Falta el nombre visible", true);
   if (!id) return toast("El identificador quedó vacío", true);
-  const d = { titulo, tipo, total: 0, creado: serverTimestamp(), creadoPor: yo.email };
+  const d = { titulo, tipo, creado: serverTimestamp(), creadoPor: yo.email };
   if (tipo === "obra") {
     const anio = $("n-anio").value.trim(), diam = $("n-diam").value.trim(), lugar = $("n-lugar").value.trim();
     if (anio) d.anio = anio;
@@ -680,7 +743,7 @@ async function abrir(a) {
   $("a-titulo").textContent = a.titulo || a.id;
   opcionesEtapa($("d-etapa"), a.tipo);
   opcionesEtapa($("f-etapa"), a.tipo);
-  ver("album");
+  irA("album");
   await cargarFotos();
 }
 
@@ -712,7 +775,7 @@ function pintarAlbum() {
          <button data-a="down" aria-label="Bajar">↓</button>
          <button data-a="edit" aria-label="Editar">✎</button>
        </div>`;
-    el.querySelector("img").src = urlCloud(f.public_id, 400);
+    el.querySelector("img").src = CY.miniatura(f.public_id, 400);
     el.querySelector(".et").textContent = (f.etapa || "").replace(/^\d+-/, "").replace(/-/g, " ");
     el.querySelector('[data-a="up"]').addEventListener("click", () => mover(i, -1));
     el.querySelector('[data-a="down"]').addEventListener("click", () => mover(i, 1));
@@ -722,8 +785,7 @@ function pintarAlbum() {
   });
 }
 
-const urlCloud = (id, w) =>
-  `https://res.cloudinary.com/${CLOUD}/image/upload/f_auto,q_auto,w_${w},c_limit/${id}`;
+const urlCloud = (id, w) => CY.url(id, w);
 
 async function mover(i, d) {
   const j = i + d;
@@ -749,7 +811,7 @@ function editar(f) {
   $("f-alt-es").value = f.alt_es || ""; $("f-alt-fr").value = f.alt_fr || "";
   $("f-cap-es").value = f.cap_es || ""; $("f-cap-fr").value = f.cap_fr || "";
   $("f-usar").checked = !!f.usar; $("f-personas").checked = !!f.personas;
-  ver("foto");
+  irA("foto", () => pintarAlbum());
 }
 
 $("f-guardar").addEventListener("click", async () => {
@@ -770,32 +832,17 @@ $("f-quitar").addEventListener("click", async () => {
   try {
     await deleteDoc(doc(db, "albums", album.id, "fotos", foto.id));
     fotos = fotos.filter(x => x.id !== foto.id);
-    await updateDoc(doc(db, "albums", album.id), { total: fotos.length });
     toast("Quitada"); pintarAlbum();
   } catch (e) { toast(e.code || "Error", true); }
 });
 
 /* ===================== SUBIR ===================== */
-$("d-add").addEventListener("click", () => $("file").click());
-$("file").addEventListener("change", (e) => {
-  const f = [...e.target.files]; e.target.value = "";
-  if (f.length) subir(f);
+$("d-add").addEventListener("click", async () => {
+  // Dos inputs, cámara y galería: ningún input solo ofrece las dos
+  // opciones de forma confiable (nucleo.js).
+  const files = await CY.pedirImagenes({ titulo: "Agregar fotos al álbum" });
+  if (files.length) subir(files);
 });
-
-// Reduce en el celular antes de subir. Sin esto, veinte fotos de cámara son
-// más de 80 MB de datos móviles.
-async function reducir(file) {
-  let bmp;
-  try { bmp = await createImageBitmap(file, { imageOrientation: "from-image" }); }
-  catch { bmp = await createImageBitmap(file); }
-  const esc = Math.min(1, MAX_ANCHO / Math.max(bmp.width, bmp.height));
-  const w = Math.round(bmp.width * esc), h = Math.round(bmp.height * esc);
-  const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
-  cv.getContext("2d").drawImage(bmp, 0, 0, w, h);
-  bmp.close?.();
-  const blob = await new Promise(r => cv.toBlob(r, "image/jpeg", CALIDAD));
-  return { blob, w, h };
-}
 
 async function subir(files) {
   const etapa = $("d-etapa").value;
@@ -805,6 +852,8 @@ async function subir(files) {
   const tags = ["app", `album:${album.id}`, `tipo:${album.tipo}`, `etapa:${etapa}`];
 
   $("prog").classList.remove("hide");
+  // El Atrás no debe expulsar de la app mientras se sube.
+  const cerrarProg = CY.capaAtras(() => $("prog").classList.add("hide"));
   const log = $("p-log"); log.textContent = "";
   const paso = (m) => { log.textContent += m + "\n"; log.scrollTop = log.scrollHeight; };
   let orden = fotos.length ? Math.max(...fotos.map(f => f.orden || 0)) : 0;
@@ -815,16 +864,7 @@ async function subir(files) {
     $("p-pct").textContent = pct + "%"; $("p-fill").style.width = pct + "%";
     $("p-txt").textContent = `${i + 1} de ${files.length}`;
     try {
-      const { blob, w, h } = await reducir(files[i]);
-      const fd = new FormData();
-      fd.append("file", blob);
-      fd.append("upload_preset", PRESET);
-      fd.append("folder", carpeta);
-      fd.append("tags", tags.join(","));
-      const r = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD}/image/upload`,
-        { method: "POST", body: fd });
-      const j = await r.json();
-      if (!r.ok) throw new Error(j.error?.message || "Cloudinary rechazó la subida");
+      const j = await CY.subirImagen(files[i], carpeta, tags);
 
       orden += 10;
       const nueva = {
@@ -835,7 +875,7 @@ async function subir(files) {
       const ref = await addDoc(collection(db, "albums", album.id, "fotos"), nueva);
       fotos.push({ id: ref.id, ...nueva });
       ok++;
-      paso(`✓ ${(files[i].size / 1048576).toFixed(1)}MB → ${(blob.size / 1048576).toFixed(2)}MB  ${w}×${h}`);
+      paso(`✓ ${(files[i].size / 1048576).toFixed(1)}MB → ${(j.pesoSubido / 1048576).toFixed(2)}MB  ${j.width}×${j.height}`);
     } catch (err) {
       mal++; paso(`✗ ${files[i].name}: ${err.message}`);
     }
@@ -843,9 +883,9 @@ async function subir(files) {
 
   $("p-pct").textContent = "100%"; $("p-fill").style.width = "100%";
   $("p-txt").textContent = `${ok} subidas${mal ? ` · ${mal} con error` : ""}`;
-  try { await updateDoc(doc(db, "albums", album.id), { total: fotos.length }); } catch {}
+  // No se guarda la cantidad: es un derivado (Libro 1 §1.4). Se cuenta al leer.
   fotos.sort((a, b) => a.orden - b.orden);
-  setTimeout(() => { $("prog").classList.add("hide"); pintarAlbum();
+  setTimeout(() => { cerrarProg(); pintarAlbum();
     toast(mal ? `${ok} subidas, ${mal} fallaron` : `${ok} fotos subidas`, !!mal); }, mal ? 2600 : 900);
 }
 </script>

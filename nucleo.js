@@ -1,0 +1,320 @@
+// ═══════════════════════════════════════════════════════════════
+//  CASAYOURTE — nucleo.js
+//  Lo común a todas las pantallas del panel: pila del botón Atrás,
+//  avisos, elección y subida de imágenes, URLs de entrega,
+//  permisos y registro del service worker.
+//
+//  Sello de versión: se muestra en el panel. Existe porque un
+//  archivo viejo subido produce síntomas idénticos a un problema
+//  de configuración, y sin esto no hay forma de saber qué código
+//  está corriendo (Libro 1 §3.12).
+// ═══════════════════════════════════════════════════════════════
+
+export const CY = {};
+
+CY.VERSION = 'nucleo-1';
+
+// ═════════════════════════════════════════════════════════════
+//  BOTÓN ATRÁS DE ANDROID
+//
+//  Con la app instalada no hay barra de direcciones: si el Atrás no
+//  cierra la capa abierta, expulsa de la aplicación y se pierde lo que
+//  se estaba cargando.
+//
+//  Una sola pila y UN solo listener de 'popstate'. Con un listener por
+//  capa, un solo Atrás cerraba todas juntas.
+//
+//  Uso:
+//    const cerrar = CY.capaAtras(() => panel.hidden = true);
+//    ...  cerrar();   // desde el botón, desde el fondo, al guardar
+// ═════════════════════════════════════════════════════════════
+CY._capas = [];
+CY._ignorarPop = 0;
+
+CY.capaAtras = function (cerrar) {
+  const capa = { cerrar, viva: true };
+  CY._capas.push(capa);
+  history.pushState({ cyCapa: CY._capas.length }, '');
+  return function () {
+    if (!capa.viva) return;
+    capa.viva = false;
+    const i = CY._capas.indexOf(capa);
+    if (i >= 0) CY._capas.splice(i, 1);
+    // Se saca del historial la entrada agregada al abrir. Ese back()
+    // dispara un 'popstate' que NO es del usuario: se ignora, si no
+    // cerraría también la capa de abajo.
+    if (history.state && history.state.cyCapa) {
+      CY._ignorarPop++;
+      history.back();
+    }
+    cerrar();
+  };
+};
+
+window.addEventListener('popstate', () => {
+  if (CY._ignorarPop > 0) { CY._ignorarPop--; return; }
+  const capa = CY._capas.pop();
+  if (capa && capa.viva) { capa.viva = false; capa.cerrar(); }
+});
+
+CY.hayCapas = () => CY._capas.length > 0;
+
+// ═════════════════════════════════════════════════════════════
+//  AVISOS
+//  Un mensaje largo se queda más tiempo: si explica qué arreglar,
+//  tres segundos no alcanzan para leerlo (Libro 1 §6.4).
+// ═════════════════════════════════════════════════════════════
+CY.aviso = function (texto, malo) {
+  let t = document.getElementById('cy-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'cy-toast';
+    document.body.appendChild(t);
+  }
+  t.textContent = texto;
+  t.className = 'on' + (malo ? ' malo' : '');
+  clearTimeout(t._h);
+  t._h = setTimeout(() => { t.className = ''; }, texto.length > 60 ? 7000 : 3200);
+};
+
+// ═════════════════════════════════════════════════════════════
+//  ERRORES TRADUCIDOS
+//  Desde el celular no hay consola del navegador: un código suelto
+//  es un problema de dos minutos convertido en tres días.
+// ═════════════════════════════════════════════════════════════
+CY.explicar = function (e) {
+  const c = (e && e.code) || '';
+  const t = {
+    'permission-denied':
+      'Permiso denegado. Revisá que tu documento en usuarios tenga activo en true (boolean, no texto) y el rol correcto, y que las reglas estén publicadas.',
+    'failed-precondition':
+      'La consulta pedía un índice. Con esta versión no debería pasar: si lo ves, avisá.',
+    'unavailable': 'Sin conexión con Firestore. Probá con mejor señal.',
+    'unauthenticated': 'La sesión caducó. Salí y volvé a entrar.',
+    'not-found': 'No se encontró el documento.',
+    'invalid-argument': 'Algún dato tiene un formato que Firestore no acepta.',
+    'resource-exhausted': 'Se agotó la cuota gratuita de Firestore por hoy.',
+    'auth/invalid-credential': 'Mail o contraseña incorrectos.',
+    'auth/email-already-in-use': 'Ese mail ya tiene cuenta.',
+    'auth/weak-password': 'La contraseña necesita al menos 6 caracteres.',
+    'auth/invalid-email': 'El mail no es válido.',
+    'auth/network-request-failed': 'Sin conexión. Probá con mejor señal.',
+    'auth/unauthorized-domain':
+      'Falta agregar casayourte.github.io en Firebase → Authentication → Settings → Authorized domains.'
+  }[c];
+  if (t) return t;
+  const m = (e && e.message) || '';
+  if (/Cloud Firestore API|not.*enabled/i.test(m))
+    return 'La base de Firestore no está creada. Creala en la consola de Firebase.';
+  return c || m || 'Error desconocido';
+};
+
+// ═════════════════════════════════════════════════════════════
+//  TEXTO
+// ═════════════════════════════════════════════════════════════
+CY.esc = (s) => String(s == null ? '' : s)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;');
+
+CY.slug = (s) => String(s || '')
+  .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+// ═════════════════════════════════════════════════════════════
+//  IMÁGENES — camino ÚNICO para toda foto del sistema
+//
+//  POR QUÉ ESTÁ ACÁ Y NO EN CADA PANTALLA: con accept="image/*" a
+//  secas, el sistema decide qué ofrecer y en varios teléfonos —sobre
+//  todo dentro de una app instalada— abre el explorador de archivos
+//  SIN ofrecer la cámara. El atributo 'capture' hace lo contrario:
+//  fuerza cámara y esconde los archivos. NINGÚN input solo da las dos
+//  opciones de forma confiable.
+//  Solución: DOS inputs y que la persona elija.
+//  (Lección heredada de Casa Verde.)
+// ═════════════════════════════════════════════════════════════
+CY.CLOUDINARY = { cloud: 'kbjqcnpa', preset: 'casayourte_movil' };
+
+// Techo de ancho al ENTREGAR. No toca el archivo guardado.
+CY.ENTREGA = 'f_auto,q_auto,w_2000';
+
+// Reducción ANTES de subir (Libro 1 §3.5).
+CY.MAX_LADO = 2000;
+CY.CALIDAD = 0.85;
+
+/** URL de entrega para un public_id, al ancho que se pida. */
+CY.url = function (publicId, ancho) {
+  const tr = ancho ? `f_auto,q_auto,w_${ancho},c_limit` : CY.ENTREGA;
+  return `https://res.cloudinary.com/${CY.CLOUDINARY.cloud}/image/upload/${tr}/${publicId}`;
+};
+
+/** Miniatura cuadrada-ish recortada al punto de interés. */
+CY.miniatura = function (publicId, ancho) {
+  const w = ancho || 400;
+  return `https://res.cloudinary.com/${CY.CLOUDINARY.cloud}/image/upload/`
+    + `f_auto,q_auto,w_${w},ar_4:3,c_fill,g_auto/${publicId}`;
+};
+
+CY.esCloudinary = (url) => typeof url === 'string'
+  && url.indexOf('res.cloudinary.com/' + CY.CLOUDINARY.cloud + '/') !== -1;
+
+/**
+ * Mete las transformaciones de entrega en una URL de Cloudinary.
+ * IDEMPOTENTE: si ya las tiene, la devuelve igual.
+ */
+CY.urlEntrega = function (url) {
+  if (!CY.esCloudinary(url)) return url;
+  const marca = '/upload/';
+  const i = url.indexOf(marca);
+  if (i === -1) return url;
+  const antes = url.slice(0, i + marca.length);
+  const resto = url.slice(i + marca.length);
+  if (CY._esTransformacion(resto.split('/')[0])) return url;
+  return antes + CY.ENTREGA + '/' + resto;
+};
+
+// ¿Ese segmento es una lista de transformaciones y no el nombre del
+// archivo ni la versión? OJO: no alcanza con "tiene guión bajo" — un
+// archivo llamado 'mi_foto.jpg' lo tiene, y darlo por transformado hace
+// que esa foto se saltee para siempre.
+CY._esTransformacion = function (seg) {
+  if (!seg || seg.indexOf('.') !== -1) return false;
+  if (/^v\d+$/.test(seg)) return false;
+  return seg.split(',').every((p) => /^[a-z]{1,3}_[A-Za-z0-9.:%-]+$/.test(p));
+};
+
+/**
+ * Hoja de elección: Tomar foto o Elegir de la galería.
+ * Devuelve un array de File, o [] si se cancela.
+ * Es un <dialog> con showModal: los elementos fijos, por más z-index
+ * que tengan, no se dibujan arriba de un dialog abierto.
+ */
+CY.pedirImagenes = function (opciones) {
+  const op = opciones || {};
+  return new Promise((resolver) => {
+    let resultado = [];
+    let resuelto = false;
+    let esperando = false;
+
+    const hoja = document.createElement('dialog');
+    hoja.className = 'cy-hoja';
+    hoja.innerHTML =
+      '<div class="cy-hoja-caja">'
+      + '<div class="cy-hoja-tit">' + CY.esc(op.titulo || 'Agregar fotos') + '</div>'
+      + '<button type="button" data-cy="camara" class="cy-hoja-b">Tomar foto</button>'
+      + '<button type="button" data-cy="archivo" class="cy-hoja-b">Elegir de la galería</button>'
+      + '<button type="button" data-cy="cancelar" class="cy-hoja-x">Cancelar</button>'
+      + '<input type="file" accept="image/*" capture="environment" data-cy="inCamara" hidden>'
+      + '<input type="file" accept="image/*" multiple data-cy="inArchivo" hidden>'
+      + '</div>';
+    document.body.appendChild(hoja);
+    hoja.showModal();
+
+    const q = (n) => hoja.querySelector('[data-cy="' + n + '"]');
+
+    // Si la persona abre la cámara o los archivos y CANCELA, el navegador
+    // no dispara ningún evento: la promesa quedaría colgada para siempre.
+    // Al volver el foco a la ventana se da un margen y se cierra vacío.
+    const alVolverFoco = () => {
+      if (!esperando) return;
+      setTimeout(() => { if (esperando && !resuelto) cerrar(); }, 900);
+    };
+    window.addEventListener('focus', alVolverFoco);
+
+    // Una sola salida: la registra capaAtras, así el botón Atrás de
+    // Android hace exactamente lo mismo que el botón Cancelar.
+    const cerrar = CY.capaAtras(function () {
+      if (resuelto) return;
+      resuelto = true;
+      esperando = false;
+      window.removeEventListener('focus', alVolverFoco);
+      try { if (hoja.open) hoja.close(); } catch (e) { /* ya cerrada */ }
+      if (hoja.parentNode) hoja.remove();
+      resolver(resultado);
+    });
+
+    q('camara').addEventListener('click', () => { esperando = true; q('inCamara').click(); });
+    q('archivo').addEventListener('click', () => { esperando = true; q('inArchivo').click(); });
+    q('cancelar').addEventListener('click', () => cerrar());
+    hoja.addEventListener('click', (e) => { if (e.target === hoja) cerrar(); });
+
+    const recibir = (inp) => inp.addEventListener('change', () => {
+      resultado = [...inp.files];
+      cerrar();
+    });
+    recibir(q('inCamara'));
+    recibir(q('inArchivo'));
+  });
+};
+
+/**
+ * Reduce en el dispositivo antes de subir. El original no se toca.
+ * Sin esto, veinte fotos de cámara son más de 80 MB de datos móviles.
+ */
+CY.reducir = async function (file) {
+  let bmp;
+  try { bmp = await createImageBitmap(file, { imageOrientation: 'from-image' }); }
+  catch (e) { bmp = await createImageBitmap(file); }
+  const esc = Math.min(1, CY.MAX_LADO / Math.max(bmp.width, bmp.height));
+  const w = Math.round(bmp.width * esc), h = Math.round(bmp.height * esc);
+  const cv = document.createElement('canvas');
+  cv.width = w; cv.height = h;
+  cv.getContext('2d').drawImage(bmp, 0, 0, w, h);
+  if (bmp.close) bmp.close();
+  const blob = await new Promise((r) => cv.toBlob(r, 'image/jpeg', CY.CALIDAD));
+  return { blob, ancho: w, alto: h };
+};
+
+/** Sube a Cloudinary y devuelve el resultado crudo. */
+CY.subirImagen = async function (file, carpeta, etiquetas) {
+  const { blob, ancho, alto } = await CY.reducir(file);
+  const fd = new FormData();
+  fd.append('file', blob);
+  fd.append('upload_preset', CY.CLOUDINARY.preset);
+  if (carpeta) fd.append('folder', carpeta);
+  if (etiquetas && etiquetas.length) fd.append('tags', etiquetas.join(','));
+  const r = await fetch(`https://api.cloudinary.com/v1_1/${CY.CLOUDINARY.cloud}/image/upload`,
+    { method: 'POST', body: fd });
+  const j = await r.json();
+  if (!r.ok) {
+    const m = (j.error && j.error.message) || 'Cloudinary rechazó la subida';
+    throw new Error(/preset/i.test(m)
+      ? `El preset "${CY.CLOUDINARY.preset}" no existe o no es unsigned. Crealo en Cloudinary: Settings → Upload → Add upload preset.`
+      : m);
+  }
+  return { ...j, origAncho: ancho, origAlto: alto, pesoSubido: blob.size };
+};
+
+// ═════════════════════════════════════════════════════════════
+//  PERMISOS — espejo de las Security Rules.
+//  Acá sólo se OCULTA lo que no corresponde; lo que de verdad
+//  impide escribir son las reglas del servidor.
+// ═════════════════════════════════════════════════════════════
+CY.ROLES = {
+  admin:     { n: 'Administrador', d: 'Todo, incluido usuarios y publicar' },
+  editor:    { n: 'Editor',        d: 'Textos del sitio y álbumes. No publica ni toca usuarios' },
+  fotografo: { n: 'Fotógrafo',     d: 'Sólo subir y ordenar fotos' }
+};
+
+CY.usuario = null;
+
+CY.puede = function (q) {
+  const u = CY.usuario;
+  if (!u || u.activo !== true) return false;
+  if (u.rol === 'admin') return true;
+  if (u.rol === 'editor') return q !== 'usuarios' && q !== 'publicar';
+  if (u.rol === 'fotografo') return q === 'fotos' || q === 'albumes';
+  return false;
+};
+
+// ═════════════════════════════════════════════════════════════
+//  PWA
+// ═════════════════════════════════════════════════════════════
+CY.registrarSW = async function () {
+  if (!('serviceWorker' in navigator)) return null;
+  try { return await navigator.serviceWorker.register('./sw.js'); }
+  catch (e) { console.warn('SW no registrado:', e); return null; }
+};
+
+/** ¿Está corriendo como app instalada? */
+CY.instalada = () => window.matchMedia('(display-mode: standalone)').matches
+  || window.navigator.standalone === true;
