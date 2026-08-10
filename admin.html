@@ -111,6 +111,7 @@ textarea{min-height:4.5rem;resize:vertical}
   box-shadow:0 6px 26px rgba(0,0,0,.5)}
 #toast.on{opacity:1}
 #toast.bad{background:var(--bad);color:#fff}
+
 /* --- contenido y galería --- */
 .lang{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;flex:none}
 .lang button{background:none;border:0;color:var(--dim);font-family:var(--mono);font-size:.62rem;
@@ -385,7 +386,11 @@ details.grupo[open]>summary{border-bottom:1px solid var(--line)}
 
 <script type="module">
 // Regla §3.1: gstatic sólo en firebase-init.js.
-import { db, auth, firebaseConfig, crearCuentaAuth,
+// createUserWithEmailAndPassword lo usa el alta POR INVITACIÓN, donde la
+// persona crea su propia cuenta y sí corresponde la instancia principal.
+// El alta directa del admin usa crearCuentaAuth, que va por una app
+// secundaria para no expulsar al admin de su sesión.
+import { db, auth, firebaseConfig, crearCuentaAuth, createUserWithEmailAndPassword,
          collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc,
          deleteDoc, serverTimestamp,
          onAuthStateChanged, signInWithEmailAndPassword, signOut,
@@ -452,7 +457,7 @@ $("in").addEventListener("click", async () => {
   try {
     await signInWithEmailAndPassword(auth, $("mail").value.trim(), $("pass").value);
   } catch (e) {
-    toast(e.code === "auth/invalid-credential" ? "Mail o contraseña incorrectos" : e.code, true);
+    toast(CY.explicar(e), true);
   } finally { b.disabled = false; b.textContent = "Entrar"; }
 });
 $("out").addEventListener("click", () => { yo = null; signOut(auth); });
@@ -486,10 +491,7 @@ $("r-crear").addEventListener("click", async () => {
     await deleteDoc(doc(db, "invitaciones", mail)).catch(() => {});
     toast("Cuenta creada");
   } catch (e) {
-    const m = { "auth/email-already-in-use": "Ese mail ya tiene cuenta. Entrá con tu contraseña",
-                "auth/weak-password": "La contraseña es muy corta",
-                "auth/invalid-email": "El mail no es válido" }[e.code];
-    toast(m || e.message, true);
+    toast(CY.explicar(e) || e.message, true);
   } finally { b.disabled = false; b.textContent = "Crear mi cuenta"; }
 });
 
@@ -510,6 +512,7 @@ onAuthStateChanged(auth, async (u) => {
       toast("Tu acceso está suspendido", true);
       yo = null; await signOut(auth); return;
     }
+    CY.usuario = yo;   // nucleo.js lo usa para CY.puede()
     $("quien").textContent = `${yo.nombre || yo.email} · ${ROLES[yo.rol]?.n || yo.rol}`
       + `  ·  ${CY.VERSION}${CY.instalada() ? " · instalada" : ""}`;
     $("quien").classList.remove("hide");
@@ -518,7 +521,7 @@ onAuthStateChanged(auth, async (u) => {
     document.querySelector("#v-list details").classList.toggle("hide", !puede("albumes"));
     cargarAlbumes(); ver("list");
   } catch (e) {
-    toast("No se pudo verificar el permiso: " + (e.code || e.message), true);
+    toast("No se pudo verificar el permiso: " + CY.explicar(e), true);
     await signOut(auth);
   }
 });
@@ -781,7 +784,7 @@ $("c-guardar").addEventListener("click", async () => {
       guardado: serverTimestamp(), guardadoPor: yo.email
     });
     CONT_ORIG = JSON.parse(JSON.stringify(CONT));
-    toast(CY.puede("publicar")
+    toast(puede("publicar")
       ? "Borrador guardado. Para que lo vea el público, tocá Publicar."
       : "Borrador guardado. Avisale a Mauro para que lo publique.");
     contarCambios();
@@ -903,6 +906,7 @@ async function cargarFotosGaleria() {
   ).forEach(([val, txt]) => {
     const b = document.createElement("button");
     b.type = "button"; b.textContent = txt;
+    b.dataset.val = val;
     b.className = val === galFiltro ? "on" : "";
     b.addEventListener("click", () => { galFiltro = val; pintarGaleria(); });
     f.appendChild(b);
@@ -911,10 +915,10 @@ async function cargarFotosGaleria() {
 }
 
 function pintarGaleria() {
+  // Se compara por el valor guardado en el botón, no por su texto: el texto
+  // está traducido y comparar contra él rompía el resaltado del filtro.
   $("g-filtros").querySelectorAll("button").forEach((b) => {
-    b.classList.toggle("on", b.textContent === galFiltro
-      || (galFiltro === "todas" && b.textContent === "todas")
-      || (galFiltro === "catalogo" && b.textContent === "aptas para el catálogo"));
+    b.classList.toggle("on", b.dataset.val === galFiltro);
   });
   let lista = galFotos;
   if (galFiltro === "catalogo") lista = lista.filter((f) => f.usar);
@@ -959,7 +963,7 @@ function volverDeGaleria() {
 $("go-cont").addEventListener("click", () => {
   irA("cont", () => { $("c-barra").classList.add("hide"); ver("list"); });
   $("c-barra").classList.remove("hide");
-  $("c-publicar").classList.toggle("hide", !CY.puede("publicar"));
+  $("c-publicar").classList.toggle("hide", !puede("publicar"));
   if (!CONT) cargarContenido(); else pintarContenido();
 });
 
@@ -1035,7 +1039,7 @@ $("dg-run").addEventListener("click", async () => {
     const r = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD}/image/upload`,
       { method: "POST", body: fd });
     const j = await r.json();
-    if (r.ok) f.ok(`Preset "${PRESET}" funcionando. Subió una imagen de prueba a la carpeta "pruebas" de Cloudinary; se puede borrar o dejar.`);
+    if (r.ok) f.ok(`Preset "${PRESET}" funcionando. Dejó una imagen de 8 píxeles en la carpeta "pruebas" de Cloudinary; se puede borrar o dejar.`);
     else {
       const m = j.error?.message || "rechazado";
       f.mal(/preset/i.test(m)
@@ -1054,6 +1058,17 @@ $("dg-run").addEventListener("click", async () => {
     else if (CY.instalada()) f.ok("Corriendo como app instalada.");
     else f.ok("Lista para instalar. En Chrome: menú ⋮ → Agregar a la pantalla principal.");
   } catch (e) { f.mal("No se pudo verificar: " + e.message); }
+
+  // 7 · contenido del sitio
+  f = fila("Contenido del sitio");
+  try {
+    const bo = await getDoc(doc(db, "sitio", "borrador"));
+    const pu = await getDoc(doc(db, "sitio", "publicado"));
+    const n = (d) => (d.exists() && d.data().es) ? Object.keys(d.data().es).length : 0;
+    const nb = n(bo), np = n(pu);
+    if (!nb && !np) f.mal("La base está vacía: el sitio se sirve de contenido.json. Entrá a Contenido y guardá para crear el borrador.");
+    else f.ok(`borrador: ${nb} textos · publicado: ${np} textos`);
+  } catch (e) { f.mal(explicar(e)); }
 
   b.disabled = false; b.textContent = "Probar de nuevo";
 });
@@ -1106,7 +1121,7 @@ async function cargarUsuarios() {
         try {
           await updateDoc(doc(db, "usuarios", u.uid), { rol: sel.value });
           toast("Rol actualizado");
-        } catch (e) { toast(e.code || "No se pudo cambiar", true); sel.value = u.rol; }
+        } catch (e) { toast(CY.explicar(e), true); sel.value = u.rol; }
       });
       const b = el.querySelector("button");
       b.textContent = u.activo ? "Suspender" : "Reactivar";
@@ -1117,7 +1132,7 @@ async function cargarUsuarios() {
           await updateDoc(doc(db, "usuarios", u.uid), { activo: !u.activo });
           toast(u.activo ? "Acceso suspendido" : "Acceso reactivado");
           cargarUsuarios();
-        } catch (e) { toast(e.code || "No se pudo", true); }
+        } catch (e) { toast(CY.explicar(e), true); }
       });
       cu.appendChild(el);
     });
@@ -1135,12 +1150,12 @@ async function cargarUsuarios() {
       el.querySelector(".sub").textContent = ROLES[i.rol]?.n || i.rol;
       el.querySelector("button").addEventListener("click", async () => {
         try { await deleteDoc(doc(db, "invitaciones", i.mail)); toast("Invitación anulada"); cargarUsuarios(); }
-        catch (e) { toast(e.code || "No se pudo", true); }
+        catch (e) { toast(CY.explicar(e), true); }
       });
       ci.appendChild(el);
     });
   } catch (e) {
-    cu.innerHTML = `<p class="empty">No se pudieron leer los usuarios.<br>${e.code || e.message}</p>`;
+    cu.innerHTML = `<p class="empty">No se pudieron leer los usuarios.<br>${CY.esc(CY.explicar(e))}</p>`;
   }
 }
 
@@ -1181,7 +1196,7 @@ $("i-crear").addEventListener("click", async () => {
     await setDoc(doc(db, "invitaciones", mail),
       { rol: $("i-rol").value, creado: serverTimestamp(), creadoPor: yo.email });
     $("i-mail").value = ""; toast("Invitación creada"); cargarUsuarios();
-  } catch (e) { toast(e.code || "No se pudo crear", true); }
+  } catch (e) { toast(CY.explicar(e), true); }
 });
 
 /* ===================== ÁLBUMES ===================== */
@@ -1212,7 +1227,7 @@ async function cargarAlbumes() {
         .catch(() => { el.querySelector(".n").textContent = "—"; });
     });
   } catch (e) {
-    cont.innerHTML = `<p class="empty">No se pudieron leer los álbumes.<br>${explicar(e)}</p>`;
+    cont.innerHTML = `<p class="empty">No se pudieron leer los álbumes.<br>${CY.esc(explicar(e))}</p>`;
   }
 }
 
@@ -1243,7 +1258,7 @@ $("n-crear").addEventListener("click", async () => {
     ["n-titulo","n-slug","n-anio","n-diam","n-lugar"].forEach(k => { if ($(k)) $(k).value = ""; });
     delete $("n-slug").dataset.tocado;
     toast("Álbum creado"); cargarAlbumes();
-  } catch (e) { toast(explicar(e), true); }
+  } catch (e) { toast(CY.explicar(e), true); }
   finally { b.disabled = false; }
 });
 
@@ -1343,7 +1358,7 @@ $("f-guardar").addEventListener("click", async () => {
   try {
     await updateDoc(doc(db, "albums", album.id, "fotos", foto.id), d);
     Object.assign(foto, d); toast("Guardado"); pintarAlbum();
-  } catch (e) { toast(e.code || "Error al guardar", true); }
+  } catch (e) { toast(CY.explicar(e), true); }
 });
 
 $("f-quitar").addEventListener("click", async () => {
@@ -1352,7 +1367,7 @@ $("f-quitar").addEventListener("click", async () => {
     await deleteDoc(doc(db, "albums", album.id, "fotos", foto.id));
     fotos = fotos.filter(x => x.id !== foto.id);
     toast("Quitada"); pintarAlbum();
-  } catch (e) { toast(e.code || "Error", true); }
+  } catch (e) { toast(CY.explicar(e), true); }
 });
 
 /* ===================== SUBIR ===================== */
