@@ -64,6 +64,9 @@ export async function crearCuentaAuth(email, clave) {
 
 export {
   app, db, auth, firebaseConfig,
+  // Usado por el alta por invitación del panel: la persona crea SU propia
+  // cuenta, así que acá sí corresponde la instancia principal.
+  createUserWithEmailAndPassword,
   doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc,
   collection, serverTimestamp, writeBatch,
   onAuthStateChanged, signInWithEmailAndPassword, signOut,

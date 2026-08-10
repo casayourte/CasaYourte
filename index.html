@@ -3,7 +3,64 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CasaYourte · Yurtas de estructura · Mauro Gastaldello</title>
+<title>CasaYourte · Constructor de yurtas en Uruguay, Argentina y Brasil</title>
+<meta name="description" content="Constructores de yurtas de estructura calculada: trei a 60°, doble anillo periférico, doble techo ventilado y piso aislado. Desmontables con la resistencia de una construcción fija. Uruguay, Argentina y Brasil. Seis años de obra entre Uruguay y Francia.">
+<meta name="author" content="Mauro Gastaldello">
+<link rel="canonical" href="https://casayourte.github.io/CasaYourte/">
+
+<!-- Dos direcciones, una por idioma. Sin esto Google no tiene qué indexar
+     en francés: el botón de idioma cambia el texto pero no la dirección. -->
+<link rel="alternate" hreflang="es" href="https://casayourte.github.io/CasaYourte/">
+<link rel="alternate" hreflang="fr" href="https://casayourte.github.io/CasaYourte/?lang=fr">
+<link rel="alternate" hreflang="x-default" href="https://casayourte.github.io/CasaYourte/">
+
+<!-- Vista previa al compartir el enlace por WhatsApp, Facebook o Instagram -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="CasaYourte">
+<meta property="og:locale" content="es_UY">
+<meta property="og:locale:alternate" content="fr_FR">
+<meta property="og:url" content="https://casayourte.github.io/CasaYourte/">
+<meta property="og:title" content="CasaYourte · Constructor de yurtas en Uruguay, Argentina y Brasil">
+<meta property="og:description" content="Yurtas de estructura calculada: desmontables, con la resistencia de una construcción fija. Trei a 60°, doble anillo periférico, doble techo ventilado y piso aislado.">
+<meta property="og:image" content="https://casayourte.github.io/CasaYourte/assets/hero.jpg">
+<meta property="og:image:alt" content="Yurta terminada con deck perimetral curvo y grandes aberturas vidriadas">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="CasaYourte · Constructor de yurtas">
+<meta name="twitter:description" content="Yurtas desmontables con la resistencia de una construcción fija. Uruguay, Argentina y Brasil.">
+<meta name="twitter:image" content="https://casayourte.github.io/CasaYourte/assets/hero.jpg">
+
+<!-- Datos estructurados: le dicen al buscador qué es esto, dónde trabaja y
+     en qué idiomas atiende. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "@id": "https://casayourte.github.io/CasaYourte/#casayourte",
+  "name": "CasaYourte",
+  "alternateName": "Casa Yourte · constructor de yurtas",
+  "description": "Construcción de yurtas de estructura calculada, desmontables con la resistencia de una construcción fija. Lonas a medida, planos para autoconstrucción, montaje y formación.",
+  "url": "https://casayourte.github.io/CasaYourte/",
+  "image": "https://casayourte.github.io/CasaYourte/assets/hero.jpg",
+  "logo": "https://casayourte.github.io/CasaYourte/assets/logo.png",
+  "founder": { "@type": "Person", "name": "Mauro Gastaldello" },
+  "telephone": "+59899696333",
+  "email": "casayourte@gmail.com",
+  "address": { "@type": "PostalAddress", "addressCountry": "UY" },
+  "areaServed": [
+    { "@type": "Country", "name": "Uruguay" },
+    { "@type": "Country", "name": "Argentina" },
+    { "@type": "Country", "name": "Brasil" }
+  ],
+  "knowsLanguage": ["es", "fr"],
+  "knowsAbout": ["yurtas", "yourtes", "construcción desmontable", "bioconstrucción", "glamping"],
+  "makesOffer": [
+    { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Lonas y telas a medida para yurtas y domos" } },
+    { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Planos y despiece para autoconstrucción de yurtas" } },
+    { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Yurta completa, de 2 a 12 metros de diámetro" } },
+    { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Montaje colaborativo y formación" } }
+  ]
+}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..800,0..100,0..1;1,9..144,300..800,0..100,0..1&family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -238,9 +295,11 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
 
 <header class="hero">
   <div class="hero-media" aria-hidden="true">
-    <video autoplay muted loop playsinline preload="metadata" poster="assets/banner.jpg">
-      <source src="assets/banner.mp4" type="assets/mp4">
-    </video>
+    <!-- El src va en el propio <video>: un <source> con un tipo MIME mal
+         escrito hace que el navegador descarte el archivo sin decir nada.
+         Ya pasó una vez, con type="assets/mp4". -->
+    <video src="assets/banner.mp4" poster="assets/banner.jpg"
+           autoplay muted loop playsinline preload="metadata"></video>
     <div class="scrim"></div>
   </div>
   <button type="button" class="hero-play" id="hero-play" aria-label="Reproducir el video">
@@ -257,8 +316,8 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
   </div>
 
   <div class="hero-body">
-    <span class="eyebrow" data-i="hero.eyebrow"></span>
-    <h1><span data-i="hero.t1"></span> <em data-i="hero.t2"></em></h1>
+    <span class="eyebrow" data-i="hero.eyebrow">Uruguay · Argentina · Brasil</span>
+    <h1><span data-i="hero.t1">Yurtas que se</span> <em data-i="hero.t2">calculan.</em></h1>
     <p class="lede" style="margin-top:1.8rem" data-i="hero.lede"></p>
   </div>
 
@@ -481,6 +540,21 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
     </div>
   </div>
 </section>
+
+<noscript>
+  <div class="wrap" style="border-top:1px solid #35302a">
+    <h2 style="font-size:1.6rem;margin-bottom:1rem">CasaYourte · constructor de yurtas</h2>
+    <p>Construimos yurtas de estructura calculada en Uruguay, Argentina y Brasil:
+    trei a 60°, doble anillo periférico que une piso y muros, doble techo ventilado,
+    piso modular aislado y umbrales que escurren el agua fuera de la estructura.
+    Desmontables, con la resistencia de una construcción fija.
+    Diámetros de 2 a 12 metros. WhatsApp +598 99 696 333 · casayourte@gmail.com</p>
+    <p lang="fr">Nous construisons des yourtes à structure calculée en Uruguay, en Argentine
+    et au Brésil : trei à 60°, double anneau périphérique reliant plancher et murs, double
+    toit ventilé, plancher modulaire isolé. Démontables, avec la résistance d'une
+    construction fixe. Diamètres de 2 à 12 mètres.</p>
+  </div>
+</noscript>
 
 <div class="foot">
   <span class="mono" style="display:flex;align-items:center;gap:.5rem"><img class="logo" src="assets/logo.png" alt="" width="20" height="20">CasaYourte · Mauro Gastaldello y familia</span>
@@ -706,8 +780,16 @@ function paint(lang){
     b.setAttribute("aria-pressed", String(b.dataset.set===lang)));
 }
 document.querySelectorAll(".lang button").forEach(b=>
-  b.addEventListener("click",()=>paint(b.dataset.set)));
-paint("es");
+  b.addEventListener("click",()=>{
+    paint(b.dataset.set);
+    // Se refleja en la URL sin recargar: así el idioma se puede compartir
+    // y los buscadores tienen una dirección propia para el francés.
+    const u = new URL(location.href);
+    if (b.dataset.set === "fr") u.searchParams.set("lang","fr");
+    else u.searchParams.delete("lang");
+    history.replaceState(null,"",u);
+  }));
+paint(/[?&]lang=fr/.test(location.search) ? "fr" : "es");
 
 /* ---------- video de portada ----------
    Con autoplay muted debería arrancar solo, pero no siempre pasa: el
@@ -827,6 +909,36 @@ const PROC_SRC=["assets/p01.jpg","assets/p02.jpg","assets/p03.jpg","assets/p04.j
   show(0);
 })();
 
+/* ---------- actualizar (sólo con ?dev=1) ----------
+   Trabajar sobre el sitio publicado es incómodo porque hay tres cachés
+   encima: la del navegador, la del service worker si el panel está
+   instalado, y la de GitHub Pages, que sirve los archivos con unos
+   minutos de vida. Este botón borra las dos primeras y recarga sin
+   caché. La de GitHub no se puede forzar: si un cambio recién subido no
+   aparece, hay que esperar un par de minutos. */
+if (/[?&]dev=1/.test(location.search)) {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.textContent = "Actualizar";
+  b.style.cssText = "position:fixed;right:.8rem;bottom:.8rem;z-index:99;"
+    + "font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;"
+    + "background:var(--blond);color:var(--ink);border:0;border-radius:999px;"
+    + "padding:.7rem 1rem;box-shadow:0 6px 24px rgba(0,0,0,.5);cursor:pointer";
+  b.addEventListener("click", async () => {
+    b.textContent = "Limpiando…";
+    try {
+      if (window.caches) {
+        const claves = await caches.keys();
+        await Promise.all(claves.map((k) => caches.delete(k)));
+      }
+    } catch (e) { /* sin cachés que borrar */ }
+    const u = new URL(location.href);
+    u.searchParams.set("v", Date.now());
+    location.replace(u.toString());
+  });
+  document.body.appendChild(b);
+}
+
 /* ---------- reveal ---------- */
 const io=new IntersectionObserver(es=>es.forEach(e=>{
   if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}
@@ -852,8 +964,12 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
 (function () {
   var PROYECTO = "casayourte-mauro";
   var CLAVE = "AIzaSyDDD_xvpC4I_ec2OZymyDqVsm1K0ISTr4Q";
+  // Con ?borrador=1 se lee el borrador en lugar de lo publicado. Sirve para
+  // que el panel muestre una vista previa antes de publicar. La lectura de
+  // sitio/ es pública, así que no hace falta sesión.
+  var DOCU = /[?&]borrador=1/.test(location.search) ? "borrador" : "publicado";
   var REST = "https://firestore.googleapis.com/v1/projects/" + PROYECTO
-           + "/databases/(default)/documents/sitio/publicado?key=" + CLAVE;
+           + "/databases/(default)/documents/sitio/" + DOCU + "?key=" + CLAVE;
 
   // Firestore REST etiqueta cada valor con su tipo.
   function valor(v) {
