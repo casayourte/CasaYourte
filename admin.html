@@ -362,6 +362,7 @@ details.grupo[open]>summary{border-bottom:1px solid var(--line)}
 <!-- BARRA DE CONTENIDO -->
 <div class="barra hide" id="c-barra">
   <span class="cuenta" id="c-cuenta"></span>
+  <button class="btn" id="c-exportar">Exportar JSON</button>
   <button class="btn" id="c-guardar">Guardar</button>
   <button class="btn p hide" id="c-publicar">Publicar</button>
 </div>
@@ -584,6 +585,17 @@ let CONT = null;        // { es:{}, fr:{}, imagenes:{} } ya decodificado
 let CONT_ORIG = null;   // copia para saber qué se tocó
 let IDIOMA = "es";
 let slotEditando = null;
+// Estructura completa del contenido.json del repo (proyecto, idiomas, imagenes,
+// logo, video, proceso). Se usa como base para exportar: el editor sólo toca
+// "textos", así que el resto se conserva tal cual está en el repositorio.
+let CONTENIDO_BASE = null;
+
+async function cargarBaseJSON() {
+  try {
+    const r = await fetch("contenido.json", { cache: "no-store" });
+    CONTENIDO_BASE = await r.json();
+  } catch (e) { CONTENIDO_BASE = null; }
+}
 
 const decod = (v) => (typeof v === "string" && v.slice(0,5) === "json:")
   ? (() => { try { return JSON.parse(v.slice(5)); } catch (e) { return v; } })() : v;
@@ -604,6 +616,7 @@ function codifMapa(m) {
 async function cargarContenido() {
   $("c-grupos").innerHTML = '<p class="empty">Cargando…</p>';
   let origen = "";
+  await cargarBaseJSON(); // siempre, para tener imagenes/logo/video/proceso al exportar
   try {
     let d = await getDoc(doc(db, "sitio", "borrador"));
     if (d.exists() && d.data().es) { origen = "borrador guardado"; }
@@ -616,8 +629,7 @@ async function cargarContenido() {
       const x = d.data();
       CONT = { es: decodMapa(x.es), fr: decodMapa(x.fr), imagenes: x.imagenes || {} };
     } else {
-      const r = await fetch("contenido.json", { cache: "no-store" });
-      const j = await r.json();
+      const j = CONTENIDO_BASE || await (await fetch("contenido.json", { cache: "no-store" })).json();
       CONT = { es: { ...j.textos.es }, fr: { ...j.textos.fr }, imagenes: {} };
       origen = "contenido.json · todavía no se sembró la base";
     }
@@ -775,6 +787,54 @@ $("c-guardar").addEventListener("click", async () => {
     contarCambios();
   } catch (e) { toast(CY.explicar(e), true); }
   finally { b.textContent = "Guardar"; contarCambios(); }
+});
+
+/* ── exportar contenido.json para el repositorio ── */
+function construirExportable() {
+  // Sale con la misma forma que contenido.json: lo único que cambia acá es
+  // "textos"; imagenes/logo/video/proceso quedan como están en el repo.
+  const base = CONTENIDO_BASE || {};
+  return {
+    proyecto: base.proyecto || "CasaYourte",
+    idiomas: base.idiomas || ["es", "fr"],
+    textos: { es: { ...CONT.es }, fr: { ...CONT.fr } },
+    imagenes: base.imagenes || [],
+    logo: base.logo,
+    video: base.video,
+    proceso: base.proceso,
+  };
+}
+
+function clavesCambiadas() {
+  const out = [];
+  ["es", "fr"].forEach((l) => {
+    Object.keys(CONT[l]).forEach((k) => {
+      if (JSON.stringify(CONT[l][k]) !== JSON.stringify(CONT_ORIG[l][k])) out.push(`${l}:${k}`);
+    });
+  });
+  return out;
+}
+
+$("c-exportar").addEventListener("click", () => {
+  try {
+    const cambios = clavesCambiadas();
+    const salida = construirExportable();
+    const json = JSON.stringify(salida, null, 2);
+
+    // Descarga al dispositivo, para reemplazar el archivo a mano en el repo.
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "contenido.json";
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+
+    toast(cambios.length
+      ? `JSON descargado con ${cambios.length} cambio${cambios.length > 1 ? "s" : ""} sin guardar incluido${cambios.length > 1 ? "s" : ""}. Subilo al repositorio.`
+      : "JSON descargado. Subilo al repositorio.");
+  } catch (e) {
+    toast(CY.explicar(e), true);
+  }
 });
 
 $("c-publicar").addEventListener("click", async () => {
