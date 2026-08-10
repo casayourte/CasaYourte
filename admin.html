@@ -363,9 +363,8 @@ details.grupo[open]>summary{border-bottom:1px solid var(--line)}
 <!-- BARRA DE CONTENIDO -->
 <div class="barra hide" id="c-barra">
   <span class="cuenta" id="c-cuenta"></span>
-  <button class="btn" id="c-exportar">Exportar JSON</button>
   <button class="btn" id="c-guardar">Guardar</button>
-  <button class="btn p hide" id="c-publicar">Publicar</button>
+  <button class="btn p" id="c-exportar">Exportar JSON</button>
 </div>
 
 <!-- UPLOAD DOCK -->
@@ -593,11 +592,34 @@ let slotEditando = null;
 // "textos", así que el resto se conserva tal cual está en el repositorio.
 let CONTENIDO_BASE = null;
 
+// ORDEN CANÓNICO de las claves, tomado del contenido.json del repositorio.
+// Hace falta porque Firestore devuelve los campos de un mapa en SU orden, no
+// en el que se escribieron: al volver a cargar el borrador, los campos
+// aparecían mezclados —Párrafo 1 antes que Título— y el JSON exportado salía
+// desordenado, ensuciando el diff en GitHub. El archivo del repositorio es la
+// referencia de orden.
+let ORDEN = { es: [], fr: [] };
+
 async function cargarBaseJSON() {
   try {
     const r = await fetch("contenido.json", { cache: "no-store" });
     CONTENIDO_BASE = await r.json();
+    ["es", "fr"].forEach((l) => {
+      ORDEN[l] = Object.keys((CONTENIDO_BASE.textos || {})[l] || {});
+    });
   } catch (e) { CONTENIDO_BASE = null; }
+}
+
+// Claves en orden canónico primero, y al final las que no estén en el archivo
+// (por si alguna se agregó desde el panel). Nunca se pierde ninguna.
+function clavesOrdenadas(l) {
+  const dic = CONT[l] || {};
+  const canon = ORDEN[l] || [];
+  const vistas = new Set();
+  const salida = [];
+  canon.forEach((k) => { if (k in dic) { salida.push(k); vistas.add(k); } });
+  Object.keys(dic).forEach((k) => { if (!vistas.has(k)) salida.push(k); });
+  return salida;
 }
 
 const decod = (v) => (typeof v === "string" && v.slice(0,5) === "json:")
@@ -621,13 +643,11 @@ async function cargarContenido() {
   let origen = "";
   await cargarBaseJSON(); // siempre, para tener imagenes/logo/video/proceso al exportar
   try {
+    // Un solo documento en la base: el borrador. Lo publicado vive en el
+    // contenido.json del repositorio, no en Firestore.
     let d = await getDoc(doc(db, "sitio", "borrador"));
-    if (d.exists() && d.data().es) { origen = "borrador guardado"; }
-    else {
-      d = await getDoc(doc(db, "sitio", "publicado"));
-      if (d.exists() && d.data().es) { origen = "lo publicado"; }
-      else d = null;
-    }
+    if (!(d.exists() && d.data().es)) d = null;
+    else origen = "borrador guardado en la base";
     if (d) {
       const x = d.data();
       CONT = { es: decodMapa(x.es), fr: decodMapa(x.fr), imagenes: x.imagenes || {} };
@@ -638,8 +658,8 @@ async function cargarContenido() {
     }
     CONT_ORIG = JSON.parse(JSON.stringify(CONT));
     $("c-nota").innerHTML = origen.indexOf("contenido.json") === 0
-      ? 'Se está leyendo del repositorio porque la base todavía está vacía. Al guardar se crea el borrador.'
-      : 'Guardar escribe el <b>borrador</b>: el visitante no lo ve. Publicar es lo que lo pone en el sitio.';
+      ? '<b>Guardar</b> deja los cambios en la base para que no se pierdan. Para que los vea el público: <b>Exportar JSON</b> y subir ese archivo al repositorio.'
+      : 'Estás editando el borrador guardado en la base. <b>El sitio todavía muestra el contenido.json del repositorio</b>: para publicar, Exportar JSON y subirlo.';
     pintarContenido();
   } catch (e) {
     $("c-grupos").innerHTML = `<p class="empty">No se pudo cargar.<br>${CY.esc(CY.explicar(e))}</p>`;
@@ -651,7 +671,7 @@ async function cargarContenido() {
 function pintarContenido() {
   const cont = $("c-grupos"); cont.innerHTML = "";
   const dic = CONT[IDIOMA];
-  const claves = Object.keys(dic);
+  const claves = clavesOrdenadas(IDIOMA);
   const usadas = new Set();
 
   GRUPOS.forEach((g) => {
@@ -784,9 +804,7 @@ $("c-guardar").addEventListener("click", async () => {
       guardado: serverTimestamp(), guardadoPor: yo.email
     });
     CONT_ORIG = JSON.parse(JSON.stringify(CONT));
-    toast(puede("publicar")
-      ? "Borrador guardado. Para que lo vea el público, tocá Publicar."
-      : "Borrador guardado. Avisale a Mauro para que lo publique.");
+    toast("Guardado en la base. Para publicarlo: Exportar JSON y subir ese archivo al repositorio.");
     contarCambios();
   } catch (e) { toast(CY.explicar(e), true); }
   finally { b.textContent = "Guardar"; contarCambios(); }
@@ -797,10 +815,17 @@ function construirExportable() {
   // Sale con la misma forma que contenido.json: lo único que cambia acá es
   // "textos"; imagenes/logo/video/proceso quedan como están en el repo.
   const base = CONTENIDO_BASE || {};
+  // Se reconstruye en orden canónico: así el diff en GitHub muestra sólo lo
+  // que cambió y no un archivo entero reordenado.
+  const enOrden = (l) => {
+    const o = {};
+    clavesOrdenadas(l).forEach((k) => { o[k] = CONT[l][k]; });
+    return o;
+  };
   return {
     proyecto: base.proyecto || "CasaYourte",
     idiomas: base.idiomas || ["es", "fr"],
-    textos: { es: { ...CONT.es }, fr: { ...CONT.fr } },
+    textos: { es: enOrden("es"), fr: enOrden("fr") },
     imagenes: base.imagenes || [],
     logo: base.logo,
     video: base.video,
@@ -838,25 +863,6 @@ $("c-exportar").addEventListener("click", () => {
   } catch (e) {
     toast(CY.explicar(e), true);
   }
-});
-
-$("c-publicar").addEventListener("click", async () => {
-  if (!confirm("Publicar el borrador?\n\nLo que se vea acá va a quedar visible en el sitio.")) return;
-  const b = $("c-publicar"); b.disabled = true; b.textContent = "Publicando…";
-  try {
-    await setDoc(doc(db, "sitio", "borrador"), {
-      es: codifMapa(CONT.es), fr: codifMapa(CONT.fr), imagenes: CONT.imagenes,
-      idiomas: ["es", "fr"], guardado: serverTimestamp(), guardadoPor: yo.email
-    });
-    await setDoc(doc(db, "sitio", "publicado"), {
-      es: codifMapa(CONT.es), fr: codifMapa(CONT.fr), imagenes: CONT.imagenes,
-      idiomas: ["es", "fr"], publicado: serverTimestamp(), publicadoPor: yo.email
-    });
-    CONT_ORIG = JSON.parse(JSON.stringify(CONT));
-    toast("Publicado. El sitio ya lo muestra.");
-    contarCambios();
-  } catch (e) { toast(CY.explicar(e), true); }
-  finally { b.disabled = false; b.textContent = "Publicar"; }
 });
 
 /* ── galería para elegir la imagen de un slot ── */
@@ -963,7 +969,6 @@ function volverDeGaleria() {
 $("go-cont").addEventListener("click", () => {
   irA("cont", () => { $("c-barra").classList.add("hide"); ver("list"); });
   $("c-barra").classList.remove("hide");
-  $("c-publicar").classList.toggle("hide", !puede("publicar"));
   if (!CONT) cargarContenido(); else pintarContenido();
 });
 
@@ -1063,11 +1068,22 @@ $("dg-run").addEventListener("click", async () => {
   f = fila("Contenido del sitio");
   try {
     const bo = await getDoc(doc(db, "sitio", "borrador"));
-    const pu = await getDoc(doc(db, "sitio", "publicado"));
-    const n = (d) => (d.exists() && d.data().es) ? Object.keys(d.data().es).length : 0;
-    const nb = n(bo), np = n(pu);
-    if (!nb && !np) f.mal("La base está vacía: el sitio se sirve de contenido.json. Entrá a Contenido y guardá para crear el borrador.");
-    else f.ok(`borrador: ${nb} textos · publicado: ${np} textos`);
+    const nb = (bo.exists() && bo.data().es) ? Object.keys(bo.data().es).length : 0;
+    const r = await fetch("contenido.json", { cache: "no-store" });
+    const j = await r.json();
+    const nj = Object.keys((j.textos || {}).es || {}).length;
+    // Si el borrador y el archivo difieren, hay algo editado sin publicar.
+    let dif = 0;
+    if (nb) {
+      const dec = (v) => (typeof v === "string" && v.slice(0,5) === "json:")
+        ? JSON.parse(v.slice(5)) : v;
+      const b = bo.data().es;
+      Object.keys(b).forEach((k) => {
+        if (JSON.stringify(dec(b[k])) !== JSON.stringify(j.textos.es[k])) dif++;
+      });
+    }
+    f.ok(`repositorio: ${nj} textos · borrador en la base: ${nb || "vacío"}`
+      + (dif ? ` · ${dif} sin publicar: exportá el JSON y subilo` : nb ? " · al día" : ""));
   } catch (e) { f.mal(explicar(e)); }
 
   b.disabled = false; b.textContent = "Probar de nuevo";
