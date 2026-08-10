@@ -98,9 +98,10 @@ textarea{min-height:4.5rem;resize:vertical}
 
 /* ---- toast ---- */
 #toast{position:fixed;left:1rem;right:1rem;bottom:calc(5.5rem + var(--safe));z-index:60;
-  background:var(--blond);color:var(--ink);border-radius:6px;padding:.7rem .9rem;
-  font-family:var(--mono);font-size:.62rem;letter-spacing:.08em;text-align:center;
-  opacity:0;transition:opacity .3s;pointer-events:none}
+  background:var(--blond);color:var(--ink);border-radius:6px;padding:.75rem .9rem;
+  font-family:var(--body);font-size:.85rem;line-height:1.4;text-align:center;
+  opacity:0;transition:opacity .3s;pointer-events:none;
+  box-shadow:0 6px 26px rgba(0,0,0,.5)}
 #toast.on{opacity:1}
 #toast.bad{background:var(--bad);color:#fff}
 .empty{text-align:center;color:var(--dim);padding:3rem 1rem;font-size:.92rem}
@@ -147,6 +148,7 @@ textarea{min-height:4.5rem;resize:vertical}
   <section id="v-list" class="hide">
     <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:1rem">
       <h1 style="font-size:1.5rem;flex:1">Álbumes</h1>
+      <button class="icon" id="go-diag" aria-label="Diagnóstico">🩺</button>
       <button class="icon hide" id="go-users" aria-label="Usuarios">👥</button>
     </div>
     <p class="mono hide" id="quien" style="color:var(--dim);margin:-.6rem 0 1rem"></p>
@@ -164,10 +166,19 @@ textarea{min-height:4.5rem;resize:vertical}
         <label><span class="k">Nombre visible</span>
           <input id="n-titulo" placeholder="Christine 7 m"></label>
         <label><span class="k">Identificador</span>
-          <input id="n-slug" placeholder="2024-christine-7m" autocapitalize="none" spellcheck="false">
+          <input id="n-slug" autocapitalize="none" spellcheck="false">
         </label>
-        <p class="note" style="margin-bottom:.8rem">Para obras: <b>año-lugar-diámetro</b>.
-        Minúsculas, sin acentos ni espacios. No se puede cambiar después.</p>
+        <p class="note" style="margin-bottom:.8rem">Se genera solo a partir del nombre. Es el
+        nombre interno de la carpeta y <b>no se puede cambiar después</b>.</p>
+        <div id="n-obra">
+          <div class="row" style="gap:.5rem">
+            <label style="flex:1"><span class="k">Año</span>
+              <input id="n-anio" type="number" inputmode="numeric" placeholder="2024"></label>
+            <label style="flex:1"><span class="k">Diámetro</span>
+              <input id="n-diam" placeholder="7 m"></label>
+          </div>
+          <label><span class="k">Lugar</span><input id="n-lugar" placeholder="Aspet, Francia"></label>
+        </div>
         <button class="btn" id="n-crear">Crear álbum</button>
       </div>
     </details>
@@ -195,6 +206,15 @@ textarea{min-height:4.5rem;resize:vertical}
         que entre con <b>Fui invitado y no tengo cuenta</b>. La contraseña la elige ella.</p>
       </div>
     </details>
+  </section>
+
+  <!-- DIAGNÓSTICO -->
+  <section id="v-diag" class="hide">
+    <h1 style="font-size:1.5rem;margin-bottom:.3rem">Diagnóstico</h1>
+    <p class="note">Prueba las tres conexiones y dice exactamente qué arreglar si algo falla.
+    No modifica nada de tus datos.</p>
+    <button class="btn p" id="dg-run">Probar todo</button>
+    <div id="dg-out" style="margin-top:1.2rem"></div>
   </section>
 
   <!-- ALBUM DETAIL -->
@@ -248,7 +268,7 @@ import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
          signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc,
-         deleteDoc, query, orderBy, serverTimestamp }
+         deleteDoc, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
 /* ===================== CONFIGURACIÓN ===================== */
@@ -293,14 +313,40 @@ let album = null, fotos = [], foto = null;
 const slug = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()
   .replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
 
+// Traduce los códigos de Firestore a algo accionable desde el celular,
+// donde no se puede abrir la consola del navegador.
+function explicar(e) {
+  const c = e?.code || "";
+  const t = {
+    "permission-denied":
+      "Permiso denegado. Revisá que tu documento en usuarios tenga activo: true y el rol correcto, y que las reglas estén publicadas.",
+    "failed-precondition":
+      "La consulta necesitaba un índice. Si ves esto con esta versión, avisame: no debería pasar.",
+    "unavailable":
+      "Sin conexión con Firestore. Probá de nuevo con mejor señal.",
+    "unauthenticated":
+      "La sesión caducó. Salí y volvé a entrar.",
+    "not-found":
+      "No se encontró el documento.",
+    "invalid-argument":
+      "Algún dato tiene un formato que Firestore no acepta.",
+    "resource-exhausted":
+      "Se agotó la cuota gratuita de Firestore por hoy.",
+  }[c];
+  if (t) return t;
+  if (/api.*not.*enabled|Cloud Firestore API/i.test(e?.message || ""))
+    return "La base de Firestore no está creada todavía. Creala en la consola de Firebase.";
+  return c || e?.message || "Error desconocido";
+}
+
 function toast(m, bad) {
   const t = $("toast");
   t.textContent = m; t.className = "on" + (bad ? " bad" : "");
-  clearTimeout(t._h); t._h = setTimeout(() => t.className = "", 3200);
+  clearTimeout(t._h); t._h = setTimeout(() => t.className = "", m.length > 60 ? 7000 : 3200);
 }
 
 function ver(v) {
-  ["login","list","users","album","foto"].forEach(x => $("v-"+x).classList.toggle("hide", x !== v));
+  ["login","list","users","diag","album","foto"].forEach(x => $("v-"+x).classList.toggle("hide", x !== v));
   $("dock").classList.toggle("hide", v !== "album" || !puede("fotos"));
   $("back").classList.toggle("hide", v === "login" || v === "list");
   $("out").classList.toggle("hide", v === "login");
@@ -382,6 +428,88 @@ onAuthStateChanged(auth, async (u) => {
 });
 
 $("go-users").addEventListener("click", () => { ver("users"); cargarUsuarios(); });
+$("go-diag").addEventListener("click", () => { ver("diag"); $("dg-out").innerHTML = ""; });
+
+/* ===================== DIAGNÓSTICO ===================== */
+$("dg-run").addEventListener("click", async () => {
+  const out = $("dg-out"); out.innerHTML = "";
+  const b = $("dg-run"); b.disabled = true; b.textContent = "Probando…";
+
+  const fila = (nombre) => {
+    const el = document.createElement("div");
+    el.className = "card";
+    el.style.alignItems = "flex-start";
+    el.innerHTML = `<span style="font-size:1.1rem;flex:none">⏳</span>
+      <div class="grow"><h2 style="font-size:.98rem"></h2>
+      <div class="sub" style="margin-top:.2rem"></div></div>`;
+    el.querySelector("h2").textContent = nombre;
+    out.appendChild(el);
+    return {
+      ok: (m) => { el.firstChild.textContent = "✅"; el.querySelector(".sub").textContent = m; },
+      mal: (m) => { el.firstChild.textContent = "❌";
+        el.querySelector(".sub").textContent = m;
+        el.querySelector(".sub").style.color = "#E9A8B0"; },
+    };
+  };
+
+  // 1 · proyecto de Firebase
+  let f = fila("Proyecto de Firebase");
+  f.ok(`${firebaseConfig.projectId} · conectado`);
+
+  // 2 · tu usuario y tu rol
+  f = fila("Tu usuario y permisos");
+  try {
+    const d = await getDoc(doc(db, "usuarios", auth.currentUser.uid));
+    if (!d.exists()) f.mal("No existe tu documento en la colección usuarios. El ID del documento tiene que ser tu UID exacto.");
+    else {
+      const u = d.data();
+      if (u.activo !== true) f.mal("Tu campo activo no es true (tiene que ser boolean, no texto).");
+      else if (!ROLES[u.rol]) f.mal(`El rol "${u.rol}" no existe. Tiene que ser admin, editor o fotografo.`);
+      else f.ok(`${u.email} · ${ROLES[u.rol].n} · activo`);
+    }
+  } catch (e) { f.mal(explicar(e)); }
+
+  // 3 · leer álbumes
+  f = fila("Leer álbumes");
+  try {
+    const snap = await getDocs(collection(db, "albums"));
+    f.ok(`${snap.size} álbumes`);
+  } catch (e) { f.mal(explicar(e)); }
+
+  // 4 · escribir y borrar en Firestore
+  f = fila("Escribir en Firestore");
+  try {
+    const ref = doc(db, "albums", "__prueba__");
+    await setDoc(ref, { titulo: "prueba", tipo: "obra", total: 0 });
+    await deleteDoc(ref);
+    f.ok("Escritura y borrado correctos");
+  } catch (e) { f.mal(explicar(e)); }
+
+  // 5 · Cloudinary
+  f = fila("Cloudinary · preset de subida");
+  try {
+    const cv = document.createElement("canvas"); cv.width = cv.height = 8;
+    const ctx = cv.getContext("2d"); ctx.fillStyle = "#DCA96B"; ctx.fillRect(0, 0, 8, 8);
+    const blob = await new Promise(r => cv.toBlob(r, "image/jpeg", .5));
+    const fd = new FormData();
+    fd.append("file", blob);
+    fd.append("upload_preset", PRESET);
+    fd.append("folder", "casayourte/__prueba__");
+    fd.append("tags", "prueba");
+    const r = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD}/image/upload`,
+      { method: "POST", body: fd });
+    const j = await r.json();
+    if (r.ok) f.ok(`Preset "${PRESET}" funcionando. Subió una imagen de prueba a la carpeta __prueba__, la podés borrar desde el panel de Cloudinary.`);
+    else {
+      const m = j.error?.message || "rechazado";
+      f.mal(/preset/i.test(m)
+        ? `El preset "${PRESET}" no existe o no es unsigned. Crealo en Cloudinary: Settings → Upload → Add upload preset, con Signing mode en Unsigned.`
+        : m);
+    }
+  } catch (e) { f.mal("No se pudo contactar Cloudinary: " + e.message); }
+
+  b.disabled = false; b.textContent = "Probar de nuevo";
+});
 
 $("back").addEventListener("click", () => {
   if (!$("v-foto").classList.contains("hide")) pintarAlbum();
@@ -482,22 +610,28 @@ $("i-crear").addEventListener("click", async () => {
 async function cargarAlbumes() {
   const cont = $("albums"); cont.innerHTML = '<p class="empty">Cargando…</p>';
   try {
-    const snap = await getDocs(query(collection(db, "albums"), orderBy("__name__", "desc")));
+    const snap = await getDocs(collection(db, "albums"));
     if (snap.empty) { cont.innerHTML = '<p class="empty">Todavía no hay álbumes.<br>Creá el primero abajo.</p>'; return; }
     cont.innerHTML = "";
-    snap.forEach(d => {
-      const a = { id: d.id, ...d.data() };
+    // Se ordena acá y no en la consulta: así no hace falta ningún índice de Firestore.
+    const lista = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    lista.sort((a, b) => String(b.anio || "").localeCompare(String(a.anio || ""))
+                         || a.id.localeCompare(b.id, "es"));
+    lista.forEach(a => {
       const el = document.createElement("div");
       el.className = "card";
       el.innerHTML = `<div class="grow"><h2></h2><div class="sub"></div></div>
                       <span class="n">${a.total || 0} fotos</span>
                       <button class="icon">›</button>`;
       el.querySelector("h2").textContent = a.titulo || a.id;
-      el.querySelector(".sub").textContent = `${a.tipo || "obra"} · ${a.id}`;
+      el.querySelector(".sub").textContent =
+        [a.tipo || "obra", a.anio, a.diametro, a.lugar].filter(Boolean).join(" · ");
       el.addEventListener("click", () => abrir(a));
       cont.appendChild(el);
     });
-  } catch (e) { cont.innerHTML = `<p class="empty">No se pudieron leer los álbumes.<br>${e.code || e.message}</p>`; }
+  } catch (e) {
+    cont.innerHTML = `<p class="empty">No se pudieron leer los álbumes.<br>${explicar(e)}</p>`;
+  }
 }
 
 $("n-titulo").addEventListener("input", (e) => {
@@ -505,16 +639,30 @@ $("n-titulo").addEventListener("input", (e) => {
 });
 $("n-slug").addEventListener("input", (e) => { e.target.dataset.tocado = "1"; });
 
+$("n-tipo").addEventListener("change", () => {
+  $("n-obra").classList.toggle("hide", $("n-tipo").value !== "obra");
+});
+
 $("n-crear").addEventListener("click", async () => {
-  const id = slug($("n-slug").value), titulo = $("n-titulo").value.trim(), tipo = $("n-tipo").value;
-  if (!id || !titulo) return toast("Falta el nombre o el identificador", true);
-  if (tipo === "obra" && !/^\d{4}-[a-z0-9-]+$/.test(id))
-    return toast("Para obras: año-lugar-diámetro", true);
+  const id = slug($("n-slug").value || $("n-titulo").value);
+  const titulo = $("n-titulo").value.trim(), tipo = $("n-tipo").value;
+  if (!titulo) return toast("Falta el nombre visible", true);
+  if (!id) return toast("El identificador quedó vacío", true);
+  const d = { titulo, tipo, total: 0, creado: serverTimestamp(), creadoPor: yo.email };
+  if (tipo === "obra") {
+    const anio = $("n-anio").value.trim(), diam = $("n-diam").value.trim(), lugar = $("n-lugar").value.trim();
+    if (anio) d.anio = anio;
+    if (diam) d.diametro = diam;
+    if (lugar) d.lugar = lugar;
+  }
+  const b = $("n-crear"); b.disabled = true;
   try {
-    await setDoc(doc(db, "albums", id), { titulo, tipo, total: 0, creado: serverTimestamp() }, { merge: true });
-    $("n-titulo").value = ""; $("n-slug").value = ""; delete $("n-slug").dataset.tocado;
+    await setDoc(doc(db, "albums", id), d, { merge: true });
+    ["n-titulo","n-slug","n-anio","n-diam","n-lugar"].forEach(k => { if ($(k)) $(k).value = ""; });
+    delete $("n-slug").dataset.tocado;
     toast("Álbum creado"); cargarAlbumes();
-  } catch (e) { toast(e.code || "Error al crear", true); }
+  } catch (e) { toast(explicar(e), true); }
+  finally { b.disabled = false; }
 });
 
 function opcionesEtapa(sel, tipo) {
@@ -537,8 +685,9 @@ async function abrir(a) {
 }
 
 async function cargarFotos() {
-  const snap = await getDocs(query(collection(db, "albums", album.id, "fotos"), orderBy("orden")));
-  fotos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const snap = await getDocs(collection(db, "albums", album.id, "fotos"));
+  fotos = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+                   .sort((a, b) => (a.orden || 0) - (b.orden || 0));
   pintarAlbum();
 }
 
@@ -546,7 +695,10 @@ function pintarAlbum() {
   ver("album");
   const g = $("fotos"); g.innerHTML = "";
   $("a-vacio").classList.toggle("hide", fotos.length > 0);
-  $("a-sub").textContent = `${fotos.length} fotos · ${fotos.filter(f => f.usar).length} en el catálogo`;
+  $("a-sub").textContent = [
+    [album.anio, album.diametro, album.lugar].filter(Boolean).join(" · "),
+    `${fotos.length} fotos · ${fotos.filter(f => f.usar).length} en el catálogo`,
+  ].filter(Boolean).join("  ·  ");
   fotos.forEach((f, i) => {
     const el = document.createElement("div");
     el.className = "ph" + (f.usar ? "" : " off");
