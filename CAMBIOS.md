@@ -1,45 +1,58 @@
-# CAMBIOS · corrección del panel
+# Qué subir · 10 de agosto de 2026
 
-## Qué subir
+Este zip es **el repositorio completo**, tal como tiene que quedar. Todo se sube desde el
+navegador del celular. **No hay nada que instalar.**
 
-| Archivo | Va en el repositorio |
+## Si ya subiste los archivos antes
+
+Cambiaron **cuatro**. Los demás están iguales y no hace falta tocarlos.
+
+| Archivo | Qué cambió |
 |---|---|
-| `admin.html` | raíz, reemplaza el actual |
-| `GUIA-ANDROID.md` | raíz, reemplaza el actual |
+| `admin.html` | arreglo del error al listar álbumes, campos de año/diámetro/lugar, y el diagnóstico 🩺 |
+| `GUIA-ANDROID.md` | sale la parte de Termux; entra la tabla de "todo desde el navegador" |
+| `README.md` | aclara que no hay herramientas de escritorio |
+| `CAMBIOS.md` | este archivo |
 
-Nada más. Ninguna imagen cambió.
+**`assets/` no cambió.** No toques esa carpeta: son 34 archivos y 5 MB.
 
-Para reemplazar desde el celular: abrí `admin.html` en GitHub → menú ⋮ → **Delete file** →
-commit. Después **Add file → Upload files** con el nuevo.
+Cómo reemplazar uno: abrilo en GitHub → menú ⋮ → **Delete file** → *Commit*. Después
+**Add file → Upload files** con el nuevo.
 
-## Los tres arreglos
+## Si es la primera vez
 
-**1 · El error `failed-precondition`.** Los álbumes se leían con una consulta ordenada, y
-Firestore pedía un índice para eso. Ahora se leen sin ordenar y el orden se hace en el
-celular. No hace falta crear ningún índice, ni ahora ni cuando haya cien álbumes.
+Seguí `GUIA-ANDROID.md`, que va paso a paso. En resumen:
 
-**2 · El identificador ya no obliga a un formato.** Antes exigía año-lugar-diámetro metido
-dentro del nombre, y encima no había dónde poner esos datos. Ahora:
+1. **Add file → Upload files** con los seis archivos de la raíz:
+   `index.html`, `admin.html`, `contenido.json`, `README.md`, `REGLAS.txt`, `GUIA-ANDROID.md`
+2. **Add file → Create new file**, nombre `assets/.gitkeep`, contenido vacío, *Commit*.
+   Al escribir la barra, GitHub crea la carpeta.
+3. Entrá a `assets/` y **Add file → Upload files** con los 34 archivos. Si el celular se
+   traba, en dos tandas.
+4. **Settings → Pages** → *Deploy from a branch* → `main` → `/ (root)` → *Save*.
 
-- El **nombre visible** es libre: "yurta doble techo" funciona.
-- El **identificador** se genera solo a partir del nombre y se puede editar.
-- **Año, diámetro y lugar** son campos aparte, opcionales, y sólo aparecen si el tipo es Obra.
+## Todo lo demás se configura en el navegador
 
-Los tres se muestran en la lista de álbumes y en el encabezado de cada uno.
+| Qué | Dónde | Guía |
+|---|---|---|
+| Dominio autorizado | consola de Firebase → Authentication → Settings | paso C1 |
+| Reglas de seguridad | consola de Firebase → Firestore → Reglas | paso C3, pegar `REGLAS.txt` |
+| Preset de subida | panel de Cloudinary → Settings → Upload | paso D |
+| Verificar que todo ande | el panel, botón 🩺 | paso E0 |
 
-**3 · Diagnóstico.** Botón 🩺 arriba a la derecha. Prueba cinco cosas y dice qué arreglar en
-cada caso, con palabras en lugar de códigos:
+## Lo que se retiró
 
-- Proyecto de Firebase
-- Tu usuario, tu rol y si `activo` es realmente boolean
-- Leer álbumes
-- Escribir y borrar en Firestore
-- El preset de Cloudinary, subiendo una imagen de 8 píxeles a una carpeta `__prueba__`
+Existían unos scripts de Node en una carpeta `media/` para cargar fotos en lote desde una
+computadora. **Se retiraron:** necesitaban terminal y npm, y nunca se pudieron correr. Lo
+que hacían lo hace el panel desde el celular.
 
-Y todos los mensajes de error del panel ahora están traducidos. `permission-denied` ya no
-dice `permission-denied`: dice qué revisar.
+También salió de la guía la sección de Termux, por la misma razón.
 
-## Sobre Cloudinary
+## Direcciones
 
-No hace falta adivinar si quedó configurado. Entrá al panel, tocá 🩺 y **Probar todo**. La
-última fila te lo dice, y si el preset no existe o no es unsigned te da los pasos exactos.
+```
+Sitio:  https://casayourte.github.io/CasaYourte/
+Panel:  https://casayourte.github.io/CasaYourte/admin.html
+```
+
+Con C y Y mayúsculas: la dirección distingue.

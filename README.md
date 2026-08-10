@@ -35,6 +35,12 @@ molesto.
 
 Para cambiar una imagen: subir la nueva con **el mismo nombre**, encima de la anterior.
 
+## Nada que instalar
+
+Todo se hace desde el navegador del celular: subir archivos por GitHub, cargar fotos por
+el panel, configurar en las consolas de Firebase y Cloudinary. **No hay herramientas de
+escritorio en este proyecto**, ni terminal, ni npm.
+
 ## Configuración
 
 Ver `GUIA-ANDROID.md`, que va paso a paso desde el celular: GitHub Pages, Firebase y
@@ -45,3 +51,14 @@ Cloudinary.
 Los cálculos, costos, márgenes y proveedores **no van a este repositorio**, que es público.
 Van a un repositorio privado aparte. Ni siquiera sirve borrarlos después: quedan en el
 historial.
+
+## Los archivos y qué hacer con cada uno
+
+| Archivo | Se toca desde |
+|---|---|
+| `index.html` | se reemplaza subiendo el nuevo |
+| `admin.html` | se reemplaza subiendo el nuevo |
+| `contenido.json` | se edita en GitHub con el lápiz, o desde el panel |
+| `assets/*` | se reemplaza subiendo con el mismo nombre |
+| `REGLAS.txt` | se copia y se pega en la consola de Firebase |
+| `GUIA-ANDROID.md` | se lee |
