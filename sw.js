@@ -21,7 +21,15 @@
 // ═══════════════════════════════════════════════════════════
 
 // v1 (10-ago-2026) — nace el panel instalable.
-const VERSION = 'cy-shell-v1';
+// v2 (10-ago-2026) — el video del sitio dejó de reproducirse. Causa: los
+//   reproductores piden el archivo por trozos (cabecera 'Range') y el
+//   servidor contesta 206 Partial Content. Guardar eso en la caché rompe
+//   la reproducción, y 'cache.put' con un 206 además lanza excepción.
+//   Ahora: las peticiones con Range y el video NO pasan por el service
+//   worker, y sólo se guarda una respuesta si su estado es 200.
+// v3 (10-ago-2026) — cambiaron admin.html y nucleo.js: entra la sección de
+//   contenido del sitio.
+const VERSION = 'cy-shell-v3';
 
 const SHELL = [
   './admin.html',
@@ -59,9 +67,24 @@ self.addEventListener('activate', (ev) => {
   );
 });
 
+// Sólo se guarda una respuesta completa y correcta. Un 206 (trozo de
+// video), un 30x o un error no se cachean nunca.
+function guardable(r) {
+  return r && r.status === 200 && (r.type === 'basic' || r.type === 'default');
+}
+
 self.addEventListener('fetch', (ev) => {
   if (ev.request.method !== 'GET') return;
+
+  // Peticiones por trozos: se dejan pasar sin tocar. Es lo que usa el
+  // reproductor de video y lo que rompía el fondo de la portada.
+  if (ev.request.headers.has('range')) return;
+
   const url = new URL(ev.request.url);
+
+  // El video tampoco pasa por acá: pesa 730 KB, no hace falta sin señal,
+  // y es el archivo más propenso a pedirse por trozos.
+  if (/\.(mp4|webm|mov|m4v)$/i.test(url.pathname)) return;
 
   // Navegación: red primero, caché si no hay señal, y si tampoco está,
   // el panel (que es la única pantalla que tiene sentido sin conexión).
@@ -69,8 +92,10 @@ self.addEventListener('fetch', (ev) => {
     ev.respondWith(
       fetch(ev.request)
         .then((r) => {
-          const copia = r.clone();
-          caches.open(VERSION).then((c) => c.put(ev.request, copia));
+          if (guardable(r)) {
+            const copia = r.clone();
+            caches.open(VERSION).then((c) => c.put(ev.request, copia)).catch(() => {});
+          }
           return r;
         })
         .catch(() => caches.match(ev.request)
@@ -84,8 +109,10 @@ self.addEventListener('fetch', (ev) => {
     ev.respondWith(
       fetch(ev.request)
         .then((r) => {
-          const copia = r.clone();
-          caches.open(VERSION).then((c) => c.put(ev.request, copia));
+          if (guardable(r)) {
+            const copia = r.clone();
+            caches.open(VERSION).then((c) => c.put(ev.request, copia)).catch(() => {});
+          }
           return r;
         })
         .catch(() => caches.match(ev.request))

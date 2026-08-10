@@ -62,7 +62,18 @@ a{color:inherit}
   background:linear-gradient(180deg,rgba(12,10,8,.82) 0%,rgba(12,10,8,.42) 38%,rgba(12,10,8,.88) 100%)}
 header.hero .trei{z-index:1}
 header.hero .trei line{opacity:.2}
-@media(prefers-reduced-motion:reduce){.hero-media video{display:none}}
+/* Antes acá había 'display:none' para quien tenga reducidas las
+   animaciones. Problema: el ahorro de batería de Android activa esa
+   preferencia, así que con el teléfono bajo de carga el video
+   desaparecía y quedaba la foto fija. Ahora el video se queda siempre;
+   si el sistema pide menos movimiento, no arranca solo y se puede
+   tocar para reproducir. */
+.hero-play{position:absolute;left:50%;bottom:clamp(5rem,14vh,9rem);transform:translateX(-50%);
+  z-index:4;display:none;align-items:center;gap:.5rem;
+  font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;
+  background:rgba(24,22,20,.72);color:var(--wool);border:1px solid #5a5145;
+  border-radius:999px;padding:.55rem .9rem;cursor:pointer;backdrop-filter:blur(4px)}
+.hero-play.on{display:inline-flex}
 header.hero{position:relative;min-height:min(100svh,860px);display:flex;flex-direction:column;
   justify-content:space-between;padding:clamp(1.1rem,3vw,2.2rem) var(--pad) clamp(2.5rem,6vw,4rem);
   background:radial-gradient(120% 95% at 78% 8%,#2C2318 0%,var(--ink) 58%);overflow:hidden}
@@ -232,6 +243,9 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
     </video>
     <div class="scrim"></div>
   </div>
+  <button type="button" class="hero-play" id="hero-play" aria-label="Reproducir el video">
+    ▶ Ver en movimiento
+  </button>
   <svg class="trei" data-lattice preserveAspectRatio="none" aria-hidden="true"></svg>
 
   <div class="topbar">
@@ -694,6 +708,48 @@ function paint(lang){
 document.querySelectorAll(".lang button").forEach(b=>
   b.addEventListener("click",()=>paint(b.dataset.set)));
 paint("es");
+
+/* ---------- video de portada ----------
+   Con autoplay muted debería arrancar solo, pero no siempre pasa: el
+   ahorro de datos, el ahorro de batería o una política del navegador lo
+   pueden bloquear sin avisar. Se pide la reproducción a mano, y si la
+   rechazan se ofrece un botón en lugar de dejar una foto fija sin
+   explicación. */
+(function () {
+  const v = document.querySelector(".hero-media video");
+  const b = document.getElementById("hero-play");
+  if (!v || !b) return;
+  const menosMovimiento = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function intentar() {
+    const p = v.play();
+    if (p && p.catch) p.catch(() => b.classList.add("on"));
+  }
+
+  b.addEventListener("click", () => {
+    b.classList.remove("on");
+    v.play().catch(() => b.classList.add("on"));
+  });
+
+  if (menosMovimiento) {
+    // El sistema pide menos movimiento: no se arranca solo, pero se deja
+    // el video a la vista y la decisión en manos del visitante.
+    b.classList.add("on");
+    return;
+  }
+
+  if (v.readyState >= 2) intentar();
+  else v.addEventListener("loadeddata", intentar, { once: true });
+
+  // Segundo intento con el primer toque en la página: algunos navegadores
+  // sólo permiten reproducir después de una interacción.
+  const reintento = () => {
+    if (!v.paused) return;
+    v.play().then(() => b.classList.remove("on")).catch(() => {});
+  };
+  addEventListener("touchstart", reintento, { once: true, passive: true });
+  addEventListener("click", reintento, { once: true });
+})();
 
 /* ---------- trei lattice: two families of laths at 60° between them ---------- */
 function lattice(svg,{gap=64,animate=true}={}){

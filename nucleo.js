@@ -12,7 +12,7 @@
 
 export const CY = {};
 
-CY.VERSION = 'nucleo-1';
+CY.VERSION = 'nucleo-3';
 
 // ═════════════════════════════════════════════════════════════
 //  BOTÓN ATRÁS DE ANDROID
@@ -303,6 +303,7 @@ CY.puede = function (q) {
   if (u.rol === 'admin') return true;
   if (u.rol === 'editor') return q !== 'usuarios' && q !== 'publicar';
   if (u.rol === 'fotografo') return q === 'fotos' || q === 'albumes';
+  // Consultas usadas: 'albumes', 'fotos', 'contenido', 'publicar', 'usuarios'.
   return false;
 };
 
