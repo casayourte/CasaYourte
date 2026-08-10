@@ -777,260 +777,105 @@ const io=new IntersectionObserver(es=>es.forEach(e=>{
 }),{rootMargin:"0px 0px -8% 0px"});
 document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
 </script>
-<script id="state" type="application/json"></script>
-<style>
-#tb{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:200;
- display:flex;gap:.35rem;background:#111;border:1px solid #4a4238;border-radius:999px;
- padding:.35rem;box-shadow:0 10px 34px rgba(0,0,0,.5);flex-wrap:wrap;max-width:94vw;justify-content:center}
-#tb button{font-family:var(--mono);font-size:.58rem;letter-spacing:.11em;text-transform:uppercase;
- background:none;border:0;color:#bdb4a2;padding:.45rem .7rem;border-radius:999px;cursor:pointer;white-space:nowrap}
-#tb button:hover{color:#fff;background:#262119}
-#tb button.on{background:var(--blond);color:#181614;font-weight:500}
-#tb .sep{width:1px;background:#3b342c;margin:.25rem .1rem}
-body.edit [data-i],body.edit [data-list] li,body.edit [data-rows] td{
- outline:1px dashed rgba(220,169,107,.45);outline-offset:3px;border-radius:2px}
-body.edit [contenteditable]:focus{outline:2px solid var(--blond);background:rgba(255,255,255,.07)}
-body.edit .paper [contenteditable]:focus{background:rgba(0,0,0,.05)}
-.imgwrap{position:relative}
-.imgbtn{position:absolute;top:.5rem;right:.5rem;z-index:6;font-family:var(--mono);
- font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;background:rgba(24,22,20,.9);
- color:#EFE8DA;border:1px solid #6b6152;border-radius:2px;padding:.3rem .5rem;cursor:pointer;display:none}
-.imgalt{position:absolute;left:0;right:0;bottom:0;z-index:6;font-family:var(--mono);
- font-size:.56rem;letter-spacing:.06em;background:rgba(24,22,20,.86);color:#EFE8DA;
- padding:.35rem .5rem;display:none;text-transform:none}
-body.edit .imgbtn,body.edit .imgalt{display:block}
-.imgalt:empty::before{content:"texto alternativo (alt) para la web";color:#8d8474;font-style:italic}
-#tb button.send.hot{background:#7A2C3C;color:#fff}
-#tb button.send b{font-weight:500}
-#send{position:fixed;inset:0;z-index:300;background:rgba(12,10,9,.78);
- display:flex;align-items:center;justify-content:center;padding:1.2rem}
-#send[hidden]{display:none}
-.send-card{background:#1F1B17;border:1px solid #4B443A;max-width:30rem;width:100%;
- padding:1.6rem;border-radius:3px}
-.send-card h3{font-family:var(--disp);color:var(--wool);font-size:1.35rem;margin:0 0 .8rem}
-.send-p{font-size:.9rem;color:#bdb4a2;margin:0 0 1rem}
-#send-list{margin:0 0 1.3rem;padding-left:1.1rem;font-family:var(--mono);font-size:.7rem;
- color:var(--blond);letter-spacing:.05em}
-#send-list li{margin-bottom:.3rem}
-.send-btns{display:flex;gap:.5rem;flex-wrap:wrap}
-.send-b{font-family:var(--mono);font-size:.6rem;letter-spacing:.11em;text-transform:uppercase;
- text-decoration:none;border:1px solid #4B443A;background:none;color:#d6cdbb;
- padding:.6rem .85rem;border-radius:2px;cursor:pointer}
-.send-b.primary{background:var(--blond);border-color:var(--blond);color:var(--ink);font-weight:500}
-#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:76px;z-index:210;
- background:var(--blond);color:#181614;font-family:var(--mono);font-size:.6rem;
- letter-spacing:.1em;text-transform:uppercase;padding:.55rem .9rem;border-radius:2px;
- opacity:0;transition:opacity .3s;pointer-events:none}
-#toast.show{opacity:1}
-@media print{#tb,#toast,.imgbtn,.imgalt{display:none!important}}
-</style>
 <script>
-/* ================= EDITOR LAYER ================= */
-let ALT = {};
-const CHANGED = {img:new Set(), text:false};
-const SLOTS = ["hero","traj1","traj2","traj3","traj4","traj5",
-               "dif1","dif2","dif3","dif4","dif5","dif6","dif7","dif8",
-               "int1","int2","int3","co","ws"];
+/* ─────────────────────────────────────────────────────────────
+   CASCADA DE CONTENIDO · tres niveles, en este orden:
 
-/* --- restore saved state --- */
-(function restore(){
-  const raw=document.getElementById("state").textContent.trim();
-  if(!raw) return;
-  try{ const s=JSON.parse(raw);
-    if(s.T){ for(const l of ["es","fr"]) if(s.T[l]) Object.assign(T[l], s.T[l]); }
-    if(s.ALT) ALT=s.ALT;
-  }catch(e){ console.warn("estado ilegible",e); }
-})();
+     1º  Firestore  sitio/publicado      ← lo último que se publicó
+     2º  contenido.json del repositorio  ← respaldo
+     3º  los textos de este mismo archivo ← último respaldo
 
-/* --- wrap every slot image so it can host controls --- */
-document.querySelectorAll("img[data-slot]").forEach(img=>{
-  const slot=img.dataset.slot, host=img.parentElement;
-  host.classList.add("imgwrap");
-  const b=document.createElement("button");
-  b.type="button"; b.className="imgbtn"; b.dataset.for=slot; b.textContent="Cambiar imagen";
-  const a=document.createElement("div");
-  a.className="imgalt"; a.contentEditable="true"; a.dataset.alt=slot;
-  a.textContent = ALT[slot] || img.getAttribute("alt") || "";
-  host.append(b,a);
-  img.alt = ALT[slot] || "";
-});
+   Firestore MANDA sobre los otros dos. Si no responde, si la cuota se
+   agotó o si el documento todavía no existe, el sitio muestra el nivel
+   siguiente. El visitante nunca ve una página vacía.
 
-/* --- edit mode --- */
-let EDIT=false;
-function applyEdit(){
-  document.querySelectorAll("[data-i]").forEach(el=>el.contentEditable=EDIT);
-  document.querySelectorAll("[data-list] li,[data-rows] td").forEach(el=>el.contentEditable=EDIT);
-  document.body.classList.toggle("edit",EDIT);
-}
-const _paint=paint;
-paint=function(l){ _paint(l); if(EDIT) applyEdit(); };
+   Se lee por la API REST, no con el SDK de Firebase: es UNA sola
+   petición y el visitante no descarga ninguna librería. Las reglas
+   permiten lectura pública de sitio/, así que no hace falta sesión.
+   ───────────────────────────────────────────────────────────── */
+(function () {
+  var PROYECTO = "casayourte-mauro";
+  var CLAVE = "AIzaSyDDD_xvpC4I_ec2OZymyDqVsm1K0ISTr4Q";
+  var REST = "https://firestore.googleapis.com/v1/projects/" + PROYECTO
+           + "/databases/(default)/documents/sitio/publicado?key=" + CLAVE;
 
-/* --- write edits back into the dictionary --- */
-document.addEventListener("input",e=>{
-  if(!EDIT) return;
-  const lang=document.documentElement.lang, d=T[lang], el=e.target;
-  CHANGED.text=true; badge();
-  if(el.dataset && el.dataset.i){ d[el.dataset.i]=el.textContent; return; }
-  if(el.dataset && el.dataset.alt){
-    const s=el.dataset.alt; ALT[s]=el.textContent.trim();
-    const im=document.querySelector('img[data-slot="'+s+'"]'); if(im) im.alt=ALT[s];
-    return;
+  // Firestore REST etiqueta cada valor con su tipo.
+  function valor(v) {
+    if (!v || typeof v !== "object") return undefined;
+    if ("stringValue" in v) return v.stringValue;
+    if ("booleanValue" in v) return v.booleanValue;
+    if ("integerValue" in v) return Number(v.integerValue);
+    if ("doubleValue" in v) return v.doubleValue;
+    if ("nullValue" in v) return null;
+    if ("arrayValue" in v) return (v.arrayValue.values || []).map(valor);
+    if ("mapValue" in v) return mapa(v.mapValue.fields || {});
+    return undefined;
   }
-  const li=el.closest("li"), ul=li&&li.closest("[data-list]");
-  if(ul){ d[ul.dataset.list]=[...ul.children].map(x=>x.textContent); return; }
-  const td=el.closest("td"), tb=td&&td.closest("[data-rows]");
-  if(tb){ d[tb.dataset.rows]=[...tb.rows].map(r=>[...r.cells].map(c=>c.textContent)); }
-},true);
-
-/* --- image replacement, downscaled --- */
-document.addEventListener("click",e=>{
-  const b=e.target.closest(".imgbtn"); if(!b) return;
-  const inp=document.createElement("input");
-  inp.type="file"; inp.accept="image/*";
-  inp.addEventListener("change",()=>{
-    const f=inp.files&&inp.files[0]; if(!f) return;
-    const fr=new FileReader();
-    fr.onload=()=>{
-      const im=new Image();
-      im.onload=()=>{
-        const M=1500, sc=Math.min(1,M/Math.max(im.width,im.height));
-        const cv=document.createElement("canvas");
-        cv.width=Math.round(im.width*sc); cv.height=Math.round(im.height*sc);
-        cv.getContext("2d").drawImage(im,0,0,cv.width,cv.height);
-        const target=document.querySelector('img[data-slot="'+b.dataset.for+'"]');
-        target.src=cv.toDataURL("image/jpeg",0.82);
-        CHANGED.img.add(b.dataset.for); badge();
-        toast("Vista previa lista · falta enviarla a Mauro");
-      };
-      im.src=fr.result;
-    };
-    fr.readAsDataURL(f);
-  });
-  inp.click();
-});
-
-/* --- helpers --- */
-function toast(m){const t=document.getElementById("toast");t.textContent=m;
-  t.classList.add("show");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),2600);}
-function dl(blob,name){const a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);a.download=name;a.click();
-  setTimeout(()=>URL.revokeObjectURL(a.href),5000);}
-function stamp(){const d=new Date(),p=n=>String(n).padStart(2,"0");
-  return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+"-"+p(d.getHours())+p(d.getMinutes());}
-
-/* --- toolbar --- */
-const tb=document.createElement("div"); tb.id="tb";
-tb.innerHTML='<button type="button" id="e-edit">Editar</button><span class="sep"></span>'+
- '<button type="button" id="e-send" class="send">Preparar envío<b id="e-badge"></b></button>'+
- '<button type="button" id="e-json">Solo textos</button>'+
- '<button type="button" id="e-imgs">Todas las imágenes</button>';
-document.body.append(tb);
-const tt=document.createElement("div"); tt.id="toast"; document.body.append(tt);
-
-document.getElementById("e-edit").addEventListener("click",ev=>{
-  EDIT=!EDIT; applyEdit(); ev.target.classList.toggle("on",EDIT);
-  ev.target.textContent = EDIT?"Ver como cliente":"Editar";
-  toast(EDIT?"Modo edición · hacé clic en cualquier texto":"Modo cliente");
-});
-
-
-document.getElementById("e-json").addEventListener("click",()=>{
-  const out={
-    proyecto:"YURTOUR · La Yourtecasa",
-    version:stamp(),
-    idiomas:["es","fr"],
-    textos:T,
-    imagenes:SLOTS.map(s=>({slot:s,archivo:s+".jpg",alt:ALT[s]||""}))
-  };
-  dl(new Blob([JSON.stringify(out,null,2)],{type:"application/json"}),
-     "contenido-yurtour-"+stamp()+".json");
-  toast("contenido.json listo para el desarrollador");
-});
-
-
-/* ---------- pendientes + envío ---------- */
-function badge(){
-  const n=(CHANGED.text?1:0)+CHANGED.img.size;
-  const b=document.getElementById("e-badge"); if(!b) return;
-  b.textContent = n? " ("+n+")" : "";
-  document.getElementById("e-send").classList.toggle("hot", n>0);
-}
-
-const panel=document.createElement("div"); panel.id="send"; panel.hidden=true;
-panel.innerHTML=
- '<div class="send-card">'+
- '<h3>Cambios listos para enviar</h3>'+
- '<p class="send-p">Estos archivos se van a descargar a tu dispositivo. Mandáselos a Mauro '+
- 'y él los registra en el sitio. Vos no tenés que tocar nada más.</p>'+
- '<ul id="send-list"></ul>'+
- '<div class="send-btns">'+
- '<a id="send-wa" class="send-b primary" href="#" target="_blank" rel="noopener">Avisar por WhatsApp</a>'+
- '<a id="send-mail" class="send-b" href="#">Abrir el mail</a>'+
- '<button type="button" id="send-close" class="send-b">Cerrar</button>'+
- '</div></div>';
-document.body.append(panel);
-
-document.getElementById("send-close").addEventListener("click",()=>panel.hidden=true);
-panel.addEventListener("click",e=>{ if(e.target===panel) panel.hidden=true; });
-
-document.getElementById("e-send").addEventListener("click",async()=>{
-  const list=document.getElementById("send-list"); list.innerHTML="";
-  if(!CHANGED.text && !CHANGED.img.size){
-    toast("Todavía no hay cambios · apretá Editar primero"); return;
+  function mapa(f) {
+    var o = {};
+    for (var k in f) { var x = valor(f[k]); if (x !== undefined) o[k] = x; }
+    return o;
   }
-  const files=[];
-  if(CHANGED.text){ files.push("contenido.json"); }
-  CHANGED.img.forEach(s=>files.push(s+".jpg"));
-  files.forEach(f=>{ const li=document.createElement("li"); li.textContent=f; list.appendChild(li); });
 
-  const msg="Hola Mauro, te mando cambios del catálogo: "+files.join(", ");
-  document.getElementById("send-wa").href="https://wa.me/59899696333?text="+encodeURIComponent(msg);
-  document.getElementById("send-mail").href="mailto:casayourte@gmail.com"+
-    "?subject="+encodeURIComponent("Cambios del catálogo YURTOUR")+
-    "&body="+encodeURIComponent(msg+"\n\n(adjuntar los archivos descargados)");
-  panel.hidden=false;
-
-  if(CHANGED.text){
-    const out={proyecto:"YURTOUR · La Yourtecasa",version:stamp(),idiomas:["es","fr"],textos:T,
-      imagenes:SLOTS.map(s=>({slot:s,archivo:"assets/"+s+".jpg",alt:ALT[s]||""}))};
-    dl(new Blob([JSON.stringify(out,null,2)],{type:"application/json"}),"contenido.json");
-    await new Promise(r=>setTimeout(r,350));
+  // Firestore NO admite arrays dentro de arrays, y la tabla de diámetros
+  // (ficha.rows) es justamente eso. Convención: los valores que no son
+  // texto se guardan como una cadena que empieza con "json:" y se
+  // reconstruyen acá. Las listas de la oferta viajan igual.
+  function decodificar(v) {
+    if (typeof v === "string" && v.slice(0, 5) === "json:") {
+      try { return JSON.parse(v.slice(5)); } catch (e) { return v; }
+    }
+    return v;
   }
-  for(const s of CHANGED.img){
-    const im=document.querySelector('img[data-slot="'+s+'"]');
-    try{ const r=await fetch(im.src); dl(await r.blob(), s+".jpg"); }catch(err){ console.warn(s,err); }
-    await new Promise(r=>setTimeout(r,350));
-  }
-});
-badge();
 
-document.getElementById("e-imgs").addEventListener("click",async()=>{
-  toast("Descargando "+SLOTS.length+" imágenes…");
-  for(const s of SLOTS){
-    const im=document.querySelector('img[data-slot="'+s+'"]'); if(!im) continue;
-    try{ const r=await fetch(im.src); dl(await r.blob(), s+".jpg"); }
-    catch(err){ console.warn(s,err); }
-    await new Promise(r=>setTimeout(r,320));
-  }
-  toast("Imágenes exportadas con el nombre de cada slot");
-});
-</script>
-
-
-<script>
-(async function(){
-  try{
-    const r=await fetch("contenido.json",{cache:"no-store"}); if(!r.ok) throw 0;
-    const j=await r.json();
-    if(j.textos){ for(const l of ["es","fr"]) if(j.textos[l]) Object.assign(T[l], j.textos[l]); }
-    if(Array.isArray(j.imagenes)) j.imagenes.forEach(o=>{
-      if(o.alt){ ALT[o.slot]=o.alt;
-        const im=document.querySelector('img[data-slot="'+o.slot+'"]'); if(im) im.alt=o.alt;
-        const a=document.querySelector('[data-alt="'+o.slot+'"]'); if(a) a.textContent=o.alt; }
+  function aplicarTextos(d) {
+    if (!d) return false;
+    var hubo = false;
+    ["es", "fr"].forEach(function (l) {
+      if (!d[l] || typeof d[l] !== "object") return;
+      Object.keys(d[l]).forEach(function (k) { T[l][k] = decodificar(d[l][k]); });
+      hubo = true;
     });
-    paint(document.documentElement.lang);
-  }catch(e){}
+    return hubo;
+  }
+
+  // Reemplazos de imagen elegidos desde el panel: slot -> public_id.
+  // Si la de Cloudinary no carga, vuelve la del repositorio: lo esencial
+  // no depende de terceros.
+  function aplicarImagenes(imgs) {
+    if (!imgs) return;
+    Object.keys(imgs).forEach(function (slot) {
+      var im = document.querySelector('img[data-slot="' + slot + '"]');
+      if (!im || !imgs[slot]) return;
+      var respaldo = im.getAttribute("src");
+      var ancho = slot === "hero" ? 1800 : (slot.indexOf("dif") === 0 ? 800 : 1200);
+      im.addEventListener("error", function reponer() {
+        im.removeEventListener("error", reponer);
+        im.src = respaldo;
+      });
+      im.src = "https://res.cloudinary.com/kbjqcnpa/image/upload/"
+             + "f_auto,q_auto,w_" + ancho + ",c_limit/" + imgs[slot];
+    });
+  }
+
+  function nivel2() {
+    return fetch("contenido.json", { cache: "no-store" })
+      .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+      .then(function (j) { if (j && j.textos) aplicarTextos(j.textos); });
+  }
+
+  fetch(REST, { cache: "no-store" })
+    .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+    .then(function (j) {
+      var d = mapa((j && j.fields) || {});
+      var hubo = aplicarTextos(d);
+      aplicarImagenes(d.imagenes);
+      if (!hubo) return nivel2();
+    })
+    .catch(function () { return nivel2().catch(function () { /* nivel 3 ya en pantalla */ }); })
+    .then(function () { paint(document.documentElement.lang); });
 })();
 </script>
+
 </body>
 </html>
