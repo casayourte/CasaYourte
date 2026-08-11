@@ -153,6 +153,14 @@ details.grupo[open]>summary{border-bottom:1px solid var(--line)}
   font-family:var(--mono);font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;
   padding:.32rem .6rem;border-radius:999px}
 .filtros button.on{background:var(--ink);color:var(--wool);border-color:var(--wool)}
+.etapa-tit{display:flex;align-items:baseline;gap:.6rem;margin:1.4rem 0 .6rem;
+  padding-bottom:.35rem;border-bottom:1px solid var(--line)}
+.etapa-tit b{font-family:var(--mono);font-size:.6rem;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--blond);flex:1}
+.etapa-tit span{font-family:var(--mono);font-size:.58rem;color:var(--dim)}
+.etapa-tit:first-child{margin-top:0}
+.ph.borrada img{opacity:.25}
+.ph.borrada .bar{background:rgba(142,58,70,.25)}
 
 /* --- de nucleo.js --- */
 #cy-toast{position:fixed;left:1rem;right:1rem;bottom:calc(5.5rem + var(--safe));z-index:400;
@@ -333,10 +341,33 @@ details.grupo[open]>summary{border-bottom:1px solid var(--line)}
 
   <!-- ALBUM DETAIL -->
   <section id="v-album" class="hide">
-    <h1 id="a-titulo" style="font-size:1.45rem"></h1>
-    <p class="mono" id="a-sub" style="color:var(--dim);margin:.4rem 0 1.2rem"></p>
-    <div class="grid" id="fotos"></div>
+    <div style="display:flex;align-items:flex-start;gap:.6rem">
+      <h1 id="a-titulo" style="font-size:1.45rem;flex:1"></h1>
+      <button class="icon" id="a-editar" aria-label="Editar álbum">✎</button>
+    </div>
+    <p class="mono" id="a-sub" style="color:var(--dim);margin:.4rem 0 1rem"></p>
+    <button class="btn hide" id="a-papelera" style="margin-bottom:1rem"></button>
+    <div id="fotos"></div>
     <div class="empty hide" id="a-vacio">Todavía no hay fotos.<br>Elegí la etapa abajo y agregá.</div>
+  </section>
+
+  <!-- EDITAR ÁLBUM -->
+  <section id="v-edalb" class="hide">
+    <h1 style="font-size:1.4rem;margin-bottom:.3rem">Editar álbum</h1>
+    <p class="mono" id="e-id" style="color:var(--dim);margin:0 0 1.2rem"></p>
+    <label><span class="k">Nombre visible</span><input id="e-titulo"></label>
+    <div id="e-obra">
+      <div class="row" style="gap:.5rem">
+        <label style="flex:1"><span class="k">Año</span>
+          <input id="e-anio" type="number" inputmode="numeric"></label>
+        <label style="flex:1"><span class="k">Diámetro</span>
+          <input id="e-diam" placeholder="7 m"></label>
+      </div>
+      <label><span class="k">Lugar</span><input id="e-lugar"></label>
+    </div>
+    <p class="note">El identificador no se puede cambiar: es el nombre de la carpeta
+    en Cloudinary y las fotos ya subidas apuntan ahí.</p>
+    <button class="btn p" id="e-guardar">Guardar</button>
   </section>
 
   <!-- PHOTO EDIT -->
@@ -429,7 +460,7 @@ function irA(v, alVolver) {
 }
 
 function ver(v) {
-  ["login","list","users","diag","cont","gal","album","foto"].forEach(x => $("v-"+x).classList.toggle("hide", x !== v));
+  ["login","list","users","diag","cont","gal","album","foto","edalb"].forEach(x => $("v-"+x).classList.toggle("hide", x !== v));
   $("dock").classList.toggle("hide", v !== "album" || !puede("fotos"));
   if (v !== "cont") { const cb = $("c-barra"); if (cb) cb.classList.add("hide"); }
   $("back").classList.toggle("hide", v === "login" || v === "list");
@@ -903,6 +934,7 @@ async function cargarFotosGaleria() {
   $("g-grid").innerHTML = '<p class="empty">Cargando fotos…</p>';
   const snap = await getDocs(collection(db, "albums", id, "fotos"));
   galFotos = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+    .filter((f) => !f.eliminada)
     .sort((a, b) => (a.orden || 0) - (b.orden || 0));
   // Filtros por etapa, armados con lo que realmente hay.
   const etapas = [...new Set(galFotos.map((f) => f.etapa).filter(Boolean))];
@@ -1086,6 +1118,21 @@ $("dg-run").addEventListener("click", async () => {
       + (dif ? ` · ${dif} sin publicar: exportá el JSON y subilo` : nb ? " · al día" : ""));
   } catch (e) { f.mal(explicar(e)); }
 
+  // 8 · archivos en la papelera
+  f = fila("Papelera de fotos");
+  try {
+    const al = await getDocs(collection(db, "albums"));
+    let n = 0;
+    for (const a of al.docs) {
+      const fs = await getDocs(collection(db, "albums", a.id, "fotos"));
+      n += fs.docs.filter((d) => d.data().eliminada).length;
+    }
+    f.ok(n
+      ? `${n} foto${n === 1 ? "" : "s"} en la papelera. Los archivos siguen en Cloudinary: `
+        + "el panel no puede borrarlos de ahí, se borran desde el panel de Cloudinary."
+      : "Ninguna foto en la papelera.");
+  } catch (e) { f.mal(explicar(e)); }
+
   b.disabled = false; b.textContent = "Probar de nuevo";
 });
 
@@ -1239,7 +1286,10 @@ async function cargarAlbumes() {
       cont.appendChild(el);
       // La cantidad se deriva al leer, no se guarda (Libro 1 §1.4).
       getDocs(collection(db, "albums", a.id, "fotos"))
-        .then(s2 => { el.querySelector(".n").textContent = s2.size + " fotos"; })
+        .then(s2 => {
+          const vivas = s2.docs.filter((d) => !d.data().eliminada).length;
+          el.querySelector(".n").textContent = vivas + " fotos";
+        })
         .catch(() => { el.querySelector(".n").textContent = "—"; });
     });
   } catch (e) {
@@ -1304,45 +1354,131 @@ async function cargarFotos() {
   pintarAlbum();
 }
 
+let verBorradas = false;
+
 function pintarAlbum() {
   ver("album");
-  const g = $("fotos"); g.innerHTML = "";
-  $("a-vacio").classList.toggle("hide", fotos.length > 0);
+  const cont = $("fotos"); cont.innerHTML = "";
+
+  const vivas = fotos.filter((f) => !f.eliminada);
+  const borradas = fotos.filter((f) => f.eliminada);
+  const lista = verBorradas ? borradas : vivas;
+
+  $("a-vacio").classList.toggle("hide", lista.length > 0);
   $("a-sub").textContent = [
     [album.anio, album.diametro, album.lugar].filter(Boolean).join(" · "),
-    `${fotos.length} fotos · ${fotos.filter(f => f.usar).length} en el catálogo`,
+    `${vivas.length} fotos · ${vivas.filter((f) => f.usar).length} en el catálogo`,
   ].filter(Boolean).join("  ·  ");
-  fotos.forEach((f, i) => {
-    const el = document.createElement("div");
-    el.className = "ph" + (f.usar ? "" : " off");
-    el.innerHTML =
-      `<img loading="lazy" alt="">
-       <span class="et"></span>
-       ${f.personas ? '<span class="flag" title="Gente identificable">👤</span>' : ""}
-       <div class="bar">
-         <button data-a="up" aria-label="Subir">↑</button>
-         <span class="pos">${String(i + 1).padStart(2, "0")}</span>
-         <button data-a="down" aria-label="Bajar">↓</button>
-         <button data-a="edit" aria-label="Editar">✎</button>
-       </div>`;
-    el.querySelector("img").src = CY.miniatura(f.public_id, 400);
-    el.querySelector(".et").textContent = (f.etapa || "").replace(/^\d+-/, "").replace(/-/g, " ");
-    el.querySelector('[data-a="up"]').addEventListener("click", () => mover(i, -1));
-    el.querySelector('[data-a="down"]').addEventListener("click", () => mover(i, 1));
-    el.querySelector('[data-a="edit"]').addEventListener("click", () => editar(f));
-    el.querySelector("img").addEventListener("click", () => editar(f));
-    g.appendChild(el);
+
+  // Papelera: las quitadas no se borran de Cloudinary, así que se pueden
+  // recuperar. El botón sólo aparece si hay algo adentro.
+  const pap = $("a-papelera");
+  pap.classList.toggle("hide", borradas.length === 0 && !verBorradas);
+  pap.textContent = verBorradas
+    ? "← Volver al álbum"
+    : `Papelera · ${borradas.length} quitada${borradas.length === 1 ? "" : "s"}`;
+
+  // Agrupado por etapa, en el orden de las 16 etapas. Todas las fotos de una
+  // misma etapa quedan juntas, con su título.
+  const orden = album.tipo === "obra" ? ETAPAS : ["general"];
+  const presentes = orden.filter((e) => lista.some((f) => f.etapa === e));
+  const sinEtapa = lista.filter((f) => !orden.includes(f.etapa));
+  const grupos = presentes.map((e) => [e, lista.filter((f) => f.etapa === e)]);
+  if (sinEtapa.length) grupos.push(["sin etapa", sinEtapa]);
+
+  grupos.forEach(([etapa, delGrupo]) => {
+    const tit = document.createElement("div");
+    tit.className = "etapa-tit";
+    tit.innerHTML = "<b></b><span></span>";
+    tit.querySelector("b").textContent =
+      etapa.replace(/^\d+-/, "").replace(/-/g, " ");
+    tit.querySelector("span").textContent =
+      delGrupo.length + (delGrupo.length === 1 ? " foto" : " fotos");
+    cont.appendChild(tit);
+
+    const g = document.createElement("div");
+    g.className = "grid";
+    delGrupo.forEach((f, i) => g.appendChild(tarjetaFoto(f, i, delGrupo)));
+    cont.appendChild(g);
   });
 }
 
+function tarjetaFoto(f, i, grupo) {
+  const el = document.createElement("div");
+  el.className = "ph" + (f.usar ? "" : " off") + (f.eliminada ? " borrada" : "");
+  el.innerHTML =
+    `<img loading="lazy" alt="">
+     ${f.personas ? '<span class="flag" title="Gente identificable">👤</span>' : ""}
+     <div class="bar"></div>`;
+  el.querySelector("img").src = CY.miniatura(f.public_id, 400);
+  const bar = el.querySelector(".bar");
+
+  if (f.eliminada) {
+    const b = document.createElement("button");
+    b.textContent = "Recuperar";
+    b.style.cssText = "flex:1;font-family:var(--mono);font-size:.55rem;letter-spacing:.1em";
+    b.addEventListener("click", () => recuperar(f));
+    bar.appendChild(b);
+    return el;
+  }
+
+  // Las flechas mueven DENTRO del grupo: mezclar etapas al reordenar sería
+  // confuso, porque la etapa es la que define la sección.
+  bar.innerHTML =
+    `<button data-a="up" aria-label="Subir">↑</button>
+     <span class="pos">${String(i + 1).padStart(2, "0")}</span>
+     <button data-a="down" aria-label="Bajar">↓</button>
+     <button data-a="edit" aria-label="Editar">✎</button>`;
+  bar.querySelector('[data-a="up"]').addEventListener("click", () => moverEn(grupo, i, -1));
+  bar.querySelector('[data-a="down"]').addEventListener("click", () => moverEn(grupo, i, 1));
+  bar.querySelector('[data-a="edit"]').addEventListener("click", () => editar(f));
+  el.querySelector("img").addEventListener("click", () => editar(f));
+  return el;
+}
+
+$("a-papelera").addEventListener("click", () => { verBorradas = !verBorradas; pintarAlbum(); });
+
+/* ── editar los datos del álbum ── */
+$("a-editar").addEventListener("click", () => {
+  $("e-id").textContent = "identificador: " + album.id;
+  $("e-titulo").value = album.titulo || "";
+  $("e-anio").value = album.anio || "";
+  $("e-diam").value = album.diametro || "";
+  $("e-lugar").value = album.lugar || "";
+  $("e-obra").classList.toggle("hide", album.tipo !== "obra");
+  irA("edalb", () => pintarAlbum());
+});
+
+$("e-guardar").addEventListener("click", async () => {
+  const titulo = $("e-titulo").value.trim();
+  if (!titulo) return toast("El nombre no puede quedar vacío", true);
+  const d = { titulo };
+  if (album.tipo === "obra") {
+    d.anio = $("e-anio").value.trim() || null;
+    d.diametro = $("e-diam").value.trim() || null;
+    d.lugar = $("e-lugar").value.trim() || null;
+  }
+  const b = $("e-guardar"); b.disabled = true; b.textContent = "Guardando…";
+  try {
+    await updateDoc(doc(db, "albums", album.id), d);
+    Object.assign(album, d);
+    $("a-titulo").textContent = album.titulo;
+    toast("Álbum actualizado");
+    if (_cerrarVista) { const c = _cerrarVista; _cerrarVista = null; c(); }
+    else pintarAlbum();
+    cargarAlbumes();
+  } catch (e) { toast(CY.explicar(e), true); }
+  finally { b.disabled = false; b.textContent = "Guardar"; }
+});
+
 const urlCloud = (id, w) => CY.url(id, w);
 
-async function mover(i, d) {
+async function moverEn(grupo, i, d) {
   const j = i + d;
-  if (j < 0 || j >= fotos.length) return;
-  const a = fotos[i], b = fotos[j];
+  if (j < 0 || j >= grupo.length) return;
+  const a = grupo[i], b = grupo[j];
   [a.orden, b.orden] = [b.orden, a.orden];
-  fotos.sort((x, y) => x.orden - y.orden);
+  fotos.sort((x, y) => (x.orden || 0) - (y.orden || 0));
   pintarAlbum();
   try {
     await Promise.all([
@@ -1377,14 +1513,36 @@ $("f-guardar").addEventListener("click", async () => {
   } catch (e) { toast(CY.explicar(e), true); }
 });
 
+// Quitar NO borra de Cloudinary: borrar de verdad necesita el api_secret, que
+// no puede estar en el navegador. Así que se manda a una papelera reversible en
+// lugar de perder el rastro del archivo. Antes se borraba el registro y el
+// archivo quedaba en Cloudinary sin forma de encontrarlo desde el panel.
 $("f-quitar").addEventListener("click", async () => {
-  if (!confirm("Quitar esta foto del álbum?\n\nEl archivo queda en Cloudinary, sólo sale del álbum.")) return;
+  if (!confirm("Quitar esta foto del álbum?\n\n"
+    + "Va a la papelera y se puede recuperar. El archivo sigue en Cloudinary: "
+    + "el panel no puede borrarlo de ahí.")) return;
   try {
-    await deleteDoc(doc(db, "albums", album.id, "fotos", foto.id));
-    fotos = fotos.filter(x => x.id !== foto.id);
-    toast("Quitada"); pintarAlbum();
+    await updateDoc(doc(db, "albums", album.id, "fotos", foto.id), {
+      eliminada: true, eliminadaEn: serverTimestamp(), eliminadaPor: yo.email,
+      usar: false,
+    });
+    Object.assign(foto, { eliminada: true, usar: false });
+    toast("A la papelera. Se puede recuperar desde el álbum.");
+    pintarAlbum();
   } catch (e) { toast(CY.explicar(e), true); }
 });
+
+async function recuperar(f) {
+  try {
+    await updateDoc(doc(db, "albums", album.id, "fotos", f.id), {
+      eliminada: false, eliminadaEn: null, eliminadaPor: null,
+    });
+    f.eliminada = false;
+    toast("Recuperada");
+    verBorradas = fotos.some((x) => x.eliminada);
+    pintarAlbum();
+  } catch (e) { toast(CY.explicar(e), true); }
+}
 
 /* ===================== SUBIR ===================== */
 $("d-add").addEventListener("click", async () => {
