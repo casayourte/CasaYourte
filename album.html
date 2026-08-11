@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Álbumes de obra · CasaYourte</title>
 <meta name="description" content="Archivo de obra de CasaYourte: cada yurta paso a paso, del taller a la yurta habitada. Anillo periférico, toono, trei a 60°, doble techo y lonas.">
-<link rel="canonical" href="https://casayourte.github.io/CasaYourte/album.html">
-<link rel="alternate" hreflang="es" href="https://casayourte.github.io/CasaYourte/album.html">
-<link rel="alternate" hreflang="fr" href="https://casayourte.github.io/CasaYourte/album.html?lang=fr">
+<link rel="canonical" href="https://casayourte.com/album.html">
+<link rel="alternate" hreflang="es" href="https://casayourte.com/album.html">
+<link rel="alternate" hreflang="fr" href="https://casayourte.com/album.html?lang=fr">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Álbumes de obra · CasaYourte">
 <meta property="og:description" content="Cada yurta paso a paso, del taller a la yurta habitada.">
-<meta property="og:image" content="https://casayourte.github.io/CasaYourte/assets/hero.jpg">
+<meta property="og:image" content="https://casayourte.com/assets/hero.jpg">
 <link rel="icon" href="./icono-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..800,0..100,0..1;1,9..144,300..800,0..100,0..1&family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -160,6 +160,8 @@ const BASE = "https://firestore.googleapis.com/v1/projects/" + PROYECTO
            + "/databases/(default)/documents/";
 const CLOUD = "kbjqcnpa";
 
+// Estos textos son el RESPALDO. Los de verdad vienen de contenido.json, con
+// las claves alb.*, y se editan desde el panel como cualquier otro texto.
 const T = {
   es: {
     eyebrow: "Archivo de obra",
@@ -383,6 +385,28 @@ addEventListener("keydown", (e) => {
   if (e.key === "ArrowLeft") abrirVisor(iVisor - 1);
   if (e.key === "ArrowRight") abrirVisor(iVisor + 1);
 });
+
+/* ---------- textos editables desde el panel ----------
+   Se leen del mismo contenido.json que usa el sitio, con las claves alb.*.
+   Si no cargan, quedan los de arriba y la página funciona igual. */
+(function () {
+  // Igual que en el index: dentro del editor no se busca el contenido.
+  if (/[?&]edit=1/.test(location.search)) return;
+  var MINUTO = Math.floor(Date.now() / 60000);
+  fetch("contenido.json?v=" + MINUTO, { cache: "no-store" })
+    .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+    .then(function (j) {
+      ["es", "fr"].forEach(function (l) {
+        var d = (j.textos || {})[l] || {};
+        Object.keys(d).forEach(function (k) {
+          if (k.indexOf("alb.") === 0) T[l][k.slice(4)] = d[k];
+        });
+      });
+      pintarTextos();
+      if (albumes.length) pintar();
+    })
+    .catch(function () { /* quedan los textos de respaldo */ });
+})();
 
 cargar();
 </script>

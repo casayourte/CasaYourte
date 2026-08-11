@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>CasaYourte · Editar el sitio</title>
+<link rel="icon" href="./icono-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..700,0..100,0..1&family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#181614; --ink2:#221E1A; --ink3:#2C2722; --line:#3B342C;
+  --wool:#EFE8DA; --dim:#A89E8C; --blond:#DCA96B; --bad:#8E3A46; --ok:#4E7D5C;
+  --disp:"Fraunces",Georgia,serif; --body:"Instrument Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+  --safe: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--ink);color:var(--wool);
+  font-family:var(--body);font-size:16px;overscroll-behavior:none}
+button,input,select,textarea{font-family:inherit;font-size:16px;color:inherit}
+button{cursor:pointer}
+.mono{font-family:var(--mono);font-size:.62rem;letter-spacing:.13em;text-transform:uppercase}
+.hide{display:none!important}
+
+/* ---- estructura ---- */
+#app{display:flex;flex-direction:column;height:100%}
+#top{flex:none;background:var(--ink);border-bottom:1px solid var(--line);
+  padding:calc(.5rem + var(--safe-top)) .6rem .5rem;display:flex;align-items:center;gap:.4rem}
+#top .t{font-family:var(--disp);font-size:.82rem;letter-spacing:.12em;font-weight:600;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+#top .t b{color:var(--blond)}
+.chip{background:none;border:1px solid var(--line);color:var(--dim);border-radius:999px;
+  padding:.42rem .7rem;font-family:var(--mono);font-size:.58rem;letter-spacing:.1em;
+  text-transform:uppercase;flex:none;white-space:nowrap}
+.chip.on{background:var(--blond);border-color:var(--blond);color:var(--ink);font-weight:500}
+.grupo-chips{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;flex:none}
+.grupo-chips button{background:none;border:0;color:var(--dim);font-family:var(--mono);
+  font-size:.58rem;letter-spacing:.1em;padding:.42rem .65rem;text-transform:uppercase}
+.grupo-chips button.on{background:var(--blond);color:var(--ink);font-weight:500}
+
+#marco{flex:1;min-height:0;position:relative;background:#000}
+#marco iframe{width:100%;height:100%;border:0;display:block}
+#velo{position:absolute;inset:0;display:grid;place-items:center;background:var(--ink);
+  color:var(--dim);font-family:var(--mono);font-size:.62rem;letter-spacing:.12em;
+  text-transform:uppercase;text-align:center;padding:2rem}
+
+#barra{flex:none;background:var(--ink2);border-top:1px solid var(--line);
+  padding:.55rem .6rem calc(.55rem + var(--safe));display:flex;gap:.4rem;align-items:center}
+#barra .cuenta{font-family:var(--mono);font-size:.56rem;letter-spacing:.1em;color:var(--dim);
+  flex:1;min-width:0;line-height:1.3}
+#barra .cuenta.sucio{color:var(--blond)}
+.btn{background:var(--ink3);border:1px solid var(--line);color:var(--wool);border-radius:6px;
+  padding:.7rem .8rem;font-family:var(--mono);font-size:.6rem;letter-spacing:.11em;
+  text-transform:uppercase;flex:none}
+.btn.p{background:var(--blond);border-color:var(--blond);color:var(--ink);font-weight:500}
+.btn:disabled{opacity:.4}
+
+/* ---- login ---- */
+#login{padding:2rem 1.2rem;max-width:26rem;margin:0 auto}
+#login h1{font-family:var(--disp);font-weight:300;font-size:1.7rem;margin:0 0 .5rem}
+#login p{color:var(--dim);font-size:.9rem;margin:0 0 1.4rem}
+#login label{display:block;margin-bottom:.9rem}
+#login .k{font-family:var(--mono);font-size:.58rem;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--blond);display:block;margin-bottom:.35rem}
+#login input{width:100%;background:var(--ink2);border:1px solid var(--line);border-radius:6px;
+  padding:.75rem;color:var(--wool)}
+#login .btn{width:100%;justify-content:center;text-align:center;padding:.95rem}
+
+/* ---- hoja de selección de foto ---- */
+#hoja{position:fixed;inset:0;z-index:80;background:rgba(12,10,8,.9);display:flex;
+  align-items:flex-end;justify-content:center}
+#hoja .caja{background:var(--ink2);border-top:1px solid var(--line);width:min(560px,100%);
+  max-height:88%;display:flex;flex-direction:column;border-radius:14px 14px 0 0}
+#hoja .hd{padding:.9rem 1rem .6rem;border-bottom:1px solid var(--line)}
+#hoja .hd h2{font-family:var(--disp);font-weight:400;font-size:1.1rem;margin:0 0 .5rem}
+#hoja .hd .lugar{font-family:var(--mono);font-size:.58rem;letter-spacing:.1em;color:var(--blond)}
+#hoja select{width:100%;margin-top:.6rem;background:var(--ink3);border:1px solid var(--line);
+  border-radius:6px;padding:.6rem;color:var(--wool)}
+#hoja .cuerpo{overflow:auto;padding:.8rem 1rem;flex:1;-webkit-overflow-scrolling:touch}
+#hoja .rej{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:.4rem}
+#hoja .rej button{padding:0;border:1px solid var(--line);border-radius:6px;overflow:hidden;
+  background:var(--ink3);position:relative;aspect-ratio:4/3}
+#hoja .rej img{width:100%;height:100%;object-fit:cover;display:block}
+#hoja .rej .g{position:absolute;top:.15rem;right:.15rem;font-size:.6rem;
+  background:rgba(24,22,20,.85);border-radius:3px;padding:0 .2rem}
+#hoja .pie{padding:.7rem 1rem calc(.9rem + var(--safe));border-top:1px solid var(--line);
+  display:flex;gap:.4rem}
+#hoja .pie .btn{flex:1;text-align:center}
+#hoja .vacio{color:var(--dim);font-size:.85rem;text-align:center;padding:2rem 1rem}
+
+#aviso{position:fixed;left:.8rem;right:.8rem;bottom:calc(4.5rem + var(--safe));z-index:120;
+  background:var(--blond);color:var(--ink);border-radius:6px;padding:.7rem .9rem;
+  font-size:.85rem;line-height:1.4;text-align:center;opacity:0;transition:opacity .25s;
+  pointer-events:none;box-shadow:0 6px 26px rgba(0,0,0,.5)}
+#aviso.on{opacity:1}
+#aviso.malo{background:var(--bad);color:#fff}
+</style>
+</head>
+<body>
+
+<section id="login">
+  <h1>Editar el sitio</h1>
+  <p>Vas a ver el sitio tal cual, y vas a poder tocar cualquier texto o foto para
+  cambiarla. Hace falta tu cuenta.</p>
+  <label><span class="k">Mail</span>
+    <input id="mail" type="email" inputmode="email" autocomplete="username"></label>
+  <label><span class="k">Contraseña</span>
+    <input id="pass" type="password" autocomplete="current-password"></label>
+  <button class="btn p" id="entrar">Entrar</button>
+</section>
+
+<div id="app" class="hide">
+  <div id="top">
+    <span class="t">Casa<b>Yourte</b></span>
+    <div class="grupo-chips" id="paginas">
+      <button type="button" data-p="index" class="on">Sitio</button>
+      <button type="button" data-p="album">Álbumes</button>
+    </div>
+    <div class="grupo-chips" id="idiomas">
+      <button type="button" data-l="es" class="on">ES</button>
+      <button type="button" data-l="fr">FR</button>
+    </div>
+  </div>
+
+  <div id="marco">
+    <iframe id="vista" title="Vista del sitio"></iframe>
+    <div id="velo">Cargando el sitio…</div>
+  </div>
+
+  <div id="barra">
+    <span class="cuenta" id="cuenta">Tocá un texto o una foto para editarla</span>
+    <button class="btn" id="guardar">Guardar</button>
+    <button class="btn p" id="exportar">Exportar</button>
+    <button class="btn" id="salir">✕</button>
+  </div>
+</div>
+
+<div id="hoja" class="hide">
+  <div class="caja">
+    <div class="hd">
+      <h2>Elegir una foto</h2>
+      <span class="lugar" id="h-lugar"></span>
+      <select id="h-album"></select>
+    </div>
+    <div class="cuerpo"><div class="rej" id="h-rej"></div>
+      <p class="vacio hide" id="h-vacio"></p></div>
+    <div class="pie">
+      <button class="btn" id="h-repo">Volver a la original</button>
+      <button class="btn" id="h-cerrar">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div id="aviso"></div>
+
+<script type="module">
+import { db, auth, doc, getDoc, getDocs, setDoc, collection, serverTimestamp,
+         onAuthStateChanged, signInWithEmailAndPassword, signOut } from "./firebase-init.js";
+import { CY } from "./nucleo.js";
+
+const $ = (id) => document.getElementById(id);
+
+/* ═══════════════════════════════════════════════════════════════
+   EDITAR VIENDO
+
+   La página real se carga en un iframe y los controles se ponen
+   encima. No hay una copia del index: es el index. Si mañana el sitio
+   cambia, el editor lo refleja sin tocar nada acá.
+
+   Mismo origen, así que desde acá se puede leer y escribir el DOM de
+   adentro. Los textos se identifican con data-i (el sitio) y data-t
+   (la página de álbumes); las imágenes con data-slot.
+   ═══════════════════════════════════════════════════════════════ */
+
+const PAGS = {
+  index: { archivo: "index.html", attr: "data-i", prefijo: "" },
+  album: { archivo: "album.html", attr: "data-t", prefijo: "alb." },
+};
+
+let pag = "index";
+let idioma = "es";
+let CONT = null;        // { es:{}, fr:{}, imagenes:{} }
+let ORIG = null;
+let ORDEN = { es: [], fr: [] };
+let BASE = null;        // el contenido.json del repositorio, tal cual
+let yo = null;
+let slotActual = null;
+let doc_ = null;        // documento del iframe
+
+const decod = (v) => (typeof v === "string" && v.slice(0, 5) === "json:")
+  ? (() => { try { return JSON.parse(v.slice(5)); } catch (e) { return v; } })() : v;
+const codif = (v) => (typeof v === "string") ? v : "json:" + JSON.stringify(v);
+const decodMapa = (m) => { const o = {}; Object.keys(m || {}).forEach(k => o[k] = decod(m[k])); return o; };
+const codifMapa = (m) => { const o = {}; Object.keys(m || {}).forEach(k => o[k] = codif(m[k])); return o; };
+
+function aviso(t, malo) {
+  const a = $("aviso"); a.textContent = t; a.className = "on" + (malo ? " malo" : "");
+  clearTimeout(a._h); a._h = setTimeout(() => a.className = "", t.length > 60 ? 6500 : 3000);
+}
+
+/* ---------- entrar ---------- */
+$("entrar").addEventListener("click", async () => {
+  const b = $("entrar"); b.disabled = true; b.textContent = "Entrando…";
+  try { await signInWithEmailAndPassword(auth, $("mail").value.trim(), $("pass").value); }
+  catch (e) { aviso(CY.explicar(e), true); }
+  finally { b.disabled = false; b.textContent = "Entrar"; }
+});
+$("salir").addEventListener("click", () => {
+  if (sucio() && !confirm("Tenés cambios sin guardar. ¿Salir igual?")) return;
+  location.href = "admin.html";
+});
+
+onAuthStateChanged(auth, async (u) => {
+  if (!u) { $("login").classList.remove("hide"); $("app").classList.add("hide"); return; }
+  try {
+    const d = await getDoc(doc(db, "usuarios", u.uid));
+    if (!d.exists()) throw new Error("Tu cuenta no tiene permisos asignados.");
+    yo = d.data();
+    if (yo.activo !== true) throw new Error("Tu acceso está suspendido.");
+    if (yo.rol !== "admin" && yo.rol !== "editor")
+      throw new Error("Hace falta rol de administrador o editor para editar el sitio.");
+    CY.usuario = yo;
+    $("login").classList.add("hide"); $("app").classList.remove("hide");
+    await cargarContenido();
+    abrirPagina();
+  } catch (e) { aviso(e.message || CY.explicar(e), true); await signOut(auth); }
+});
+
+/* ---------- contenido ---------- */
+async function cargarContenido() {
+  const r = await fetch("contenido.json?v=" + Date.now(), { cache: "no-store" });
+  BASE = await r.json();
+  ["es", "fr"].forEach(l => ORDEN[l] = Object.keys((BASE.textos || {})[l] || {}));
+
+  const d = await getDoc(doc(db, "sitio", "borrador"));
+  if (d.exists() && d.data().es) {
+    const x = d.data();
+    CONT = { es: decodMapa(x.es), fr: decodMapa(x.fr), imagenes: x.imagenes || {} };
+  } else {
+    CONT = { es: { ...BASE.textos.es }, fr: { ...BASE.textos.fr },
+             imagenes: { ...(BASE.reemplazos || {}) } };
+  }
+  ORIG = JSON.parse(JSON.stringify(CONT));
+}
+
+function sucio() {
+  if (!CONT || !ORIG) return false;
+  return JSON.stringify(CONT) !== JSON.stringify(ORIG);
+}
+
+function contar() {
+  let n = 0;
+  ["es", "fr"].forEach(l => Object.keys(CONT[l]).forEach(k => {
+    if (JSON.stringify(CONT[l][k]) !== JSON.stringify(ORIG[l][k])) n++;
+  }));
+  const im = Object.keys({ ...ORIG.imagenes, ...CONT.imagenes })
+    .filter(k => (CONT.imagenes[k] || "") !== (ORIG.imagenes[k] || "")).length;
+  const c = $("cuenta");
+  const total = n + im;
+  c.classList.toggle("sucio", total > 0);
+  c.textContent = total
+    ? `${n} texto${n === 1 ? "" : "s"}${im ? ` y ${im} imagen${im === 1 ? "" : "es"}` : ""} sin guardar`
+    : "Tocá un texto o una foto para editarla";
+  $("guardar").disabled = total === 0;
+}
+
+/* ---------- abrir la página en el iframe ---------- */
+function abrirPagina() {
+  $("velo").classList.remove("hide");
+  $("velo").textContent = "Cargando…";
+  const f = $("vista");
+  f.onload = () => {
+    doc_ = f.contentDocument;
+    try { preparar(); $("velo").classList.add("hide"); }
+    catch (e) { $("velo").textContent = "No se pudo preparar la página: " + e.message; }
+  };
+  // sin caché, para que el editor no trabaje sobre una versión vieja
+  f.src = PAGS[pag].archivo + "?edit=1&v=" + Date.now()
+        + (idioma === "fr" ? "&lang=fr" : "");
+}
+
+$("paginas").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.p === pag) return;
+  pag = b.dataset.p;
+  $("paginas").querySelectorAll("button").forEach(x => x.classList.toggle("on", x.dataset.p === pag));
+  abrirPagina();
+});
+$("idiomas").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.l === idioma) return;
+  idioma = b.dataset.l;
+  $("idiomas").querySelectorAll("button").forEach(x => x.classList.toggle("on", x.dataset.l === idioma));
+  abrirPagina();
+});
+
+/* ---------- preparar la página cargada ---------- */
+function preparar() {
+  const cfg = PAGS[pag];
+
+  // Estilos del modo edición, inyectados dentro del iframe.
+  const st = doc_.createElement("style");
+  st.textContent = `
+    [data-editable]{outline:1px dashed rgba(220,169,107,.55);outline-offset:3px;
+      cursor:text;border-radius:2px;transition:background .15s}
+    [data-editable]:hover{background:rgba(220,169,107,.10)}
+    [data-editable]:focus{outline:2px solid #DCA96B;background:rgba(220,169,107,.14)}
+    [data-slot]{cursor:pointer}
+    .cy-marco-img{outline:2px dashed rgba(220,169,107,.7);outline-offset:-4px}
+    .cy-etiqueta{position:absolute;z-index:9;font:500 9px/1 ui-monospace,monospace;
+      letter-spacing:.08em;background:#DCA96B;color:#181614;padding:2px 4px;border-radius:2px;
+      pointer-events:none}
+    a{pointer-events:none!important}
+  `;
+  doc_.head.appendChild(st);
+
+  // El contenido que se está editando manda sobre lo que trajo la página.
+  pintarEnIframe();
+
+  // Los textos: se editan tocándolos.
+  doc_.querySelectorAll("[" + cfg.attr + "]").forEach((el) => {
+    const clave = cfg.prefijo + el.getAttribute(cfg.attr);
+    if (!(clave in CONT[idioma])) return;
+    if (Array.isArray(CONT[idioma][clave])) return;   // listas y tablas, aparte
+    el.dataset.editable = clave;
+    el.setAttribute("contenteditable", "true");
+    el.setAttribute("spellcheck", "false");
+    el.addEventListener("input", () => {
+      // Los títulos con <em> conservan el HTML; el resto es texto plano.
+      CONT[idioma][clave] = /<em>/i.test(String(CONT[idioma][clave]))
+        ? el.innerHTML.trim() : el.textContent;
+      contar();
+    });
+    el.addEventListener("focus", () => { $("cuenta").textContent = "editando · " + clave; });
+    el.addEventListener("blur", contar);
+  });
+
+  // Las listas y la tabla no se editan en la página: se avisa dónde sí.
+  doc_.querySelectorAll("[data-list],[data-rows]").forEach((el) => {
+    el.style.outline = "1px dashed rgba(142,58,70,.6)";
+    el.addEventListener("click", () => aviso(
+      "Las listas y la tabla de precios se editan en el panel, en Contenido del sitio.", true));
+  });
+
+  // Las imágenes: se tocan y se elige otra.
+  const fotos = doc_.querySelectorAll("img[data-slot]");
+  fotos.forEach((im) => {
+    im.addEventListener("click", (ev) => {
+      ev.preventDefault(); ev.stopPropagation();
+      abrirHoja(im.dataset.slot);
+    }, true);
+  });
+
+  // El cuadro del proceso se pausa: si sigue avanzando, no se puede tocar
+  // una foto sin que cambie abajo del dedo.
+  const t = doc_.getElementById("proc-toggle");
+  if (t && t.textContent.trim().toLowerCase().startsWith("pau")) t.click();
+
+  aviso(fotos.length
+    ? `Listo. ${fotos.length} imágenes y los textos se pueden tocar.`
+    : "Listo para editar.");
+  contar();
+}
+
+// Se escribe CONT dentro de la página, con las mismas reglas que usa el sitio.
+function pintarEnIframe() {
+  const cfg = PAGS[pag];
+  const d = CONT[idioma];
+  doc_.querySelectorAll("[" + cfg.attr + "]").forEach((el) => {
+    const v = d[cfg.prefijo + el.getAttribute(cfg.attr)];
+    if (v === undefined || Array.isArray(v)) return;
+    if (/<em>/i.test(String(v))) el.innerHTML = v; else el.textContent = v;
+  });
+  doc_.querySelectorAll("[data-list]").forEach((ul) => {
+    const v = d[ul.dataset.list]; if (!Array.isArray(v)) return;
+    ul.innerHTML = ""; v.forEach(x => { const li = doc_.createElement("li"); li.textContent = x; ul.appendChild(li); });
+  });
+  doc_.querySelectorAll("[data-rows]").forEach((tb) => {
+    const v = d[tb.dataset.rows]; if (!Array.isArray(v)) return;
+    tb.innerHTML = "";
+    v.forEach(fila => {
+      const tr = doc_.createElement("tr");
+      fila.forEach((c, i) => { const td = doc_.createElement("td");
+        if (i < 2) td.className = "num"; td.textContent = c; tr.appendChild(td); });
+      tb.appendChild(tr);
+    });
+  });
+  aplicarImagenes();
+}
+
+function aplicarImagenes() {
+  Object.keys(CONT.imagenes || {}).forEach((slot) => {
+    const pid = CONT.imagenes[slot];
+    const im = doc_.querySelector('img[data-slot="' + slot + '"]');
+    if (!im || !pid) return;
+    const url = CY.url(pid, /^p\d\d$/.test(slot) ? 1200 : (slot === "hero" ? 1800 : 1200));
+    im.dataset.src = url;
+    im.src = url;
+  });
+}
+
+/* ---------- hoja de fotos ---------- */
+let albums = [], fotosAlb = [];
+
+async function abrirHoja(slot) {
+  slotActual = slot;
+  $("h-lugar").textContent = "lugar: " + slot;
+  $("hoja").classList.remove("hide");
+  const cerrar = CY.capaAtras(() => $("hoja").classList.add("hide"));
+  $("h-cerrar").onclick = () => cerrar();
+  $("h-repo").onclick = () => {
+    delete CONT.imagenes[slotActual];
+    const im = doc_.querySelector('img[data-slot="' + slotActual + '"]');
+    if (im) { const o = ORIG.imagenes[slotActual]; im.src = o ? CY.url(o, 1200) : "assets/" + slotActual + ".jpg"; }
+    contar(); cerrar(); aviso("Vuelve la imagen del repositorio. Falta guardar.");
+  };
+  $("h-rej").innerHTML = '<p class="vacio">Cargando…</p>';
+  try {
+    if (!albums.length) {
+      const snap = await getDocs(collection(db, "albums"));
+      albums = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => (a.titulo || a.id).localeCompare(b.titulo || b.id, "es"));
+      $("h-album").innerHTML = "";
+      albums.forEach(a => {
+        const o = document.createElement("option");
+        o.value = a.id; o.textContent = a.titulo || a.id;
+        $("h-album").appendChild(o);
+      });
+    }
+    if (!albums.length) {
+      $("h-rej").innerHTML = "";
+      $("h-vacio").classList.remove("hide");
+      $("h-vacio").textContent = "Todavía no hay álbumes. Creá uno y subí fotos desde el panel.";
+      return;
+    }
+    await cargarFotos();
+  } catch (e) { $("h-rej").innerHTML = ""; $("h-vacio").classList.remove("hide");
+    $("h-vacio").textContent = CY.explicar(e); }
+}
+
+$("h-album").addEventListener("change", cargarFotos);
+
+async function cargarFotos() {
+  const id = $("h-album").value;
+  $("h-rej").innerHTML = '<p class="vacio">Cargando…</p>';
+  const snap = await getDocs(collection(db, "albums", id, "fotos"));
+  fotosAlb = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+    .filter(f => !f.eliminada && f.public_id)
+    .sort((a, b) => (a.orden || 0) - (b.orden || 0));
+  const rej = $("h-rej"); rej.innerHTML = "";
+  $("h-vacio").classList.toggle("hide", fotosAlb.length > 0);
+  if (!fotosAlb.length) $("h-vacio").textContent = "Ese álbum no tiene fotos.";
+  fotosAlb.forEach(f => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.innerHTML = '<img loading="lazy" alt="">'
+      + (f.personas ? '<span class="g" title="Gente identificable">👤</span>' : "");
+    b.querySelector("img").src = CY.miniatura(f.public_id, 260);
+    b.addEventListener("click", () => elegir(f));
+    rej.appendChild(b);
+  });
+}
+
+function elegir(f) {
+  if (f.personas && !confirm(
+    "Esta foto tiene gente identificable.\n\n¿Tenés autorización para publicarla?")) return;
+  CONT.imagenes[slotActual] = f.public_id;
+  const im = doc_.querySelector('img[data-slot="' + slotActual + '"]');
+  if (im) { const u = CY.url(f.public_id, 1200); im.dataset.src = u; im.src = u; }
+  contar();
+  $("h-cerrar").click();
+  aviso("Imagen cambiada. Falta guardar.");
+}
+
+/* ---------- guardar ---------- */
+$("guardar").addEventListener("click", async () => {
+  const b = $("guardar"); b.disabled = true; b.textContent = "…";
+  try {
+    // El mapa completo con setDoc: nunca updateDoc de una clave con punto.
+    await setDoc(doc(db, "sitio", "borrador"), {
+      es: codifMapa(CONT.es), fr: codifMapa(CONT.fr),
+      imagenes: CONT.imagenes, idiomas: ["es", "fr"],
+      guardado: serverTimestamp(), guardadoPor: yo.email,
+    });
+    ORIG = JSON.parse(JSON.stringify(CONT));
+    contar();
+    aviso("Guardado en la base. Para que lo vea el público: Exportar y subir el archivo.");
+  } catch (e) { aviso(CY.explicar(e), true); }
+  finally { b.textContent = "Guardar"; contar(); }
+});
+
+/* ---------- exportar ---------- */
+function enOrden(l) {
+  const o = {}, vistas = new Set();
+  (ORDEN[l] || []).forEach(k => { if (k in CONT[l]) { o[k] = CONT[l][k]; vistas.add(k); } });
+  Object.keys(CONT[l]).forEach(k => { if (!vistas.has(k)) o[k] = CONT[l][k]; });
+  return o;
+}
+
+function bajar(texto, nombre, tipo) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([texto], { type: tipo }));
+  a.download = nombre; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+
+$("exportar").addEventListener("click", async () => {
+  if (sucio() && !confirm("Tenés cambios sin guardar.\n\nSe van a incluir en el archivo. ¿Seguir?"))
+    return;
+  const salida = {
+    proyecto: BASE.proyecto || "CasaYourte",
+    idiomas: BASE.idiomas || ["es", "fr"],
+    textos: { es: enOrden("es"), fr: enOrden("fr") },
+    reemplazos: { ...(CONT.imagenes || {}) },
+    imagenes: BASE.imagenes || [],
+    logo: BASE.logo, video: BASE.video, proceso: BASE.proceso,
+  };
+  bajar(JSON.stringify(salida, null, 2), "contenido.json", "application/json");
+  aviso("contenido.json descargado. Subilo al repositorio y el sitio cambia.");
+});
+</script>
+</body>
+</html>

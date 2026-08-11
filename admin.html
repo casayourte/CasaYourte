@@ -228,6 +228,7 @@ details.grupo[open]>summary{border-bottom:1px solid var(--line)}
   <section id="v-list" class="hide">
     <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:1rem">
       <h1 style="font-size:1.5rem;flex:1">Álbumes</h1>
+      <button class="icon" id="go-ver" aria-label="Editar viendo el sitio">👁</button>
       <button class="icon" id="go-cont" aria-label="Contenido del sitio">✎</button>
       <button class="icon" id="go-diag" aria-label="Diagnóstico">🩺</button>
       <button class="icon hide" id="go-users" aria-label="Usuarios">👥</button>
@@ -276,6 +277,9 @@ details.grupo[open]>summary{border-bottom:1px solid var(--line)}
     </div>
     <p class="mono" id="c-sub" style="color:var(--dim);margin:0 0 1rem"></p>
     <p class="note" id="c-nota"></p>
+    <p class="note" style="border-left-color:var(--ok)">Para editar viendo la página tal
+    cual, usá el ojo 👁 de la portada del panel. Acá están <b>todos</b> los textos,
+    incluidas las listas y la tabla de precios, que ahí no se pueden tocar.</p>
     <div id="c-grupos"></div>
   </section>
 
@@ -555,6 +559,7 @@ onAuthStateChanged(auth, async (u) => {
     $("quien").classList.remove("hide");
     $("go-users").classList.toggle("hide", !puede("usuarios"));
     $("go-cont").classList.toggle("hide", !puede("contenido"));
+    $("go-ver").classList.toggle("hide", !puede("contenido"));
     document.querySelector("#v-list details").classList.toggle("hide", !puede("albumes"));
     cargarAlbumes(); ver("list");
   } catch (e) {
@@ -562,6 +567,9 @@ onAuthStateChanged(auth, async (u) => {
     await signOut(auth);
   }
 });
+
+// Editor visual: la página real con los controles encima (editar.html).
+$("go-ver").addEventListener("click", () => { location.href = "editar.html"; });
 
 $("go-users").addEventListener("click", () => { irA("users"); cargarUsuarios(); });
 $("go-diag").addEventListener("click", () => { irA("diag"); $("dg-out").innerHTML = ""; });
@@ -587,7 +595,9 @@ $("go-diag").addEventListener("click", () => { irA("diag"); $("dg-out").innerHTM
 // Los 20 lugares de imagen del sitio, en el orden en que aparecen.
 const SLOTS = ["hero","traj1","traj2","traj3","traj4","traj5",
   "dif1","dif2","dif3","dif4","dif5","dif6","dif7","dif8",
-  "int1","int2","int3","co","ws"];
+  "int1","int2","int3","co","ws",
+  // Los doce fotogramas del cuadro del proceso: faltaban y no se podían cambiar.
+  "p01","p02","p03","p04","p05","p06","p07","p08","p09","p10","p11","p12"];
 
 // Grupos, en el orden de la página. El prefijo agrupa las claves.
 const GRUPOS = [
@@ -600,6 +610,8 @@ const GRUPOS = [
   { t: "Qué ofrecemos",      pre: ["of","o1","o2","o3","o4"] },
   { t: "Co-construcción",    pre: ["co"] },
   { t: "Taller y ficha",     pre: ["ws","ficha"] },
+  { t: "Invitación al álbum", pre: ["al"] },
+  { t: "Página de álbumes",   pre: ["alb"] },
   { t: "Contacto",           pre: ["ct"] },
 ];
 
@@ -691,7 +703,8 @@ async function cargarContenido() {
       CONT = { es: decodMapa(x.es), fr: decodMapa(x.fr), imagenes: x.imagenes || {} };
     } else {
       const j = CONTENIDO_BASE || await (await fetch("contenido.json", { cache: "no-store" })).json();
-      CONT = { es: { ...j.textos.es }, fr: { ...j.textos.fr }, imagenes: {} };
+      CONT = { es: { ...j.textos.es }, fr: { ...j.textos.fr },
+               imagenes: { ...(j.reemplazos || {}) } };
       origen = "contenido.json · todavía no se sembró la base";
     }
     CONT_ORIG = JSON.parse(JSON.stringify(CONT));
@@ -872,6 +885,10 @@ $("c-recargar").addEventListener("click", async () => {
     let dif = [];
     if (enBase && enBase.es) {
       CONT = { es: decodMapa(enBase.es), fr: decodMapa(enBase.fr), imagenes: enBase.imagenes || {} };
+      // Los reemplazos también se comparan contra el archivo publicado.
+      Object.keys({ ...(j.reemplazos || {}), ...CONT.imagenes }).forEach((k) => {
+        if ((CONT.imagenes[k] || "") !== ((j.reemplazos || {})[k] || "")) dif.push("img:" + k);
+      });
       ["es", "fr"].forEach((l) => {
         Object.keys(CONT[l]).forEach((k) => {
           const a = JSON.stringify(CONT[l][k]);
@@ -880,7 +897,8 @@ $("c-recargar").addEventListener("click", async () => {
         });
       });
     } else {
-      CONT = { es: { ...enJson.es }, fr: { ...enJson.fr }, imagenes: {} };
+      CONT = { es: { ...enJson.es }, fr: { ...enJson.fr },
+               imagenes: { ...(j.reemplazos || {}) } };
     }
     CONT_ORIG = JSON.parse(JSON.stringify(CONT));
 
@@ -922,6 +940,11 @@ function construirExportable() {
     proyecto: base.proyecto || "CasaYourte",
     idiomas: base.idiomas || ["es", "fr"],
     textos: { es: enOrden("es"), fr: enOrden("fr") },
+    // ESTO es lo que faltaba: los reemplazos elegidos desde la galería.
+    // Antes se copiaba "imagenes" del archivo original y se ignoraba lo
+    // editado, así que el JSON exportado seguía apuntando a la foto vieja.
+    // Mapa slot -> public_id de Cloudinary. Vacío = se usa la de assets/.
+    reemplazos: { ...(CONT.imagenes || {}) },
     imagenes: base.imagenes || [],
     logo: base.logo,
     video: base.video,

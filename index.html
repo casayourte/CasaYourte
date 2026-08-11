@@ -6,28 +6,28 @@
 <title>CasaYourte · Constructor de yurtas en Uruguay, Argentina y Brasil</title>
 <meta name="description" content="Constructores de yurtas de estructura calculada: trei a 60°, doble anillo periférico, doble techo ventilado y piso aislado. Desmontables con la resistencia de una construcción fija. Uruguay, Argentina y Brasil. Seis años de obra entre Uruguay y Francia.">
 <meta name="author" content="Mauro Gastaldello">
-<link rel="canonical" href="https://casayourte.github.io/CasaYourte/">
+<link rel="canonical" href="https://casayourte.com/">
 
 <!-- Dos direcciones, una por idioma. Sin esto Google no tiene qué indexar
      en francés: el botón de idioma cambia el texto pero no la dirección. -->
-<link rel="alternate" hreflang="es" href="https://casayourte.github.io/CasaYourte/">
-<link rel="alternate" hreflang="fr" href="https://casayourte.github.io/CasaYourte/?lang=fr">
-<link rel="alternate" hreflang="x-default" href="https://casayourte.github.io/CasaYourte/">
+<link rel="alternate" hreflang="es" href="https://casayourte.com/">
+<link rel="alternate" hreflang="fr" href="https://casayourte.com/?lang=fr">
+<link rel="alternate" hreflang="x-default" href="https://casayourte.com/">
 
 <!-- Vista previa al compartir el enlace por WhatsApp, Facebook o Instagram -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="CasaYourte">
 <meta property="og:locale" content="es_UY">
 <meta property="og:locale:alternate" content="fr_FR">
-<meta property="og:url" content="https://casayourte.github.io/CasaYourte/">
+<meta property="og:url" content="https://casayourte.com/">
 <meta property="og:title" content="CasaYourte · Constructor de yurtas en Uruguay, Argentina y Brasil">
 <meta property="og:description" content="Yurtas de estructura calculada: desmontables, con la resistencia de una construcción fija. Trei a 60°, doble anillo periférico, doble techo ventilado y piso aislado.">
-<meta property="og:image" content="https://casayourte.github.io/CasaYourte/assets/hero.jpg">
+<meta property="og:image" content="https://casayourte.com/assets/hero.jpg">
 <meta property="og:image:alt" content="Yurta terminada con deck perimetral curvo y grandes aberturas vidriadas">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="CasaYourte · Constructor de yurtas">
 <meta name="twitter:description" content="Yurtas desmontables con la resistencia de una construcción fija. Uruguay, Argentina y Brasil.">
-<meta name="twitter:image" content="https://casayourte.github.io/CasaYourte/assets/hero.jpg">
+<meta name="twitter:image" content="https://casayourte.com/assets/hero.jpg">
 
 <!-- Datos estructurados: le dicen al buscador qué es esto, dónde trabaja y
      en qué idiomas atiende. -->
@@ -35,13 +35,13 @@
 {
   "@context": "https://schema.org",
   "@type": "LocalBusiness",
-  "@id": "https://casayourte.github.io/CasaYourte/#casayourte",
+  "@id": "https://casayourte.com/#casayourte",
   "name": "CasaYourte",
   "alternateName": "Casa Yourte · constructor de yurtas",
   "description": "Construcción de yurtas de estructura calculada, desmontables con la resistencia de una construcción fija. Lonas a medida, planos para autoconstrucción, montaje y formación.",
-  "url": "https://casayourte.github.io/CasaYourte/",
-  "image": "https://casayourte.github.io/CasaYourte/assets/hero.jpg",
-  "logo": "https://casayourte.github.io/CasaYourte/assets/logo.png",
+  "url": "https://casayourte.com/",
+  "image": "https://casayourte.com/assets/hero.jpg",
+  "logo": "https://casayourte.com/assets/logo.png",
   "founder": { "@type": "Person", "name": "Mauro Gastaldello" },
   "telephone": "+59899696333",
   "email": "casayourte@gmail.com",
@@ -901,6 +901,7 @@ const PROC_SRC=["assets/p01.jpg","assets/p02.jpg","assets/p03.jpg","assets/p04.j
   for(let i=1;i<=N;i++){
     const im=document.createElement("img");
     im.dataset.src=SRC(i); im.alt=""; im.decoding="async";
+    im.dataset.slot="p"+String(i).padStart(2,"0");
     stage.appendChild(im); imgs.push(im);
     const t=document.createElement("i"); t.dataset.go=i-1; bar.appendChild(t); ticks.push(t);
   }
@@ -995,6 +996,11 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
    petición y sin cargar el SDK.
    ───────────────────────────────────────────────────────────── */
 (function () {
+  // Dentro del editor visual la página NO busca su contenido: lo escribe el
+  // editor desde el iframe padre. Si buscara, pisaría lo que se está editando
+  // justo cuando llega la respuesta.
+  if (/[?&]edit=1/.test(location.search)) { paint(document.documentElement.lang); return; }
+
   var VER_BORRADOR = /[?&]borrador=1/.test(location.search);
 
   // Firestore NO admite arrays dentro de arrays, y la tabla de diámetros
@@ -1024,8 +1030,24 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
     Object.keys(imgs).forEach(function (slot) {
       var im = document.querySelector('img[data-slot="' + slot + '"]');
       if (!im || !imgs[slot]) return;
+      var ancho0 = slot === "hero" ? 1800 : (slot.indexOf("dif") === 0 ? 800 : 1200);
+      // Los del cuadro del proceso cargan cuando les toca: se cambia la
+      // fuente diferida además del src, si ya se hubiera cargado.
+      if (/^p\d\d$/.test(slot)) {
+        var nueva = "https://res.cloudinary.com/kbjqcnpa/image/upload/"
+                  + "f_auto,q_auto,w_1200,c_limit/" + imgs[slot];
+        var previo = im.dataset.src;
+        im.dataset.src = nueva;
+        if (im.src) {
+          im.addEventListener("error", function rep() {
+            im.removeEventListener("error", rep); im.src = previo;
+          });
+          im.src = nueva;
+        }
+        return;
+      }
       var respaldo = im.getAttribute("src");
-      var ancho = slot === "hero" ? 1800 : (slot.indexOf("dif") === 0 ? 800 : 1200);
+      var ancho = ancho0;
       im.addEventListener("error", function reponer() {
         im.removeEventListener("error", reponer);
         im.src = respaldo;
@@ -1045,6 +1067,10 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
     .then(function (r) { if (!r.ok) throw 0; return r.json(); })
     .then(function (j) {
       if (j && j.textos) aplicarTextos(j.textos);
+      // Los reemplazos de imagen elegidos desde el panel. Antes esto sólo
+      // corría en la vista previa del borrador, así que en el sitio
+      // publicado la foto elegida no aparecía nunca.
+      if (j && j.reemplazos) aplicarImagenes(j.reemplazos);
     })
     .catch(function () { /* nivel 2: los textos de este archivo ya están puestos */ });
 
