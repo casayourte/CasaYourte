@@ -265,6 +265,14 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
 .tbl td:first-child{font-weight:600}
 .tbl .num{font-family:var(--mono);font-size:.84rem}
 
+/* ---------- invitación al álbum ---------- */
+.album-inv{background:var(--ink-2);border-top:1px solid #35302a}
+.album-b{display:inline-flex;align-items:center;gap:.6rem;margin-top:2rem;
+  font-family:var(--mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;
+  text-decoration:none;border:1px solid var(--blond);color:var(--blond);
+  padding:.9rem 1.4rem;border-radius:2px;transition:background .25s,color .25s}
+.album-b:hover{background:var(--blond);color:var(--ink)}
+
 /* ---------- contact ---------- */
 .cta{display:flex;gap:.7rem;justify-content:center;flex-wrap:wrap;margin-top:2rem}
 .cta-b{font-family:var(--mono);font-size:.68rem;letter-spacing:.13em;text-transform:uppercase;
@@ -521,6 +529,14 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
   <p class="small" style="margin-top:1.2rem;max-width:60ch" data-i="ficha.note"></p>
 </section>
 
+<!-- ÁLBUM -->
+<section class="wrap album-inv">
+  <span class="eyebrow" data-i="al.eyebrow"></span>
+  <h2 style="font-size:clamp(2rem,5.5vw,3.4rem);max-width:26ch" data-i="al.title"></h2>
+  <p class="lede" style="margin-top:1.5rem;color:#c2b9a7" data-i="al.b"></p>
+  <a class="album-b" href="album.html"><span data-i="al.cta"></span> →</a>
+</section>
+
 <!-- CONTACT -->
 <section class="wrap contact">
   <svg class="trei" data-lattice preserveAspectRatio="none" aria-hidden="true" style="opacity:.5"></svg>
@@ -652,6 +668,10 @@ es:{
  ],
  "ficha.note":"Los diámetros de referencia son los que tenemos calculados y listos para cotizar rápido. Fuera de esa lista trabajamos igual, de 2 a 12 metros, con un plazo mayor de diseño.",
 
+ "al.eyebrow":"Archivo de obra",
+ "al.title":"Cada yurta, fotografiada paso a paso.",
+ "al.b":"No mostramos sólo el resultado. El archivo tiene la obra completa, en el orden real y agrupada por etapa: el anillo periférico en el banco, el toono desde abajo, el trei desplegándose, las lonas en el pasto. Es la forma más honesta de mostrar cómo se construye.",
+ "al.cta":"Ver los álbumes de obra",
  "ct.eyebrow":"Hablemos","ct.title":"Contanos qué querés construir.",
  "ct.b":"Si tenés un terreno, un proyecto de glamping o simplemente una idea, escribinos. La primera conversación siempre es sobre el lugar y el clima, no sobre el precio.",
  "ct.k3":"Taller","ct.v3":"Uruguay · dirección a confirmar",
@@ -747,6 +767,10 @@ fr:{
  ],
  "ficha.note":"Les diamètres de référence sont ceux que nous avons calculés et prêts à chiffrer rapidement. En dehors de cette liste nous travaillons de la même façon, de 2 à 12 mètres, avec un délai de conception plus long.",
 
+ "al.eyebrow":"Archives de chantier",
+ "al.title":"Chaque yourte, photographiée étape par étape.",
+ "al.b":"Nous ne montrons pas seulement le résultat. Les archives contiennent le chantier complet, dans l'ordre réel et regroupé par étape : l'anneau périphérique sur l'établi, le toono vu d'en bas, le trei qui se déploie, les toiles dans l'herbe. C'est la façon la plus honnête de montrer comment on construit.",
+ "al.cta":"Voir les albums de chantier",
  "ct.eyebrow":"Parlons-en","ct.title":"Dites-nous ce que vous voulez construire.",
  "ct.b":"Si vous avez un terrain, un projet de glamping ou simplement une idée, écrivez-nous. La première conversation porte toujours sur le lieu et le climat, jamais sur le prix.",
  "ct.k3":"Atelier","ct.v3":"Uruguay · adresse à confirmer",
@@ -788,6 +812,10 @@ document.querySelectorAll(".lang button").forEach(b=>
     if (b.dataset.set === "fr") u.searchParams.set("lang","fr");
     else u.searchParams.delete("lang");
     history.replaceState(null,"",u);
+    // El enlace al álbum se lleva el idioma elegido.
+    document.querySelectorAll('a[href^="album.html"]').forEach(a=>{
+      a.setAttribute("href", b.dataset.set==="fr" ? "album.html?lang=fr" : "album.html");
+    });
   }));
 paint(/[?&]lang=fr/.test(location.search) ? "fr" : "es");
 
@@ -916,10 +944,10 @@ const PROC_SRC=["assets/p01.jpg","assets/p02.jpg","assets/p03.jpg","assets/p04.j
    minutos de vida. Este botón borra las dos primeras y recarga sin
    caché. La de GitHub no se puede forzar: si un cambio recién subido no
    aparece, hay que esperar un par de minutos. */
-if (/[?&]dev=1/.test(location.search)) {
+if (/[?&]dev=1|[?&]borrador=1/.test(location.search)) {
   const b = document.createElement("button");
   b.type = "button";
-  b.textContent = "Actualizar";
+  b.textContent = "Recargar";
   b.style.cssText = "position:fixed;right:.8rem;bottom:.8rem;z-index:99;"
     + "font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;"
     + "background:var(--blond);color:var(--ink);border:0;border-radius:999px;"
@@ -1008,7 +1036,12 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
   }
 
   // ── nivel 1: el archivo del repositorio ──
-  var cadena = fetch("contenido.json", { cache: "no-store" })
+  // Se agrega un parámetro que cambia cada minuto. 'no-store' evita la caché
+  // del navegador, pero NO la de GitHub Pages, que sirve los archivos con unos
+  // minutos de vida: un cambio recién subido no aparecía. El parámetro la
+  // saltea sin perder del todo el cacheo.
+  var MINUTO = Math.floor(Date.now() / 60000);
+  var cadena = fetch("contenido.json?v=" + MINUTO, { cache: "no-store" })
     .then(function (r) { if (!r.ok) throw 0; return r.json(); })
     .then(function (j) {
       if (j && j.textos) aplicarTextos(j.textos);

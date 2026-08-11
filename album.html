@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Álbumes de obra · CasaYourte</title>
+<meta name="description" content="Archivo de obra de CasaYourte: cada yurta paso a paso, del taller a la yurta habitada. Anillo periférico, toono, trei a 60°, doble techo y lonas.">
+<link rel="canonical" href="https://casayourte.github.io/CasaYourte/album.html">
+<link rel="alternate" hreflang="es" href="https://casayourte.github.io/CasaYourte/album.html">
+<link rel="alternate" hreflang="fr" href="https://casayourte.github.io/CasaYourte/album.html?lang=fr">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Álbumes de obra · CasaYourte">
+<meta property="og:description" content="Cada yurta paso a paso, del taller a la yurta habitada.">
+<meta property="og:image" content="https://casayourte.github.io/CasaYourte/assets/hero.jpg">
+<link rel="icon" href="./icono-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..800,0..100,0..1;1,9..144,300..800,0..100,0..1&family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#181614; --ink-2:#242019; --ink-3:#2C2722; --line:#35302a;
+  --wool:#EFE8DA; --dim:#A89E8C; --blond:#DCA96B; --burg:#7A2C3C;
+  --disp:"Fraunces",Georgia,serif; --body:"Instrument Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+  --pad:clamp(1.25rem,5vw,5.5rem);
+  --safe: env(safe-area-inset-bottom, 0px);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--ink);color:var(--wool);font-family:var(--body);
+  font-size:16px;line-height:1.6}
+h1,h2,h3{font-family:var(--disp);font-weight:500;margin:0;line-height:1.05;
+  font-variation-settings:"SOFT" 22,"WONK" 1;letter-spacing:-.015em}
+p{margin:0 0 1em}
+a{color:inherit}
+img{display:block;width:100%;height:100%;object-fit:cover}
+.mono{font-family:var(--mono);font-size:.66rem;letter-spacing:.15em;text-transform:uppercase}
+.hide{display:none!important}
+
+/* ---- cabecera ---- */
+header{position:sticky;top:0;z-index:20;background:rgba(24,22,20,.94);
+  backdrop-filter:blur(8px);border-bottom:1px solid var(--line);
+  padding:.8rem var(--pad);display:flex;align-items:center;gap:.8rem}
+header .mark{font-family:var(--disp);font-size:.95rem;letter-spacing:.16em;font-weight:600;
+  display:flex;align-items:center;gap:.5rem;flex:1;text-decoration:none}
+header .mark span{color:var(--blond)}
+header .mark img{width:26px;height:26px;flex:none;opacity:.92}
+.lang{display:flex;border:1px solid #4a4238;border-radius:999px;overflow:hidden;flex:none}
+.lang button{font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;background:none;
+  border:0;color:#a89e8c;padding:.42rem .7rem;cursor:pointer;text-transform:uppercase}
+.lang button[aria-pressed="true"]{background:var(--blond);color:var(--ink)}
+
+/* ---- intro ---- */
+.intro{padding:clamp(2.5rem,7vw,5rem) var(--pad) clamp(1.5rem,4vw,2.5rem);max-width:1400px;margin:0 auto}
+.eyebrow{font-family:var(--mono);font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--blond);display:block;margin-bottom:1.4rem}
+.eyebrow::before{content:"";display:inline-block;width:1.6rem;height:1px;
+  background:var(--blond);vertical-align:.32em;margin-right:.7rem}
+.intro h1{font-size:clamp(2rem,6.5vw,3.6rem);font-weight:300;max-width:26ch;
+  font-variation-settings:"SOFT" 40,"WONK" 1}
+.intro h1 em{font-style:italic;color:var(--blond)}
+.intro p{margin-top:1.3rem;max-width:52ch;color:var(--dim);font-size:1.02rem}
+
+/* ---- álbumes ---- */
+main{max-width:1400px;margin:0 auto;padding:0 var(--pad) calc(4rem + var(--safe))}
+.alb{border-top:1px solid var(--line);padding:clamp(2rem,5vw,3.2rem) 0}
+.alb-hd{display:flex;align-items:baseline;gap:1rem;flex-wrap:wrap;margin-bottom:.4rem}
+.alb-hd h2{font-size:clamp(1.5rem,3.6vw,2.2rem);flex:1 1 14ch}
+.alb-hd .meta{font-family:var(--mono);font-size:.62rem;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--blond)}
+.alb-sub{color:var(--dim);font-size:.9rem;margin-bottom:1.6rem}
+
+.etapa{margin-bottom:1.8rem}
+.etapa-tit{display:flex;align-items:baseline;gap:.7rem;margin-bottom:.7rem;
+  padding-bottom:.35rem;border-bottom:1px solid var(--line)}
+.etapa-tit b{font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--wool);flex:1;font-weight:500}
+.etapa-tit span{font-family:var(--mono);font-size:.56rem;color:var(--dim)}
+.rejilla{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.5rem}
+@media(min-width:900px){.rejilla{grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:.7rem}}
+.foto{position:relative;aspect-ratio:4/3;overflow:hidden;background:var(--ink-2);
+  border:1px solid var(--line);cursor:zoom-in;padding:0}
+.foto img{transition:transform .5s cubic-bezier(.2,.7,.2,1)}
+.foto:hover img{transform:scale(1.04)}
+
+/* ---- visor ---- */
+#visor{position:fixed;inset:0;z-index:60;background:rgba(12,10,8,.96);
+  display:flex;flex-direction:column;padding:0}
+#visor img{flex:1;min-height:0;width:100%;height:auto;object-fit:contain;background:#000}
+#visor .pie{padding:.9rem var(--pad) calc(1rem + var(--safe));display:flex;gap:.8rem;
+  align-items:flex-start;border-top:1px solid var(--line);background:var(--ink)}
+#visor .txt{flex:1;min-width:0;font-size:.9rem;color:var(--dim);line-height:1.45}
+#visor .txt b{display:block;font-family:var(--mono);font-size:.56rem;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--blond);margin-bottom:.25rem}
+#visor .nav{display:flex;gap:.35rem;flex:none}
+#visor button{font-family:var(--mono);font-size:.62rem;letter-spacing:.12em;
+  text-transform:uppercase;background:none;border:1px solid #4a4238;color:var(--wool);
+  padding:.55rem .75rem;border-radius:3px;cursor:pointer;min-width:2.6rem}
+
+.estado{text-align:center;color:var(--dim);padding:4rem 1rem;font-size:.95rem}
+.volver{display:inline-flex;align-items:center;gap:.5rem;font-family:var(--mono);
+  font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;
+  border:1px solid #4a4238;padding:.8rem 1.2rem;border-radius:3px;margin-top:2rem}
+.volver:hover{border-color:var(--blond)}
+.foot{border-top:1px solid var(--line);padding:1.6rem var(--pad);max-width:1400px;
+  margin:0 auto;color:#8d8474;display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="mark" href="./"><img src="assets/logo.png" alt="">Casa<span>Yourte</span></a>
+  <div class="lang" role="group" aria-label="Idioma">
+    <button type="button" data-set="es" aria-pressed="true">ES</button>
+    <button type="button" data-set="fr" aria-pressed="false">FR</button>
+  </div>
+</header>
+
+<div class="intro">
+  <span class="eyebrow" data-t="eyebrow"></span>
+  <h1 data-t="titulo"></h1>
+  <p data-t="lede"></p>
+</div>
+
+<main id="main">
+  <p class="estado" data-t="cargando"></p>
+</main>
+
+<div class="foot">
+  <span class="mono">CasaYourte · Mauro Gastaldello y familia</span>
+  <a class="mono" href="./" data-t="volver"></a>
+</div>
+
+<div id="visor" class="hide">
+  <img id="v-img" alt="">
+  <div class="pie">
+    <div class="txt"><b id="v-etapa"></b><span id="v-cap"></span></div>
+    <div class="nav">
+      <button type="button" id="v-prev" aria-label="Anterior">‹</button>
+      <button type="button" id="v-next" aria-label="Siguiente">›</button>
+      <button type="button" id="v-close" aria-label="Cerrar">✕</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   ÁLBUM PÚBLICO
+
+   Lee Firestore por la API REST: dos peticiones por álbum y ninguna
+   librería. Las reglas permiten lectura pública de albums y de su
+   subcolección fotos, así que no hace falta sesión.
+
+   Sólo se muestran los álbumes marcados como públicos en el panel, y
+   dentro de ellos las fotos que no estén en la papelera. Nada se
+   publica solo: marcar el álbum es una decisión explícita.
+   ═══════════════════════════════════════════════════════════════ */
+
+const PROYECTO = "casayourte-mauro";
+const CLAVE = "AIzaSyDDD_xvpC4I_ec2OZymyDqVsm1K0ISTr4Q";
+const BASE = "https://firestore.googleapis.com/v1/projects/" + PROYECTO
+           + "/databases/(default)/documents/";
+const CLOUD = "kbjqcnpa";
+
+const T = {
+  es: {
+    eyebrow: "Archivo de obra",
+    titulo: "Cada yurta, <em>paso a paso</em>.",
+    lede: "Del taller a la yurta habitada. Las fotos van en el orden real de la construcción, agrupadas por etapa: el anillo periférico, el toono, el trei, el techo, las lonas. Es el trabajo como fue, no como queda en el catálogo.",
+    cargando: "Cargando los álbumes…",
+    vacio: "Todavía no hay álbumes publicados. Volvé pronto.",
+    error: "No se pudieron cargar los álbumes en este momento.",
+    volver: "← Volver al sitio",
+    fotos: "fotos",
+    sinEtapa: "otras",
+  },
+  fr: {
+    eyebrow: "Archives de chantier",
+    titulo: "Chaque yourte, <em>étape par étape</em>.",
+    lede: "De l'atelier à la yourte habitée. Les photos suivent l'ordre réel de la construction, regroupées par étape : l'anneau périphérique, le toono, le trei, le toit, les toiles. Le travail tel qu'il a été, pas tel qu'il apparaît dans un catalogue.",
+    cargando: "Chargement des albums…",
+    vacio: "Aucun album publié pour le moment. Revenez bientôt.",
+    error: "Impossible de charger les albums pour le moment.",
+    volver: "← Retour au site",
+    fotos: "photos",
+    sinEtapa: "autres",
+  },
+};
+
+// Las 16 etapas, en el orden de la obra. Es la misma lista del panel y del
+// cálculo de horas: no se renumera.
+const ETAPAS = ["01-terreno-y-apoyos","02-taller-piezas","03-plancher","04-trei",
+  "05-anillo-periferico","06-toono","07-techo-triangulos","08-perchas",
+  "09-lonas-y-costura","10-aislacion","11-aberturas-y-umbrales","12-skydome",
+  "13-terminada-exterior","14-terminada-interior","15-equipo-y-obra","16-desmontaje"];
+
+const NOMBRE_ETAPA = {
+  fr: {
+    "01-terreno-y-apoyos":"terrain et appuis","02-taller-piezas":"atelier · pièces",
+    "03-plancher":"plancher","04-trei":"trei","05-anillo-periferico":"anneau périphérique",
+    "06-toono":"toono","07-techo-triangulos":"toit · triangles","08-perchas":"perches",
+    "09-lonas-y-costura":"toiles et couture","10-aislacion":"isolation",
+    "11-aberturas-y-umbrales":"ouvertures et seuils","12-skydome":"skydome",
+    "13-terminada-exterior":"terminée · extérieur","14-terminada-interior":"terminée · intérieur",
+    "15-equipo-y-obra":"équipe et chantier","16-desmontaje":"démontage",
+  },
+};
+
+let idioma = /[?&]lang=fr/.test(location.search) ? "fr" : "es";
+let albumes = [];
+let planas = [];   // todas las fotos en orden, para el visor
+let iVisor = 0;
+
+/* ---------- REST ---------- */
+function valor(v) {
+  if (!v || typeof v !== "object") return undefined;
+  if ("stringValue" in v) return v.stringValue;
+  if ("booleanValue" in v) return v.booleanValue;
+  if ("integerValue" in v) return Number(v.integerValue);
+  if ("doubleValue" in v) return v.doubleValue;
+  if ("nullValue" in v) return null;
+  if ("arrayValue" in v) return (v.arrayValue.values || []).map(valor);
+  if ("mapValue" in v) return mapa(v.mapValue.fields || {});
+  return undefined;
+}
+function mapa(f) {
+  const o = {};
+  for (const k in f) { const x = valor(f[k]); if (x !== undefined) o[k] = x; }
+  return o;
+}
+const idDe = (nombre) => nombre.split("/").pop();
+
+async function traer(ruta) {
+  const r = await fetch(BASE + ruta + "?key=" + CLAVE + "&pageSize=300", { cache: "no-store" });
+  if (!r.ok) throw new Error(r.status);
+  const j = await r.json();
+  return (j.documents || []).map((d) => ({ id: idDe(d.name), ...mapa(d.fields || {}) }));
+}
+
+const urlFoto = (pid, w) =>
+  `https://res.cloudinary.com/${CLOUD}/image/upload/f_auto,q_auto,w_${w},c_limit/${pid}`;
+const urlMini = (pid, w) =>
+  `https://res.cloudinary.com/${CLOUD}/image/upload/f_auto,q_auto,w_${w},ar_4:3,c_fill,g_auto/${pid}`;
+
+/* ---------- textos ---------- */
+function pintarTextos() {
+  const d = T[idioma];
+  document.documentElement.lang = idioma;
+  document.querySelectorAll("[data-t]").forEach((el) => {
+    const v = d[el.dataset.t];
+    if (v === undefined) return;
+    if (/<em>/.test(v)) el.innerHTML = v; else el.textContent = v;
+  });
+  document.querySelectorAll(".lang button").forEach((b) =>
+    b.setAttribute("aria-pressed", String(b.dataset.set === idioma)));
+}
+document.querySelectorAll(".lang button").forEach((b) =>
+  b.addEventListener("click", () => {
+    idioma = b.dataset.set;
+    const u = new URL(location.href);
+    if (idioma === "fr") u.searchParams.set("lang", "fr"); else u.searchParams.delete("lang");
+    history.replaceState(null, "", u);
+    pintarTextos(); pintar();
+  }));
+pintarTextos();
+
+/* ---------- cargar ---------- */
+async function cargar() {
+  try {
+    const todos = await traer("albums");
+    const publicos = todos.filter((a) => a.publico === true);
+    // Los más nuevos primero. Sin orderBy: se ordena acá, así no hace falta
+    // ningún índice de Firestore.
+    publicos.sort((a, b) => String(b.anio || "").localeCompare(String(a.anio || ""))
+      || String(a.titulo || a.id).localeCompare(String(b.titulo || b.id), "es"));
+
+    albumes = [];
+    for (const a of publicos) {
+      let fotos = [];
+      try { fotos = await traer("albums/" + a.id + "/fotos"); } catch (e) { fotos = []; }
+      fotos = fotos.filter((f) => !f.eliminada && f.public_id)
+                   .sort((x, y) => (x.orden || 0) - (y.orden || 0));
+      if (fotos.length) albumes.push({ ...a, fotos });
+    }
+    pintar();
+  } catch (e) {
+    document.getElementById("main").innerHTML =
+      '<p class="estado">' + T[idioma].error + "</p>";
+  }
+}
+
+/* ---------- pintar ---------- */
+function nombreEtapa(e) {
+  if (idioma === "fr" && NOMBRE_ETAPA.fr[e]) return NOMBRE_ETAPA.fr[e];
+  return e.replace(/^\d+-/, "").replace(/-/g, " ");
+}
+
+function pintar() {
+  const main = document.getElementById("main");
+  const d = T[idioma];
+  if (!albumes.length) { main.innerHTML = '<p class="estado">' + d.vacio + "</p>"; return; }
+
+  main.innerHTML = "";
+  planas = [];
+
+  albumes.forEach((a) => {
+    const sec = document.createElement("section");
+    sec.className = "alb";
+    const meta = [a.anio, a.diametro, a.lugar].filter(Boolean).join(" · ");
+    sec.innerHTML = `<div class="alb-hd"><h2></h2><span class="meta"></span></div>
+                     <p class="alb-sub"></p>`;
+    sec.querySelector("h2").textContent = a.titulo || a.id;
+    sec.querySelector(".meta").textContent = meta;
+    sec.querySelector(".alb-sub").textContent = a.fotos.length + " " + d.fotos;
+
+    // Agrupado por etapa, en el orden de la obra.
+    const orden = ETAPAS.filter((e) => a.fotos.some((f) => f.etapa === e));
+    const sueltas = a.fotos.filter((f) => !ETAPAS.includes(f.etapa));
+    const grupos = orden.map((e) => [e, a.fotos.filter((f) => f.etapa === e)]);
+    if (sueltas.length) grupos.push([null, sueltas]);
+
+    grupos.forEach(([etapa, fs]) => {
+      const g = document.createElement("div");
+      g.className = "etapa";
+      g.innerHTML = `<div class="etapa-tit"><b></b><span></span></div>
+                     <div class="rejilla"></div>`;
+      g.querySelector("b").textContent = etapa ? nombreEtapa(etapa) : d.sinEtapa;
+      g.querySelector("span").textContent = fs.length;
+      const rej = g.querySelector(".rejilla");
+      fs.forEach((f) => {
+        const k = planas.length;
+        planas.push({ ...f, album: a.titulo || a.id });
+        const b = document.createElement("button");
+        b.type = "button"; b.className = "foto";
+        b.innerHTML = '<img loading="lazy" decoding="async" alt="">';
+        const im = b.querySelector("img");
+        im.src = urlMini(f.public_id, 420);
+        im.alt = (idioma === "fr" ? f.alt_fr : f.alt_es) || "";
+        b.addEventListener("click", () => abrirVisor(k));
+        rej.appendChild(b);
+      });
+      sec.appendChild(g);
+    });
+    main.appendChild(sec);
+  });
+
+  const volver = document.createElement("a");
+  volver.className = "volver"; volver.href = "./";
+  volver.textContent = d.volver;
+  main.appendChild(volver);
+}
+
+/* ---------- visor ---------- */
+const visor = document.getElementById("visor");
+
+function abrirVisor(i) {
+  iVisor = (i + planas.length) % planas.length;
+  const f = planas[iVisor];
+  document.getElementById("v-img").src = urlFoto(f.public_id, 1600);
+  document.getElementById("v-etapa").textContent =
+    [f.album, f.etapa ? nombreEtapa(f.etapa) : ""].filter(Boolean).join(" · ");
+  document.getElementById("v-cap").textContent =
+    (idioma === "fr" ? f.cap_fr : f.cap_es) || "";
+  if (visor.classList.contains("hide")) {
+    visor.classList.remove("hide");
+    document.body.style.overflow = "hidden";
+    // El botón Atrás de Android cierra el visor en lugar de salir de la página.
+    history.pushState({ visor: 1 }, "");
+  }
+}
+function cerrarVisor(porAtras) {
+  visor.classList.add("hide");
+  document.body.style.overflow = "";
+  if (!porAtras && history.state && history.state.visor) history.back();
+}
+addEventListener("popstate", () => {
+  if (!visor.classList.contains("hide")) cerrarVisor(true);
+});
+document.getElementById("v-close").addEventListener("click", () => cerrarVisor());
+document.getElementById("v-prev").addEventListener("click", () => abrirVisor(iVisor - 1));
+document.getElementById("v-next").addEventListener("click", () => abrirVisor(iVisor + 1));
+addEventListener("keydown", (e) => {
+  if (visor.classList.contains("hide")) return;
+  if (e.key === "Escape") cerrarVisor();
+  if (e.key === "ArrowLeft") abrirVisor(iVisor - 1);
+  if (e.key === "ArrowRight") abrirVisor(iVisor + 1);
+});
+
+cargar();
+</script>
+</body>
+</html>

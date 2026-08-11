@@ -27,6 +27,7 @@
 //   la reproducción, y 'cache.put' con un 206 además lanza excepción.
 //   Ahora: las peticiones con Range y el video NO pasan por el service
 //   worker, y sólo se guarda una respuesta si su estado es 200.
+// v3 (10-ago-2026) — cambió admin.html (recargar y comparar, álbum público).
 // v3 (10-ago-2026) — cambiaron admin.html y nucleo.js: entra la sección de
 //   contenido del sitio.
 const VERSION = 'cy-shell-v3';

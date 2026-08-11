@@ -365,6 +365,12 @@ details.grupo[open]>summary{border-bottom:1px solid var(--line)}
       </div>
       <label><span class="k">Lugar</span><input id="e-lugar"></label>
     </div>
+    <label style="display:flex;gap:.6rem;align-items:flex-start;margin-top:.4rem">
+      <input type="checkbox" id="e-publico" style="width:auto;margin-top:.2rem">
+      <span style="font-size:.9rem">Mostrar este álbum en el sitio público<br>
+      <span style="font-size:.78rem;color:var(--dim)">Aparece en la página de álbumes de obra,
+      con todas sus fotos menos las de la papelera.</span></span></label>
+    <p class="note" id="e-aviso"></p>
     <p class="note">El identificador no se puede cambiar: es el nombre de la carpeta
     en Cloudinary y las fotos ya subidas apuntan ahí.</p>
     <button class="btn p" id="e-guardar">Guardar</button>
@@ -394,6 +400,7 @@ details.grupo[open]>summary{border-bottom:1px solid var(--line)}
 <!-- BARRA DE CONTENIDO -->
 <div class="barra hide" id="c-barra">
   <span class="cuenta" id="c-cuenta"></span>
+  <button class="btn" id="c-recargar" aria-label="Recargar y comparar">↻</button>
   <button class="btn" id="c-guardar">Guardar</button>
   <button class="btn p" id="c-exportar">Exportar JSON</button>
 </div>
@@ -841,6 +848,64 @@ $("c-guardar").addEventListener("click", async () => {
   finally { b.textContent = "Guardar"; contarCambios(); }
 });
 
+/* ── recargar y comparar ──
+   Vuelve a leer las dos fuentes desde cero y dice en qué difieren: lo que
+   está guardado en la base contra lo que está publicado en el
+   contenido.json del repositorio. Es la respuesta a "¿por qué el sitio no
+   muestra lo que edité?". */
+$("c-recargar").addEventListener("click", async () => {
+  const b = $("c-recargar"); b.disabled = true; b.textContent = "…";
+  try {
+    // El parámetro saltea la caché de GitHub Pages, que sirve los archivos
+    // con unos minutos de vida.
+    const r = await fetch("contenido.json?v=" + Date.now(), { cache: "no-store" });
+    const j = await r.json();
+    const enJson = (j.textos || {});
+
+    const d = await getDoc(doc(db, "sitio", "borrador"));
+    const enBase = d.exists() ? d.data() : null;
+
+    // Se recarga el editor con lo que hay ahora, descartando lo no guardado.
+    CONTENIDO_BASE = j;
+    ["es", "fr"].forEach((l) => { ORDEN[l] = Object.keys(enJson[l] || {}); });
+
+    let dif = [];
+    if (enBase && enBase.es) {
+      CONT = { es: decodMapa(enBase.es), fr: decodMapa(enBase.fr), imagenes: enBase.imagenes || {} };
+      ["es", "fr"].forEach((l) => {
+        Object.keys(CONT[l]).forEach((k) => {
+          const a = JSON.stringify(CONT[l][k]);
+          const bb = JSON.stringify((enJson[l] || {})[k]);
+          if (a !== bb) dif.push(`${l}:${k}`);
+        });
+      });
+    } else {
+      CONT = { es: { ...enJson.es }, fr: { ...enJson.fr }, imagenes: {} };
+    }
+    CONT_ORIG = JSON.parse(JSON.stringify(CONT));
+
+    const imgs = Object.keys(CONT.imagenes || {}).filter((k) => CONT.imagenes[k]).length;
+    $("c-sub").textContent = enBase
+      ? `base: ${Object.keys(CONT.es).length} textos · repositorio: ${Object.keys(enJson.es || {}).length}`
+      : "sólo el repositorio · la base está vacía";
+    $("c-nota").innerHTML = !enBase
+      ? 'No hay nada guardado en la base. Estás viendo el <b>contenido.json</b> del repositorio.'
+      : dif.length
+        ? `Hay <b>${dif.length} diferencia${dif.length === 1 ? "" : "s"}</b> entre la base y lo publicado`
+          + `${imgs ? `, más ${imgs} imagen${imgs === 1 ? "" : "es"} reemplazada${imgs === 1 ? "" : "s"}` : ""}.`
+          + ` Para publicar: <b>Exportar JSON</b> y subir ese archivo al repositorio.`
+          + `<br><span style="font-family:var(--mono);font-size:.56rem;color:var(--dim)">`
+          + dif.slice(0, 12).map(CY.esc).join("  ")
+          + (dif.length > 12 ? `  +${dif.length - 12}` : "") + "</span>"
+        : "La base y el repositorio dicen <b>lo mismo</b>. El sitio muestra lo que ves acá.";
+    pintarContenido();
+    toast(dif.length
+      ? `${dif.length} diferencia${dif.length === 1 ? "" : "s"} sin publicar`
+      : "Todo al día: la base y el sitio coinciden");
+  } catch (e) { toast(CY.explicar(e), true); }
+  finally { b.disabled = false; b.textContent = "↻"; }
+});
+
 /* ── exportar contenido.json para el repositorio ── */
 function construirExportable() {
   // Sale con la misma forma que contenido.json: lo único que cambia acá es
@@ -1281,7 +1346,8 @@ async function cargarAlbumes() {
                       <button class="icon">›</button>`;
       el.querySelector("h2").textContent = a.titulo || a.id;
       el.querySelector(".sub").textContent =
-        [a.tipo || "obra", a.anio, a.diametro, a.lugar].filter(Boolean).join(" · ");
+        [a.publico ? "público" : "privado", a.tipo || "obra", a.anio, a.diametro, a.lugar]
+          .filter(Boolean).join(" · ");
       el.addEventListener("click", () => abrir(a));
       cont.appendChild(el);
       // La cantidad se deriva al leer, no se guarda (Libro 1 §1.4).
@@ -1446,13 +1512,22 @@ $("a-editar").addEventListener("click", () => {
   $("e-diam").value = album.diametro || "";
   $("e-lugar").value = album.lugar || "";
   $("e-obra").classList.toggle("hide", album.tipo !== "obra");
+  $("e-publico").checked = album.publico === true;
+  // Se avisa por las fotos con gente identificable: publicar el álbum las
+  // hace visibles y eso necesita autorización.
+  const conGente = fotos.filter((f) => !f.eliminada && f.personas).length;
+  $("e-aviso").innerHTML = conGente
+    ? `<b>Atención:</b> ${conGente} foto${conGente === 1 ? "" : "s"} de este álbum `
+      + `${conGente === 1 ? "está marcada" : "están marcadas"} con gente identificable. `
+      + "Publicarlas necesita su autorización."
+    : "Ninguna foto de este álbum está marcada con gente identificable.";
   irA("edalb", () => pintarAlbum());
 });
 
 $("e-guardar").addEventListener("click", async () => {
   const titulo = $("e-titulo").value.trim();
   if (!titulo) return toast("El nombre no puede quedar vacío", true);
-  const d = { titulo };
+  const d = { titulo, publico: $("e-publico").checked };
   if (album.tipo === "obra") {
     d.anio = $("e-anio").value.trim() || null;
     d.diametro = $("e-diam").value.trim() || null;
@@ -1463,7 +1538,9 @@ $("e-guardar").addEventListener("click", async () => {
     await updateDoc(doc(db, "albums", album.id), d);
     Object.assign(album, d);
     $("a-titulo").textContent = album.titulo;
-    toast("Álbum actualizado");
+    toast($("e-publico").checked
+      ? "Guardado. El álbum ya se ve en la página pública de álbumes."
+      : "Guardado. El álbum no se muestra en el sitio público.");
     if (_cerrarVista) { const c = _cerrarVista; _cerrarVista = null; c(); }
     else pintarAlbum();
     cargarAlbumes();
