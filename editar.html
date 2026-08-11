@@ -237,7 +237,14 @@ async function cargarContenido() {
   const d = await getDoc(doc(db, "sitio", "borrador"));
   if (d.exists() && d.data().es) {
     const x = d.data();
-    CONT = { es: decodMapa(x.es), fr: decodMapa(x.fr), imagenes: x.imagenes || {} };
+    // MEZCLA, no reemplazo: el borrador manda para lo que tiene y el archivo
+    // del repositorio completa el resto. Un borrador guardado antes de que
+    // existiera una clave no puede hacerla desaparecer.
+    CONT = {
+      es: { ...(BASE.textos.es || {}), ...decodMapa(x.es) },
+      fr: { ...(BASE.textos.fr || {}), ...decodMapa(x.fr) },
+      imagenes: { ...(BASE.reemplazos || {}), ...(x.imagenes || {}) },
+    };
   } else {
     CONT = { es: { ...BASE.textos.es }, fr: { ...BASE.textos.fr },
              imagenes: { ...(BASE.reemplazos || {}) } };
@@ -507,6 +514,14 @@ function bajar(texto, nombre, tipo) {
 }
 
 $("exportar").addEventListener("click", async () => {
+  // Red de seguridad: nunca exportar con menos texto del que hay publicado.
+  const faltan = ["es", "fr"].flatMap((l) =>
+    Object.keys(BASE.textos[l] || {}).filter((k) => !(k in CONT[l])).map((k) => l + ":" + k));
+  if (faltan.length) {
+    aviso(`No se exporta: faltarían ${faltan.length} textos que están en el repositorio. `
+      + "Recargá la página del editor.", true);
+    return;
+  }
   if (sucio() && !confirm("Tenés cambios sin guardar.\n\nSe van a incluir en el archivo. ¿Seguir?"))
     return;
   const salida = {

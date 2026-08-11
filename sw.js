@@ -30,9 +30,10 @@
 // v3 (10-ago-2026) — cambió admin.html (recargar y comparar, álbum público).
 // v4 (11-ago-2026) — dominio propio casayourte.com, y cambió admin.html.
 // v5 (11-ago-2026) — editar.html, el editor sobre la página real.
+// v6 (11-ago-2026) — el borrador se MEZCLA con el archivo, no lo reemplaza.
 // v3 (10-ago-2026) — cambiaron admin.html y nucleo.js: entra la sección de
 //   contenido del sitio.
-const VERSION = 'cy-shell-v5';
+const VERSION = 'cy-shell-v6';
 
 const SHELL = [
   './admin.html',

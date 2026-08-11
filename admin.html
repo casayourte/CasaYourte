@@ -700,7 +700,19 @@ async function cargarContenido() {
     else origen = "borrador guardado en la base";
     if (d) {
       const x = d.data();
-      CONT = { es: decodMapa(x.es), fr: decodMapa(x.fr), imagenes: x.imagenes || {} };
+      // MEZCLA, no reemplazo. El borrador manda para lo que tiene, y el
+      // archivo del repositorio completa el resto.
+      //
+      // Antes se tomaba sólo el borrador, y toda clave agregada al
+      // contenido.json DESPUÉS de guardar el borrador desaparecía al
+      // exportar: así se perdieron las 9 claves alb.* de la página de
+      // álbumes. Un borrador viejo no puede borrar texto nuevo.
+      const baseT = (CONTENIDO_BASE && CONTENIDO_BASE.textos) || { es: {}, fr: {} };
+      CONT = {
+        es: { ...(baseT.es || {}), ...decodMapa(x.es) },
+        fr: { ...(baseT.fr || {}), ...decodMapa(x.fr) },
+        imagenes: { ...((CONTENIDO_BASE || {}).reemplazos || {}), ...(x.imagenes || {}) },
+      };
     } else {
       const j = CONTENIDO_BASE || await (await fetch("contenido.json", { cache: "no-store" })).json();
       CONT = { es: { ...j.textos.es }, fr: { ...j.textos.fr },
@@ -884,7 +896,11 @@ $("c-recargar").addEventListener("click", async () => {
 
     let dif = [];
     if (enBase && enBase.es) {
-      CONT = { es: decodMapa(enBase.es), fr: decodMapa(enBase.fr), imagenes: enBase.imagenes || {} };
+      CONT = {
+        es: { ...(enJson.es || {}), ...decodMapa(enBase.es) },
+        fr: { ...(enJson.fr || {}), ...decodMapa(enBase.fr) },
+        imagenes: { ...(j.reemplazos || {}), ...(enBase.imagenes || {}) },
+      };
       // Los reemplazos también se comparan contra el archivo publicado.
       Object.keys({ ...(j.reemplazos || {}), ...CONT.imagenes }).forEach((k) => {
         if ((CONT.imagenes[k] || "") !== ((j.reemplazos || {})[k] || "")) dif.push("img:" + k);
@@ -964,6 +980,18 @@ function clavesCambiadas() {
 
 $("c-exportar").addEventListener("click", () => {
   try {
+    // Red de seguridad: si el archivo fuera a salir con menos claves que el
+    // del repositorio, algo se está perdiendo y hay que parar.
+    const base = (CONTENIDO_BASE && CONTENIDO_BASE.textos) || null;
+    if (base) {
+      const faltan = ["es", "fr"].flatMap((l) =>
+        Object.keys(base[l] || {}).filter((k) => !(k in CONT[l])).map((k) => l + ":" + k));
+      if (faltan.length) {
+        toast(`No se exporta: faltarían ${faltan.length} textos que sí están en el `
+          + `repositorio (${faltan.slice(0, 3).join(", ")}…). Tocá ↻ y volvé a intentar.`, true);
+        return;
+      }
+    }
     const cambios = clavesCambiadas();
     const salida = construirExportable();
     const json = JSON.stringify(salida, null, 2);
