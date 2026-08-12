@@ -1,5 +1,7 @@
 {
   "proyecto": "CasaYourte",
+  "generadoPor": "editar-2",
+  "generadoEl": "2026-08-12 13:17",
   "idiomas": [
     "es",
     "fr"
@@ -9,13 +11,13 @@
       "hero.eyebrow": "Uruguay · Argentina · Brasil",
       "hero.t1": "Yurtas que se",
       "hero.t2": "calculan.",
-      "hero.lede": "Seis años de trabajo con yurtas en familia, entre Uruguay y Francia, con constructores, autoconstructores, arquitectos e ingenieros del rubro. Cada pieza dibujada, calculada y cortada antes de llegar al terreno.",
+      "hero.lede": "Seis años de trabajo con yurtas en familia, entre Uruguay y Francia, con amigos, constructores, autoconstructores, arquitectos e ingenieros del rubro. Cada pieza dibujada, calculada y cortada antes de llegar al terreno.",
       "hero.k1": "Diámetros",
       "hero.v1": "De 2 a 12 metros, a medida",
       "hero.k2": "Probado",
       "hero.v2": "Aro central en eucalipto: 4 años y 2 desmontajes sin deformación",
       "hero.k3": "Base",
-      "hero.v3": "Uruguay · ocho años de vida y obra en Francia",
+      "hero.v3": "Uruguay · seis años de vida y obra en Francia",
       "in.eyebrow": "El interior",
       "in.title": "La estructura no se esconde: es la arquitectura.",
       "in.lede": "En una yurta de catálogo el techo se tapa. Acá la primera capa triangulada queda a la vista, y con las aberturas vidriadas integradas al trei la luz entra por los costados y por arriba. Es lo que no se puede explicar con una ficha técnica.",
@@ -24,7 +26,7 @@
       "cap.hero": "Último proyecto · yurta terminada con deck perimetral curvo, anexo acoplado y grandes aberturas vidriadas",
       "id.eyebrow": "La idea",
       "id.title": "Una yurta <em>es</em> una estructura desmontable: Lo que agregamos es todo lo demás.",
-      "id.b1": "La yurta viene de un pueblo nómade. Es desmontable por origen, como una carpa: eso no es una prestación que se le añada, es su naturaleza. Lo que cambió en Europa fue el habitante, no la estructura: gente que no se muda, pero que quiere poder desarmar.",
+      "id.b1": "La yurta viene de un pueblo nómade. Es desmontable desde su concepción, como una carpa: eso no es una prestación que se le añada, es su naturaleza. Lo que cambió en Europa fue el habitante, no la estructura: gente que no se muda, pero que quiere poder desarmar.",
       "id.b2": "Y ahí aparece el sentido real de poder desarmar cuando no sos nómade: construir con poco impacto sobre el territorio. Una yurta no cimenta, no excava, no impermeabiliza el suelo. Se apoya, se habita, y el día que se va el terreno vuelve a lo que era. Es una manera de construir que respeta el ecosistema en el que se instala en lugar de transformarlo.",
       "id.b3": "El problema es que casi siempre se paga ese respeto con incomodidad. Nuestro trabajo va en la dirección opuesta: llevar la capacidad mecánica y la eficiencia térmica de la estructura hasta donde da, sin que pierda la esencia. Piso aislado, doble techo ventilado, doble anillo que une piso y muros, aberturas que escurren el agua. Lo más parecido a una casa que se pueda desarmar.",
       "id.k": "Lo mejor de la yurta y lo mejor de una casa, en la misma estructura. Eso es CasaYourte.",
@@ -398,7 +400,12 @@
       "foot.r": "Mauro Gastaldello et sa famille"
     }
   },
-  "reemplazos": {},
+  "reemplazos": {
+    "dif8": "casayourte/obras/yurta-doble-techo/14-terminada-interior/iegcymiljblawohg5pbk",
+    "p12": "casayourte/obras/yurta-doble-techo/05-anillo-periferico/rvyuessqwyp3z4tyigeh",
+    "int2": "casayourte/obras/yurta-doble-techo/14-terminada-interior/iegcymiljblawohg5pbk",
+    "hero": "casayourte/obras/yurta-doble-techo/13-terminada-exterior/bwivnxshtewlexx1urzo"
+  },
   "imagenes": [
     {
       "slot": "hero",
