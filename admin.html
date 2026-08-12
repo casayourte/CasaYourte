@@ -228,6 +228,7 @@ details.grupo[open]>summary{border-bottom:1px solid var(--line)}
   <section id="v-list" class="hide">
     <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:1rem">
       <h1 style="font-size:1.5rem;flex:1">Álbumes</h1>
+      <button class="icon" id="go-nuevo" aria-label="Actualizar el panel">↻</button>
       <button class="icon" id="go-ver" aria-label="Editar viendo el sitio">👁</button>
       <button class="icon" id="go-cont" aria-label="Contenido del sitio">✎</button>
       <button class="icon" id="go-diag" aria-label="Diagnóstico">🩺</button>
@@ -439,6 +440,11 @@ import { db, auth, firebaseConfig, crearCuentaAuth, createUserWithEmailAndPasswo
 import { CY } from "./nucleo.js";
 
 /* ===================== CONFIGURACIÓN ===================== */
+// Sello de ESTE archivo. El de nucleo.js no sirve para saber si admin.html
+// quedó viejo en la caché: son dos archivos distintos. Al cambiar el panel,
+// se sube este número.
+const PANEL = "admin-7";
+
 const CLOUD = CY.CLOUDINARY.cloud;
 const PRESET = CY.CLOUDINARY.preset;
 
@@ -555,7 +561,7 @@ onAuthStateChanged(auth, async (u) => {
     }
     CY.usuario = yo;   // nucleo.js lo usa para CY.puede()
     $("quien").textContent = `${yo.nombre || yo.email} · ${ROLES[yo.rol]?.n || yo.rol}`
-      + `  ·  ${CY.VERSION}${CY.instalada() ? " · instalada" : ""}`;
+      + `  ·  ${PANEL} · ${CY.VERSION}${CY.instalada() ? " · instalada" : ""}`;
     $("quien").classList.remove("hide");
     $("go-users").classList.toggle("hide", !puede("usuarios"));
     $("go-cont").classList.toggle("hide", !puede("contenido"));
@@ -566,6 +572,22 @@ onAuthStateChanged(auth, async (u) => {
     toast("No se pudo verificar el permiso: " + CY.explicar(e), true);
     await signOut(auth);
   }
+});
+
+// Fuerza traer el panel de nuevo: borra las cachés del navegador y del service
+// worker y recarga. Con la app instalada, un admin.html viejo puede quedar
+// servido desde la caché y todo lo demás parece roto sin razón.
+$("go-nuevo").addEventListener("click", async () => {
+  if (!confirm("Actualizar el panel?\n\nSe descarta lo que no esté guardado.")) return;
+  try {
+    if (window.caches) {
+      const ks = await caches.keys();
+      await Promise.all(ks.map((k) => caches.delete(k)));
+    }
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (reg) await reg.update();
+  } catch (e) { /* seguimos igual */ }
+  location.replace("admin.html?v=" + Date.now());
 });
 
 // Editor visual: la página real con los controles encima (editar.html).
@@ -954,6 +976,10 @@ function construirExportable() {
   };
   return {
     proyecto: base.proyecto || "CasaYourte",
+    // Firma del código que generó este archivo. Sirve para saber, mirando el
+    // JSON, si salió del panel actualizado o de una copia vieja en caché.
+    generadoPor: PANEL,
+    generadoEl: new Date().toISOString().slice(0, 16).replace("T", " "),
     idiomas: base.idiomas || ["es", "fr"],
     textos: { es: enOrden("es"), fr: enOrden("fr") },
     // ESTO es lo que faltaba: los reemplazos elegidos desde la galería.
@@ -1142,8 +1168,13 @@ $("dg-run").addEventListener("click", async () => {
     };
   };
 
+  // 0 · versiones · lo primero, porque explica casi cualquier rareza
+  let f = fila("Versión del código");
+  f.ok(`panel ${PANEL} · núcleo ${CY.VERSION}`
+    + (CY.instalada() ? " · corriendo como app instalada" : ""));
+
   // 1 · proyecto de Firebase
-  let f = fila("Proyecto de Firebase");
+  f = fila("Proyecto de Firebase");
   f.ok(`${firebaseConfig.projectId} · conectado`);
 
   // 2 · tu usuario y tu rol

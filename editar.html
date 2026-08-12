@@ -113,7 +113,8 @@ button{cursor:pointer}
 
 <div id="app" class="hide">
   <div id="top">
-    <span class="t">Casa<b>Yourte</b></span>
+    <span class="t">Casa<b>Yourte</b> <span class="mono" id="sello"
+      style="color:var(--dim);font-size:.5rem"></span></span>
     <div class="grupo-chips" id="paginas">
       <button type="button" data-p="index" class="on">Sitio</button>
       <button type="button" data-p="album">Álbumes</button>
@@ -161,6 +162,9 @@ import { db, auth, doc, getDoc, getDocs, setDoc, collection, serverTimestamp,
 import { CY } from "./nucleo.js";
 
 const $ = (id) => document.getElementById(id);
+
+// Sello de este archivo, para saber si quedó viejo en la caché.
+const EDITOR = "editar-2";
 
 /* ═══════════════════════════════════════════════════════════════
    EDITAR VIENDO
@@ -222,6 +226,7 @@ onAuthStateChanged(auth, async (u) => {
     if (yo.rol !== "admin" && yo.rol !== "editor")
       throw new Error("Hace falta rol de administrador o editor para editar el sitio.");
     CY.usuario = yo;
+    $("sello").textContent = EDITOR;
     $("login").classList.add("hide"); $("app").classList.remove("hide");
     await cargarContenido();
     abrirPagina();
@@ -526,6 +531,8 @@ $("exportar").addEventListener("click", async () => {
     return;
   const salida = {
     proyecto: BASE.proyecto || "CasaYourte",
+    generadoPor: EDITOR,
+    generadoEl: new Date().toISOString().slice(0, 16).replace("T", " "),
     idiomas: BASE.idiomas || ["es", "fr"],
     textos: { es: enOrden("es"), fr: enOrden("fr") },
     reemplazos: { ...(CONT.imagenes || {}) },
