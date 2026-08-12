@@ -1,7 +1,7 @@
 {
   "proyecto": "CasaYourte",
   "generadoPor": "editar-2",
-  "generadoEl": "2026-08-12 13:17",
+  "generadoEl": "2026-08-12 13:46",
   "idiomas": [
     "es",
     "fr"
@@ -186,7 +186,7 @@
       "al.cta": "Ver los álbumes de obra",
       "alb.eyebrow": "Archivo de obra",
       "alb.titulo": "Cada yurta, <em>paso a paso</em>.",
-      "alb.lede": "Del taller a la yurta habitada. Las fotos van en el orden real de la construcción, agrupadas por etapa: el anillo periférico, el toono, el trei, el techo, las lonas. Es el trabajo como fue, no como queda en el catálogo.",
+      "alb.lede": "De l'atelier à la yourte habitée. Il s'agit d'une séquence photographique organisée selon le déroulement du projet de construction, regroupée par étape : Anneau périphérique, le toono, le trei, le toit, les bâches, etc.C'est un outil permettant de comprendre la trajectoire et l'évolution de la proposition.Chaque expérience est une occasion d'apprentissage et recèle des aspects uniques que nous conservons.",
       "alb.cargando": "Cargando los álbumes…",
       "alb.vacio": "Todavía no hay álbumes publicados. Volvé pronto.",
       "alb.error": "No se pudieron cargar los álbumes en este momento.",
