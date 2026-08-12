@@ -1,38 +1,107 @@
 # CasaYourte
 
-Catálogo bilingüe y panel de administración. Sitio estático, sin build ni servidor.
+Sitio, catálogo bilingüe y panel de administración. Estático: sin build, sin servidor,
+sin dependencias que instalar.
 
-**Sitio:** https://casayourte.github.io/CasaYourte/
-**Panel:** https://casayourte.github.io/CasaYourte/admin.html
+| | |
+|---|---|
+| **Sitio** | https://casayourte.com/ |
+| **Álbumes de obra** | https://casayourte.com/album.html |
+| **Panel** | https://casayourte.com/admin.html |
+| **Editar viendo el sitio** | https://casayourte.com/editar.html |
 
-## Archivos
+El panel se instala como app: abrilo, recargá una vez con señal, y en Chrome
+menú ⋮ → *Agregar a la pantalla principal*.
+
+---
+
+## Los archivos
+
+**Páginas públicas**
+
+| Archivo | Qué es |
+|---|---|
+| `index.html` | el catálogo. Lee sus textos de `contenido.json` |
+| `album.html` | los álbumes de obra que estén marcados como públicos |
+
+**Páginas de administración** — todas piden cuenta
+
+| Archivo | Qué es |
+|---|---|
+| `admin.html` | el panel: álbumes, fotos, textos y usuarios |
+| `editar.html` | el editor sobre la página real: tocás un texto o una foto y la cambiás |
+| `sembrar.html` | uso único. Copia el contenido a la base. **Borrar después de usarlo** |
+
+**Código común**
+
+| Archivo | Qué es |
+|---|---|
+| `firebase-init.js` | único archivo que toca el SDK de Firebase. La versión vive acá |
+| `nucleo.js` | botón Atrás de Android, avisos, imágenes, Cloudinary, permisos |
+| `sw.js` | service worker: el panel abre sin señal |
+| `manifest.json` | hace la app instalable |
+
+**Contenido y datos**
+
+| Archivo | Qué es |
+|---|---|
+| `contenido.json` | 143 textos por idioma, español y francés, y los reemplazos de imagen |
+| `assets/` | las 34 imágenes y el video, todo en una sola carpeta |
+| `icono-192.png` · `icono-512.png` · `apple-touch-icon.png` | iconos de la app |
+| `CNAME` | declara el dominio propio. Una línea |
+| `REGLAS.txt` | las reglas de seguridad de Firestore, para copiar y pegar |
+
+**Documentación**
+
+| Archivo | Qué es |
+|---|---|
+| `README.md` | este archivo |
+| `GUIA-ANDROID.md` | configuración paso a paso desde el celular |
+| `CAMBIOS.md` | qué se cambió en la última entrega y qué había que subir |
+
+---
+
+## Nada que instalar
+
+Todo se hace desde el navegador del celular: subir archivos por GitHub, cargar fotos por
+el panel, configurar en las consolas de Firebase y Cloudinary. **No hay herramientas de
+escritorio en este proyecto**, ni terminal, ni npm.
+
+Una sola carpeta a propósito: subir carpetas anidadas desde el celular es
+innecesariamente molesto.
+
+---
+
+## Cómo se cambia el contenido
+
+El circuito es de una sola dirección:
 
 ```
-index.html            el catálogo público
-admin.html            el panel: álbumes, fotos y usuarios
-firebase-init.js      único punto de contacto con Firebase
-nucleo.js             lo común del panel: Atrás, avisos, imágenes, permisos
-sw.js                 service worker: hace que el panel funcione sin señal
-manifest.json         hace la app instalable
-icono-192.png · icono-512.png · apple-touch-icon.png
-contenido.json        los 130 textos en español y francés
-REGLAS.txt            las reglas de seguridad de Firestore, para copiar y pegar
-assets/               las 34 imágenes y el video, todo en una sola carpeta
-README.md             este archivo
-GUIA-ANDROID.md       configuración paso a paso desde el celular
+editás en el panel o en editar.html
+  → Guardar     deja los cambios en Firestore, para que no se pierdan
+  → Exportar    descarga contenido.json
+  → lo subís al repositorio
+  → cambia el sitio
 ```
 
-**El panel se instala como app.** Abrilo, recargá una vez con señal, y en Chrome:
-menú ⋮ → Agregar a la pantalla principal.
+**El `contenido.json` del repositorio es lo publicado. Firestore es el cuaderno de
+trabajo.** El sitio no lee la base, salvo que se lo pidas con `?borrador=1`.
 
-**Al cambiar cualquiera de los archivos de la lista `SHELL` de `sw.js`, hay que subir la
-`VERSION` que está arriba en ese archivo.** Si no, un teléfono que ya instaló la app puede
-seguir sirviendo una mezcla de archivos viejos y nuevos.
+Dos caminos para editar, y los dos escriben el mismo borrador:
 
-Una sola carpeta a propósito: subir carpetas anidadas desde el celular es innecesariamente
-molesto.
+- **`editar.html`** (ojo 👁 en el panel) · la página real, tocás y escribís encima. Las
+  fotos se cambian eligiendo del álbum. No edita listas ni la tabla de precios.
+- **Panel → Contenido del sitio** (lápiz ✎) · todos los textos por formulario,
+  incluidas las listas y la tabla.
 
-## Los nombres de assets/
+### Cambiar una imagen · dos caminos distintos
+
+- **Desde el editor:** elegís una foto de un álbum. Queda como *reemplazo* en
+  `contenido.json`, y si Cloudinary falla el sitio vuelve sola a la de `assets/`.
+- **Desde GitHub:** subís un archivo con el mismo nombre sobre `assets/`. Cambia el
+  respaldo para todos.
+
+### Los nombres de `assets/`
 
 | Archivo | Dónde aparece |
 |---|---|
@@ -46,32 +115,66 @@ molesto.
 | `banner.mp4` `banner.jpg` | video de portada y su imagen de respaldo |
 | `logo.png` | el logo |
 
-Para cambiar una imagen: subir la nueva con **el mismo nombre**, encima de la anterior.
+Son 32 lugares editables: esos, menos el video y el logo.
 
-## Nada que instalar
+---
 
-Todo se hace desde el navegador del celular: subir archivos por GitHub, cargar fotos por
-el panel, configurar en las consolas de Firebase y Cloudinary. **No hay herramientas de
-escritorio en este proyecto**, ni terminal, ni npm.
+## Al subir código
 
-## Configuración
+**Si cambia cualquier archivo de la lista `SHELL` de `sw.js`, hay que subir también la
+`VERSION` que está arriba en ese archivo.** Si no, un teléfono que ya instaló la app puede
+seguir sirviendo una mezcla de archivos viejos y nuevos.
 
-Ver `GUIA-ANDROID.md`, que va paso a paso desde el celular: GitHub Pages, Firebase y
-Cloudinary.
+**Y si cambia `admin.html` o `editar.html`, subir su sello:** la constante `PANEL` en el
+primero, `EDITOR` en el segundo. Ese número se muestra en la interfaz y se firma en el JSON
+exportado. Es la única forma de saber, mirando, si el archivo que corre es el nuevo o una
+copia vieja de la caché.
+
+Si algo se comporta raro sin motivo, **lo primero es el sello**, no la configuración.
+El botón ↻ del panel borra las cachés y recarga.
+
+---
+
+## Idiomas
+
+Español y francés. El botón de idioma cambia el texto y también la dirección:
+
+```
+https://casayourte.com/            español
+https://casayourte.com/?lang=fr    francés
+```
+
+Esa segunda dirección es la que conviene compartir con clientes franceses: sin ella, para
+un buscador la versión en francés no existe.
+
+**En el editor se edita el idioma que se está viendo.** Para cambiar el francés hay que
+pasar a FR primero.
+
+---
+
+## Para trabajar
+
+| Dirección | Qué hace |
+|---|---|
+| `?dev=1` | botón para borrar cachés y recargar limpio |
+| `?borrador=1` | muestra el borrador de la base, sin publicar, con aviso arriba |
+| `?lang=fr` | abre en francés |
+
+---
 
 ## No subir acá
 
-Los cálculos, costos, márgenes y proveedores **no van a este repositorio**, que es público.
-Van a un repositorio privado aparte. Ni siquiera sirve borrarlos después: quedan en el
-historial.
+**Los cálculos, costos, márgenes, tarifas y proveedores no van a este repositorio, que es
+público.** Van a un repositorio privado aparte. Ni siquiera sirve borrarlos después: quedan
+en el historial.
 
-## Los archivos y qué hacer con cada uno
+Lo mismo la documentación interna del proyecto (`CASAYOURTE-DOCUMENTACION.md`).
 
-| Archivo | Se toca desde |
-|---|---|
-| `index.html` | se reemplaza subiendo el nuevo |
-| `admin.html` | se reemplaza subiendo el nuevo |
-| `contenido.json` | se edita en GitHub con el lápiz, o desde el panel |
-| `assets/*` | se reemplaza subiendo con el mismo nombre |
-| `REGLAS.txt` | se copia y se pega en la consola de Firebase |
-| `GUIA-ANDROID.md` | se lee |
+Los `.md` de este repositorio se sirven en texto plano a cualquiera que sepa la dirección.
+
+---
+
+## Configuración
+
+Ver `GUIA-ANDROID.md`: GitHub Pages, el dominio, Firebase y Cloudinary, paso a paso desde
+el celular.

@@ -20,13 +20,14 @@ En el repositorio: **Add file → Upload files**.
 Toca *choose your files* y seleccioná los seis juntos desde tu gestor de archivos:
 
 ```
-index.html
-admin.html
-contenido.json
-README.md
-REGLAS.txt
-GUIA-ANDROID.md
+index.html        album.html       admin.html
+editar.html       sembrar.html     contenido.json
+firebase-init.js  nucleo.js        sw.js
+manifest.json     CNAME            REGLAS.txt
+README.md         GUIA-ANDROID.md
 ```
+
+Y los tres iconos: `icono-192.png`, `icono-512.png`, `apple-touch-icon.png`.
 
 Abajo, en *Commit changes*, escribí `primera carga` y toca **Commit changes**.
 
@@ -74,8 +75,8 @@ un tilde verde.
 Tus dos direcciones:
 
 ```
-Sitio:  https://casayourte.github.io/CasaYourte/
-Panel:  https://casayourte.github.io/CasaYourte/admin.html
+Sitio:  https://casayourte.com/
+Panel:  https://casayourte.com/admin.html
 ```
 
 **Ojo con las mayúsculas:** `CasaYourte` va con C y Y mayúsculas. La dirección distingue.
@@ -106,15 +107,19 @@ Andá a **⚙ Configuración del proyecto → General** y mirá **ID del proyect
 
 Mientras estés ahí, bajá a *Tus apps* y comparé los seis valores con los del `admin.html`.
 
-## C1 · Dominio autorizado
+## C1 · Dominios autorizados
 
 Sin este paso el panel no te va a dejar entrar.
 
-**Authentication → Settings → Authorized domains → Add domain**:
+**Authentication → Settings → Authorized domains → Add domain**, y agregá **los dos**:
 
 ```
+casayourte.com
 casayourte.github.io
 ```
+
+El primero es el dominio propio. El segundo conviene dejarlo mientras las dos direcciones
+funcionen: si el DNS del dominio se cae o tarda, el panel sigue entrando por la de GitHub.
 
 ## C2 · Tu usuario ya está
 
@@ -181,7 +186,7 @@ La prueba de Cloudinary sube una imagen de 8 píxeles a una carpeta `__prueba__`
 borrar desde el panel de Cloudinary cuando quieras, o dejarla.
 
 
-**E1 · El sitio.** Abrí `https://casayourte.github.io/CasaYourte/`
+**E1 · El sitio.** Abrí `https://casayourte.com/`
 Tiene que verse el video de portada, las fotos, y el botón de francés arriba a la derecha.
 Si las fotos no cargan, algún nombre de `assets/` está mal escrito.
 
@@ -248,9 +253,9 @@ anterior.
 | Qué | Valor |
 |---|---|
 | Repositorio | `github.com/casayourte/CasaYourte` |
-| Sitio | `casayourte.github.io/CasaYourte/` |
-| Panel | `casayourte.github.io/CasaYourte/admin.html` |
-| Dominio en Firebase | `casayourte.github.io` |
+| Sitio | `casayourte.com/` |
+| Panel | `casayourte.com/admin.html` |
+| Dominio en Firebase | `casayourte.com` |
 | Proyecto Firebase | `casayourte` |
 | Cloudinary cloud | `kbjqcnpa` |
 | Upload preset | `casayourte_movil` |
