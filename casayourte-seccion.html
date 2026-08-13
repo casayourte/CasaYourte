@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>CasaYourte · Sección paramétrica del muro</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..700,0..100,0..1&family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#181614; --ink2:#221E1A; --ink3:#2B2621; --line:#3B342C;
+  --wool:#EFE8DA; --dim:#A89E8C; --blond:#DCA96B; --burg:#7A2C3C;
+  --ok:#5B8B6A; --wip:#C08A3E; --stop:#8E3A46;
+  --disp:"Fraunces",Georgia,serif; --body:"Instrument Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+  --safe: env(safe-area-inset-bottom, 0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--ink);color:var(--wool);font-family:var(--body);
+  font-size:16px;line-height:1.5;padding-bottom:calc(2rem + var(--safe))}
+h1,h2{font-family:var(--disp);font-weight:400;margin:0;line-height:1.08;
+  font-variation-settings:"SOFT" 30,"WONK" 1}
+button,input,select{font-family:inherit;font-size:16px;color:inherit}
+.mono{font-family:var(--mono);font-size:.62rem;letter-spacing:.13em;text-transform:uppercase}
+
+header{padding:1.6rem 1rem 1rem;border-bottom:1px solid var(--line)}
+header .eb{font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--blond);display:block;margin-bottom:.7rem}
+header h1{font-size:clamp(1.5rem,5.5vw,2.2rem);font-weight:300;
+  font-variation-settings:"SOFT" 40,"WONK" 1}
+header p{margin:.7rem 0 0;color:var(--dim);font-size:.9rem;max-width:52ch}
+
+.dib{background:var(--ink2);border-bottom:1px solid var(--line);padding:.4rem;
+  overflow-x:auto;-webkit-overflow-scrolling:touch}
+.dib svg{display:block;min-width:660px}
+
+section{padding:1.2rem 1rem;border-bottom:1px solid var(--line)}
+section h2{font-size:1.05rem;margin-bottom:.2rem}
+section .sub{font-size:.82rem;color:var(--dim);margin-bottom:.9rem}
+
+.campos{display:grid;grid-template-columns:1fr 1fr;gap:.5rem .7rem}
+@media(min-width:620px){.campos{grid-template-columns:repeat(3,1fr)}}
+label{display:block}
+label .k{font-family:var(--mono);font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--blond);display:block;margin-bottom:.25rem;line-height:1.3}
+label input,label select{width:100%;background:var(--ink3);border:1px solid var(--line);
+  border-radius:6px;padding:.55rem;color:var(--wool);font-family:var(--mono);font-size:.88rem}
+label input:focus,label select:focus{outline:2px solid var(--blond);outline-offset:1px}
+label .u{font-size:.68rem;color:#6f6759;margin-top:.15rem;display:block}
+
+.res{display:grid;grid-template-columns:1fr;gap:0}
+.res div{display:flex;gap:.6rem;align-items:baseline;padding:.45rem 0;
+  border-bottom:1px solid var(--line);font-size:.88rem}
+.res div:last-child{border-bottom:0}
+.res .n{flex:1;color:var(--dim)}
+.res .v{font-family:var(--mono);font-size:.88rem;color:var(--wool);font-weight:500;
+  white-space:nowrap}
+.res .v.d{color:var(--blond)}
+
+.alerta{border-left:3px solid var(--wip);background:var(--ink2);border-radius:0 8px 8px 0;
+  padding:.7rem .8rem;margin-top:.8rem;font-size:.86rem;color:var(--dim)}
+.alerta b{color:var(--wip)}
+.alerta.mal{border-left-color:var(--stop)}
+.alerta.mal b{color:#E9A8B0}
+.alerta.ok{border-left-color:var(--ok)}
+.alerta.ok b{color:#8FBF9E}
+.btn{display:block;width:100%;padding:.85rem;border-radius:6px;border:1px solid var(--line);
+  background:var(--ink2);color:var(--wool);font-family:var(--mono);font-size:.66rem;
+  letter-spacing:.13em;text-transform:uppercase;margin-top:.6rem;cursor:pointer}
+.btn.p{background:var(--blond);border-color:var(--blond);color:var(--ink);font-weight:500}
+.row{display:flex;gap:.5rem}
+.row .btn{flex:1;margin-top:0}
+.pie{padding:1rem;color:#5a5145;font-size:.75rem;text-align:center}
+</style>
+</head>
+<body>
+
+<header>
+  <span class="eb">Sección paramétrica</span>
+  <h1>Cambiá un valor y el dibujo se rehace.</h1>
+  <p>Corte radial del borde superior del muro. Cada medida del dibujo sale de los campos de
+  abajo. El centro de la yurta queda a la derecha.</p>
+</header>
+
+<div class="dib"><svg id="svg" viewBox="0 0 900 620" width="100%"></svg></div>
+
+<section>
+  <h2>Medidas que se deciden</h2>
+  <p class="sub">Todo en metros, salvo el ángulo.</p>
+  <div class="campos" id="campos"></div>
+  <div class="row" style="margin-top:.9rem">
+    <button class="btn" data-caso="modelo">Modelo 7 m</button>
+    <button class="btn" data-caso="christine">Christine 24 cm</button>
+    <button class="btn" data-caso="grueso">Aislación 40 cm</button>
+  </div>
+</section>
+
+<section>
+  <h2>Lo que sale del cálculo</h2>
+  <p class="sub">Los valores en color son los que van al despiece.</p>
+  <div class="res" id="res"></div>
+  <div id="alertas"></div>
+</section>
+
+<section>
+  <h2>Los triángulos del techo</h2>
+  <p class="sub">Medidos al centro de la madera, como corresponde.</p>
+  <div class="res" id="res2"></div>
+</section>
+
+<p class="pie">CasaYourte · borrador de cálculo</p>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   Todas las reglas en un solo lugar. Cambiar una acá cambia el
+   dibujo, la tabla y las alertas a la vez.
+   ═══════════════════════════════════════════════════════════════ */
+
+const CAMPOS = [
+  ["D",        "Diámetro de la yurta",        7.000, "m"],
+  ["ais_nom",  "Aislación del muro · nominal",0.120, "m"],
+  ["rel",      "Compresión",                  0.75,  "3/4 = 0,75"],
+  ["ais_techo","Aislación del techo · nominal",0.120,"m"],
+  ["ancho_an", "Ancho del anillo",            0.090, "m · se decide"],
+  ["e_mad",    "Espesor de una capa del anillo",0.040,"m · van dos"],
+  ["h_ap",     "Altura del vértice del triángulo",0.104,"m"],
+  ["e_trei",   "Espesor del listón de trei",  0.019, "m"],
+  ["e_per",    "Espesor listón perímetro ext",0.010, "m"],
+  ["n_per",    "Capas del perímetro exterior",2,     "unidades"],
+  ["e_int",    "Espesor listón perímetro int",0.010, "m · una capa"],
+  ["ang",      "Ángulo del techo",            30,    "grados"],
+  ["r_toono",  "Radio exterior del toono",    1.000, "m"],
+  ["n_tri",    "Triángulos del techo",        36,    "uno por percha"],
+];
+
+const CASOS = {
+  modelo:    {ais_nom:0.120, ancho_an:0.090, e_mad:0.040, h_ap:0.104, ais_techo:0.120},
+  christine: {ais_nom:0.240, ancho_an:0.100, e_mad:0.045, h_ap:0.150, ais_techo:0.240},
+  grueso:    {ais_nom:0.400, ancho_an:0.100, e_mad:0.045, h_ap:0.220, ais_techo:0.400},
+};
+
+const P = {};
+CAMPOS.forEach(([k,,v]) => P[k] = v);
+
+function calc() {
+  const rad = P.ang * Math.PI / 180;
+  const tan = Math.tan(rad), cos = Math.cos(rad);
+  const R = P.D / 2;
+  const ais = P.ais_nom * P.rel;
+  const r_int = R - ais;                       // cara interior del anillo
+  const r_ext = r_int + P.ancho_an;            // el ancho se decide
+  const per = P.n_per * P.e_per;               // borde exterior del muro
+  const r_tri = R - per;                       // hasta acá llega el triángulo
+  const base = r_tri - r_int;                  // base del triángulo
+  const trunc = P.h_ap - base * tan;           // cara truncada al exterior
+  const vuelo = r_tri - r_ext;                 // cuánto sobresale del anillo
+  const h_sand = 2 * P.e_mad;
+  const camara = P.ais_techo * P.rel;
+  const semi = Math.PI / P.n_tri;
+  const r_mid = r_int * Math.cos(semi);
+  return {
+    R, ais, r_int, r_ext, per, r_tri, base, trunc, vuelo, h_sand, camara, tan, cos,
+    trei_int: r_int - 2 * P.e_trei,
+    r_lito_int: r_int - 2 * P.e_trei - P.e_int,
+    montante: ais + 2 * P.e_trei,
+    hip: Math.hypot(base, P.h_ap - trunc),
+    h_min: 0.020 + base * tan,
+    r_mid, flecha: r_int - r_mid,
+    caida: (r_int - r_mid) * tan,
+    largo_med: (r_mid - P.r_toono) / cos,
+    largo_rad: (r_int - P.r_toono) / cos,
+    cuerda: 2 * r_int * Math.sin(semi),
+    paso: 2 * Math.PI * r_int / P.n_tri,
+  };
+}
+
+/* ---------- dibujo ---------- */
+function dibujar() {
+  const C = calc();
+  const W = 900, H = 620;
+  const s = [];
+
+  // encuadre radial: desde un poco antes del listón interior hasta pasado el borde
+  const rA = C.r_lito_int - 0.030, rB = C.R + 0.030;
+  const MX = 118, MD = 168;            // márgenes izquierdo y derecho
+  const esc = (W - MX - MD) / (rB - rA);
+  const X = r => MX + (r - rA) * esc;
+
+  // encuadre vertical: 0 = cara superior del sándwich
+  const top = -(P.h_ap + C.camara + 0.055);
+  const bot = 0.300;
+  const escY = (H - 210) / (bot - top);
+  const eY = Math.min(esc, escY);      // misma escala en los dos ejes
+  const MY = 118 + P.h_ap * eY + C.camara * eY;
+  const Y = m => MY + m * eY;
+
+  const T = (x,y,t,c="#EFE8DA",sz=10.5,a="start",w="400") =>
+    s.push(`<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" fill="${c}" font-size="${sz}" text-anchor="${a}" font-weight="${w}">${t}</text>`);
+  const CH = (x1,x2,y,t,c="#DCA96B") => {
+    s.push(`<line x1="${x1.toFixed(1)}" y1="${y.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y.toFixed(1)}" stroke="${c}" stroke-width="1.1" marker-start="url(#a1)" marker-end="url(#a2)"/>`);
+    T((x1+x2)/2, y-5, t, c, 9.8, "middle", "500");
+  };
+  const CV = (x,y1,y2,t,c="#8fa3b3") => {
+    s.push(`<line x1="${x.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${c}" stroke-width="1.1" marker-start="url(#b1)" marker-end="url(#b2)"/>`);
+    T(x+6, (y1+y2)/2+4, t, c, 9.8, "start", "500");
+  };
+
+  s.push(`<defs>
+    <marker id="a1" markerWidth="7" markerHeight="7" refX="1" refY="2.6" orient="auto"><path d="M6,0 L0,2.6 L6,5.2 z" fill="#DCA96B"/></marker>
+    <marker id="a2" markerWidth="7" markerHeight="7" refX="6" refY="2.6" orient="auto"><path d="M0,0 L6,2.6 L0,5.2 z" fill="#DCA96B"/></marker>
+    <marker id="b1" markerWidth="7" markerHeight="7" refX="2.6" refY="1" orient="auto"><path d="M0,6 L2.6,0 L5.2,6 z" fill="#8fa3b3"/></marker>
+    <marker id="b2" markerWidth="7" markerHeight="7" refX="2.6" refY="6" orient="auto"><path d="M0,0 L2.6,6 L5.2,0 z" fill="#8fa3b3"/></marker>
+    <pattern id="pm" width="7" height="7" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="0" y2="7" stroke="#6b7f8e" stroke-width="2"/></pattern>
+    <pattern id="pt" width="7" height="7" patternTransform="rotate(-45)" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="0" y2="7" stroke="#7d8f6b" stroke-width="2"/></pattern>
+  </defs>`);
+  s.push(`<rect width="${W}" height="${H}" fill="#181614"/>`);
+
+  const yTreiBot = 0.260;
+
+  // ejes
+  [C.r_lito_int, C.trei_int, C.r_int, C.r_ext, C.r_tri, C.R].forEach(r =>
+    s.push(`<line x1="${X(r).toFixed(1)}" y1="${Y(-(P.h_ap+C.camara)-0.030).toFixed(1)}" x2="${X(r).toFixed(1)}" y2="${Y(yTreiBot+0.048).toFixed(1)}" stroke="#453e35" stroke-width="1" stroke-dasharray="3 4"/>`));
+
+  // perchas radiales
+  const yP = -(P.h_ap + C.camara);
+  s.push(`<rect x="${X(rA).toFixed(1)}" y="${Y(yP-0.030).toFixed(1)}" width="${((rB-rA)*eY).toFixed(1)}" height="${(0.030*eY).toFixed(1)}" fill="#8a7a5f" opacity=".45" stroke="#b09a72" stroke-width="1.1"/>`);
+  T(X(C.r_lito_int), Y(yP-0.011), "PERCHAS RADIALES · segunda capa", "#c9b78f", 9.8, "start", "600");
+
+  // cámara del techo
+  s.push(`<rect x="${X(C.r_int).toFixed(1)}" y="${Y(yP).toFixed(1)}" width="${((C.R-C.r_int)*eY).toFixed(1)}" height="${(C.camara*eY).toFixed(1)}" fill="url(#pt)" opacity=".38" stroke="#7d8f6b" stroke-width="1" stroke-dasharray="4 3"/>`);
+  T(X(C.r_int)+7, Y(yP)+15, "CÁMARA del techo", "#a8bd93", 9.5, "start", "600");
+
+  // aislación del muro
+  s.push(`<rect x="${X(C.r_int).toFixed(1)}" y="${Y(C.h_sand).toFixed(1)}" width="${((C.R-C.r_int)*eY).toFixed(1)}" height="${((yTreiBot-C.h_sand)*eY).toFixed(1)}" fill="url(#pm)" opacity=".38"/>`);
+  T(X(C.r_int)+7, Y(yTreiBot-0.048), "AISLACIÓN del muro", "#8fa3b3", 9.5, "start", "600");
+
+  // triángulo separador + distanciador
+  const yBase = 0;
+  s.push(`<path d="M ${X(C.r_int).toFixed(1)} ${Y(yBase).toFixed(1)} L ${X(C.r_tri).toFixed(1)} ${Y(yBase).toFixed(1)} L ${X(C.r_tri).toFixed(1)} ${Y(-C.trunc).toFixed(1)} L ${X(C.r_int).toFixed(1)} ${Y(-P.h_ap).toFixed(1)} Z" fill="#5A6A5F" stroke="#C6D3C4" stroke-width="1.5"/>`);
+  T(X(C.r_int)+8, Y(-P.h_ap)+20, "TRIÁNGULO", "#DCEAD9", 9.5, "start", "700");
+  T(X(C.r_int)+8, Y(-P.h_ap)+32, "SEPARADOR", "#DCEAD9", 9.5, "start", "700");
+  T(X(C.r_int)+8, Y(-P.h_ap)+46, P.ang+"°", "#DCEAD9", 10.5, "start", "700");
+
+  if (C.vuelo > 0.001) {
+    // la parte que sobresale del anillo necesita distanciador
+    s.push(`<rect x="${X(C.r_ext).toFixed(1)}" y="${Y(yBase).toFixed(1)}" width="${(C.vuelo*eY).toFixed(1)}" height="${(C.h_sand*eY).toFixed(1)}" fill="#7A2C3C" opacity=".55" stroke="#B0566A" stroke-width="1.4"/>`);
+    T(X(C.r_ext)+(C.vuelo*eY)/2, Y(C.h_sand/2)+4, "DIST.", "#E9A8B0", 9, "middle", "700");
+  }
+
+  // listones del perímetro exterior
+  for (let i=0;i<P.n_per;i++){
+    const x0 = C.R - (i+1)*P.e_per;
+    s.push(`<rect x="${X(x0).toFixed(1)}" y="${Y(-C.trunc).toFixed(1)}" width="${(P.e_per*eY).toFixed(1)}" height="${(C.trunc*eY).toFixed(1)}" fill="#8a7550" stroke="#181614" stroke-width="1"/>`);
+  }
+  s.push(`<rect x="${X(C.r_tri).toFixed(1)}" y="${Y(yBase).toFixed(1)}" width="${(C.per*eY).toFixed(1)}" height="${((yTreiBot-yBase)*eY).toFixed(1)}" fill="#7f6f52" stroke="#181614" stroke-width="1"/>`);
+  T(X(C.R)+9, Y(-C.trunc)+12, "BORDE EXTERIOR", "#c9ab7a", 9.3, "start", "600");
+  T(X(C.R)+9, Y(-C.trunc)+24, P.n_per+" × "+(P.e_per*1000).toFixed(0)+" mm", "#c9ab7a", 9);
+
+  // anillo · dos capas idénticas
+  [[0,P.e_mad,"#DCA96B","B"],[P.e_mad,C.h_sand,"#C89B62","A"]].forEach(([y0,y1,c,l])=>{
+    s.push(`<rect x="${X(C.r_int).toFixed(1)}" y="${Y(y0).toFixed(1)}" width="${(P.ancho_an*eY).toFixed(1)}" height="${((y1-y0)*eY).toFixed(1)}" fill="${c}" stroke="#181614" stroke-width="1.4"/>`);
+    T(X(C.r_int)+(P.ancho_an*eY)/2, Y(y0)+((y1-y0)*eY)/2+4, l, "#181614", 12, "middle", "700");
+  });
+
+  // trei
+  for (let i=0;i<2;i++){
+    const x0 = C.trei_int + i*P.e_trei;
+    s.push(`<rect x="${X(x0).toFixed(1)}" y="${Y(C.h_sand).toFixed(1)}" width="${(P.e_trei*eY).toFixed(1)}" height="${((yTreiBot-C.h_sand)*eY).toFixed(1)}" fill="${i?'#C4B98F':'#D8CDA8'}" stroke="#181614" stroke-width="1"/>`);
+  }
+  T(X(C.trei_int)+P.e_trei*eY, Y(yTreiBot-0.100), "TREI", "#D8CDA8", 9.8, "middle", "600");
+
+  // listón interior
+  s.push(`<rect x="${X(C.r_lito_int).toFixed(1)}" y="${Y(C.h_sand).toFixed(1)}" width="${(P.e_int*eY).toFixed(1)}" height="${((yTreiBot-C.h_sand)*eY).toFixed(1)}" fill="#8e7f66" stroke="#181614" stroke-width="1"/>`);
+  T(X(C.r_lito_int)-8, Y(yTreiBot-0.130), "perímetro INTERIOR", "#c0ae92", 9.3, "end", "600");
+
+  // montante
+  s.push(`<rect x="${X(C.trei_int).toFixed(1)}" y="${Y(0).toFixed(1)}" width="${(C.montante*eY).toFixed(1)}" height="${((yTreiBot)*eY).toFixed(1)}" fill="none" stroke="#B0566A" stroke-width="1.6" stroke-dasharray="7 4"/>`);
+  T(X(C.trei_int)+6, Y(yTreiBot-0.012), "MONTANTE · por detrás", "#E9A8B0", 9.3, "start", "600");
+
+  // cotas
+  CH(X(C.r_int), X(C.r_ext), Y(-(P.h_ap+C.camara)-0.036), "anillo "+(P.ancho_an*1000).toFixed(0), "#C08A3E");
+  CV(X(C.R)+62, Y(yP), Y(-P.h_ap), (C.camara*1000).toFixed(0), "#a8bd93");
+  CV(X(C.R)+62, Y(-P.h_ap), Y(0), (P.h_ap*1000).toFixed(0));
+  CH(X(C.r_int), X(C.r_tri), Y(yTreiBot+0.026), "base triángulo "+(C.base*1000).toFixed(0), "#C6D3C4");
+  CH(X(C.r_int), X(C.R), Y(yTreiBot+0.052), "aislación "+(C.ais*1000).toFixed(0));
+  CH(X(C.trei_int), X(C.R), Y(yTreiBot+0.078), "montante "+(C.montante*1000).toFixed(0), "#E9A8B0");
+
+  [[C.r_lito_int,"#c0ae92"],[C.trei_int,"#E9A8B0"],[C.r_int,"#DCA96B"],
+   [C.r_ext,"#C08A3E"],[C.r_tri,"#C6D3C4"],[C.R,"#8fa3b3"]].forEach(([r,c])=>
+    T(X(r), Y(yTreiBot+0.100), r.toFixed(3), c, 9, "middle", "600"));
+  T(MX-14, Y(yTreiBot+0.100), "radio", "#A89E8C", 8.6, "end");
+
+  T(MX-14, 26, "CORTE · borde superior del muro", "#EFE8DA", 12, "start", "700");
+  T(MX-14, 43, `yurta ${P.D} m · aislación ${(P.ais_nom*1000).toFixed(0)} → ${(C.ais*1000).toFixed(0)} mm · techo ${P.ang}°`, "#A89E8C", 9.5);
+  T(W-14, Y(yTreiBot+0.100), "centro \u2190", "#453e35", 8.6, "end");
+
+  document.getElementById("svg").setAttribute("viewBox", `0 0 ${W} ${H}`);
+  document.getElementById("svg").innerHTML = s.join("");
+  return C;
+}
+
+/* ---------- tablas y alertas ---------- */
+const mm = v => (v*1000).toFixed(1).replace(".0","") + " mm";
+const m3 = v => v.toFixed(3);
+
+function pintar() {
+  const C = dibujar();
+
+  document.getElementById("res").innerHTML = [
+    ["Aislación comprimida", mm(C.ais), 0],
+    ["Radio interior del anillo", m3(C.r_int), 1],
+    ["Radio exterior del anillo", m3(C.r_ext), 0],
+    ["Alto del sándwich · dos capas", mm(C.h_sand), 0],
+    ["Base del triángulo separador", mm(C.base), 1],
+    ["Cara truncada al exterior", mm(C.trunc), 1],
+    ["Hipotenusa del triángulo", mm(C.hip), 1],
+    ["Vuelo sobre el anillo", C.vuelo > 0.0005 ? mm(C.vuelo) : "no sobresale", C.vuelo>0.0005?1:0],
+    ["Montante de abertura · largo", mm(C.montante), 1],
+    ["Cara interior del trei", m3(C.trei_int), 0],
+    ["Cámara de aislación del techo", mm(C.camara), 0],
+  ].map(([n,v,d]) => `<div><span class="n">${n}</span><span class="v${d?" d":""}">${v}</span></div>`).join("");
+
+  document.getElementById("res2").innerHTML = [
+    ["Triángulos · uno por percha", P.n_tri, 0],
+    ["Paso sobre el anillo", mm(C.paso), 0],
+    ["Cuerda de la base", mm(C.cuerda), 1],
+    ["Radio del medio de la base", m3(C.r_mid), 0],
+    ["Flecha · cuánto no llega al anillo", mm(C.flecha), 1],
+    ["Cuánto cae bajo el cono", mm(C.caida), 1],
+    ["Largo de la mediana", m3(C.largo_med), 1],
+    ["Largo si se midiera al radio", m3(C.largo_rad), 0],
+    ["Corte de los vértices", (2*P.ang) + "°", 1],
+  ].map(([n,v,d]) => `<div><span class="n">${n}</span><span class="v${d?" d":""}">${v}</span></div>`).join("");
+
+  const al = [];
+  if (C.trunc < 0.020)
+    al.push(["mal", `La cara truncada queda en ${mm(C.trunc)}. Con menos de 20 mm no hay
+      dónde atornillar el listón del borde. Subí la altura del vértice a ${mm(C.h_min)} o más.`]);
+  else if (C.trunc < 0.030)
+    al.push(["", `La cara truncada son ${mm(C.trunc)}: justo. El mínimo es 20 mm.`]);
+  if (C.vuelo > 0.001)
+    al.push(["", `El triángulo sobresale ${mm(C.vuelo)} del anillo: hace falta
+      <b>distanciador</b> en esa parte, porque queda en el aire.`]);
+  else if (Math.abs(C.vuelo) < 0.001)
+    al.push(["ok", `El triángulo termina justo en el borde del anillo. Sin distanciador.`]);
+  if (C.caida > 0.020)
+    al.push(["", `Con ${P.n_tri} triángulos el medio de la base cae ${mm(C.caida)} bajo el
+      cono. Arriba de 20 mm conviene más triángulos o cortar la base curva.`]);
+  if (C.base <= 0)
+    al.push(["mal", `La aislación es menor que los listones del borde: no hay lugar para el
+      triángulo.`]);
+  document.getElementById("alertas").innerHTML = al.map(([c,t]) =>
+    `<div class="alerta ${c}">${t}</div>`).join("");
+}
+
+/* ---------- campos ---------- */
+document.getElementById("campos").innerHTML = CAMPOS.map(([k,n,v,u]) =>
+  `<label><span class="k">${n}</span>
+   <input type="number" step="any" inputmode="decimal" data-k="${k}" value="${v}">
+   <span class="u">${u}</span></label>`).join("");
+
+document.getElementById("campos").addEventListener("input", e => {
+  const k = e.target.dataset.k;
+  const v = parseFloat(e.target.value);
+  if (k && isFinite(v)) { P[k] = v; pintar(); }
+});
+
+document.querySelectorAll("[data-caso]").forEach(b =>
+  b.addEventListener("click", () => {
+    Object.assign(P, CASOS[b.dataset.caso]);
+    document.querySelectorAll("#campos input").forEach(i => {
+      if (P[i.dataset.k] !== undefined) i.value = P[i.dataset.k];
+    });
+    pintar();
+  }));
+
+pintar();
+</script>
+</body>
+</html>
