@@ -128,7 +128,7 @@ import { db, auth, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, addDoc,
          collection, serverTimestamp, onAuthStateChanged, signOut } from "./firebase-init.js";
 import { CY } from "./nucleo.js";
 
-CY.PANEL = "calculo-4";
+CY.PANEL = "calculo-5";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 const yo = await CY.arrancar({ db, auth, doc, getDoc, onAuthStateChanged }, "calculo", "calculo");
 
@@ -177,7 +177,7 @@ const CAMPOS = [
   ["n_ab",     "Aberturas",                       5,     "unidades"],
   ["n_gr",     "Grupos contiguos",                3,     "las juntas comparten montante"],
   ["alt_ab",   "Alto de la abertura",             2.280, "m"],
-  ["anc_mon",  "Ancho del montante",              0.080, "m"],
+  ["esp_mon",  "Espesor del montante",            0.080, "m · el ancho se deriva"],
 ];
 const CLAVES = CAMPOS.filter(c => c[0] !== "·").map(c => c[0]);
 const PORDEF = {}; CAMPOS.forEach(c => { if (c[0] !== "·") PORDEF[c[0]] = c[2]; });
@@ -260,7 +260,11 @@ function calc() {
     vol_tri: nt * (2 * lado_tri + 2 * Rint * Math.sin(beta)) * P.tri_anc * P.tri_esp,
     slant, area_techo: Math.PI * (Rp + P.r_toono) * slant,
     area_muro: 2 * Math.PI * R * P.alto,
-    n_mon: P.n_ab + P.n_gr, mon_largo: A + 2 * P.e_trei,
+    n_mon: P.n_ab + P.n_gr,
+    // El ANCHO del montante no se elige: tiene que cubrir la aislación
+    // comprimida más los DOS listones del trei. Dos palos de 2,2 no son lo
+    // mismo que dos de 1,6.
+    mon_ancho: A + 2 * P.e_trei,
     vol_perchas: n * slant * P.p_anc * P.p_alt,
     per_lito_ext: 2 * Math.PI * R * 2,
     per_lito_int: 2 * Math.PI * r_int_lito,
@@ -287,6 +291,11 @@ function tarjeta(tit, nota, filas, avisos) {
 function pintarPiezas() {
   const C = calc();
   let h = "";
+
+  h += `<div class="aviso"><b>Todas las medidas van en líneas</b>, al centro de la madera. Los
+    espesores y anchos de las secciones no entran en la geometría: alimentan los metros
+    cúbicos, y en un solo caso definen una medida —el ancho del montante, que tiene que cubrir
+    los dos listones del trei—.</div>`;
 
   h += `<h2 style="margin:.3rem 0 .5rem">El anillo periférico</h2>`;
   h += tarjeta("Radios y volumen", "Dos capas idénticas, un sándwich.", [
@@ -414,11 +423,17 @@ function pintarPiezas() {
   h += tarjeta("Montantes", "Del borde exterior del plancher a la cara interior del trei.", [
     ["", "Aberturas · grupos", "", `${un(P.n_ab)} · ${un(P.n_gr)}`, ""],
     ["", "Montantes", "aberturas + grupos", un(C.n_mon), "d"],
-    ["A", "Largo del montante", "A + 2 listones de trei", mm(C.mon_largo), "d"],
-    ["", "Alto × ancho", "", `${m(P.alt_ab)} × ${mm(P.anc_mon)}`, ""],
-    ["", "Volumen", "", m3(C.n_mon * C.mon_largo * P.alt_ab * P.anc_mon), ""],
-  ], [["", `El largo <b>no depende del diámetro</b>: son los mismos ${mm(C.mon_largo)} en 4,
-      7 o 12 metros. Sólo cambia dónde empieza.`]]);
+    ["A", "Ancho del montante", "A + 2 listones de trei", mm(C.mon_ancho), "d"],
+    ["", "Espesor", "se decide", mm(P.esp_mon), ""],
+    ["", "Alto", "", m(P.alt_ab), ""],
+    ["", "Volumen", "", m3(C.n_mon * C.mon_ancho * P.alt_ab * P.esp_mon), ""],
+  ], [
+    ["", `El ancho <b>no se elige</b>: tiene que cubrir la aislación comprimida más los dos
+      listones del trei. Con listones de ${mm(P.e_trei)} son ${mm(C.mon_ancho)}; si el
+      aserradero trae de 22 mm serían ${mm(C.A + 0.044)}.`],
+    ["", `Y <b>no depende del diámetro</b>: son los mismos ${mm(C.mon_ancho)} en 4, 7 o 12
+      metros. Sólo cambia dónde empieza.`],
+  ]);
 
   h += `<h2 style="margin:1.2rem 0 .5rem">Superficies</h2>`;
   h += tarjeta("Para la lona y el aislante", "", [
