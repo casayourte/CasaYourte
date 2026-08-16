@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>CasaYourte · Usuarios</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..700,0..100,0..1&family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link rel="stylesheet" href="./estilos.css">
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#181614">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="icon" href="./icono-192.png">
+<style>
+  .usr{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap}
+  .usr.inactivo{opacity:.5}
+  .usr .info{flex:1;min-width:150px}
+  .usr .info b{display:block;font-size:.95rem}
+  .usr .info small{display:block;color:var(--dim);font-size:.76rem;overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+
+<div id="nav"></div>
+
+<div class="contenedor">
+  <div style="display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;margin-bottom:.3rem">
+    <h1 style="margin-right:auto">Usuarios</h1>
+    <button class="btn p" id="btnNuevo"><span class="material-icons">person_add</span> Agregar</button>
+  </div>
+  <p class="gris">Hay <b>una sola cuenta administradora</b>. Los demás trabajan con permisos
+  explícitos: sin ninguno tildado, una persona entra pero no puede tocar nada. Desactivar a
+  alguien le corta el acceso sin borrar su historial.</p>
+
+  <div id="lista"><div class="vacio">Cargando…</div></div>
+
+  <h2 style="margin:1.6rem 0 .4rem">Invitaciones pendientes</h2>
+  <p class="gris">Quien recibe una invitación crea su propia contraseña. Nadie maneja claves
+  ajenas.</p>
+  <div id="invits"></div>
+</div>
+
+<dialog id="modal"><div class="modal">
+  <h2 id="mTit">Agregar persona</h2>
+  <p class="gris" id="mSub">La cuenta queda lista para entrar.</p>
+
+  <div class="seg" id="modos">
+    <button class="on" data-m="cuenta">Crearle la cuenta</button>
+    <button data-m="invitar">Invitarla</button>
+  </div>
+
+  <label><span class="k">Nombre</span><input id="fNombre" maxlength="60"></label>
+
+  <div id="gCuenta">
+    <label><span class="k">Mail</span>
+      <input id="fMail" type="email" inputmode="email" autocapitalize="none" spellcheck="false"></label>
+    <label><span class="k">Contraseña inicial · mínimo 6</span>
+      <input id="fClave" type="text" autocomplete="off"></label>
+    <p class="ayuda">Se la pasás vos. Después puede cambiarla con «Olvidé mi contraseña».</p>
+  </div>
+
+  <div id="gInvitar" class="oculto">
+    <label><span class="k">Mail al que invitás</span>
+      <input id="fMail2" type="email" inputmode="email" autocapitalize="none" spellcheck="false"></label>
+    <p class="ayuda">Le mandás el enlace del panel y entra por «Fui invitado». Elige su propia
+    contraseña.</p>
+  </div>
+
+  <label><span class="k">Rol</span>
+    <select id="fRol">
+      <option value="colaborador">Colaborador</option>
+      <option value="admin">Administrador</option>
+    </select></label>
+
+  <h3 style="margin:1rem 0 .2rem">Permisos</h3>
+  <p class="ayuda" style="margin-top:0">Sin ninguno tildado, la persona entra al panel pero
+  no puede crear ni editar nada.</p>
+  <div id="permisos"></div>
+  <div class="perm-admin oculto" id="permAdmin">
+    El administrador puede todo por definición. No se le tildan permisos uno por uno.
+  </div>
+
+  <div class="cierre">
+    <button class="btn" id="mCancelar">Cancelar</button>
+    <button class="btn p" id="mGuardar"><span class="material-icons">save</span> Guardar</button>
+  </div>
+</div></dialog>
+
+<script type="module">
+import { db, auth, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc,
+         collection, serverTimestamp, onAuthStateChanged, signOut,
+         crearCuentaAuth } from './firebase-init.js';
+import { CY } from './nucleo.js';
+
+CY.PANEL = 'usuarios-1';
+CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace('./admin.html')); };
+
+const yo = await CY.arrancar({ db, auth, doc, getDoc, onAuthStateChanged }, 'usuarios');
+if (!CY.esAdmin()) { location.replace('./admin.html'); throw new Error('sólo admin'); }
+
+const $ = (id) => document.getElementById(id);
+const esc = CY.esc;
+let usuarios = [], invits = [], editUid = null, modo = 'cuenta';
+
+/* ═══ lista ═══════════════════════════════════════════════ */
+const chips = (x) => {
+  if (x.rol === 'admin') return '<span class="chip admin">Todo · sin restricciones</span>';
+  const on = CY.PERMISOS.filter((p) => (x.permisos || {})[p.id] === true);
+  if (!on.length) return '<span class="chip no">Sin permisos</span>';
+  return on.map((p) => `<span class="chip si">${esc(p.label)}</span>`).join('');
+};
+
+async function cargar() {
+  try {
+    const [su, si] = await Promise.all([
+      getDocs(collection(db, 'usuarios')),
+      getDocs(collection(db, 'invitaciones')),
+    ]);
+    usuarios = su.docs.map((d) => ({ uid: d.id, ...d.data() }))
+      .sort((a, b) => (b.rol === 'admin') - (a.rol === 'admin')
+        || String(a.nombre || a.email).localeCompare(String(b.nombre || b.email), 'es'));
+    invits = si.docs.map((d) => ({ mail: d.id, ...d.data() }));
+    render();
+  } catch (e) {
+    $('lista').innerHTML = `<div class="vacio">${esc(CY.explicar(e))}</div>`;
+  }
+}
+
+function render() {
+  $('lista').innerHTML = usuarios.length ? usuarios.map((x) => `
+    <div class="tarj usr${x.activo ? '' : ' inactivo'}">
+      ${CY.avatarHTML(x)}
+      <div class="info"><b>${esc(x.nombre || '(sin nombre)')}${x.uid === yo.uid ? ' · vos' : ''}</b>
+        <small>${esc(x.email || '')}${x.activo ? '' : ' · desactivado'}</small></div>
+      <span class="chip ${x.rol === 'admin' ? 'admin' : ''}">${x.rol === 'admin' ? 'Admin' : 'Colaborador'}</span>
+      <button class="btn-mini" data-ed="${esc(x.uid)}" title="Editar">
+        <span class="material-icons" style="font-size:19px">edit</span></button>
+      ${x.uid === yo.uid ? '' : `<button class="btn-mini" data-tg="${esc(x.uid)}"
+        title="${x.activo ? 'Desactivar' : 'Reactivar'}">
+        <span class="material-icons" style="font-size:19px;color:${x.activo ? 'var(--bad)' : 'var(--ok)'}">
+        ${x.activo ? 'person_off' : 'how_to_reg'}</span></button>`}
+      <div class="chips" style="flex-basis:100%">${chips(x)}</div>
+    </div>`).join('') : '<div class="vacio">Sin usuarios.</div>';
+
+  $('invits').innerHTML = invits.length ? invits.map((i) => `
+    <div class="tarj lista-tarj">
+      <div class="crece"><b>${esc(i.mail)}</b>
+        <div class="sub">${esc(i.rol === 'admin' ? 'Administrador' : 'Colaborador')}</div></div>
+      <button class="btn d" data-anu="${esc(i.mail)}">Anular</button>
+    </div>`).join('') : '<div class="vacio">Ninguna pendiente.</div>';
+}
+
+document.addEventListener('click', async (ev) => {
+  const ed = ev.target.closest('[data-ed]');
+  if (ed) return editar(ed.dataset.ed);
+  const tg = ev.target.closest('[data-tg]');
+  if (tg) return alternar(tg.dataset.tg);
+  const an = ev.target.closest('[data-anu]');
+  if (an) return anular(an.dataset.anu);
+});
+
+async function alternar(uid) {
+  const x = usuarios.find((y) => y.uid === uid);
+  if (!confirm(x.activo
+    ? `¿Desactivar a ${x.nombre}?\n\nNo va a poder entrar hasta que lo reactives.`
+    : `¿Reactivar a ${x.nombre}?`)) return;
+  try {
+    await updateDoc(doc(db, 'usuarios', uid), { activo: !x.activo, actualizado: serverTimestamp() });
+    CY.aviso(x.activo ? 'Desactivado' : 'Reactivado', false);
+    cargar();
+  } catch (e) { CY.aviso(CY.explicar(e), true); }
+}
+
+async function anular(mail) {
+  if (!confirm(`¿Anular la invitación a ${mail}?`)) return;
+  try { await deleteDoc(doc(db, 'invitaciones', mail)); CY.aviso('Anulada'); cargar(); }
+  catch (e) { CY.aviso(CY.explicar(e), true); }
+}
+
+/* ═══ permisos del formulario ═════════════════════════════ */
+function pintarPermisos(p) {
+  const v = p || {};
+  $('permisos').innerHTML = CY.PERMISOS.map((x) => `
+    <label class="perm">
+      <input type="checkbox" class="chk" data-p="${esc(x.id)}" ${v[x.id] === true ? 'checked' : ''}>
+      <span><b><span class="material-icons" style="font-size:16px">${esc(x.icono)}</span>
+        ${esc(x.label)}</b><small>${esc(x.detalle)}</small></span>
+    </label>`).join('');
+}
+const leerPermisos = () => {
+  const o = {};
+  CY.PERMISOS.forEach((x) => { o[x.id] = false; });
+  document.querySelectorAll('.chk').forEach((c) => { o[c.dataset.p] = c.checked; });
+  return o;
+};
+function porRol() {
+  const esAdm = $('fRol').value === 'admin';
+  $('permisos').classList.toggle('oculto', esAdm);
+  $('permAdmin').classList.toggle('oculto', !esAdm);
+}
+$('fRol').addEventListener('change', porRol);
+
+/* ═══ modal ═══════════════════════════════════════════════ */
+const ponerModo = (m) => {
+  modo = m;
+  document.querySelectorAll('#modos button').forEach((b) => b.classList.toggle('on', b.dataset.m === m));
+  $('gCuenta').classList.toggle('oculto', m !== 'cuenta');
+  $('gInvitar').classList.toggle('oculto', m !== 'invitar');
+  $('mSub').textContent = m === 'cuenta'
+    ? 'Le creás la cuenta con una contraseña que le pasás vos. Tu sesión no se toca.'
+    : 'Le dejás una invitación. Entra al panel y elige su propia contraseña.';
+};
+$('modos').addEventListener('click', (ev) => {
+  const b = ev.target.closest('button');
+  if (b && !editUid) ponerModo(b.dataset.m);
+});
+
+let cerrarModal = null;
+function abrirModal() {
+  $('modal').showModal();
+  cerrarModal = CY.capaAtras(() => { try { $('modal').close(); } catch (e) {} cerrarModal = null; });
+}
+const salirModal = () => { if (cerrarModal) cerrarModal(); else $('modal').close(); };
+$('mCancelar').addEventListener('click', salirModal);
+
+$('btnNuevo').addEventListener('click', () => {
+  editUid = null;
+  $('mTit').textContent = 'Agregar persona';
+  $('modos').classList.remove('oculto');
+  ponerModo('cuenta');
+  ['fNombre', 'fMail', 'fClave', 'fMail2'].forEach((i) => { $(i).value = ''; });
+  $('fRol').value = 'colaborador';
+  pintarPermisos({}); porRol();
+  abrirModal(); $('fNombre').focus();
+});
+
+function editar(uid) {
+  const x = usuarios.find((y) => y.uid === uid);
+  if (!x) return;
+  editUid = uid;
+  $('mTit').textContent = 'Editar persona';
+  $('mSub').textContent = 'El mail y la contraseña no se cambian desde acá.';
+  $('modos').classList.add('oculto');
+  $('gCuenta').classList.add('oculto');
+  $('gInvitar').classList.add('oculto');
+  $('fNombre').value = x.nombre || '';
+  $('fRol').value = x.rol === 'admin' ? 'admin' : 'colaborador';
+  // Nadie se quita a sí mismo el rol de administrador: es la forma más
+  // rápida de quedarse afuera del propio panel sin manera de volver.
+  $('fRol').disabled = (uid === yo.uid);
+  pintarPermisos(x.permisos); porRol();
+  abrirModal();
+}
+
+$('mGuardar').addEventListener('click', async () => {
+  const nombre = $('fNombre').value.trim();
+  const rol = $('fRol').value;
+  const permisos = rol === 'admin' ? {} : leerPermisos();
+  if (!nombre) return CY.aviso('Falta el nombre', true);
+  const b = $('mGuardar'); b.disabled = true;
+  try {
+    if (editUid) {
+      const d = { nombre, permisos, actualizado: serverTimestamp() };
+      if (editUid !== yo.uid) d.rol = rol;
+      await updateDoc(doc(db, 'usuarios', editUid), d);
+      CY.aviso('Guardado');
+    } else if (modo === 'cuenta') {
+      const mail = $('fMail').value.trim().toLowerCase();
+      const clave = $('fClave').value;
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) throw new Error('El mail no es válido');
+      if (clave.length < 6) throw new Error('La contraseña necesita al menos 6 caracteres');
+      // App secundaria: crear la cuenta acá no debe expulsar al admin.
+      const uid = await crearCuentaAuth(mail, clave);
+      await setDoc(doc(db, 'usuarios', uid), {
+        email: mail, nombre, rol, permisos, activo: true,
+        creado: serverTimestamp(), creadoPor: yo.email,
+      });
+      CY.aviso(`Cuenta creada. Pasale el mail y la contraseña a ${nombre}.`);
+    } else {
+      const mail = $('fMail2').value.trim().toLowerCase();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) throw new Error('El mail no es válido');
+      await setDoc(doc(db, 'invitaciones', mail), {
+        rol, permisos, nombre, creado: serverTimestamp(), creadoPor: yo.email,
+      });
+      CY.aviso('Invitación creada. Mandale el enlace del panel.');
+    }
+    salirModal();
+    cargar();
+  } catch (e) {
+    CY.aviso(e.code ? CY.explicar(e) : e.message, true);
+  } finally { b.disabled = false; }
+});
+
+cargar();
+</script>
+</body>
+</html>

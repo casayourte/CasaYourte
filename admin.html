@@ -12,191 +12,85 @@
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
 <link rel="icon" href="./icono-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..700,0..100,0..1&family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link rel="stylesheet" href="./estilos.css">
 <style>
-:root{
-  --ink:#181614; --ink2:#221E1A; --ink3:#2C2722; --line:#3B342C;
-  --wool:#EFE8DA; --dim:#A89E8C; --blond:#DCA96B; --burg:#7A2C3C;
-  --ok:#4E7D5C; --bad:#8E3A46;
-  --disp:"Fraunces",Georgia,serif; --body:"Instrument Sans",system-ui,sans-serif;
-  --mono:"IBM Plex Mono",ui-monospace,monospace;
-  --safe: env(safe-area-inset-bottom, 0px);
-  --safe-top: env(safe-area-inset-top, 0px);
-}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:var(--ink);color:var(--wool);font-family:var(--body);
-  font-size:16px;line-height:1.5;overscroll-behavior-y:contain}
-h1,h2{font-family:var(--disp);font-weight:400;margin:0;line-height:1.1;
-  font-variation-settings:"SOFT" 30,"WONK" 1}
-button,input,select,textarea{font-family:inherit;font-size:16px;color:inherit}
-button{cursor:pointer}
-.mono{font-family:var(--mono);font-size:.66rem;letter-spacing:.13em;text-transform:uppercase}
-.hide{display:none!important}
-
-/* ---- chrome ---- */
-header{position:sticky;top:0;z-index:20;background:var(--ink);border-bottom:1px solid var(--line);
-  padding:calc(.7rem + var(--safe-top)) 1rem .7rem;display:flex;align-items:center;gap:.6rem}
-header .t{font-family:var(--disp);letter-spacing:.14em;font-size:.9rem;font-weight:600;flex:1;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-header .t b{color:var(--blond);font-weight:600}
-.icon{background:none;border:1px solid var(--line);color:var(--dim);border-radius:6px;
-  width:2.4rem;height:2.4rem;display:grid;place-items:center;font-size:1.1rem;flex:none}
-.icon:active{border-color:var(--blond);color:var(--wool)}
-main{padding:1rem 1rem calc(6rem + var(--safe))}
-
-/* ---- forms ---- */
-label{display:block;margin-bottom:1rem}
-label .k{font-family:var(--mono);font-size:.6rem;letter-spacing:.13em;text-transform:uppercase;
-  color:var(--blond);display:block;margin-bottom:.4rem}
-input,select,textarea{width:100%;background:var(--ink2);border:1px solid var(--line);
-  border-radius:6px;padding:.75rem;color:var(--wool)}
-input:focus,select,textarea:focus{outline:2px solid var(--blond);outline-offset:1px}
-textarea{min-height:4.5rem;resize:vertical}
-.btn{display:block;width:100%;padding:.95rem;border-radius:6px;border:1px solid var(--line);
-  background:var(--ink2);color:var(--wool);font-family:var(--mono);font-size:.68rem;
-  letter-spacing:.13em;text-transform:uppercase}
-.btn.p{background:var(--blond);border-color:var(--blond);color:var(--ink);font-weight:500}
-.btn.d{border-color:var(--bad);color:#E9A8B0}
-.btn:disabled{opacity:.45}
-.row{display:flex;gap:.5rem}
-.row .btn{flex:1}
-
-/* ---- lists ---- */
-.card{background:var(--ink2);border:1px solid var(--line);border-radius:8px;
-  padding:.9rem;margin-bottom:.7rem;display:flex;gap:.8rem;align-items:center}
-.card .grow{flex:1;min-width:0}
-.card h2{font-size:1.05rem;margin-bottom:.2rem}
-.card .sub{font-size:.8rem;color:var(--dim)}
-.card .n{font-family:var(--mono);font-size:.62rem;color:var(--blond);flex:none}
-
-/* ---- photo grid ---- */
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.6rem}
-.ph{position:relative;background:var(--ink2);border:1px solid var(--line);border-radius:8px;
-  overflow:hidden}
+/* sólo lo propio de esta pantalla; el resto vive en estilos.css */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:.55rem}
+.ph{position:relative;background:var(--ink2);border:1px solid var(--line);
+  border-radius:var(--r-s);overflow:hidden}
 .ph img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover}
-.ph .bar{display:flex;align-items:center;gap:.25rem;padding:.35rem}
-.ph .bar button{flex:1;background:none;border:0;color:var(--dim);font-size:1rem;padding:.3rem;
-  border-radius:4px}
+.ph .bar{display:flex;align-items:center;gap:.2rem;padding:.3rem}
+.ph .bar button{flex:1;background:none;border:0;color:var(--dim);font-size:1rem;
+  padding:.28rem;border-radius:5px}
 .ph .bar button:active{background:var(--ink3);color:var(--wool)}
-.ph .pos{font-family:var(--mono);font-size:.58rem;color:var(--blond);padding:0 .3rem}
-.ph .et{position:absolute;top:.3rem;left:.3rem;font-family:var(--mono);font-size:.52rem;
-  letter-spacing:.08em;background:rgba(24,22,20,.85);padding:.18rem .35rem;border-radius:3px;
-  color:var(--wool);max-width:calc(100% - .6rem);overflow:hidden;text-overflow:ellipsis;
-  white-space:nowrap}
+.ph .pos{font-family:var(--mono);font-size:.58rem;color:var(--blond);padding:0 .25rem}
+.ph .et{position:absolute;top:.28rem;left:.28rem;font-family:var(--mono);font-size:.52rem;
+  letter-spacing:.06em;background:rgba(24,22,20,.86);padding:.15rem .32rem;border-radius:3px;
+  max-width:calc(100% - .56rem);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ph.off img{opacity:.35}
-.ph .flag{position:absolute;top:.3rem;right:.3rem;font-size:.7rem;background:rgba(24,22,20,.85);
-  border-radius:3px;padding:.1rem .3rem}
-
-/* ---- upload dock ---- */
-.dock{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--ink2);
-  border-top:1px solid var(--line);padding:.7rem 1rem calc(.7rem + var(--safe));
-  display:flex;gap:.5rem;align-items:center}
+.ph.borrada img{opacity:.22}
+.ph .flag{position:absolute;top:.28rem;right:.28rem;font-size:.7rem;
+  background:rgba(24,22,20,.86);border-radius:3px;padding:.05rem .28rem}
+.etapa-tit{display:flex;align-items:baseline;gap:.5rem;margin:1.2rem 0 .5rem;
+  padding-bottom:.3rem;border-bottom:1px solid var(--line)}
+.etapa-tit b{font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--blond);flex:1;font-weight:500}
+.etapa-tit span{font-family:var(--mono);font-size:.56rem;color:var(--dim)}
+.dock{position:fixed;left:0;right:0;bottom:calc(var(--barra) + var(--safe));z-index:35;
+  background:var(--ink2);border-top:1px solid var(--line);padding:.55rem .8rem;
+  display:flex;gap:.45rem;align-items:center}
 .dock select{flex:1;min-width:0}
-.dock .btn{width:auto;flex:none;padding:.85rem 1rem}
-
-/* ---- progress ---- */
-#prog{position:fixed;inset:0;z-index:50;background:rgba(12,10,8,.93);display:grid;
-  place-items:center;padding:1.5rem}
+.dock .btn{flex:none}
+#prog{position:fixed;inset:0;z-index:60;background:rgba(12,10,8,.94);display:grid;
+  place-items:center;padding:1.4rem}
 #prog .box{width:100%;max-width:22rem;text-align:center}
-#prog .pct{font-family:var(--disp);font-size:3rem;color:var(--blond)}
-#prog .track{height:3px;background:var(--line);border-radius:2px;overflow:hidden;margin:1rem 0}
+#prog .pct{font-family:var(--disp);font-size:2.8rem;color:var(--blond)}
+#prog .track{height:3px;background:var(--line);border-radius:2px;overflow:hidden;margin:.9rem 0}
 #prog .fill{height:100%;background:var(--blond);width:0;transition:width .25s}
-#prog .log{font-family:var(--mono);font-size:.6rem;color:var(--dim);text-align:left;
-  max-height:9rem;overflow:auto;white-space:pre-wrap;line-height:1.7}
-
-/* ---- toast ---- */
-#toast{position:fixed;left:1rem;right:1rem;bottom:calc(5.5rem + var(--safe));z-index:60;
-  background:var(--blond);color:var(--ink);border-radius:6px;padding:.75rem .9rem;
-  font-family:var(--body);font-size:.85rem;line-height:1.4;text-align:center;
-  opacity:0;transition:opacity .3s;pointer-events:none;
-  box-shadow:0 6px 26px rgba(0,0,0,.5)}
-#toast.on{opacity:1}
-#toast.bad{background:var(--bad);color:#fff}
-
-/* --- contenido y galería --- */
-.lang{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;flex:none}
-.lang button{background:none;border:0;color:var(--dim);font-family:var(--mono);font-size:.62rem;
-  letter-spacing:.12em;padding:.45rem .8rem}
-.lang button.on{background:var(--blond);color:var(--ink);font-weight:500}
-details.grupo{border:1px solid var(--line);border-radius:8px;background:var(--ink2);
-  margin-bottom:.6rem;overflow:hidden}
-details.grupo>summary{padding:.85rem .9rem;cursor:pointer;display:flex;align-items:center;
-  gap:.6rem;list-style:none}
-details.grupo>summary::-webkit-details-marker{display:none}
-details.grupo>summary b{flex:1;font-size:.98rem;font-weight:600}
-details.grupo>summary .c{font-family:var(--mono);font-size:.58rem;color:var(--blond)}
-details.grupo[open]>summary{border-bottom:1px solid var(--line)}
-.grupo-cuerpo{padding:.9rem}
-.campo{margin-bottom:1rem}
-.campo .et{display:flex;gap:.5rem;align-items:baseline;margin-bottom:.3rem}
-.campo .et b{font-size:.85rem;font-weight:600;flex:1}
-.campo .et code{font-family:var(--mono);font-size:.56rem;color:var(--dim);
-  background:var(--ink3);padding:.1rem .3rem;border-radius:3px}
-.campo textarea{width:100%;background:var(--ink3);border:1px solid var(--line);border-radius:6px;
-  padding:.6rem;color:var(--wool);font-family:inherit;font-size:.92rem;line-height:1.5;
-  resize:vertical;min-height:2.6rem}
-.campo textarea:focus{outline:2px solid var(--blond);outline-offset:1px}
-.campo textarea.tocado{border-color:var(--blond)}
-.campo .ayuda{font-size:.75rem;color:var(--dim);margin-top:.25rem}
-.slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.6rem}
-.slot{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--ink3)}
+#prog .log{font-family:var(--mono);font-size:.58rem;color:var(--dim);text-align:left;
+  max-height:8rem;overflow:auto;white-space:pre-wrap;line-height:1.65}
+.slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:.5rem}
+.slot{border:1px solid var(--line);border-radius:var(--r-s);overflow:hidden;
+  background:var(--ink3);padding:0;color:inherit;display:block;text-align:left}
 .slot img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover}
-.slot .pie{padding:.4rem .5rem;display:flex;align-items:center;gap:.3rem}
-.slot .pie span{font-family:var(--mono);font-size:.55rem;color:var(--blond);flex:1}
-.slot .pie i{font-size:.6rem;color:var(--dim);font-style:normal}
-.barra{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--ink2);
-  border-top:1px solid var(--line);padding:.7rem 1rem calc(.7rem + var(--safe));
-  display:flex;gap:.5rem;align-items:center}
-.barra .cuenta{font-family:var(--mono);font-size:.58rem;color:var(--blond);flex:1;line-height:1.3}
-.barra .btn{width:auto;flex:none;margin:0;padding:.8rem 1rem}
-.filtros{display:flex;gap:.35rem;flex-wrap:wrap;margin-bottom:.9rem}
+.slot .pie{padding:.32rem .4rem;display:flex;gap:.25rem;align-items:center}
+.slot .pie span{font-family:var(--mono);font-size:.54rem;color:var(--blond);flex:1}
+.slot .pie i{font-size:.58rem;color:var(--dim);font-style:normal}
+details.grupo{border:1px solid var(--line);border-radius:var(--r-s);background:var(--ink2);
+  margin-bottom:.5rem;overflow:hidden}
+details.grupo>summary{padding:.75rem .85rem;cursor:pointer;display:flex;align-items:center;
+  gap:.5rem;list-style:none}
+details.grupo>summary::-webkit-details-marker{display:none}
+details.grupo>summary b{flex:1;font-size:.95rem;font-weight:600}
+details.grupo>summary .c{font-family:var(--mono);font-size:.56rem;color:var(--blond)}
+details.grupo[open]>summary{border-bottom:1px solid var(--line)}
+.grupo-cuerpo{padding:.8rem}
+.campo{margin-bottom:.9rem}
+.campo .et{display:flex;gap:.4rem;align-items:baseline;margin-bottom:.25rem}
+.campo .et b{font-size:.83rem;font-weight:600;flex:1}
+.campo .et code{font-family:var(--mono);font-size:.54rem;color:var(--dim);
+  background:var(--ink3);padding:.08rem .28rem;border-radius:3px}
+.campo textarea{font-size:.9rem;min-height:2.5rem}
+.campo textarea.tocado{border-color:var(--blond)}
+.filtros{display:flex;gap:.3rem;flex-wrap:wrap;margin-bottom:.8rem}
 .filtros button{background:none;border:1px solid var(--line);color:var(--dim);
-  font-family:var(--mono);font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;
-  padding:.32rem .6rem;border-radius:999px}
-.filtros button.on{background:var(--ink);color:var(--wool);border-color:var(--wool)}
-.etapa-tit{display:flex;align-items:baseline;gap:.6rem;margin:1.4rem 0 .6rem;
-  padding-bottom:.35rem;border-bottom:1px solid var(--line)}
-.etapa-tit b{font-family:var(--mono);font-size:.6rem;letter-spacing:.13em;
-  text-transform:uppercase;color:var(--blond);flex:1}
-.etapa-tit span{font-family:var(--mono);font-size:.58rem;color:var(--dim)}
-.etapa-tit:first-child{margin-top:0}
-.ph.borrada img{opacity:.25}
-.ph.borrada .bar{background:rgba(142,58,70,.25)}
-
-/* --- de nucleo.js --- */
-#cy-toast{position:fixed;left:1rem;right:1rem;bottom:calc(5.5rem + var(--safe));z-index:400;
-  background:var(--blond);color:var(--ink);border-radius:6px;padding:.75rem .9rem;
-  font-size:.85rem;line-height:1.4;text-align:center;opacity:0;transition:opacity .3s;
-  pointer-events:none;box-shadow:0 6px 26px rgba(0,0,0,.5)}
-#cy-toast.on{opacity:1}
-#cy-toast.malo{background:var(--bad);color:#fff}
-.cy-hoja{position:fixed;inset:0;width:100%;height:100%;max-width:100%;max-height:100%;
-  border:0;padding:0;background:rgba(12,10,8,.8);display:flex;align-items:flex-end;
-  justify-content:center}
-.cy-hoja::backdrop{background:rgba(12,10,8,.6)}
-.cy-hoja-caja{background:var(--ink2);border:1px solid var(--line);border-bottom:0;
-  border-radius:14px 14px 0 0;width:min(440px,100%);
-  padding:1rem 1rem calc(1rem + var(--safe))}
-.cy-hoja-tit{font-family:var(--disp);font-size:1.1rem;text-align:center;margin-bottom:.9rem;
-  color:var(--wool)}
-.cy-hoja-b{display:block;width:100%;text-align:left;background:var(--ink3);
-  border:1px solid var(--line);border-radius:10px;padding:.95rem 1rem;color:var(--wool);
-  font-size:.95rem;margin-bottom:.5rem}
-.cy-hoja-x{display:block;width:100%;background:none;border:0;color:var(--dim);
-  padding:.8rem;font-size:.9rem}
-.empty{text-align:center;color:var(--dim);padding:3rem 1rem;font-size:.92rem}
-.note{background:var(--ink2);border-left:3px solid var(--blond);padding:.7rem .8rem;
-  font-size:.85rem;color:var(--dim);border-radius:0 6px 6px 0;margin-bottom:1.2rem}
+  font-family:var(--mono);font-size:.55rem;letter-spacing:.09em;text-transform:uppercase;
+  padding:.3rem .55rem;border-radius:999px}
+.filtros button.on{background:var(--ink3);color:var(--wool);border-color:var(--wool)}
+.cbarra{position:fixed;left:0;right:0;bottom:calc(var(--barra) + var(--safe));z-index:35;
+  background:var(--ink2);border-top:1px solid var(--line);padding:.55rem .8rem;
+  display:flex;gap:.4rem;align-items:center}
+.cbarra .cuenta{font-family:var(--mono);font-size:.56rem;color:var(--blond);flex:1;line-height:1.3}
+.cbarra .btn{flex:none;padding:.55rem .7rem}
 </style>
 </head>
 <body>
 
-<header>
-  <button class="icon hide" id="back" aria-label="Volver">‹</button>
-  <span class="t">Casa<b>Yourte</b> · Panel</span>
-  <button class="icon hide" id="out" aria-label="Salir">⏻</button>
-</header>
+<div id="nav"></div>
 
-<main>
+<div class="contenedor" id="main">
+  <button class="btn hide" id="back" style="margin-bottom:.8rem"><span class="material-icons">arrow_back</span> Volver</button>
   <!-- LOGIN -->
   <section id="v-login">
     <h1 style="font-size:1.6rem;margin-bottom:.4rem">Entrar</h1>
@@ -226,15 +120,8 @@ details.grupo[open]>summary{border-bottom:1px solid var(--line)}
 
   <!-- ALBUM LIST -->
   <section id="v-list" class="hide">
-    <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:1rem">
-      <h1 style="font-size:1.5rem;flex:1">Álbumes</h1>
-      <button class="icon" id="go-nuevo" aria-label="Actualizar el panel">↻</button>
-      <button class="icon" id="go-ver" aria-label="Editar viendo el sitio">👁</button>
-      <button class="icon" id="go-cont" aria-label="Contenido del sitio">✎</button>
-      <button class="icon" id="go-diag" aria-label="Diagnóstico">🩺</button>
-      <button class="icon hide" id="go-users" aria-label="Usuarios">👥</button>
-    </div>
-    <p class="mono hide" id="quien" style="color:var(--dim);margin:-.6rem 0 1rem"></p>
+    <h1 style="margin-bottom:.8rem">Álbumes de obra</h1>
+    <p class="gris" id="quien" style="margin:-.4rem 0 1rem"></p>
     <div id="albums"></div>
     <details style="margin-top:1.5rem">
       <summary class="mono" style="color:var(--blond);padding:.6rem 0">+ Álbum nuevo</summary>
@@ -293,46 +180,6 @@ details.grupo[open]>summary{border-bottom:1px solid var(--line)}
     <div class="grid" id="g-grid"></div>
     <div class="empty hide" id="g-vacio">Ese álbum no tiene fotos todavía.</div>
     <button class="btn" id="g-repo" style="margin-top:1rem">Volver a la imagen original del sitio</button>
-  </section>
-
-  <!-- USUARIOS -->
-  <section id="v-users" class="hide">
-    <h1 style="font-size:1.5rem;margin-bottom:.3rem">Usuarios</h1>
-    <p class="mono" id="u-sub" style="color:var(--dim);margin:0 0 1.2rem"></p>
-    <div id="users"></div>
-
-    <h2 style="font-size:1.1rem;margin:1.8rem 0 .6rem">Invitaciones pendientes</h2>
-    <div id="invits"></div>
-
-    <details style="margin-top:1.5rem">
-      <summary class="mono" style="color:var(--blond);padding:.6rem 0">+ Crear una cuenta</summary>
-      <div style="padding-top:.8rem">
-        <p class="note">Le creás la cuenta con una contraseña que le pasás vos. Tu sesión no
-        se toca. Ella la puede cambiar después con <b>Olvidé mi contraseña</b>.</p>
-        <label><span class="k">Nombre</span><input id="a-nombre" placeholder="Florencia"></label>
-        <label><span class="k">Mail</span>
-          <input id="a-mail" type="email" inputmode="email" autocapitalize="none" spellcheck="false"></label>
-        <label><span class="k">Contraseña inicial</span>
-          <input id="a-pass" type="text" autocomplete="off" placeholder="mínimo 6 caracteres"></label>
-        <label><span class="k">Rol</span><select id="a-rol"></select></label>
-        <p class="note" id="a-desc"></p>
-        <button class="btn p" id="a-crear">Crear la cuenta</button>
-      </div>
-    </details>
-
-    <details style="margin-top:.8rem">
-      <summary class="mono" style="color:var(--blond);padding:.6rem 0">+ Invitar a alguien</summary>
-      <div style="padding-top:.8rem">
-        <label><span class="k">Mail</span>
-          <input id="i-mail" type="email" inputmode="email" autocapitalize="none" spellcheck="false"></label>
-        <label><span class="k">Rol</span><select id="i-rol"></select></label>
-        <p class="note" id="i-desc"></p>
-        <button class="btn" id="i-crear">Crear invitación</button>
-        <div style="height:.5rem"></div>
-        <p class="note" style="margin:0">Después mandale el enlace del panel por WhatsApp y
-        que entre con <b>Fui invitado y no tengo cuenta</b>. La contraseña la elige ella.</p>
-      </div>
-    </details>
   </section>
 
   <!-- DIAGNÓSTICO -->
@@ -400,10 +247,10 @@ details.grupo[open]>summary{border-bottom:1px solid var(--line)}
     <div style="height:.5rem"></div>
     <button class="btn d" id="f-quitar">Quitar del álbum</button>
   </section>
-</main>
+</div>
 
 <!-- BARRA DE CONTENIDO -->
-<div class="barra hide" id="c-barra">
+<div class="cbarra hide" id="c-barra">
   <span class="cuenta" id="c-cuenta"></span>
   <button class="btn" id="c-recargar" aria-label="Recargar y comparar">↻</button>
   <button class="btn" id="c-guardar">Guardar</button>
@@ -449,7 +296,6 @@ const CLOUD = CY.CLOUDINARY.cloud;
 const PRESET = CY.CLOUDINARY.preset;
 
 // Los roles viven en nucleo.js: tienen que coincidir con las reglas.
-const ROLES = CY.ROLES;
 
 // Las 16 etapas. Mismo orden que el cálculo de horas y el manual. No renumerar.
 const ETAPAS = ["01-terreno-y-apoyos","02-taller-piezas","03-plancher","04-trei",
@@ -481,7 +327,6 @@ function ver(v) {
   $("dock").classList.toggle("hide", v !== "album" || !puede("fotos"));
   if (v !== "cont") { const cb = $("c-barra"); if (cb) cb.classList.add("hide"); }
   $("back").classList.toggle("hide", v === "login" || v === "list");
-  $("out").classList.toggle("hide", v === "login");
   window.scrollTo(0, 0);
 }
 
@@ -507,7 +352,6 @@ $("in").addEventListener("click", async () => {
     toast(CY.explicar(e), true);
   } finally { b.disabled = false; b.textContent = "Entrar"; }
 });
-$("out").addEventListener("click", () => { yo = null; signOut(auth); });
 
 $("olvide").addEventListener("click", async () => {
   const mail = $("mail").value.trim().toLowerCase();
@@ -530,10 +374,13 @@ $("r-crear").addEventListener("click", async () => {
   try {
     const inv = await getDoc(doc(db, "invitaciones", mail));
     if (!inv.exists()) throw new Error("No hay ninguna invitación para ese mail");
-    const rol = inv.data().rol;
+    // El rol Y los permisos salen de la invitación, no de lo que escriba
+    // la persona: las reglas exigen que coincidan.
+    const { rol, permisos } = inv.data();
     const cred = await createUserWithEmailAndPassword(auth, mail, pass);
     await setDoc(doc(db, "usuarios", cred.user.uid), {
-      email: mail, nombre, rol, activo: true, creado: serverTimestamp(),
+      email: mail, nombre, rol, permisos: permisos || {}, activo: true,
+      creado: serverTimestamp(),
     });
     await deleteDoc(doc(db, "invitaciones", mail)).catch(() => {});
     toast("Cuenta creada");
@@ -547,37 +394,49 @@ $("r-crear").addEventListener("click", async () => {
 CY.registrarSW();
 
 onAuthStateChanged(auth, async (u) => {
-  if (!u) { yo = null; ver("login"); return; }
+  if (!u) { yo = null; CY.usuario = null; ver("login"); return; }
   try {
     const d = await getDoc(doc(db, "usuarios", u.uid));
     if (!d.exists()) {
-      toast("Tu cuenta existe pero no tiene permisos asignados", true);
+      toast("Tu cuenta existe pero todavía no tiene permisos. Avisale a Mauro.", true);
       await signOut(auth); return;
     }
     yo = { uid: u.uid, ...d.data() };
     if (!yo.activo) {
-      toast("Tu acceso está suspendido", true);
+      toast("Tu acceso está desactivado", true);
       yo = null; await signOut(auth); return;
     }
-    CY.usuario = yo;   // nucleo.js lo usa para CY.puede()
-    $("quien").textContent = `${yo.nombre || yo.email} · ${ROLES[yo.rol]?.n || yo.rol}`
-      + `  ·  ${PANEL} · ${CY.VERSION}${CY.instalada() ? " · instalada" : ""}`;
+    CY.usuario = yo;
+    CY.PANEL = PANEL;
+    // Una sola función dibuja la cabecera, la barra y la hoja «Más» en
+    // todas las páginas del panel (nucleo.js).
+    CY.renderNav("albumes");
+    $("quien").textContent = puede("albumes")
+      ? `${yo.nombre || yo.email} · ${CY.esAdmin() ? "administrador" : "colaborador"}`
+      : "Tu cuenta no tiene el permiso de álbumes.";
     $("quien").classList.remove("hide");
-    $("go-users").classList.toggle("hide", !puede("usuarios"));
-    $("go-cont").classList.toggle("hide", !puede("contenido"));
-    $("go-ver").classList.toggle("hide", !puede("contenido"));
     document.querySelector("#v-list details").classList.toggle("hide", !puede("albumes"));
-    cargarAlbumes(); ver("list");
+    if (puede("albumes")) cargarAlbumes();
+    // si se entró por #contenido o #diag, abrir esa pantalla
+    if (location.hash) setTimeout(porHash, 0);
+    else $("albums").innerHTML = '<div class="vacio">No tenés permiso para ver los álbumes.</div>';
+    ver("list");
   } catch (e) {
     toast("No se pudo verificar el permiso: " + CY.explicar(e), true);
     await signOut(auth);
   }
 });
 
+// Salir y actualizar los cuelga la navegación compartida.
+CY.alSalir = () => {
+  yo = null; CY.usuario = null;
+  signOut(auth).then(() => location.reload());
+};
+
 // Fuerza traer el panel de nuevo: borra las cachés del navegador y del service
-// worker y recarga. Con la app instalada, un admin.html viejo puede quedar
-// servido desde la caché y todo lo demás parece roto sin razón.
-$("go-nuevo").addEventListener("click", async () => {
+// worker y recarga. Con la app instalada, un archivo viejo puede quedar servido
+// desde la caché y todo lo demás parece roto sin razón.
+CY.alCuenta = async () => {
   if (!confirm("Actualizar el panel?\n\nSe descarta lo que no esté guardado.")) return;
   try {
     if (window.caches) {
@@ -588,13 +447,8 @@ $("go-nuevo").addEventListener("click", async () => {
     if (reg) await reg.update();
   } catch (e) { /* seguimos igual */ }
   location.replace("admin.html?v=" + Date.now());
-});
+};
 
-// Editor visual: la página real con los controles encima (editar.html).
-$("go-ver").addEventListener("click", () => { location.href = "editar.html"; });
-
-$("go-users").addEventListener("click", () => { irA("users"); cargarUsuarios(); });
-$("go-diag").addEventListener("click", () => { irA("diag"); $("dg-out").innerHTML = ""; });
 
 /* ═════════════════════════════════════════════════════════════
    CONTENIDO DEL SITIO
@@ -1140,11 +994,21 @@ function volverDeGaleria() {
 }
 
 /* ── entrada a la sección ── */
-$("go-cont").addEventListener("click", () => {
+// Contenido y diagnóstico todavía viven dentro de esta página: la hoja «Más»
+// los abre con un hash, hasta que se separen en contenido.html y
+// diagnostico.html.
+function porHash() {
+  const h = location.hash.replace("#", "");
+  if (h === "contenido" && puede("contenido")) abrirContenido();
+  if (h === "diag") { irA("diag"); $("dg-out").innerHTML = ""; }
+}
+addEventListener("hashchange", porHash);
+
+function abrirContenido() {
   irA("cont", () => { $("c-barra").classList.add("hide"); ver("list"); });
   $("c-barra").classList.remove("hide");
   if (!CONT) cargarContenido(); else pintarContenido();
-});
+}
 
 /* ===================== DIAGNÓSTICO ===================== */
 $("dg-run").addEventListener("click", async () => {
@@ -1185,8 +1049,11 @@ $("dg-run").addEventListener("click", async () => {
     else {
       const u = d.data();
       if (u.activo !== true) f.mal("Tu campo activo no es true (tiene que ser boolean, no texto).");
-      else if (!ROLES[u.rol]) f.mal(`El rol "${u.rol}" no existe. Tiene que ser admin, editor o fotografo.`);
-      else f.ok(`${u.email} · ${ROLES[u.rol].n} · activo`);
+      else {
+        const p = CY.PERMISOS.filter(x => (u.permisos || {})[x.id]).map(x => x.label);
+        f.ok(`${u.email} · ${u.rol === "admin" ? "administrador · todo"
+          : (p.length ? "colaborador · " + p.join(", ") : "colaborador · sin permisos")}`);
+      }
     }
   } catch (e) { f.mal(explicar(e)); }
 
@@ -1287,126 +1154,6 @@ $("back").addEventListener("click", () => {
   // Mismo camino que el Atrás de Android: una sola pila (§3.3).
   if (_cerrarVista) { const c = _cerrarVista; _cerrarVista = null; c(); }
   else { album = null; ver("list"); }
-});
-
-/* ===================== USUARIOS ===================== */
-function opcionesRol(sel, actual) {
-  sel.innerHTML = "";
-  for (const [k, v] of Object.entries(ROLES)) {
-    const o = document.createElement("option");
-    o.value = k; o.textContent = v.n; if (k === actual) o.selected = true;
-    sel.appendChild(o);
-  }
-}
-opcionesRol($("i-rol"), "editor");
-const descRol = () => { $("i-desc").textContent = ROLES[$("i-rol").value].d; };
-$("i-rol").addEventListener("change", descRol); descRol();
-
-async function cargarUsuarios() {
-  const cu = $("users"), ci = $("invits");
-  cu.innerHTML = '<p class="empty">Cargando…</p>'; ci.innerHTML = "";
-  try {
-    const snap = await getDocs(collection(db, "usuarios"));
-    cu.innerHTML = "";
-    let activos = 0;
-    snap.forEach(d => {
-      const u = { uid: d.id, ...d.data() };
-      if (u.activo) activos++;
-      const propio = u.uid === yo.uid;
-      const el = document.createElement("div");
-      el.className = "card";
-      el.style.flexWrap = "wrap";
-      el.innerHTML =
-        `<div class="grow"><h2></h2><div class="sub"></div></div>
-         <div style="display:flex;gap:.4rem;align-items:center;width:100%;margin-top:.5rem">
-           <select style="flex:1"></select>
-           <button class="btn" style="width:auto;padding:.6rem .8rem"></button>
-         </div>`;
-      el.querySelector("h2").textContent = (u.nombre || u.email) + (propio ? " · vos" : "");
-      el.querySelector(".sub").textContent = u.email + (u.activo ? "" : " · suspendido");
-      const sel = el.querySelector("select");
-      opcionesRol(sel, u.rol);
-      sel.disabled = propio;
-      sel.addEventListener("change", async () => {
-        try {
-          await updateDoc(doc(db, "usuarios", u.uid), { rol: sel.value });
-          toast("Rol actualizado");
-        } catch (e) { toast(CY.explicar(e), true); sel.value = u.rol; }
-      });
-      const b = el.querySelector("button");
-      b.textContent = u.activo ? "Suspender" : "Reactivar";
-      if (u.activo) b.classList.add("d");
-      b.disabled = propio;
-      b.addEventListener("click", async () => {
-        try {
-          await updateDoc(doc(db, "usuarios", u.uid), { activo: !u.activo });
-          toast(u.activo ? "Acceso suspendido" : "Acceso reactivado");
-          cargarUsuarios();
-        } catch (e) { toast(CY.explicar(e), true); }
-      });
-      cu.appendChild(el);
-    });
-    $("u-sub").textContent = `${snap.size} usuarios · ${activos} activos`;
-
-    const inv = await getDocs(collection(db, "invitaciones"));
-    if (inv.empty) { ci.innerHTML = '<p class="empty" style="padding:1.2rem">Ninguna pendiente.</p>'; }
-    inv.forEach(d => {
-      const i = { mail: d.id, ...d.data() };
-      const el = document.createElement("div");
-      el.className = "card";
-      el.innerHTML = `<div class="grow"><h2></h2><div class="sub"></div></div>
-                      <button class="btn d" style="width:auto;padding:.6rem .8rem">Anular</button>`;
-      el.querySelector("h2").textContent = i.mail;
-      el.querySelector(".sub").textContent = ROLES[i.rol]?.n || i.rol;
-      el.querySelector("button").addEventListener("click", async () => {
-        try { await deleteDoc(doc(db, "invitaciones", i.mail)); toast("Invitación anulada"); cargarUsuarios(); }
-        catch (e) { toast(CY.explicar(e), true); }
-      });
-      ci.appendChild(el);
-    });
-  } catch (e) {
-    cu.innerHTML = `<p class="empty">No se pudieron leer los usuarios.<br>${CY.esc(CY.explicar(e))}</p>`;
-  }
-}
-
-opcionesRol($("a-rol"), "editor");
-const descAlta = () => { $("a-desc").textContent = ROLES[$("a-rol").value].d; };
-$("a-rol").addEventListener("change", descAlta); descAlta();
-
-// Alta directa. Usa una app secundaria de Firebase (ver firebase-init.js):
-// createUserWithEmailAndPassword loguea a la cuenta nueva en la instancia
-// donde corre, así que hacerlo en la principal expulsaría al admin de su
-// propia sesión.
-$("a-crear").addEventListener("click", async () => {
-  const nombre = $("a-nombre").value.trim();
-  const mail = $("a-mail").value.trim().toLowerCase();
-  const pass = $("a-pass").value;
-  const rol = $("a-rol").value;
-  if (!nombre) return toast("Falta el nombre", true);
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) return toast("Mail inválido", true);
-  if (pass.length < 6) return toast("La contraseña necesita al menos 6 caracteres", true);
-  const b = $("a-crear"); b.disabled = true; b.textContent = "Creando…";
-  try {
-    const uid = await crearCuentaAuth(mail, pass);
-    await setDoc(doc(db, "usuarios", uid), {
-      email: mail, nombre, rol, activo: true,
-      creado: serverTimestamp(), creadoPor: yo.email,
-    });
-    ["a-nombre","a-mail","a-pass"].forEach(k => { $(k).value = ""; });
-    toast(`Cuenta creada para ${nombre}. Pasale el mail y la contraseña.`);
-    cargarUsuarios();
-  } catch (e) { toast(CY.explicar(e), true); }
-  finally { b.disabled = false; b.textContent = "Crear la cuenta"; }
-});
-
-$("i-crear").addEventListener("click", async () => {
-  const mail = $("i-mail").value.trim().toLowerCase();
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) return toast("Mail inválido", true);
-  try {
-    await setDoc(doc(db, "invitaciones", mail),
-      { rol: $("i-rol").value, creado: serverTimestamp(), creadoPor: yo.email });
-    $("i-mail").value = ""; toast("Invitación creada"); cargarUsuarios();
-  } catch (e) { toast(CY.explicar(e), true); }
 });
 
 /* ===================== ÁLBUMES ===================== */
