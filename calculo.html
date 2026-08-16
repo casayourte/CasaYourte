@@ -33,12 +33,12 @@ header h1{font-size:clamp(1.5rem,5.5vw,2.2rem);font-weight:300;
   font-variation-settings:"SOFT" 40,"WONK" 1}
 header p{margin:.7rem 0 0;color:var(--dim);font-size:.9rem;max-width:54ch}
 
-nav{position:sticky;top:0;z-index:30;background:rgba(24,22,20,.96);backdrop-filter:blur(8px);
+nav#tabs{position:sticky;top:0;z-index:29;background:rgba(24,22,20,.96);backdrop-filter:blur(8px);
   border-bottom:1px solid var(--line);display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch}
-nav button{flex:none;background:none;border:0;border-bottom:2px solid transparent;
+nav#tabs button{flex:none;background:none;border:0;border-bottom:2px solid transparent;
   color:var(--dim);font-family:var(--mono);font-size:.6rem;letter-spacing:.11em;
   text-transform:uppercase;padding:.85rem .8rem;white-space:nowrap}
-nav button.on{color:var(--blond);border-bottom-color:var(--blond)}
+nav#tabs button.on{color:var(--blond);border-bottom-color:var(--blond)}
 
 section{padding:1.3rem 1rem;border-bottom:1px solid var(--line)}
 section>h2{font-size:1.15rem;margin-bottom:.2rem}
@@ -98,6 +98,7 @@ figcaption{font-size:.78rem;color:var(--dim);margin-top:.5rem}
 .row .btn{flex:1;text-align:center}
 .oculto{display:none}
 </style>
+<link rel="stylesheet" href="./estilos.css">
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" href="./icono-192.png">
 </head>
@@ -111,7 +112,7 @@ figcaption{font-size:.78rem;color:var(--dim);margin-top:.5rem}
   elemento, con la fórmula de la que vienen y a qué medida del croquis corresponde.</p>
 </header>
 
-<nav id="nav"></nav>
+<nav id="tabs"></nav>
 
 <div id="v-datos">
   <section>
@@ -496,12 +497,12 @@ document.getElementById("letras").innerHTML =
 
 /* ---------- navegación ---------- */
 const VISTAS = [["datos","Datos"],["croquis","Croquis"],["result","Resultados"]];
-document.getElementById("nav").innerHTML = VISTAS.map(([k,t],i) =>
+document.getElementById("tabs").innerHTML = VISTAS.map(([k,t],i) =>
   `<button data-v="${k}" class="${i===0?"on":""}">${t}</button>`).join("");
-document.getElementById("nav").addEventListener("click", e => {
+document.getElementById("tabs").addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
   VISTAS.forEach(([k]) => document.getElementById("v-"+k).classList.toggle("oculto", k !== b.dataset.v));
-  document.querySelectorAll("#nav button").forEach(x => x.classList.toggle("on", x === b));
+  document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("on", x === b));
   window.scrollTo(0,0);
 });
 
