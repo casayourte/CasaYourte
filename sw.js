@@ -35,17 +35,22 @@
 // v8 (14-ago-2026) — estilos.css, usuarios.html y calculo.html; navegación común.
 // v9 (16-ago-2026) — contenido.html y diagnostico.html salen de admin.html.
 // v10 (16-ago-2026) — estilos.css recupera las clases que se habían perdido.
+// v11 (16-ago-2026) — cálculos por cliente, láminas de referencia, y la edición
+//   del sitio queda sólo en editar.html: contenido.html se retira.
+// v12 (16-ago-2026) — las dos capas del techo se calculan separadas.
+// v13 (16-ago-2026) — la apertura de la base sale de la condición de paralelismo.
 // v3 (10-ago-2026) — cambiaron admin.html y nucleo.js: entra la sección de
 //   contenido del sitio.
-const VERSION = 'cy-shell-v10';
+const VERSION = 'cy-shell-v13';
 
 const SHELL = [
   './admin.html',
   './editar.html',
   './usuarios.html',
   './calculo.html',
-  './contenido.html',
   './diagnostico.html',
+  './assets/lamina-muro.jpg',
+  './assets/lamina-triangulo.jpg',
   './estilos.css',
   './nucleo.js',
   './firebase-init.js',
