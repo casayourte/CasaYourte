@@ -295,17 +295,88 @@ CY.ROLES = {
   fotografo: { n: 'Fotógrafo',     d: 'Sólo subir y ordenar fotos' }
 };
 
+// ═════════════════════════════════════════════════════════════
+//  PERMISOS · fuente única
+//
+//  Hay UNA cuenta administradora. Los demás son colaboradores con
+//  permisos explícitos. Agregar un permiso se hace acá y en las
+//  reglas de Firestore; en ningún otro lado.
+// ═════════════════════════════════════════════════════════════
+CY.PERMISOS = [
+  { id:'albumes',   label:'Álbumes de obra', icono:'photo_library',
+    detalle:'Crear álbumes, subir fotos, ordenarlas y escribir sus textos.' },
+  { id:'contenido', label:'Contenido del sitio', icono:'edit_note',
+    detalle:'Editar los textos del catálogo y elegir las imágenes desde los álbumes.' },
+  { id:'publicar',  label:'Publicar', icono:'publish',
+    detalle:'Exportar el contenido para el repositorio y marcar álbumes como públicos.' },
+  { id:'calculo',   label:'Cálculo de taller', icono:'straighten',
+    detalle:'Ver y usar la calculadora de piezas.' },
+];
+
+// Navegación. grupo 'directo' va en la barra de abajo; el resto en la hoja «Más».
+CY.NAV = [
+  { id:'albumes',  label:'Álbumes de obra', corto:'Álbumes', icono:'photo_library',
+    href:'./admin.html',       grupo:'directo', perm:'albumes' },
+  { id:'contenido',label:'Contenido del sitio', corto:'Contenido', icono:'edit_note',
+    href:'./contenido.html',   grupo:'directo', perm:'contenido' },
+  { id:'calculo',  label:'Cálculo de taller', corto:'Cálculo', icono:'straighten',
+    href:'./calculo.html',     grupo:'directo', perm:'calculo' },
+
+  { id:'editar',   label:'Editar viendo el sitio', icono:'visibility',
+    href:'./editar.html',      grupo:'trabajo', perm:'contenido',
+    detalle:'La página real: tocás un texto o una foto y la cambiás.' },
+  { id:'sitio',    label:'Ver el sitio', icono:'public',
+    href:'./index.html',       grupo:'ver' },
+  { id:'albpub',   label:'Ver los álbumes públicos', icono:'collections',
+    href:'./album.html',       grupo:'ver' },
+  { id:'usuarios', label:'Usuarios', icono:'group',
+    href:'./usuarios.html',    grupo:'ajustes', soloAdmin:true,
+    detalle:'Quién entra y qué puede hacer.' },
+  { id:'diag',     label:'Diagnóstico', icono:'monitor_heart',
+    href:'./diagnostico.html', grupo:'ajustes',
+    detalle:'Probar las conexiones cuando algo no anda.' },
+];
+
+CY.GRUPOS = [
+  { id:'trabajo', label:'Trabajo' },
+  { id:'ver',     label:'Ver como visitante' },
+  { id:'ajustes', label:'Ajustes' },
+];
+
 CY.usuario = null;
+
+// El administrador puede todo. El resto, sólo lo que tenga tildado.
+// Esto es un ESPEJO de las reglas de Firestore: acá se oculta lo que no
+// corresponde, pero lo que de verdad impide escribir son las reglas.
+CY.esAdmin = () => CY.usuario?.activo === true && CY.usuario?.rol === 'admin';
 
 CY.puede = function (q) {
   const u = CY.usuario;
   if (!u || u.activo !== true) return false;
   if (u.rol === 'admin') return true;
-  if (u.rol === 'editor') return q !== 'usuarios' && q !== 'publicar';
-  if (u.rol === 'fotografo') return q === 'fotos' || q === 'albumes';
-  // Consultas usadas: 'albumes', 'fotos', 'contenido', 'publicar', 'usuarios'.
-  return false;
+  if (q === 'usuarios') return false;
+  if (q === 'fotos') q = 'albumes';
+  return (u.permisos || {})[q] === true;
 };
+
+CY.verItem = function (it) {
+  if (it.soloAdmin) return CY.esAdmin();
+  if (!it.perm) return true;
+  return CY.puede(it.perm);
+};
+
+CY.inicialesDe = function (nombre) {
+  const p = String(nombre || '').trim().split(/\s+/).filter(Boolean);
+  if (!p.length) return '?';
+  return (p[0][0] + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase();
+};
+
+CY.avatarHTML = function (u, cls) {
+  return u && u.fotoUrl
+    ? `<span class="avatar ${cls || ''}"><img src="${CY.esc(u.fotoUrl)}" alt=""></span>`
+    : `<span class="avatar ${cls || ''}">${CY.esc(CY.inicialesDe(u && u.nombre))}</span>`;
+};
+
 
 // ═════════════════════════════════════════════════════════════
 //  PWA
@@ -319,3 +390,109 @@ CY.registrarSW = async function () {
 /** ¿Está corriendo como app instalada? */
 CY.instalada = () => window.matchMedia('(display-mode: standalone)').matches
   || window.navigator.standalone === true;
+
+// ═════════════════════════════════════════════════════════════
+//  NAVEGACIÓN
+//
+//  Una sola función dibuja la cabecera, la barra de abajo y la hoja
+//  «Más» en todas las páginas del panel. Si una pantalla se ve
+//  distinta de las otras, es que no está llamando a esto.
+// ═════════════════════════════════════════════════════════════
+CY.renderNav = function (activo) {
+  const cont = document.getElementById('nav');
+  if (!cont) return;
+  document.body.classList.add('con-barra');
+
+  const visibles = CY.NAV.filter(CY.verItem);
+  const directos = visibles.filter((it) => it.grupo === 'directo');
+  const enHoja   = visibles.filter((it) => it.grupo !== 'directo');
+  const activoEnHoja = enHoja.some((it) => it.id === activo);
+
+  const item = CY.NAV.find((it) => it.id === activo);
+  const titulo = (item && item.label) || document.title.replace(/^CasaYourte\s*·\s*/, '');
+  const u = CY.usuario;
+
+  const tab = (it) =>
+    `<a class="tab ${it.id === activo ? 'activo' : ''}" href="${it.href}">
+       <span class="material-icons">${it.icono}</span>${CY.esc(it.corto || it.label)}</a>`;
+
+  const enlace = (it) =>
+    `<a href="${it.href}" class="${it.id === activo ? 'activo' : ''}">
+       <span class="material-icons">${it.icono}</span>
+       <span>${CY.esc(it.label)}${it.detalle ? `<small>${CY.esc(it.detalle)}</small>` : ''}</span>
+     </a>`;
+
+  const grupos = CY.GRUPOS.map((g) => {
+    const its = enHoja.filter((it) => it.grupo === g.id);
+    return its.length ? `<h4>${CY.esc(g.label)}</h4>` + its.map(enlace).join('') : '';
+  }).join('');
+
+  cont.innerHTML =
+    `<header class="cab"><div class="cab-in">
+       <img src="./assets/logo.png" alt="" onerror="this.remove()">
+       <span class="tit">${CY.esc(titulo)}</span>
+       <button class="avatar" id="cy-yo" title="${CY.esc(u?.nombre || '')}">
+         ${u?.fotoUrl ? `<img src="${CY.esc(u.fotoUrl)}" alt="">` : CY.esc(CY.inicialesDe(u?.nombre))}
+       </button>
+     </div></header>
+
+     <nav class="barra"><div class="barra-in">
+       ${directos.map(tab).join('')}
+       <button class="tab ${activoEnHoja ? 'activo' : ''}" id="cy-mas">
+         <span class="material-icons">apps</span>Más</button>
+     </div></nav>
+
+     <div class="tapa" id="cy-tapa"></div>
+     <div class="hoja" id="cy-hoja">
+       <div class="agarre"></div>
+       ${grupos}
+       <h4>Tu cuenta</h4>
+       <button class="item" id="cy-cuenta">
+         <span class="material-icons">badge</span>
+         <span>${CY.esc(u?.nombre || 'Mi cuenta')}
+           <small>${CY.esc(u?.email || '')} · ${u?.rol === 'admin' ? 'administrador' : 'colaborador'}</small></span>
+       </button>
+       <button class="item" id="cy-salir">
+         <span class="material-icons">logout</span><span>Salir</span></button>
+       <p class="ayuda" style="margin:.8rem .6rem 0">
+         ${CY.esc(CY.VERSION)} · ${CY.esc(CY.PANEL || '')}${CY.instalada() ? ' · instalada' : ''}</p>
+     </div>`;
+
+  const tapa = document.getElementById('cy-tapa');
+  const hoja = document.getElementById('cy-hoja');
+  let cerrar = null;
+  const abrir = () => {
+    tapa.classList.add('on'); hoja.classList.add('on');
+    // El Atrás de Android cierra la hoja en vez de salir de la app.
+    cerrar = CY.capaAtras(() => { tapa.classList.remove('on'); hoja.classList.remove('on'); cerrar = null; });
+  };
+  document.getElementById('cy-mas').addEventListener('click', () => cerrar ? cerrar() : abrir());
+  tapa.addEventListener('click', () => cerrar && cerrar());
+  document.getElementById('cy-yo').addEventListener('click', () => cerrar ? cerrar() : abrir());
+  document.getElementById('cy-salir').addEventListener('click', () => {
+    if (CY.alSalir) CY.alSalir();
+  });
+  document.getElementById('cy-cuenta').addEventListener('click', () => {
+    if (CY.alCuenta) CY.alCuenta(); else CY.aviso('Tu cuenta la administra Mauro.');
+  });
+};
+
+// Guardia común: verifica sesión, carga el usuario y dibuja la navegación.
+// Devuelve el usuario, o redirige y lanza si no corresponde.
+CY.arrancar = async function (fb, activo, permiso) {
+  const { db, auth, doc, getDoc, onAuthStateChanged } = fb;
+  const u = await new Promise((res) => {
+    const off = onAuthStateChanged(auth, (x) => { off(); res(x); });
+  });
+  if (!u) { location.replace('./admin.html'); throw new Error('sin sesión'); }
+  const d = await getDoc(doc(db, 'usuarios', u.uid));
+  if (!d.exists()) { location.replace('./admin.html'); throw new Error('sin permisos'); }
+  CY.usuario = { uid: u.uid, ...d.data() };
+  if (CY.usuario.activo !== true) { location.replace('./admin.html'); throw new Error('suspendido'); }
+  // replace y no href: con href la página queda en el historial y el Atrás
+  // vuelve a entrar acá para que lo echen de nuevo, sin salida.
+  if (permiso && !CY.puede(permiso)) { location.replace('./admin.html'); throw new Error('sin permiso'); }
+  CY.registrarSW();
+  CY.renderNav(activo);
+  return CY.usuario;
+};

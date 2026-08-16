@@ -32,13 +32,21 @@
 // v5 (11-ago-2026) — editar.html, el editor sobre la página real.
 // v6 (11-ago-2026) — el borrador se MEZCLA con el archivo, no lo reemplaza.
 // v7 (11-ago-2026) — sellos de versión visibles y firma en el JSON exportado.
+// v8 (14-ago-2026) — estilos.css, usuarios.html y calculo.html; navegación común.
+// v9 (16-ago-2026) — contenido.html y diagnostico.html salen de admin.html.
+// v10 (16-ago-2026) — estilos.css recupera las clases que se habían perdido.
 // v3 (10-ago-2026) — cambiaron admin.html y nucleo.js: entra la sección de
 //   contenido del sitio.
-const VERSION = 'cy-shell-v7';
+const VERSION = 'cy-shell-v10';
 
 const SHELL = [
   './admin.html',
   './editar.html',
+  './usuarios.html',
+  './calculo.html',
+  './contenido.html',
+  './diagnostico.html',
+  './estilos.css',
   './nucleo.js',
   './firebase-init.js',
   './manifest.json',

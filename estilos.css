@@ -185,6 +185,59 @@ dialog::backdrop{background:rgba(12,10,8,.72)}
 #cy-toast.malo{background:var(--bad);color:#fff}
 #cy-toast.bien{background:var(--ok);color:#fff}
 
+
+/* ── clases que usa el marcado del panel ──────────────────────
+   Nombres heredados de cuando cada pantalla tenía su propia hoja.
+   Se definen acá una sola vez para que sirvan en todas las páginas.
+   ─────────────────────────────────────────────────────────── */
+.hide{display:none!important}
+
+.card{background:var(--ink2);border:1px solid var(--line);border-radius:var(--r);
+  padding:.85rem .95rem;margin-bottom:.6rem;display:flex;gap:.7rem;align-items:center}
+.card .grow{flex:1;min-width:0}
+.card h2{font-size:1rem;margin-bottom:.15rem}
+.card .sub{font-size:.8rem;color:var(--dim)}
+.card .n{font-family:var(--mono);font-size:.64rem;color:var(--blond);flex:none}
+
+.empty{text-align:center;color:var(--dim);padding:2.4rem 1rem;font-size:.9rem}
+
+.note{border-left:3px solid var(--blond);background:var(--ink2);
+  border-radius:0 var(--r-s) var(--r-s) 0;padding:.65rem .8rem;margin:.6rem 0;
+  font-size:.85rem;color:var(--dim)}
+.note b{color:var(--wool)}
+
+.icon{background:none;border:1px solid var(--line2);color:var(--dim);border-radius:8px;
+  width:2.4rem;height:2.4rem;display:grid;place-items:center;font-size:1.05rem;flex:none}
+.icon:active{border-color:var(--blond);color:var(--wool)}
+
+.row{display:flex;gap:.5rem}
+.row .btn{flex:1}
+label .k{display:block;font-size:.78rem;color:var(--dim);margin-bottom:.25rem}
+
+/* ── grilla de fotos · la usan los álbumes y la galería ────── */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:.55rem}
+.ph{position:relative;background:var(--ink2);border:1px solid var(--line);
+  border-radius:var(--r-s);overflow:hidden}
+.ph img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover}
+.ph .bar{display:flex;align-items:center;gap:.2rem;padding:.3rem}
+.ph .bar button{flex:1;background:none;border:0;color:var(--dim);font-size:1rem;
+  padding:.28rem;border-radius:5px}
+.ph .bar button:active{background:var(--ink3);color:var(--wool)}
+.ph .pos{font-family:var(--mono);font-size:.58rem;color:var(--blond);padding:0 .25rem}
+.ph .et{position:absolute;top:.28rem;left:.28rem;font-family:var(--mono);font-size:.52rem;
+  letter-spacing:.06em;background:rgba(24,22,20,.86);padding:.15rem .32rem;border-radius:3px;
+  max-width:calc(100% - .56rem);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ph.off img{opacity:.35}
+.ph.borrada img{opacity:.22}
+.ph .flag{position:absolute;top:.28rem;right:.28rem;font-size:.7rem;
+  background:rgba(24,22,20,.86);border-radius:3px;padding:.05rem .28rem}
+
+/* ── el conmutador de idioma ───────────────────────────────── */
+.lang{display:flex;border:1px solid var(--line2);border-radius:999px;overflow:hidden;flex:none}
+.lang button{background:none;border:0;color:var(--dim);font-family:var(--mono);
+  font-size:.62rem;letter-spacing:.1em;padding:.42rem .75rem}
+.lang button.on{background:var(--blond);color:var(--ink);font-weight:600}
+
 @media(min-width:760px){
   .barra{border-top:1px solid var(--line)}
   .contenedor{padding:1.4rem 1rem}
