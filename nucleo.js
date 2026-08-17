@@ -12,7 +12,7 @@
 
 export const CY = {};
 
-CY.VERSION = 'nucleo-3';
+CY.VERSION = 'nucleo-8';
 
 // ═════════════════════════════════════════════════════════════
 //  BOTÓN ATRÁS DE ANDROID
@@ -317,14 +317,14 @@ CY.PERMISOS = [
 CY.NAV = [
   { id:'albumes',  label:'Álbumes de obra', corto:'Álbumes', icono:'photo_library',
     href:'./admin.html',       grupo:'directo', perm:'albumes' },
-  { id:'contenido',label:'Contenido del sitio', corto:'Contenido', icono:'edit_note',
-    href:'./contenido.html',   grupo:'directo', perm:'contenido' },
+  // La edición del sitio es UNA sola: viendo la página real. El editor por
+  // formularios se retiró en la T27 para no tener dos caminos que escriben lo
+  // mismo y se desincronizan.
+  { id:'editar',   label:'Editar el sitio', corto:'Editar', icono:'edit_note',
+    href:'./editar.html',      grupo:'directo', perm:'contenido' },
   { id:'calculo',  label:'Cálculo de taller', corto:'Cálculo', icono:'straighten',
     href:'./calculo.html',     grupo:'directo', perm:'calculo' },
 
-  { id:'editar',   label:'Editar viendo el sitio', icono:'visibility',
-    href:'./editar.html',      grupo:'trabajo', perm:'contenido',
-    detalle:'La página real: tocás un texto o una foto y la cambiás.' },
   { id:'sitio',    label:'Ver el sitio', icono:'public',
     href:'./index.html',       grupo:'ver' },
   { id:'albpub',   label:'Ver los álbumes públicos', icono:'collections',
@@ -338,7 +338,6 @@ CY.NAV = [
 ];
 
 CY.GRUPOS = [
-  { id:'trabajo', label:'Trabajo' },
   { id:'ver',     label:'Ver como visitante' },
   { id:'ajustes', label:'Ajustes' },
 ];

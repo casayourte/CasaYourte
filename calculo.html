@@ -128,7 +128,7 @@ import { db, auth, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, addDoc,
          collection, serverTimestamp, onAuthStateChanged, signOut } from "./firebase-init.js";
 import { CY } from "./nucleo.js";
 
-CY.PANEL = "calculo-5";
+CY.PANEL = "calculo-6";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 const yo = await CY.arrancar({ db, auth, doc, getDoc, onAuthStateChanged }, "calculo", "calculo");
 

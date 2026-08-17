@@ -28,16 +28,19 @@ menú ⋮ → *Agregar a la pantalla principal*.
 
 | Archivo | Qué es |
 |---|---|
-| `admin.html` | el panel: álbumes, fotos, textos y usuarios |
-| `editar.html` | el editor sobre la página real: tocás un texto o una foto y la cambiás |
-| `sembrar.html` | uso único. Copia el contenido a la base. **Borrar después de usarlo** |
+| `admin.html` | los álbumes de obra |
+| `editar.html` | el editor: la página real, tocás un texto o una foto y la cambiás |
+| `calculo.html` | los cálculos de taller, uno por cliente |
+| `usuarios.html` | quién entra y qué puede hacer |
+| `diagnostico.html` | las pruebas de conexión |
 
 **Código común**
 
 | Archivo | Qué es |
 |---|---|
 | `firebase-init.js` | único archivo que toca el SDK de Firebase. La versión vive acá |
-| `nucleo.js` | botón Atrás de Android, avisos, imágenes, Cloudinary, permisos |
+| `estilos.css` | una sola hoja para todas las pantallas del panel |
+| `nucleo.js` | navegación, permisos, Atrás de Android, avisos, imágenes, Cloudinary |
 | `sw.js` | service worker: el panel abre sin señal |
 | `manifest.json` | hace la app instalable |
 
@@ -46,7 +49,7 @@ menú ⋮ → *Agregar a la pantalla principal*.
 | Archivo | Qué es |
 |---|---|
 | `contenido.json` | 143 textos por idioma, español y francés, y los reemplazos de imagen |
-| `assets/` | las 34 imágenes y el video, todo en una sola carpeta |
+| `assets/` | las imágenes, el video y las dos láminas del cálculo |
 | `icono-192.png` · `icono-512.png` · `apple-touch-icon.png` | iconos de la app |
 | `CNAME` | declara el dominio propio. Una línea |
 | `REGLAS.txt` | las reglas de seguridad de Firestore, para copiar y pegar |
@@ -118,6 +121,25 @@ Dos caminos para editar, y los dos escriben el mismo borrador:
 Son 32 lugares editables: esos, menos el video y el logo.
 
 ---
+
+## Los sellos de versión
+
+Cada archivo con lógica propia lleva su número, visible en el panel abajo del nombre. **Al
+subir una versión nueva hay que subir su sello**, o no hay forma de saber si el teléfono está
+sirviendo el archivo nuevo o una copia vieja de la caché.
+
+| Archivo | Constante | Valor de esta versión |
+|---|---|---|
+| `nucleo.js` | `CY.VERSION` | `nucleo-8` |
+| `sw.js` | `VERSION` | `cy-shell-v15` |
+| `admin.html` | `PANEL` | `admin-8` |
+| `editar.html` | `EDITOR` | `editar-3` |
+| `calculo.html` | `CY.PANEL` | `calculo-6` |
+| `usuarios.html` | `CY.PANEL` | `usuarios-2` |
+| `diagnostico.html` | `CY.PANEL` | `diagnostico-2` |
+
+Si el panel muestra un número distinto al de esta tabla, ese archivo no se subió o está
+cacheado. El botón ↻ del avatar borra las cachés.
 
 ## Al subir código
 

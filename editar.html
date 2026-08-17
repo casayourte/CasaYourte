@@ -6,6 +6,7 @@
 <meta name="robots" content="noindex, nofollow">
 <title>CasaYourte · Editar el sitio</title>
 <link rel="icon" href="./icono-192.png">
+<link rel="stylesheet" href="./estilos.css">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..700,0..100,0..1&family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -164,7 +165,8 @@ import { CY } from "./nucleo.js";
 const $ = (id) => document.getElementById(id);
 
 // Sello de este archivo, para saber si quedó viejo en la caché.
-const EDITOR = "editar-2";
+const EDITOR = "editar-3";
+CY.PANEL = EDITOR;
 
 /* ═══════════════════════════════════════════════════════════════
    EDITAR VIENDO
@@ -349,11 +351,16 @@ function preparar() {
     el.addEventListener("blur", contar);
   });
 
-  // Las listas y la tabla no se editan en la página: se avisa dónde sí.
+  // Las listas y la tabla se editan en una hoja aparte: tocar celda por celda
+  // dentro de la página, en un celular, se rompe sola.
   doc_.querySelectorAll("[data-list],[data-rows]").forEach((el) => {
-    el.style.outline = "1px dashed rgba(142,58,70,.6)";
-    el.addEventListener("click", () => aviso(
-      "Las listas y la tabla de precios se editan en el panel, en Contenido del sitio.", true));
+    el.style.outline = "1px dashed rgba(220,169,107,.75)";
+    el.style.cursor = "pointer";
+    el.addEventListener("click", (ev) => {
+      ev.preventDefault(); ev.stopPropagation();
+      abrirHojaLista(el.dataset.list ? el.dataset.list : el.dataset.rows,
+                     el.hasAttribute("data-rows"));
+    }, true);
   });
 
   // Las imágenes: se tocan y se elige otra.
@@ -410,6 +417,60 @@ function aplicarImagenes() {
     const url = CY.url(pid, /^p\d\d$/.test(slot) ? 1200 : (slot === "hero" ? 1800 : 1200));
     im.dataset.src = url;
     im.src = url;
+  });
+}
+
+/* ---------- listas y tabla ----------
+   Una lista es un ítem por línea. La tabla es una fila por línea, con las
+   celdas separadas por |. Texto plano, que es lo único que se puede editar
+   con el pulgar sin que se desarme. */
+let cerrarLista = null;
+function abrirHojaLista(clave, esTabla) {
+  const v = CONT[idioma][clave];
+  if (v === undefined) return aviso("Esa clave no está en el contenido", true);
+  const texto = esTabla
+    ? (Array.isArray(v) ? v.map((f) => f.join(" | ")).join("\n") : String(v))
+    : (Array.isArray(v) ? v.join("\n") : String(v));
+
+  const hoja = document.createElement("dialog");
+  hoja.className = "cy-hoja";
+  hoja.innerHTML =
+    `<div class="cy-hoja-caja">
+       <div class="cy-hoja-tit">${esTabla ? "Tabla" : "Lista"} · ${CY.esc(clave)}</div>
+       <p style="font-size:.82rem;color:var(--dim);margin:0 0 .6rem">${esTabla
+         ? "Una fila por línea. Las celdas se separan con |"
+         : "Un punto por línea."}</p>
+       <textarea id="hl-txt" rows="${Math.min(14, Math.max(4, texto.split("\n").length + 1))}"
+         style="width:100%;background:var(--ink3);border:1px solid var(--line);
+         border-radius:6px;padding:.6rem;color:var(--wool);font-family:var(--mono);
+         font-size:.86rem;line-height:1.6"></textarea>
+       <div style="display:flex;gap:.5rem;margin-top:.7rem">
+         <button class="cy-hoja-x" id="hl-cancelar" style="flex:1">Cancelar</button>
+         <button class="cy-hoja-b" id="hl-ok" style="flex:1;text-align:center;
+           background:var(--blond);color:var(--ink);font-weight:600;border-color:var(--blond)">
+           Aplicar</button>
+       </div>
+     </div>`;
+  document.body.appendChild(hoja);
+  hoja.showModal();
+  hoja.querySelector("#hl-txt").value = texto;
+
+  cerrarLista = CY.capaAtras(() => {
+    cerrarLista = null;
+    try { if (hoja.open) hoja.close(); } catch (e) {}
+    hoja.remove();
+  });
+  hoja.querySelector("#hl-cancelar").addEventListener("click", () => cerrarLista && cerrarLista());
+  hoja.addEventListener("click", (e) => { if (e.target === hoja && cerrarLista) cerrarLista(); });
+  hoja.querySelector("#hl-ok").addEventListener("click", () => {
+    const t = hoja.querySelector("#hl-txt").value;
+    CONT[idioma][clave] = esTabla
+      ? t.split("\n").filter((l) => l.trim()).map((l) => l.split("|").map((c) => c.trim()))
+      : t.split("\n").map((l) => l.trim()).filter(Boolean);
+    if (cerrarLista) cerrarLista();
+    pintarEnIframe();
+    contar();
+    aviso("Aplicado. Falta guardar.");
   });
 }
 

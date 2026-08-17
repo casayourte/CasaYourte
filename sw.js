@@ -42,7 +42,7 @@
 // v14 (16-ago-2026) — el ancho del montante se deriva del espesor del trei.
 // v3 (10-ago-2026) — cambiaron admin.html y nucleo.js: entra la sección de
 //   contenido del sitio.
-const VERSION = 'cy-shell-v14';
+const VERSION = 'cy-shell-v15';
 
 const SHELL = [
   './admin.html',
