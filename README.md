@@ -131,10 +131,10 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 | Archivo | Constante | Valor de esta versión |
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-9` |
-| `sw.js` | `VERSION` | `cy-shell-v17` |
-| `admin.html` | `PANEL` | `admin-10` |
+| `sw.js` | `VERSION` | `cy-shell-v18` |
+| `admin.html` | `PANEL` | `admin-11` |
 | `editar.html` | `EDITOR` | `editar-3` |
-| `calculo.html` | `CY.PANEL` | `calculo-7` |
+| `calculo.html` | `CY.PANEL` | `calculo-8` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-2` |
 | `diagnostico.html` | `CY.PANEL` | `diagnostico-2` |
 

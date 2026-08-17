@@ -128,7 +128,7 @@ import { db, auth, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, addDoc,
          collection, serverTimestamp, onAuthStateChanged, signOut } from "./firebase-init.js";
 import { CY } from "./nucleo.js";
 
-CY.PANEL = "calculo-7";
+CY.PANEL = "calculo-8";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 const yo = await CY.arrancar({ db, auth, doc, getDoc, onAuthStateChanged }, "calculo", "calculo");
 
@@ -488,11 +488,25 @@ document.addEventListener("click", (ev) => {
   if (a) abrir(proyectos.find(p => p.id === a.dataset.abrir));
 });
 
+// Dónde estaba el scroll de cada sección y de cada pestaña. Volver a la lista
+// tiene que dejarla donde estaba, y volver a una pestaña también: con treinta
+// medidas, mandar al principio obliga a buscar de nuevo el campo.
+const scrollDe = {};
+let seccionActual = null;
+
+function recordar(clave) { if (clave) scrollDe[clave] = window.scrollY; }
+function restituir(clave) {
+  const y = scrollDe[clave] || 0;
+  requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo(0, y)));
+}
+
 function verSeccion(v) {
+  recordar(seccionActual);
+  seccionActual = v;
   $("v-lista").classList.toggle("hide", v !== "lista");
   $("v-proy").classList.toggle("hide", v !== "proy");
   $("barra-p").classList.toggle("hide", v !== "proy");
-  window.scrollTo(0, 0);
+  restituir(v);
 }
 
 $("btnNuevo").addEventListener("click", () => {
@@ -518,6 +532,7 @@ function abrir(p) {
     : "Todavía no está guardado.";
   $("f-borrar").classList.toggle("hide", !proy.id);
   document.querySelectorAll("#campos input").forEach(i => { i.value = P[i.dataset.k]; });
+  scrollDe["pest:datos"] = 0; scrollDe.proy = 0;
   verPestaña("datos");
   verSeccion("proy");
   // El Atrás de Android vuelve a la lista en lugar de salir de la app.
@@ -542,11 +557,12 @@ const PEST = [["datos","Medidas"],["piezas","Piezas"],["croquis","Croquis"],["fi
 $("pest").innerHTML = PEST.map(([k,t],i) =>
   `<button data-p="${k}" class="${i===0?"on":""}">${t}</button>`).join("");
 function verPestaña(k) {
+  recordar("pest:" + pest);
   pest = k;
   PEST.forEach(([x]) => $("t-" + x).classList.toggle("hide", x !== k));
   document.querySelectorAll("#pest button").forEach(b => b.classList.toggle("on", b.dataset.p === k));
   if (k === "piezas") pintarPiezas();
-  window.scrollTo(0, 0);
+  restituir("pest:" + k);
 }
 $("pest").addEventListener("click", (ev) => {
   const b = ev.target.closest("button"); if (b) verPestaña(b.dataset.p);

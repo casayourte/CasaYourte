@@ -216,7 +216,7 @@ import { CY } from "./nucleo.js";
 // Sello de ESTE archivo. El de nucleo.js no sirve para saber si admin.html
 // quedó viejo en la caché: son dos archivos distintos. Al cambiar el panel,
 // se sube este número.
-const PANEL = "admin-10";
+const PANEL = "admin-11";
 
 const CLOUD = CY.CLOUDINARY.cloud;
 const PRESET = CY.CLOUDINARY.preset;
@@ -248,11 +248,22 @@ function irA(v, alVolver) {
   _cerrarVista = CY.capaAtras(() => { _cerrarVista = null; (alVolver || (() => ver("list")))(); });
 }
 
+// Dónde estaba el scroll de cada vista. Volver de editar una foto tiene que
+// dejar la pantalla donde estaba: con 212 fotos, mandar al principio obliga a
+// buscar de nuevo el lugar en el que se estaba trabajando.
+const scrollDe = {};
+let vistaActual = null;
+
 function ver(v) {
+  if (vistaActual) scrollDe[vistaActual] = window.scrollY;
+  vistaActual = v;
   ["login","list","album","foto","edalb"].forEach(x => $("v-"+x).classList.toggle("hide", x !== v));
   $("dock").classList.toggle("hide", v !== "album" || !puede("fotos"));
   $("back").classList.toggle("hide", v === "login" || v === "list");
-  window.scrollTo(0, 0);
+  // En dos cuadros: uno para que el navegador aplique el cambio de vista y
+  // sepa el alto real de la página, otro para poder desplazarse hasta ahí.
+  const y = v === "foto" || v === "edalb" ? 0 : (scrollDe[v] || 0);
+  requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo(0, y)));
 }
 
 /* ===================== PERMISOS ===================== */
@@ -474,6 +485,24 @@ async function cargarFotos() {
 
 let verBorradas = false;
 
+// Repintar reconstruye la grilla entera, y eso pierde el scroll. Se guarda
+// antes y se restituye después, para que mover una foto con las flechas no
+// mande la pantalla al principio.
+// Deja una foto concreta a la vista. Se usa al volver de editarla: puede haber
+// cambiado de etapa y estar en otro lugar de la página.
+function aLaVista(id) {
+  requestAnimationFrame(() => {
+    const el = document.querySelector(`[data-foto="${id}"]`);
+    if (el) el.scrollIntoView({ block: "center", behavior: "auto" });
+  });
+}
+
+function conScroll(fn) {
+  const y = window.scrollY;
+  fn();
+  requestAnimationFrame(() => window.scrollTo(0, y));
+}
+
 function pintarAlbum() {
   ver("album");
   const cont = $("fotos"); cont.innerHTML = "";
@@ -556,7 +585,7 @@ async function moverEtapa(presentes, etapa, d) {
   const base = album.tipo === "obra" ? ETAPAS : ["general"];
   const nuevo = [...lista, ...base.filter((e) => !lista.includes(e))];
   album.ordenEtapas = nuevo;
-  pintarAlbum();
+  conScroll(pintarAlbum);
   try {
     await updateDoc(doc(db, "albums", album.id), { ordenEtapas: nuevo });
   } catch (e) { toast(CY.explicar(e), true); }
@@ -565,6 +594,7 @@ async function moverEtapa(presentes, etapa, d) {
 function tarjetaFoto(f, i, grupo) {
   const el = document.createElement("div");
   el.className = "ph" + (f.usar ? "" : " off") + (f.eliminada ? " borrada" : "");
+  el.dataset.foto = f.id;
   el.innerHTML =
     `<img loading="lazy" alt="">
      ${f.personas ? '<span class="flag" title="Gente identificable">👤</span>' : ""}
@@ -608,8 +638,8 @@ async function marcarUsar(f, valor) {
   try {
     await updateDoc(doc(db, "albums", album.id, "fotos", f.id), { usar: valor });
     f.usar = valor;
-    pintarAlbum();
-  } catch (e) { toast(CY.explicar(e), true); pintarAlbum(); }
+    conScroll(pintarAlbum);
+  } catch (e) { toast(CY.explicar(e), true); conScroll(pintarAlbum); }
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -677,7 +707,7 @@ async function reubicar(grupo, foto, hasta) {
   const base = Math.min(...grupo.map((x) => x.orden || 0));
   grupo.forEach((x, k) => { x.orden = base + k * 10; });
   fotos.sort((a, b) => (a.orden || 0) - (b.orden || 0));
-  pintarAlbum();
+  conScroll(pintarAlbum);
   try {
     const lote = writeBatch(db);
     grupo.forEach((x) =>
@@ -700,11 +730,17 @@ $("a-publico").addEventListener("click", async () => {
     await updateDoc(doc(db, "albums", album.id), { publico: v });
     album.publico = v;
     toast(v ? "Publicado. Ya se ve en la página de álbumes." : "Sacado del sitio.");
-    pintarAlbum(); cargarAlbumes();
+    conScroll(pintarAlbum); cargarAlbumes();
   } catch (e) { toast(CY.explicar(e), true); }
 });
 
-$("a-papelera").addEventListener("click", () => { verBorradas = !verBorradas; pintarAlbum(); });
+$("a-papelera").addEventListener("click", () => {
+  verBorradas = !verBorradas;
+  // Al mostrar la papelera se agregan fotos al final y el alto cambia mucho:
+  // ahí sí conviene ir al principio. Al cerrarla se mantiene el lugar.
+  if (verBorradas) { pintarAlbum(); window.scrollTo(0, 0); }
+  else conScroll(pintarAlbum);
+});
 
 /* ── editar los datos del álbum ── */
 $("a-editar").addEventListener("click", () => {
@@ -758,7 +794,7 @@ async function moverEn(grupo, i, d) {
   const a = grupo[i], b = grupo[j];
   [a.orden, b.orden] = [b.orden, a.orden];
   fotos.sort((x, y) => (x.orden || 0) - (y.orden || 0));
-  pintarAlbum();
+  conScroll(pintarAlbum);
   try {
     await Promise.all([
       updateDoc(doc(db, "albums", album.id, "fotos", a.id), { orden: a.orden }),
@@ -776,7 +812,8 @@ function editar(f) {
   $("f-alt-es").value = f.alt_es || ""; $("f-alt-fr").value = f.alt_fr || "";
   $("f-cap-es").value = f.cap_es || ""; $("f-cap-fr").value = f.cap_fr || "";
   $("f-usar").checked = !!f.usar; $("f-personas").checked = !!f.personas;
-  irA("foto", () => pintarAlbum());
+  // Al volver, se repinta y se deja a la vista la foto que se estaba editando.
+  irA("foto", () => { pintarAlbum(); aLaVista(f.id); });
 }
 
 $("f-guardar").addEventListener("click", async () => {
@@ -788,7 +825,7 @@ $("f-guardar").addEventListener("click", async () => {
   };
   try {
     await updateDoc(doc(db, "albums", album.id, "fotos", foto.id), d);
-    Object.assign(foto, d); toast("Guardado"); pintarAlbum();
+    Object.assign(foto, d); toast("Guardado");
   } catch (e) { toast(CY.explicar(e), true); }
 });
 
@@ -807,7 +844,7 @@ $("f-quitar").addEventListener("click", async () => {
     });
     Object.assign(foto, { eliminada: true, usar: false });
     toast("A la papelera. Se puede recuperar desde el álbum.");
-    pintarAlbum();
+    conScroll(pintarAlbum);
   } catch (e) { toast(CY.explicar(e), true); }
 });
 
@@ -819,7 +856,7 @@ async function recuperar(f) {
     f.eliminada = false;
     toast("Recuperada");
     verBorradas = fotos.some((x) => x.eliminada);
-    pintarAlbum();
+    conScroll(pintarAlbum);
   } catch (e) { toast(CY.explicar(e), true); }
 }
 
@@ -846,6 +883,7 @@ async function subir(files) {
   let orden = fotos.length ? Math.max(...fotos.map(f => f.orden || 0)) : 0;
   let ok = 0, mal = 0;
 
+  let ultimaSubida = null;
   for (let i = 0; i < files.length; i++) {
     const pct = Math.round(i / files.length * 100);
     $("p-pct").textContent = pct + "%"; $("p-fill").style.width = pct + "%";
@@ -861,6 +899,7 @@ async function subir(files) {
       };
       const ref = await addDoc(collection(db, "albums", album.id, "fotos"), nueva);
       fotos.push({ id: ref.id, ...nueva });
+      ultimaSubida = ref.id;
       ok++;
       paso(`✓ ${(files[i].size / 1048576).toFixed(1)}MB → ${(j.pesoSubido / 1048576).toFixed(2)}MB  ${j.width}×${j.height}`);
     } catch (err) {
@@ -872,8 +911,12 @@ async function subir(files) {
   $("p-txt").textContent = `${ok} subidas${mal ? ` · ${mal} con error` : ""}`;
   // No se guarda la cantidad: es un derivado (Libro 1 §1.4). Se cuenta al leer.
   fotos.sort((a, b) => a.orden - b.orden);
-  setTimeout(() => { cerrarProg(); pintarAlbum();
-    toast(mal ? `${ok} subidas, ${mal} fallaron` : `${ok} fotos subidas`, !!mal); }, mal ? 2600 : 900);
+  setTimeout(() => {
+    cerrarProg(); pintarAlbum();
+    // Las recién subidas quedan al final de su etapa: se lleva la vista ahí.
+    if (ok && ultimaSubida) aLaVista(ultimaSubida);
+    toast(mal ? `${ok} subidas, ${mal} fallaron` : `${ok} fotos subidas`, !!mal);
+  }, mal ? 2600 : 900);
 }
 </script>
 </body>
