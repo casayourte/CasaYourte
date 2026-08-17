@@ -36,7 +36,7 @@
   padding-bottom:.3rem;border-bottom:1px solid var(--line)}
 .etapa-tit b{font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;
   text-transform:uppercase;color:var(--blond);flex:1;font-weight:500}
-.etapa-tit span{font-family:var(--mono);font-size:.56rem;color:var(--dim)}
+.etapa-tit>span:not(.material-icons){font-family:var(--mono);font-size:.56rem;color:var(--dim)}
 .dock{position:fixed;left:0;right:0;bottom:calc(var(--barra) + var(--safe));z-index:35;
   background:var(--ink2);border-top:1px solid var(--line);padding:.55rem .8rem;
   display:flex;gap:.45rem;align-items:center}
@@ -216,7 +216,7 @@ import { CY } from "./nucleo.js";
 // Sello de ESTE archivo. El de nucleo.js no sirve para saber si admin.html
 // quedó viejo en la caché: son dos archivos distintos. Al cambiar el panel,
 // se sube este número.
-const PANEL = "admin-9";
+const PANEL = "admin-10";
 
 const CLOUD = CY.CLOUDINARY.cloud;
 const PRESET = CY.CLOUDINARY.preset;
@@ -588,18 +588,18 @@ function tarjetaFoto(f, i, grupo) {
        <input type="checkbox" ${f.usar ? "checked" : ""}>
        <span class="material-icons">${f.usar ? "check_circle" : "radio_button_unchecked"}</span>
      </label>
-     <span class="pos">${String(i + 1).padStart(2, "0")}</span>
+     <button class="pos" data-a="pos" aria-label="Mover a otra posición">${String(i + 1).padStart(2, "0")}</button>
      <button data-a="up" aria-label="Subir">↑</button>
      <button data-a="down" aria-label="Bajar">↓</button>
      <button data-a="edit" aria-label="Editar">✎</button>`;
   bar.querySelector(".usar input").addEventListener("change", (ev) =>
     marcarUsar(f, ev.target.checked));
   // Las flechas mueven DENTRO del grupo: la etapa define la sección.
+  bar.querySelector('[data-a="pos"]').addEventListener("click", () => pedirPosicion(grupo, f, i));
   bar.querySelector('[data-a="up"]').addEventListener("click", () => moverEn(grupo, i, -1));
   bar.querySelector('[data-a="down"]').addEventListener("click", () => moverEn(grupo, i, 1));
   bar.querySelector('[data-a="edit"]').addEventListener("click", () => editar(f));
   el.querySelector("img").addEventListener("click", () => editar(f));
-  arrastrable(el, f, grupo);
   return el;
 }
 
@@ -613,103 +613,67 @@ async function marcarUsar(f, valor) {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   ARRASTRAR Y SOLTAR con el dedo
+   REUBICAR ESCRIBIENDO EL NÚMERO
 
-   Se usan eventos de PUNTERO, no la API de arrastre de HTML: esa
-   última no funciona con el dedo en Android.
+   No hay arrastre: en la app instalada, la pulsación sostenida abre el
+   menú del sistema y no se puede evitar desde la página. Escribir la
+   posición es además más rápido para mover una foto veinte lugares.
 
-   El arrastre arranca con una pulsación sostenida de 320 ms. Sin esa
-   espera, cualquier deslizamiento para hacer scroll movería una foto
-   sin querer, que es peor que no poder arrastrar.
+   Se toca el número, se escribe el destino, y todas las de abajo
+   corren un lugar.
    ═══════════════════════════════════════════════════════════════ */
-let arr = null;
+function pedirPosicion(grupo, foto, i) {
+  const total = grupo.length;
+  const hoja = document.createElement("dialog");
+  hoja.className = "cy-hoja";
+  hoja.innerHTML =
+    `<div class="cy-hoja-caja">
+       <div class="cy-hoja-tit">Mover a la posición</div>
+       <p style="font-size:.84rem;color:var(--dim);margin:0 0 .8rem">
+         Está en la <b>${i + 1}</b> de ${total}. Las de abajo corren un lugar.</p>
+       <input id="pp-n" type="number" inputmode="numeric" min="1" max="${total}"
+         value="${i + 1}" style="text-align:center;font-size:1.4rem;
+         font-family:var(--mono);padding:.6rem">
+       <div style="display:flex;gap:.4rem;margin:.7rem 0">
+         <button class="btn" id="pp-pri" style="flex:1">Primera</button>
+         <button class="btn" id="pp-ult" style="flex:1">Última</button>
+       </div>
+       <div style="display:flex;gap:.5rem">
+         <button class="cy-hoja-x" id="pp-no" style="flex:1">Cancelar</button>
+         <button class="btn p" id="pp-si" style="flex:1">Mover</button>
+       </div>
+     </div>`;
+  document.body.appendChild(hoja);
+  hoja.showModal();
+  const inp = hoja.querySelector("#pp-n");
+  inp.focus(); inp.select();
 
-function arrastrable(el, f, grupo) {
-  el.addEventListener("pointerdown", (ev) => {
-    if (ev.target.closest("button, label")) return;   // los controles siguen andando
-    const t0 = Date.now();
-    const x0 = ev.clientX, y0 = ev.clientY;
-    let listo = false;
-
-    const espera = setTimeout(() => {
-      listo = true;
-      empezar(el, f, grupo, x0, y0);
-      if (navigator.vibrate) navigator.vibrate(18);
-    }, 320);
-
-    const mover = (e) => {
-      if (!listo && (Math.abs(e.clientX - x0) > 8 || Math.abs(e.clientY - y0) > 8)) {
-        clearTimeout(espera);            // se está haciendo scroll: no es un arrastre
-        limpiar();
-      }
-    };
-    const soltar = () => { clearTimeout(espera); limpiar(); };
-    const limpiar = () => {
-      removeEventListener("pointermove", mover);
-      removeEventListener("pointerup", soltar);
-      removeEventListener("pointercancel", soltar);
-    };
-    addEventListener("pointermove", mover, { passive: true });
-    addEventListener("pointerup", soltar);
-    addEventListener("pointercancel", soltar);
+  const cerrar = CY.capaAtras(() => {
+    try { if (hoja.open) hoja.close(); } catch (e) {}
+    hoja.remove();
+  });
+  const aplicar = (n) => {
+    const hasta = Math.max(1, Math.min(total, Math.round(n))) - 1;
+    cerrar();
+    if (hasta !== i) reubicar(grupo, foto, hasta);
+  };
+  hoja.querySelector("#pp-no").addEventListener("click", () => cerrar());
+  hoja.querySelector("#pp-pri").addEventListener("click", () => aplicar(1));
+  hoja.querySelector("#pp-ult").addEventListener("click", () => aplicar(total));
+  hoja.querySelector("#pp-si").addEventListener("click", () => aplicar(parseInt(inp.value, 10)));
+  inp.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); aplicar(parseInt(inp.value, 10)); }
   });
 }
 
-function empezar(el, f, grupo, x0, y0) {
-  const caja = el.getBoundingClientRect();
-  const fantasma = el.cloneNode(true);
-  fantasma.className = "ph fantasma";
-  Object.assign(fantasma.style, {
-    position: "fixed", left: caja.left + "px", top: caja.top + "px",
-    width: caja.width + "px", height: caja.height + "px",
-    pointerEvents: "none", zIndex: 90, opacity: ".92",
-    transform: "scale(1.04)", boxShadow: "0 12px 32px rgba(0,0,0,.55)",
-  });
-  document.body.appendChild(fantasma);
-  el.classList.add("origen");
-  document.body.style.overflow = "hidden";     // el scroll estorba mientras se arrastra
-  arr = { el, f, grupo, fantasma, dx: x0 - caja.left, dy: y0 - caja.top, destino: null };
-
-  const mover = (e) => {
-    if (!arr) return;
-    e.preventDefault();
-    fantasma.style.left = (e.clientX - arr.dx) + "px";
-    fantasma.style.top = (e.clientY - arr.dy) + "px";
-    // ¿sobre qué foto del MISMO grupo está el dedo?
-    const bajo = document.elementFromPoint(e.clientX, e.clientY);
-    const otra = bajo && bajo.closest(".ph:not(.fantasma):not(.origen)");
-    document.querySelectorAll(".ph.blanco").forEach((x) => x.classList.remove("blanco"));
-    arr.destino = null;
-    if (otra && otra.parentElement === arr.el.parentElement) {
-      otra.classList.add("blanco");
-      arr.destino = otra;
-    }
-  };
-  const soltar = () => {
-    removeEventListener("pointermove", mover);
-    removeEventListener("pointerup", soltar);
-    removeEventListener("pointercancel", soltar);
-    document.body.style.overflow = "";
-    fantasma.remove();
-    el.classList.remove("origen");
-    document.querySelectorAll(".ph.blanco").forEach((x) => x.classList.remove("blanco"));
-    const d = arr.destino, g = arr.grupo, or = arr.f;
-    arr = null;
-    if (d) soltarEn(g, or, [...d.parentElement.children].indexOf(d));
-  };
-  addEventListener("pointermove", mover, { passive: false });
-  addEventListener("pointerup", soltar);
-  addEventListener("pointercancel", soltar);
-}
-
-/* Reordena el grupo y reescribe el orden de todas sus fotos. Se hace en un
-   lote: si se escribieran de a una, un corte de señal dejaría el orden a
-   medio aplicar. */
-async function soltarEn(grupo, foto, hasta) {
+/* Reordena el grupo y reescribe el orden de TODAS sus fotos en un lote: si se
+   escribieran de a una, un corte de señal dejaría el orden a medio aplicar. */
+async function reubicar(grupo, foto, hasta) {
   const desde = grupo.indexOf(foto);
   if (desde < 0 || hasta < 0 || desde === hasta) return;
   grupo.splice(hasta, 0, ...grupo.splice(desde, 1));
-  // se reparten los órdenes del grupo, de diez en diez, respetando el rango
+  // Los órdenes se reparten de diez en diez dentro del rango que ya ocupaba el
+  // grupo, para no pisar los de las otras etapas.
   const base = Math.min(...grupo.map((x) => x.orden || 0));
   grupo.forEach((x, k) => { x.orden = base + k * 10; });
   fotos.sort((a, b) => (a.orden || 0) - (b.orden || 0));
@@ -719,6 +683,7 @@ async function soltarEn(grupo, foto, hasta) {
     grupo.forEach((x) =>
       lote.update(doc(db, "albums", album.id, "fotos", x.id), { orden: x.orden }));
     await lote.commit();
+    toast(`Movida a la ${hasta + 1}`);
   } catch (e) { toast(CY.explicar(e), true); cargarFotos(); }
 }
 

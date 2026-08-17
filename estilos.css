@@ -38,6 +38,13 @@ a{color:var(--blond)}
 button,input,select,textarea{font-family:inherit;font-size:16px;color:inherit}
 button{cursor:pointer}
 .material-icons{font-size:20px;line-height:1;vertical-align:-4px}
+/* Una regla de contenedor como `.algo span{font-family:...}` le gana en
+   especificidad a `.material-icons` y el icono sale escrito como palabra.
+   Esto lo evita de una vez para todas las pantallas. */
+span.material-icons,
+.material-icons{font-family:"Material Icons"!important;font-weight:400;font-style:normal;
+  letter-spacing:normal;text-transform:none;white-space:nowrap;direction:ltr;
+  -webkit-font-feature-settings:"liga";-webkit-font-smoothing:antialiased}
 .oculto{display:none!important}
 
 .mono{font-family:var(--mono);font-size:.62rem;letter-spacing:.13em;text-transform:uppercase}
@@ -243,7 +250,11 @@ label .k{display:block;font-size:.78rem;color:var(--dim);margin-bottom:.25rem}
 .ph .bar button{flex:1;background:none;border:0;color:var(--dim);font-size:1rem;
   padding:.28rem;border-radius:5px}
 .ph .bar button:active{background:var(--ink3);color:var(--wool)}
-.ph .pos{font-family:var(--mono);font-size:.58rem;color:var(--blond);padding:0 .25rem}
+/* El número es un botón: se toca y se escribe la posición nueva. */
+.ph .bar button.pos{flex:none;font-family:var(--mono);font-size:.62rem;color:var(--blond);
+  padding:.28rem .42rem;border:1px solid transparent;border-radius:5px;background:none;
+  font-weight:500}
+.ph .bar button.pos:active{background:var(--ink3);border-color:var(--blond)}
 .ph .et{position:absolute;top:.28rem;left:.28rem;font-family:var(--mono);font-size:.52rem;
   letter-spacing:.06em;background:rgba(24,22,20,.86);padding:.15rem .32rem;border-radius:3px;
   max-width:calc(100% - .56rem);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -266,12 +277,6 @@ label .k{display:block;font-size:.78rem;color:var(--dim);margin-bottom:.25rem}
 .ph .bar label.usar .material-icons{font-size:19px;color:var(--dim)}
 .ph .bar label.usar input:checked + .material-icons{color:var(--ok)}
 .ph .bar label.usar:active{background:var(--ink3)}
-
-/* ── arrastrar y soltar ───────────────────────────────────── */
-.ph.origen{opacity:.28}
-.ph.blanco{outline:2px solid var(--blond);outline-offset:-2px}
-.ph.fantasma{border-color:var(--blond)}
-.grid{touch-action:pan-y}
 
 /* ── encabezado de etapa, con sus flechas ─────────────────── */
 .etapa-tit .btn-mini{margin-left:-.15rem}
