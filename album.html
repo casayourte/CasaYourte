@@ -313,8 +313,11 @@ function pintar() {
     sec.querySelector(".meta").textContent = meta;
     sec.querySelector(".alb-sub").textContent = a.fotos.length + " " + d.fotos;
 
-    // Agrupado por etapa, en el orden de la obra.
-    const orden = ETAPAS.filter((e) => a.fotos.some((f) => f.etapa === e));
+    // Agrupado por etapa, en el orden que tenga guardado el álbum.
+    const guardado = Array.isArray(a.ordenEtapas) ? a.ordenEtapas : [];
+    const secuencia = [...guardado.filter((e) => ETAPAS.includes(e)),
+                       ...ETAPAS.filter((e) => !guardado.includes(e))];
+    const orden = secuencia.filter((e) => a.fotos.some((f) => f.etapa === e));
     const sueltas = a.fotos.filter((f) => !ETAPAS.includes(f.etapa));
     const grupos = orden.map((e) => [e, a.fotos.filter((f) => f.etapa === e)]);
     if (sueltas.length) grupos.push([null, sueltas]);

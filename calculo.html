@@ -128,7 +128,7 @@ import { db, auth, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, addDoc,
          collection, serverTimestamp, onAuthStateChanged, signOut } from "./firebase-init.js";
 import { CY } from "./nucleo.js";
 
-CY.PANEL = "calculo-6";
+CY.PANEL = "calculo-7";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 const yo = await CY.arrancar({ db, auth, doc, getDoc, onAuthStateChanged }, "calculo", "calculo");
 
@@ -251,7 +251,7 @@ function calc() {
     n_lito_trei: Math.round(2 * Math.PI / alfa) * 2,
     vol_trei: Math.round(2 * Math.PI / alfa) * 2
       * Math.hypot(P.alto, P.alto / Math.tan(Math.PI / 3)) * P.anc_trei * P.e_trei,
-    Rp, p_largo: slant, paso_p: 2 * Math.PI * R / n,
+    Rp, p_largo: slant, paso_p: 2 * Math.PI * R / P.n_per_r,
     nt, beta: beta * 180 / Math.PI, delta: delta * 180 / Math.PI,
     r_med, cuerda: 2 * Rint * Math.sin(beta), flecha: Rint - r_med,
     h_vert, lado_tri, sep_tri, n_nec, sep_capas,
@@ -265,7 +265,7 @@ function calc() {
     // comprimida más los DOS listones del trei. Dos palos de 2,2 no son lo
     // mismo que dos de 1,6.
     mon_ancho: A + 2 * P.e_trei,
-    vol_perchas: n * slant * P.p_anc * P.p_alt,
+    vol_perchas: P.n_per_r * slant * P.p_anc * P.p_alt,
     per_lito_ext: 2 * Math.PI * R * 2,
     per_lito_int: 2 * Math.PI * r_int_lito,
   };

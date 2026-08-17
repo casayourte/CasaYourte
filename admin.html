@@ -129,7 +129,10 @@
       <button class="icon" id="a-editar" aria-label="Editar álbum">✎</button>
     </div>
     <p class="mono" id="a-sub" style="color:var(--dim);margin:.4rem 0 1rem"></p>
-    <button class="btn hide" id="a-papelera" style="margin-bottom:1rem"></button>
+    <div class="fila-btn" style="margin-bottom:1rem">
+      <button class="btn" id="a-publico"></button>
+      <button class="btn hide" id="a-papelera"></button>
+    </div>
     <div id="fotos"></div>
     <div class="empty hide" id="a-vacio">Todavía no hay fotos.<br>Elegí la etapa abajo y agregá.</div>
   </section>
@@ -204,7 +207,7 @@
 // secundaria para no expulsar al admin de su sesión.
 import { db, auth, firebaseConfig, crearCuentaAuth, createUserWithEmailAndPassword,
          collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc,
-         deleteDoc, serverTimestamp,
+         deleteDoc, serverTimestamp, writeBatch,
          onAuthStateChanged, signInWithEmailAndPassword, signOut,
          sendPasswordResetEmail } from "./firebase-init.js";
 import { CY } from "./nucleo.js";
@@ -213,7 +216,7 @@ import { CY } from "./nucleo.js";
 // Sello de ESTE archivo. El de nucleo.js no sirve para saber si admin.html
 // quedó viejo en la caché: son dos archivos distintos. Al cambiar el panel,
 // se sube este número.
-const PANEL = "admin-8";
+const PANEL = "admin-9";
 
 const CLOUD = CY.CLOUDINARY.cloud;
 const PRESET = CY.CLOUDINARY.preset;
@@ -487,28 +490,52 @@ function pintarAlbum() {
 
   // Papelera: las quitadas no se borran de Cloudinary, así que se pueden
   // recuperar. El botón sólo aparece si hay algo adentro.
+  // El estado de publicación va a la vista: es lo que decide si el álbum
+  // aparece en el sitio, y estaba escondido dentro de la ficha.
+  const pub = $("a-publico");
+  pub.innerHTML = album.publico
+    ? '<span class="material-icons">public</span> Publicado en el sitio'
+    : '<span class="material-icons">lock</span> No publicado';
+  pub.classList.toggle("p", !!album.publico);
+
   const pap = $("a-papelera");
   pap.classList.toggle("hide", borradas.length === 0 && !verBorradas);
   pap.textContent = verBorradas
     ? "← Volver al álbum"
     : `Papelera · ${borradas.length} quitada${borradas.length === 1 ? "" : "s"}`;
 
-  // Agrupado por etapa, en el orden de las 16 etapas. Todas las fotos de una
-  // misma etapa quedan juntas, con su título.
-  const orden = album.tipo === "obra" ? ETAPAS : ["general"];
+  // Agrupado por etapa. El orden de las etapas se guarda POR ÁLBUM: la
+  // secuencia de las 16 es el punto de partida, no una imposición.
+  const base = album.tipo === "obra" ? ETAPAS : ["general"];
+  const guardado = Array.isArray(album.ordenEtapas) ? album.ordenEtapas : [];
+  const orden = [...guardado.filter((e) => base.includes(e)),
+                 ...base.filter((e) => !guardado.includes(e))];
   const presentes = orden.filter((e) => lista.some((f) => f.etapa === e));
-  const sinEtapa = lista.filter((f) => !orden.includes(f.etapa));
+  const sinEtapa = lista.filter((f) => !base.includes(f.etapa));
   const grupos = presentes.map((e) => [e, lista.filter((f) => f.etapa === e)]);
-  if (sinEtapa.length) grupos.push(["sin etapa", sinEtapa]);
+  if (sinEtapa.length) grupos.push([null, sinEtapa]);
 
-  grupos.forEach(([etapa, delGrupo]) => {
+  grupos.forEach(([etapa, delGrupo], k) => {
     const tit = document.createElement("div");
     tit.className = "etapa-tit";
-    tit.innerHTML = "<b></b><span></span>";
-    tit.querySelector("b").textContent =
-      etapa.replace(/^\d+-/, "").replace(/-/g, " ");
+    tit.innerHTML = `<b></b><span></span>
+      ${etapa ? `<button class="btn-mini" data-et="sube" ${k === 0 ? "disabled" : ""}
+          aria-label="Subir etapa"><span class="material-icons"
+          style="font-size:18px">keyboard_arrow_up</span></button>
+        <button class="btn-mini" data-et="baja" ${k === presentes.length - 1 ? "disabled" : ""}
+          aria-label="Bajar etapa"><span class="material-icons"
+          style="font-size:18px">keyboard_arrow_down</span></button>` : ""}`;
+    tit.querySelector("b").textContent = etapa
+      ? etapa.replace(/^\d+-/, "").replace(/-/g, " ")
+      : "sin etapa";
     tit.querySelector("span").textContent =
       delGrupo.length + (delGrupo.length === 1 ? " foto" : " fotos");
+    if (etapa) {
+      tit.querySelector('[data-et="sube"]').addEventListener("click",
+        () => moverEtapa(presentes, etapa, -1));
+      tit.querySelector('[data-et="baja"]').addEventListener("click",
+        () => moverEtapa(presentes, etapa, 1));
+    }
     cont.appendChild(tit);
 
     const g = document.createElement("div");
@@ -516,6 +543,23 @@ function pintarAlbum() {
     delGrupo.forEach((f, i) => g.appendChild(tarjetaFoto(f, i, delGrupo)));
     cont.appendChild(g);
   });
+}
+
+/* ── reordenar las etapas del álbum ── */
+async function moverEtapa(presentes, etapa, d) {
+  const lista = [...presentes];
+  const i = lista.indexOf(etapa), j = i + d;
+  if (i < 0 || j < 0 || j >= lista.length) return;
+  [lista[i], lista[j]] = [lista[j], lista[i]];
+  // se guarda el orden COMPLETO, con las que no tienen fotos al final, para
+  // que agregar fotos a una etapa vacía no la mande al fondo
+  const base = album.tipo === "obra" ? ETAPAS : ["general"];
+  const nuevo = [...lista, ...base.filter((e) => !lista.includes(e))];
+  album.ordenEtapas = nuevo;
+  pintarAlbum();
+  try {
+    await updateDoc(doc(db, "albums", album.id), { ordenEtapas: nuevo });
+  } catch (e) { toast(CY.explicar(e), true); }
 }
 
 function tarjetaFoto(f, i, grupo) {
@@ -537,19 +581,163 @@ function tarjetaFoto(f, i, grupo) {
     return el;
   }
 
-  // Las flechas mueven DENTRO del grupo: mezclar etapas al reordenar sería
-  // confuso, porque la etapa es la que define la sección.
+  // El tilde de «usar en el catálogo» va acá, bajo la foto: es la decisión que
+  // más se toma y no tiene sentido entrar a la ficha de cada una para tomarla.
   bar.innerHTML =
-    `<button data-a="up" aria-label="Subir">↑</button>
+    `<label class="usar" title="Usar en el catálogo público">
+       <input type="checkbox" ${f.usar ? "checked" : ""}>
+       <span class="material-icons">${f.usar ? "check_circle" : "radio_button_unchecked"}</span>
+     </label>
      <span class="pos">${String(i + 1).padStart(2, "0")}</span>
+     <button data-a="up" aria-label="Subir">↑</button>
      <button data-a="down" aria-label="Bajar">↓</button>
      <button data-a="edit" aria-label="Editar">✎</button>`;
+  bar.querySelector(".usar input").addEventListener("change", (ev) =>
+    marcarUsar(f, ev.target.checked));
+  // Las flechas mueven DENTRO del grupo: la etapa define la sección.
   bar.querySelector('[data-a="up"]').addEventListener("click", () => moverEn(grupo, i, -1));
   bar.querySelector('[data-a="down"]').addEventListener("click", () => moverEn(grupo, i, 1));
   bar.querySelector('[data-a="edit"]').addEventListener("click", () => editar(f));
   el.querySelector("img").addEventListener("click", () => editar(f));
+  arrastrable(el, f, grupo);
   return el;
 }
+
+/* ── el tilde del catálogo, sin salir de la grilla ── */
+async function marcarUsar(f, valor) {
+  try {
+    await updateDoc(doc(db, "albums", album.id, "fotos", f.id), { usar: valor });
+    f.usar = valor;
+    pintarAlbum();
+  } catch (e) { toast(CY.explicar(e), true); pintarAlbum(); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ARRASTRAR Y SOLTAR con el dedo
+
+   Se usan eventos de PUNTERO, no la API de arrastre de HTML: esa
+   última no funciona con el dedo en Android.
+
+   El arrastre arranca con una pulsación sostenida de 320 ms. Sin esa
+   espera, cualquier deslizamiento para hacer scroll movería una foto
+   sin querer, que es peor que no poder arrastrar.
+   ═══════════════════════════════════════════════════════════════ */
+let arr = null;
+
+function arrastrable(el, f, grupo) {
+  el.addEventListener("pointerdown", (ev) => {
+    if (ev.target.closest("button, label")) return;   // los controles siguen andando
+    const t0 = Date.now();
+    const x0 = ev.clientX, y0 = ev.clientY;
+    let listo = false;
+
+    const espera = setTimeout(() => {
+      listo = true;
+      empezar(el, f, grupo, x0, y0);
+      if (navigator.vibrate) navigator.vibrate(18);
+    }, 320);
+
+    const mover = (e) => {
+      if (!listo && (Math.abs(e.clientX - x0) > 8 || Math.abs(e.clientY - y0) > 8)) {
+        clearTimeout(espera);            // se está haciendo scroll: no es un arrastre
+        limpiar();
+      }
+    };
+    const soltar = () => { clearTimeout(espera); limpiar(); };
+    const limpiar = () => {
+      removeEventListener("pointermove", mover);
+      removeEventListener("pointerup", soltar);
+      removeEventListener("pointercancel", soltar);
+    };
+    addEventListener("pointermove", mover, { passive: true });
+    addEventListener("pointerup", soltar);
+    addEventListener("pointercancel", soltar);
+  });
+}
+
+function empezar(el, f, grupo, x0, y0) {
+  const caja = el.getBoundingClientRect();
+  const fantasma = el.cloneNode(true);
+  fantasma.className = "ph fantasma";
+  Object.assign(fantasma.style, {
+    position: "fixed", left: caja.left + "px", top: caja.top + "px",
+    width: caja.width + "px", height: caja.height + "px",
+    pointerEvents: "none", zIndex: 90, opacity: ".92",
+    transform: "scale(1.04)", boxShadow: "0 12px 32px rgba(0,0,0,.55)",
+  });
+  document.body.appendChild(fantasma);
+  el.classList.add("origen");
+  document.body.style.overflow = "hidden";     // el scroll estorba mientras se arrastra
+  arr = { el, f, grupo, fantasma, dx: x0 - caja.left, dy: y0 - caja.top, destino: null };
+
+  const mover = (e) => {
+    if (!arr) return;
+    e.preventDefault();
+    fantasma.style.left = (e.clientX - arr.dx) + "px";
+    fantasma.style.top = (e.clientY - arr.dy) + "px";
+    // ¿sobre qué foto del MISMO grupo está el dedo?
+    const bajo = document.elementFromPoint(e.clientX, e.clientY);
+    const otra = bajo && bajo.closest(".ph:not(.fantasma):not(.origen)");
+    document.querySelectorAll(".ph.blanco").forEach((x) => x.classList.remove("blanco"));
+    arr.destino = null;
+    if (otra && otra.parentElement === arr.el.parentElement) {
+      otra.classList.add("blanco");
+      arr.destino = otra;
+    }
+  };
+  const soltar = () => {
+    removeEventListener("pointermove", mover);
+    removeEventListener("pointerup", soltar);
+    removeEventListener("pointercancel", soltar);
+    document.body.style.overflow = "";
+    fantasma.remove();
+    el.classList.remove("origen");
+    document.querySelectorAll(".ph.blanco").forEach((x) => x.classList.remove("blanco"));
+    const d = arr.destino, g = arr.grupo, or = arr.f;
+    arr = null;
+    if (d) soltarEn(g, or, [...d.parentElement.children].indexOf(d));
+  };
+  addEventListener("pointermove", mover, { passive: false });
+  addEventListener("pointerup", soltar);
+  addEventListener("pointercancel", soltar);
+}
+
+/* Reordena el grupo y reescribe el orden de todas sus fotos. Se hace en un
+   lote: si se escribieran de a una, un corte de señal dejaría el orden a
+   medio aplicar. */
+async function soltarEn(grupo, foto, hasta) {
+  const desde = grupo.indexOf(foto);
+  if (desde < 0 || hasta < 0 || desde === hasta) return;
+  grupo.splice(hasta, 0, ...grupo.splice(desde, 1));
+  // se reparten los órdenes del grupo, de diez en diez, respetando el rango
+  const base = Math.min(...grupo.map((x) => x.orden || 0));
+  grupo.forEach((x, k) => { x.orden = base + k * 10; });
+  fotos.sort((a, b) => (a.orden || 0) - (b.orden || 0));
+  pintarAlbum();
+  try {
+    const lote = writeBatch(db);
+    grupo.forEach((x) =>
+      lote.update(doc(db, "albums", album.id, "fotos", x.id), { orden: x.orden }));
+    await lote.commit();
+  } catch (e) { toast(CY.explicar(e), true); cargarFotos(); }
+}
+
+$("a-publico").addEventListener("click", async () => {
+  const v = !album.publico;
+  if (v) {
+    const conGente = fotos.filter((f) => !f.eliminada && f.personas).length;
+    if (!confirm(`¿Publicar «${album.titulo}» en el sitio?\n\n`
+      + `Van a verse sus ${fotos.filter((f) => !f.eliminada).length} fotos.`
+      + (conGente ? `\n\nAtención: ${conGente} tienen gente identificable y publicarlas `
+        + `necesita su autorización.` : ""))) return;
+  }
+  try {
+    await updateDoc(doc(db, "albums", album.id), { publico: v });
+    album.publico = v;
+    toast(v ? "Publicado. Ya se ve en la página de álbumes." : "Sacado del sitio.");
+    pintarAlbum(); cargarAlbumes();
+  } catch (e) { toast(CY.explicar(e), true); }
+});
 
 $("a-papelera").addEventListener("click", () => { verBorradas = !verBorradas; pintarAlbum(); });
 
