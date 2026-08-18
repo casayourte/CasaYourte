@@ -250,7 +250,7 @@ import { CY } from "./nucleo.js";
 // Sello de ESTE archivo. El de nucleo.js no sirve para saber si admin.html
 // quedó viejo en la caché: son dos archivos distintos. Al cambiar el panel,
 // se sube este número.
-const PANEL = "admin-13";
+const PANEL = "admin-14";
 
 const CLOUD = CY.CLOUDINARY.cloud;
 const PRESET = CY.CLOUDINARY.preset;
@@ -733,16 +733,40 @@ function tarjetaFoto(f, i, grupo) {
      <button class="pos" data-a="pos" aria-label="Mover a otra posición">${String(i + 1).padStart(2, "0")}</button>
      <button data-a="up" aria-label="Subir">↑</button>
      <button data-a="down" aria-label="Bajar">↓</button>
-     <button data-a="edit" aria-label="Editar">✎</button>`;
+     <button data-a="del" aria-label="Quitar del álbum"><span class="material-icons"
+       style="font-size:15px;vertical-align:-2px">delete_outline</span></button>`;
   bar.querySelector(".usar input").addEventListener("change", (ev) =>
     marcarUsar(f, ev.target.checked));
   // Las flechas mueven DENTRO del grupo: la etapa define la sección.
   bar.querySelector('[data-a="pos"]').addEventListener("click", () => pedirPosicion(grupo, f, i));
   bar.querySelector('[data-a="up"]').addEventListener("click", () => moverEn(grupo, i, -1));
   bar.querySelector('[data-a="down"]').addEventListener("click", () => moverEn(grupo, i, 1));
-  bar.querySelector('[data-a="edit"]').addEventListener("click", () => editar(f));
+  // Editar se abre tocando la foto. El botón de la barra es el tacho: quitar
+  // es la acción que se toma mirando la grilla, y editar ya tiene toda la
+  // imagen como área para el dedo.
+  bar.querySelector('[data-a="del"]').addEventListener("click", async () => {
+    if (await aPapelera(f)) conScroll(pintarAlbum);
+  });
   el.querySelector("img").addEventListener("click", () => editar(f));
   return el;
+}
+
+/* ── a la papelera ──
+   Misma acción desde la grilla y desde la ficha de la foto. No borra nada de
+   Cloudinary: el panel no puede, y por eso siempre se puede recuperar. */
+async function aPapelera(f) {
+  if (!confirm("¿Quitar esta foto del álbum?\n\n"
+    + "Va a la papelera y se puede recuperar. El archivo sigue en Cloudinary: "
+    + "el panel no puede borrarlo de ahí.")) return false;
+  try {
+    await updateDoc(doc(db, "albums", album.id, "fotos", f.id), {
+      eliminada: true, eliminadaEn: serverTimestamp(), eliminadaPor: yo.email,
+      usar: false,
+    });
+    Object.assign(f, { eliminada: true, usar: false });
+    toast("A la papelera. Se recupera desde el botón Papelera.");
+    return true;
+  } catch (e) { toast(CY.explicar(e), true); return false; }
 }
 
 /* ── el tilde del catálogo, sin salir de la grilla ── */
@@ -1135,18 +1159,11 @@ $("f-guardar").addEventListener("click", async () => {
 // lugar de perder el rastro del archivo. Antes se borraba el registro y el
 // archivo quedaba en Cloudinary sin forma de encontrarlo desde el panel.
 $("f-quitar").addEventListener("click", async () => {
-  if (!confirm("Quitar esta foto del álbum?\n\n"
-    + "Va a la papelera y se puede recuperar. El archivo sigue en Cloudinary: "
-    + "el panel no puede borrarlo de ahí.")) return;
-  try {
-    await updateDoc(doc(db, "albums", album.id, "fotos", foto.id), {
-      eliminada: true, eliminadaEn: serverTimestamp(), eliminadaPor: yo.email,
-      usar: false,
-    });
-    Object.assign(foto, { eliminada: true, usar: false });
-    toast("A la papelera. Se puede recuperar desde el álbum.");
-    conScroll(pintarAlbum);
-  } catch (e) { toast(CY.explicar(e), true); }
+  if (!(await aPapelera(foto))) return;
+  // Se cierra la capa en lugar de repintar por debajo: la foto ya no está en
+  // la grilla y volver con Atrás a su ficha no tendría sentido.
+  if (_cerrarVista) { const c = _cerrarVista; _cerrarVista = null; c(); }
+  else conScroll(pintarAlbum);
 });
 
 async function recuperar(f) {
