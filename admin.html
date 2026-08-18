@@ -250,7 +250,7 @@ import { CY } from "./nucleo.js";
 // Sello de ESTE archivo. El de nucleo.js no sirve para saber si admin.html
 // quedó viejo en la caché: son dos archivos distintos. Al cambiar el panel,
 // se sube este número.
-const PANEL = "admin-14";
+const PANEL = "admin-15";
 
 const CLOUD = CY.CLOUDINARY.cloud;
 const PRESET = CY.CLOUDINARY.preset;
@@ -965,10 +965,13 @@ function pintarCats() {
     const fila = document.createElement("div");
     fila.style.cssText = "display:flex;align-items:center;gap:.4rem;padding:.55rem 0;"
       + "border-bottom:1px solid var(--linea,#2a2a2a)";
+    // Las dos líneas llevan clase propia: 'div div' desde la fila también
+    // alcanza al contenedor, porque la fila misma es un div y cuenta como
+    // ancestro. Eso borraba las dos líneas de un saque.
     fila.innerHTML =
       `<div style="flex:1;min-width:0">
-         <div style="font-size:.95rem"></div>
-         <div class="mono" style="font-size:.7rem;color:var(--dim)"></div>
+         <div class="c-n" style="font-size:.95rem"></div>
+         <div class="c-m mono" style="font-size:.7rem;color:var(--dim)"></div>
        </div>
        <button class="btn-mini" data-c="sube" ${k === 0 ? "disabled" : ""}
          aria-label="Subir"><span class="material-icons"
@@ -977,8 +980,8 @@ function pintarCats() {
          aria-label="Bajar"><span class="material-icons"
          style="font-size:18px">keyboard_arrow_down</span></button>
        <button class="btn-mini" data-c="edit" aria-label="Editar">✎</button>`;
-    fila.querySelector("div div").textContent = e.es || legible(e.id);
-    fila.querySelectorAll("div div")[1].textContent =
+    fila.querySelector(".c-n").textContent = e.es || legible(e.id);
+    fila.querySelector(".c-m").textContent =
       (n ? n + (n === 1 ? " foto" : " fotos") : "vacía")
       + (e.desc_es ? " · con descripción" : "");
     fila.querySelector('[data-c="sube"]').addEventListener("click", () => moverCat(e.id, -1));

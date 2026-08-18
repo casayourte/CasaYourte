@@ -44,9 +44,10 @@
 // v20 (18-ago-2026) — el álbum público respeta el tilde de cada foto.
 // v21 (18-ago-2026) — las categorías de cada álbum se editan desde el panel.
 // v22 (18-ago-2026) — en la grilla, el tacho reemplaza al lápiz.
+// v23 (18-ago-2026) — la lista de categorías se dibuja: 'div div' se comía las filas.
 // v3 (10-ago-2026) — cambiaron admin.html y nucleo.js: entra la sección de
 //   contenido del sitio.
-const VERSION = 'cy-shell-v22';
+const VERSION = 'cy-shell-v23';
 
 const SHELL = [
   './admin.html',
