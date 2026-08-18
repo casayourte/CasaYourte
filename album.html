@@ -278,7 +278,10 @@ async function cargar() {
     for (const a of publicos) {
       let fotos = [];
       try { fotos = await traer("albums/" + a.id + "/fotos"); } catch (e) { fotos = []; }
-      fotos = fotos.filter((f) => !f.eliminada && f.public_id)
+      // Se muestran sólo las fotos marcadas en el panel. 'usar' nace en falso:
+      // nada se publica solo, ni el álbum ni la foto. Antes acá sólo se
+      // descartaba la papelera y el tilde del panel no llegaba a decidir nada.
+      fotos = fotos.filter((f) => !f.eliminada && f.usar === true && f.public_id)
                    .sort((x, y) => (x.orden || 0) - (y.orden || 0));
       if (fotos.length) albumes.push({ ...a, fotos });
     }

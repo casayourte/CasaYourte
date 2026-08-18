@@ -155,7 +155,7 @@
       <input type="checkbox" id="e-publico" style="width:auto;margin-top:.2rem">
       <span style="font-size:.9rem">Mostrar este álbum en el sitio público<br>
       <span style="font-size:.78rem;color:var(--dim)">Aparece en la página de álbumes de obra,
-      con todas sus fotos menos las de la papelera.</span></span></label>
+      con las fotos que tengan el tilde. Las demás no se ven.</span></span></label>
     <p class="note" id="e-aviso"></p>
     <p class="note">El identificador no se puede cambiar: es el nombre de la carpeta
     en Cloudinary y las fotos ya subidas apuntan ahí.</p>
@@ -172,7 +172,9 @@
     <label><span class="k">Leyenda · francés</span><textarea id="f-cap-fr"></textarea></label>
     <label style="display:flex;gap:.6rem;align-items:center">
       <input type="checkbox" id="f-usar" style="width:auto">
-      <span style="font-size:.9rem">Usar en el catálogo público</span></label>
+      <span style="font-size:.9rem">Mostrar esta foto en el sitio<br>
+      <span style="font-size:.78rem;color:var(--dim)">Vale para el álbum público y para
+      elegirla en el catálogo. Sin el tilde no se ve en ningún lado.</span></span></label>
     <label style="display:flex;gap:.6rem;align-items:center">
       <input type="checkbox" id="f-personas" style="width:auto">
       <span style="font-size:.9rem">Hay gente identificable</span></label>
@@ -216,7 +218,7 @@ import { CY } from "./nucleo.js";
 // Sello de ESTE archivo. El de nucleo.js no sirve para saber si admin.html
 // quedó viejo en la caché: son dos archivos distintos. Al cambiar el panel,
 // se sube este número.
-const PANEL = "admin-11";
+const PANEL = "admin-12";
 
 const CLOUD = CY.CLOUDINARY.cloud;
 const PRESET = CY.CLOUDINARY.preset;
@@ -514,7 +516,7 @@ function pintarAlbum() {
   $("a-vacio").classList.toggle("hide", lista.length > 0);
   $("a-sub").textContent = [
     [album.anio, album.diametro, album.lugar].filter(Boolean).join(" · "),
-    `${vivas.length} fotos · ${vivas.filter((f) => f.usar).length} en el catálogo`,
+    `${vivas.length} fotos · ${vivas.filter((f) => f.usar).length} en el sitio`,
   ].filter(Boolean).join("  ·  ");
 
   // Papelera: las quitadas no se borran de Cloudinary, así que se pueden
@@ -611,10 +613,10 @@ function tarjetaFoto(f, i, grupo) {
     return el;
   }
 
-  // El tilde de «usar en el catálogo» va acá, bajo la foto: es la decisión que
+  // El tilde de «mostrar en el sitio» va acá, bajo la foto: es la decisión que
   // más se toma y no tiene sentido entrar a la ficha de cada una para tomarla.
   bar.innerHTML =
-    `<label class="usar" title="Usar en el catálogo público">
+    `<label class="usar" title="Mostrar esta foto en el sitio">
        <input type="checkbox" ${f.usar ? "checked" : ""}>
        <span class="material-icons">${f.usar ? "check_circle" : "radio_button_unchecked"}</span>
      </label>
@@ -720,9 +722,14 @@ async function reubicar(grupo, foto, hasta) {
 $("a-publico").addEventListener("click", async () => {
   const v = !album.publico;
   if (v) {
-    const conGente = fotos.filter((f) => !f.eliminada && f.personas).length;
+    // Se cuenta lo que se va a ver de verdad: las marcadas, no todas las vivas.
+    const marcadas = fotos.filter((f) => !f.eliminada && f.usar);
+    const conGente = marcadas.filter((f) => f.personas).length;
     if (!confirm(`¿Publicar «${album.titulo}» en el sitio?\n\n`
-      + `Van a verse sus ${fotos.filter((f) => !f.eliminada).length} fotos.`
+      + (marcadas.length
+        ? `Van a verse ${marcadas.length} foto${marcadas.length === 1 ? "" : "s"}, `
+          + `las que tienen el tilde.`
+        : `Ninguna foto tiene el tilde: el álbum no va a aparecer hasta que marques alguna.`)
       + (conGente ? `\n\nAtención: ${conGente} tienen gente identificable y publicarlas `
         + `necesita su autorización.` : ""))) return;
   }
@@ -752,13 +759,14 @@ $("a-editar").addEventListener("click", () => {
   $("e-obra").classList.toggle("hide", album.tipo !== "obra");
   $("e-publico").checked = album.publico === true;
   // Se avisa por las fotos con gente identificable: publicar el álbum las
-  // hace visibles y eso necesita autorización.
-  const conGente = fotos.filter((f) => !f.eliminada && f.personas).length;
+  // hace visibles y eso necesita autorización. Sólo cuentan las marcadas,
+  // que son las únicas que llegan al sitio.
+  const conGente = fotos.filter((f) => !f.eliminada && f.usar && f.personas).length;
   $("e-aviso").innerHTML = conGente
-    ? `<b>Atención:</b> ${conGente} foto${conGente === 1 ? "" : "s"} de este álbum `
-      + `${conGente === 1 ? "está marcada" : "están marcadas"} con gente identificable. `
+    ? `<b>Atención:</b> ${conGente} foto${conGente === 1 ? "" : "s"} de las que se `
+      + `publican ${conGente === 1 ? "tiene" : "tienen"} gente identificable. `
       + "Publicarlas necesita su autorización."
-    : "Ninguna foto de este álbum está marcada con gente identificable.";
+    : "Ninguna foto marcada de este álbum tiene gente identificable.";
   irA("edalb", () => pintarAlbum());
 });
 
