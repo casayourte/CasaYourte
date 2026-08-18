@@ -42,9 +42,10 @@
 // v14 (16-ago-2026) — el ancho del montante se deriva del espesor del trei.
 // v19 (18-ago-2026) — el sitio lee Firestore: se retira el borrador y la exportación.
 // v20 (18-ago-2026) — el álbum público respeta el tilde de cada foto.
+// v21 (18-ago-2026) — las categorías de cada álbum se editan desde el panel.
 // v3 (10-ago-2026) — cambiaron admin.html y nucleo.js: entra la sección de
 //   contenido del sitio.
-const VERSION = 'cy-shell-v20';
+const VERSION = 'cy-shell-v21';
 
 const SHELL = [
   './admin.html',

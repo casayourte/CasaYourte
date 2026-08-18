@@ -131,6 +131,7 @@
     <p class="mono" id="a-sub" style="color:var(--dim);margin:.4rem 0 1rem"></p>
     <div class="fila-btn" style="margin-bottom:1rem">
       <button class="btn" id="a-publico"></button>
+      <button class="btn" id="a-cats"><span class="material-icons">label</span> Categorías</button>
       <button class="btn hide" id="a-papelera"></button>
     </div>
     <div id="fotos"></div>
@@ -183,6 +184,37 @@
     <div style="height:.5rem"></div>
     <button class="btn d" id="f-quitar">Quitar del álbum</button>
   </section>
+
+  <!-- CATEGORÍAS DEL ÁLBUM -->
+  <section id="v-cats" class="hide">
+    <h1 style="font-size:1.4rem;margin-bottom:.3rem">Categorías</h1>
+    <p class="mono" id="c-sub" style="color:var(--dim);margin:0 0 1.2rem"></p>
+    <div id="c-lista"></div>
+    <div style="height:1rem"></div>
+    <button class="btn p" id="c-nueva">+ Categoría</button>
+    <p class="note">Cada álbum tiene su propia lista. Renombrar no mueve ninguna
+    foto: la foto guarda el identificador, no el nombre. Las categorías sin fotos
+    no aparecen en el sitio, pero se pueden dejar preparadas acá.</p>
+  </section>
+
+  <!-- EDITAR CATEGORÍA -->
+  <section id="v-edet" class="hide">
+    <h1 style="font-size:1.4rem;margin-bottom:.3rem">Editar categoría</h1>
+    <p class="mono" id="t-id" style="color:var(--dim);margin:0 0 1.2rem"></p>
+    <label><span class="k">Nombre · español</span><input id="t-es"></label>
+    <label><span class="k">Nombre · francés</span><input id="t-fr"></label>
+    <label><span class="k">Descripción · español</span><textarea id="t-des"></textarea></label>
+    <label><span class="k">Descripción · francés</span><textarea id="t-dfr"></textarea></label>
+    <p class="note">La descripción se muestra arriba de las fotos de esa categoría,
+    en el sitio. Si el francés queda vacío se usa el español.</p>
+    <button class="btn p" id="t-guardar">Guardar</button>
+    <div style="height:1.4rem"></div>
+    <div id="t-mover-caja" class="hide">
+      <label><span class="k">Al borrar, mover sus fotos a</span>
+        <select id="t-mover"></select></label>
+    </div>
+    <button class="btn d" id="t-borrar">Borrar categoría</button>
+  </section>
 </div>
 
 <!-- UPLOAD DOCK -->
@@ -218,7 +250,7 @@ import { CY } from "./nucleo.js";
 // Sello de ESTE archivo. El de nucleo.js no sirve para saber si admin.html
 // quedó viejo en la caché: son dos archivos distintos. Al cambiar el panel,
 // se sube este número.
-const PANEL = "admin-12";
+const PANEL = "admin-13";
 
 const CLOUD = CY.CLOUDINARY.cloud;
 const PRESET = CY.CLOUDINARY.preset;
@@ -230,6 +262,19 @@ const ETAPAS = ["01-terreno-y-apoyos","02-taller-piezas","03-plancher","04-trei"
   "05-anillo-periferico","06-toono","07-techo-triangulos","08-perchas",
   "09-lonas-y-costura","10-aislacion","11-aberturas-y-umbrales","12-skydome",
   "13-terminada-exterior","14-terminada-interior","15-equipo-y-obra","16-desmontaje"];
+
+// Los nombres en francés de las 16, sólo para derivar la lista de un álbum que
+// todavía no la tenga: una vez derivada, los nombres viven en el álbum y se
+// editan desde acá.
+const ETAPA_FR = {
+  "01-terreno-y-apoyos":"terrain et appuis","02-taller-piezas":"atelier · pièces",
+  "03-plancher":"plancher","04-trei":"trei","05-anillo-periferico":"anneau périphérique",
+  "06-toono":"toono","07-techo-triangulos":"toit · triangles","08-perchas":"perches",
+  "09-lonas-y-costura":"toiles et couture","10-aislacion":"isolation",
+  "11-aberturas-y-umbrales":"ouvertures et seuils","12-skydome":"skydome",
+  "13-terminada-exterior":"terminée · extérieur","14-terminada-interior":"terminée · intérieur",
+  "15-equipo-y-obra":"équipe et chantier","16-desmontaje":"démontage",
+};
 
 /* ===================== ESTADO ===================== */
 const $ = (id) => document.getElementById(id);
@@ -259,7 +304,8 @@ let vistaActual = null;
 function ver(v) {
   if (vistaActual) scrollDe[vistaActual] = window.scrollY;
   vistaActual = v;
-  ["login","list","album","foto","edalb"].forEach(x => $("v-"+x).classList.toggle("hide", x !== v));
+  ["login","list","album","foto","edalb","cats","edet"]
+    .forEach(x => $("v-"+x).classList.toggle("hide", x !== v));
   $("dock").classList.toggle("hide", v !== "album" || !puede("fotos"));
   $("back").classList.toggle("hide", v === "login" || v === "list");
   // En dos cuadros: uno para que el navegador aplique el cambio de vista y
@@ -459,12 +505,49 @@ $("n-crear").addEventListener("click", async () => {
   finally { b.disabled = false; }
 });
 
-function opcionesEtapa(sel, tipo) {
+/* ═══════════════════════════════════════════════════════════════
+   LAS CATEGORÍAS DEL ÁLBUM
+
+   Viven en el álbum: albums/{id}.etapas, un arreglo de
+   { id, es, fr, desc_es, desc_fr } cuyo orden es el orden de la página.
+   Cada álbum tiene su lista propia.
+
+   La foto guarda el id de la categoría, nunca el nombre. Por eso renombrar
+   no toca ninguna foto, y borrar sí: hay que decir a dónde van las suyas.
+
+   Los álbumes de antes no tienen la lista: se deriva de las 16 y del
+   ordenEtapas que tuvieran, y se escribe la primera vez que se cambia algo.
+   Hasta ese momento nada cambia de aspecto, ni en el panel ni en el sitio.
+   ═══════════════════════════════════════════════════════════════ */
+const legible = (id) => String(id).replace(/^\d+-/, "").replace(/-/g, " ");
+
+function etapasDe(a) {
+  if (Array.isArray(a.etapas) && a.etapas.length)
+    return a.etapas.filter((e) => e && e.id).map((e) => ({ ...e }));
+  const base = a.tipo === "obra" ? ETAPAS : ["general"];
+  const guardado = Array.isArray(a.ordenEtapas) ? a.ordenEtapas : [];
+  const orden = [...guardado.filter((e) => base.includes(e)),
+                 ...base.filter((e) => !guardado.includes(e))];
+  return orden.map((id) => ({ id, es: legible(id), fr: ETAPA_FR[id] || "",
+                              desc_es: "", desc_fr: "" }));
+}
+
+const nombreEt = (id) => {
+  const e = etapasDe(album).find((x) => x.id === id);
+  return e ? (e.es || legible(id)) : legible(id);
+};
+
+// Se guarda la lista entera de una vez: es un solo campo del álbum.
+async function guardarEtapas(lista) {
+  await updateDoc(doc(db, "albums", album.id), { etapas: lista });
+  album.etapas = lista;
+}
+
+function opcionesEtapa(sel, a) {
   sel.innerHTML = "";
-  const lista = tipo === "obra" ? ETAPAS : ["general"];
-  lista.forEach(e => {
+  etapasDe(a).forEach((e) => {
     const o = document.createElement("option");
-    o.value = e; o.textContent = e.replace(/^\d+-/, "").replace(/-/g, " ");
+    o.value = e.id; o.textContent = e.es || legible(e.id);
     sel.appendChild(o);
   });
 }
@@ -472,8 +555,8 @@ function opcionesEtapa(sel, tipo) {
 async function abrir(a) {
   album = a;
   $("a-titulo").textContent = a.titulo || a.id;
-  opcionesEtapa($("d-etapa"), a.tipo);
-  opcionesEtapa($("f-etapa"), a.tipo);
+  opcionesEtapa($("d-etapa"), a);
+  opcionesEtapa($("f-etapa"), a);
   irA("album");
   await cargarFotos();
 }
@@ -535,14 +618,12 @@ function pintarAlbum() {
     ? "← Volver al álbum"
     : `Papelera · ${borradas.length} quitada${borradas.length === 1 ? "" : "s"}`;
 
-  // Agrupado por etapa. El orden de las etapas se guarda POR ÁLBUM: la
-  // secuencia de las 16 es el punto de partida, no una imposición.
-  const base = album.tipo === "obra" ? ETAPAS : ["general"];
-  const guardado = Array.isArray(album.ordenEtapas) ? album.ordenEtapas : [];
-  const orden = [...guardado.filter((e) => base.includes(e)),
-                 ...base.filter((e) => !guardado.includes(e))];
-  const presentes = orden.filter((e) => lista.some((f) => f.etapa === e));
-  const sinEtapa = lista.filter((f) => !base.includes(f.etapa));
+  // Agrupado por categoría, en el orden del álbum. Las vacías no se dibujan
+  // acá: se ven y se ordenan en la pantalla de categorías.
+  const cats = etapasDe(album);
+  const ids = cats.map((e) => e.id);
+  const presentes = cats.map((e) => e.id).filter((e) => lista.some((f) => f.etapa === e));
+  const sinEtapa = lista.filter((f) => !ids.includes(f.etapa));
   const grupos = presentes.map((e) => [e, lista.filter((f) => f.etapa === e)]);
   if (sinEtapa.length) grupos.push([null, sinEtapa]);
 
@@ -555,10 +636,9 @@ function pintarAlbum() {
           style="font-size:18px">keyboard_arrow_up</span></button>
         <button class="btn-mini" data-et="baja" ${k === presentes.length - 1 ? "disabled" : ""}
           aria-label="Bajar etapa"><span class="material-icons"
-          style="font-size:18px">keyboard_arrow_down</span></button>` : ""}`;
-    tit.querySelector("b").textContent = etapa
-      ? etapa.replace(/^\d+-/, "").replace(/-/g, " ")
-      : "sin etapa";
+          style="font-size:18px">keyboard_arrow_down</span></button>
+        <button class="btn-mini" data-et="edit" aria-label="Editar categoría">✎</button>` : ""}`;
+    tit.querySelector("b").textContent = etapa ? nombreEt(etapa) : "sin etapa";
     tit.querySelector("span").textContent =
       delGrupo.length + (delGrupo.length === 1 ? " foto" : " fotos");
     if (etapa) {
@@ -566,8 +646,21 @@ function pintarAlbum() {
         () => moverEtapa(presentes, etapa, -1));
       tit.querySelector('[data-et="baja"]').addEventListener("click",
         () => moverEtapa(presentes, etapa, 1));
+      tit.querySelector('[data-et="edit"]').addEventListener("click",
+        () => abrirCat(etapa, () => pintarAlbum()));
     }
     cont.appendChild(tit);
+
+    // La descripción se ve también acá: es lo que va a leer el público arriba
+    // de estas fotos, y conviene tenerlo delante al ordenarlas.
+    const desc = etapa && (cats.find((x) => x.id === etapa) || {}).desc_es;
+    if (desc) {
+      const p = document.createElement("p");
+      p.style.cssText = "font-size:.82rem;line-height:1.45;color:var(--dim);"
+        + "margin:-.3rem 0 .7rem;max-width:60ch";
+      p.textContent = desc;
+      cont.appendChild(p);
+    }
 
     const g = document.createElement("div");
     g.className = "grid";
@@ -576,21 +669,38 @@ function pintarAlbum() {
   });
 }
 
-/* ── reordenar las etapas del álbum ── */
+/* ── reordenar las categorías ──
+   En la grilla las flechas mueven de una sección visible a la otra: se salta
+   por encima de las vacías, que no se están viendo. En la pantalla de
+   categorías se mueve de a un lugar en la lista completa. Las dos cosas
+   terminan escribiendo el mismo arreglo. */
 async function moverEtapa(presentes, etapa, d) {
-  const lista = [...presentes];
-  const i = lista.indexOf(etapa), j = i + d;
-  if (i < 0 || j < 0 || j >= lista.length) return;
-  [lista[i], lista[j]] = [lista[j], lista[i]];
-  // se guarda el orden COMPLETO, con las que no tienen fotos al final, para
-  // que agregar fotos a una etapa vacía no la mande al fondo
-  const base = album.tipo === "obra" ? ETAPAS : ["general"];
-  const nuevo = [...lista, ...base.filter((e) => !lista.includes(e))];
-  album.ordenEtapas = nuevo;
-  conScroll(pintarAlbum);
-  try {
-    await updateDoc(doc(db, "albums", album.id), { ordenEtapas: nuevo });
-  } catch (e) { toast(CY.explicar(e), true); }
+  const i = presentes.indexOf(etapa), j = i + d;
+  if (i < 0 || j < 0 || j >= presentes.length) return;
+  await ponerJunto(etapa, presentes[j], d > 0, () => conScroll(pintarAlbum));
+}
+
+async function moverCat(id, d) {
+  const l = etapasDe(album);
+  const i = l.findIndex((e) => e.id === id), j = i + d;
+  if (i < 0 || j < 0 || j >= l.length) return;
+  await ponerJunto(id, l[j].id, d > 0, () => pintarCats());
+}
+
+// Saca la categoría de su lugar y la vuelve a poner al lado de la otra.
+async function ponerJunto(id, vecino, despues, repintar) {
+  const l = etapasDe(album);
+  const i = l.findIndex((e) => e.id === id);
+  if (i < 0) return;
+  const [it] = l.splice(i, 1);
+  const k = l.findIndex((e) => e.id === vecino);
+  if (k < 0) return;
+  l.splice(k + (despues ? 1 : 0), 0, it);
+  const antes = album.etapas;
+  album.etapas = l;
+  repintar();
+  try { await guardarEtapas(l); }
+  catch (e) { album.etapas = antes; repintar(); toast(CY.explicar(e), true); }
 }
 
 function tarjetaFoto(f, i, grupo) {
@@ -811,12 +921,195 @@ async function moverEn(grupo, i, d) {
   } catch (e) { toast("No se pudo guardar el orden", true); }
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   PANTALLA DE CATEGORÍAS
+   ═══════════════════════════════════════════════════════════════ */
+let catEd = null, catVolver = null;
+
+$("a-cats").addEventListener("click", () => {
+  irA("cats", () => pintarAlbum());
+  pintarCats();
+});
+
+function pintarCats() {
+  ver("cats");
+  const l = etapasDe(album);
+  $("c-sub").textContent = l.length + (l.length === 1 ? " categoría" : " categorías");
+  const cont = $("c-lista"); cont.innerHTML = "";
+  l.forEach((e, k) => {
+    const n = fotos.filter((f) => !f.eliminada && f.etapa === e.id).length;
+    const fila = document.createElement("div");
+    fila.style.cssText = "display:flex;align-items:center;gap:.4rem;padding:.55rem 0;"
+      + "border-bottom:1px solid var(--linea,#2a2a2a)";
+    fila.innerHTML =
+      `<div style="flex:1;min-width:0">
+         <div style="font-size:.95rem"></div>
+         <div class="mono" style="font-size:.7rem;color:var(--dim)"></div>
+       </div>
+       <button class="btn-mini" data-c="sube" ${k === 0 ? "disabled" : ""}
+         aria-label="Subir"><span class="material-icons"
+         style="font-size:18px">keyboard_arrow_up</span></button>
+       <button class="btn-mini" data-c="baja" ${k === l.length - 1 ? "disabled" : ""}
+         aria-label="Bajar"><span class="material-icons"
+         style="font-size:18px">keyboard_arrow_down</span></button>
+       <button class="btn-mini" data-c="edit" aria-label="Editar">✎</button>`;
+    fila.querySelector("div div").textContent = e.es || legible(e.id);
+    fila.querySelectorAll("div div")[1].textContent =
+      (n ? n + (n === 1 ? " foto" : " fotos") : "vacía")
+      + (e.desc_es ? " · con descripción" : "");
+    fila.querySelector('[data-c="sube"]').addEventListener("click", () => moverCat(e.id, -1));
+    fila.querySelector('[data-c="baja"]').addEventListener("click", () => moverCat(e.id, 1));
+    fila.querySelector('[data-c="edit"]').addEventListener("click",
+      () => abrirCat(e.id, () => pintarCats()));
+    cont.appendChild(fila);
+  });
+}
+
+/* ── editar una categoría ── */
+function abrirCat(id, volver) {
+  const e = etapasDe(album).find((x) => x.id === id);
+  if (!e) return;
+  catEd = id; catVolver = volver;
+  $("t-id").textContent = "identificador: " + id;
+  $("t-es").value = e.es || legible(id);
+  $("t-fr").value = e.fr || "";
+  $("t-des").value = e.desc_es || "";
+  $("t-dfr").value = e.desc_fr || "";
+
+  // Si tiene fotos, borrarla obliga a decir a dónde van: ninguna foto se
+  // queda sin categoría por haber borrado la que la contenía.
+  const dentro = fotos.filter((f) => f.etapa === id).length;
+  const otras = etapasDe(album).filter((x) => x.id !== id);
+  const caja = $("t-mover-caja");
+  caja.classList.toggle("hide", dentro === 0);
+  if (dentro) {
+    const sel = $("t-mover"); sel.innerHTML = "";
+    otras.forEach((x) => {
+      const o = document.createElement("option");
+      o.value = x.id; o.textContent = x.es || legible(x.id);
+      sel.appendChild(o);
+    });
+  }
+  $("t-borrar").textContent = dentro
+    ? `Borrar y mover ${dentro} foto${dentro === 1 ? "" : "s"}`
+    : "Borrar categoría";
+  $("t-borrar").disabled = otras.length === 0;
+  irA("edet", volver);
+}
+
+$("t-guardar").addEventListener("click", async () => {
+  const nombre = $("t-es").value.trim();
+  if (!nombre) return toast("El nombre en español no puede quedar vacío", true);
+  const l = etapasDe(album).map((x) => x.id === catEd
+    ? { ...x, es: nombre, fr: $("t-fr").value.trim(),
+        desc_es: $("t-des").value.trim(), desc_fr: $("t-dfr").value.trim() }
+    : x);
+  const b = $("t-guardar"); b.disabled = true; b.textContent = "Guardando…";
+  try {
+    await guardarEtapas(l);
+    opcionesEtapa($("d-etapa"), album);
+    toast("Guardado");
+    const v = catVolver; catVolver = null;
+    if (_cerrarVista) { const c = _cerrarVista; _cerrarVista = null; c(); }
+    else if (v) v();
+  } catch (e) { toast(CY.explicar(e), true); }
+  finally { b.disabled = false; b.textContent = "Guardar"; }
+});
+
+$("t-borrar").addEventListener("click", async () => {
+  const e = etapasDe(album).find((x) => x.id === catEd);
+  if (!e) return;
+  const l = etapasDe(album).filter((x) => x.id !== catEd);
+  if (!l.length) return toast("Tiene que quedar al menos una categoría", true);
+  const dentro = fotos.filter((f) => f.etapa === catEd);
+  const destino = dentro.length ? $("t-mover").value : null;
+  const nombreDest = destino ? nombreEt(destino) : "";
+  if (!confirm(dentro.length
+    ? `¿Borrar «${e.es}» y mover sus ${dentro.length} fotos a «${nombreDest}»?`
+      + `\n\nIncluye las que estén en la papelera.`
+    : `¿Borrar la categoría «${e.es}»?`)) return;
+  const b = $("t-borrar"); b.disabled = true;
+  try {
+    // Las fotos se reescriben en un lote: un corte de señal no puede dejar
+    // la mitad apuntando a una categoría que ya no existe.
+    if (dentro.length) {
+      const lote = writeBatch(db);
+      dentro.forEach((f) =>
+        lote.update(doc(db, "albums", album.id, "fotos", f.id), { etapa: destino }));
+      await lote.commit();
+      dentro.forEach((f) => { f.etapa = destino; });
+    }
+    await guardarEtapas(l);
+    opcionesEtapa($("d-etapa"), album);
+    toast(dentro.length ? `Borrada. Las fotos quedaron en «${nombreDest}»` : "Borrada");
+    const v = catVolver; catVolver = null;
+    if (_cerrarVista) { const c = _cerrarVista; _cerrarVista = null; c(); }
+    else if (v) v();
+  } catch (er) { toast(CY.explicar(er), true); }
+  finally { b.disabled = false; }
+});
+
+/* ── categoría nueva ── */
+$("c-nueva").addEventListener("click", () => {
+  const hoja = document.createElement("dialog");
+  hoja.className = "cy-hoja";
+  hoja.innerHTML =
+    `<div class="cy-hoja-caja">
+       <div class="cy-hoja-tit">Categoría nueva</div>
+       <p style="font-size:.84rem;color:var(--dim);margin:0 0 .8rem">
+         El nombre se puede cambiar después. El identificador sale de este
+         nombre y queda fijo.</p>
+       <input id="cn-n" placeholder="nombre en español" style="padding:.6rem">
+       <div style="display:flex;gap:.5rem;margin-top:.8rem">
+         <button class="cy-hoja-x" id="cn-no" style="flex:1">Cancelar</button>
+         <button class="btn p" id="cn-si" style="flex:1">Crear</button>
+       </div>
+     </div>`;
+  document.body.appendChild(hoja);
+  hoja.showModal();
+  const inp = hoja.querySelector("#cn-n");
+  inp.focus();
+  const cerrar = CY.capaAtras(() => {
+    try { if (hoja.open) hoja.close(); } catch (e) {}
+    hoja.remove();
+  });
+  const crear = async () => {
+    const nombre = inp.value.trim();
+    if (!nombre) return;
+    const id = slug(nombre);
+    if (!id) return toast("Ese nombre no da un identificador válido", true);
+    const l = etapasDe(album);
+    if (l.some((x) => x.id === id)) { cerrar(); return toast("Ya existe una categoría con ese nombre", true); }
+    cerrar();
+    const nueva = { id, es: nombre, fr: "", desc_es: "", desc_fr: "" };
+    try {
+      await guardarEtapas([...l, nueva]);
+      opcionesEtapa($("d-etapa"), album);
+      pintarCats();
+      toast("Creada. Va al final: usá las flechas para moverla");
+    } catch (e) { toast(CY.explicar(e), true); }
+  };
+  hoja.querySelector("#cn-no").addEventListener("click", () => cerrar());
+  hoja.querySelector("#cn-si").addEventListener("click", crear);
+  inp.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); crear(); }
+  });
+});
+
 /* ===================== EDITAR FOTO ===================== */
 function editar(f) {
   foto = f;
   $("f-img").src = urlCloud(f.public_id, 900);
-  opcionesEtapa($("f-etapa"), album.tipo);
-  $("f-etapa").value = f.etapa || $("f-etapa").options[0].value;
+  opcionesEtapa($("f-etapa"), album);
+  // Puede apuntar a una categoría borrada a mano en la base: se agrega como
+  // opción para no cambiarla sin querer al guardar cualquier otra cosa.
+  const sel = $("f-etapa");
+  if (f.etapa && ![...sel.options].some((o) => o.value === f.etapa)) {
+    const o = document.createElement("option");
+    o.value = f.etapa; o.textContent = legible(f.etapa) + " · sin categoría";
+    sel.insertBefore(o, sel.firstChild);
+  }
+  sel.value = f.etapa || sel.options[0].value;
   $("f-alt-es").value = f.alt_es || ""; $("f-alt-fr").value = f.alt_fr || "";
   $("f-cap-es").value = f.cap_es || ""; $("f-cap-fr").value = f.cap_fr || "";
   $("f-usar").checked = !!f.usar; $("f-personas").checked = !!f.personas;

@@ -74,6 +74,8 @@ main{max-width:1400px;margin:0 auto;padding:0 var(--pad) calc(4rem + var(--safe)
 .etapa-tit b{font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;
   text-transform:uppercase;color:var(--wool);flex:1;font-weight:500}
 .etapa-tit span{font-family:var(--mono);font-size:.56rem;color:var(--dim)}
+.etapa-desc{font-size:.9rem;line-height:1.5;color:var(--dim);max-width:60ch;
+  margin:-.2rem 0 .9rem}
 .rejilla{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.5rem}
 @media(min-width:900px){.rejilla{grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:.7rem}}
 .foto{position:relative;aspect-ratio:4/3;overflow:hidden;background:var(--ink-2);
@@ -293,9 +295,29 @@ async function cargar() {
 }
 
 /* ---------- pintar ---------- */
+// La lista de categorías vive en el álbum: albums/{id}.etapas, un arreglo de
+// { id, es, fr, desc_es, desc_fr } en el orden en que se muestran. Los álbumes
+// que todavía no la tengan usan las 16 de siempre, con el ordenEtapas que
+// tuvieran guardado. La foto guarda el id, nunca el nombre: renombrar una
+// categoría no toca ninguna foto.
+const legible = (id) => String(id).replace(/^\d+-/, "").replace(/-/g, " ");
+
+function etapasDe(a) {
+  if (Array.isArray(a.etapas) && a.etapas.length)
+    return a.etapas.filter((e) => e && e.id);
+  const guardado = Array.isArray(a.ordenEtapas) ? a.ordenEtapas : [];
+  const orden = [...guardado.filter((e) => ETAPAS.includes(e)),
+                 ...ETAPAS.filter((e) => !guardado.includes(e))];
+  return orden.map((id) => ({ id, es: legible(id), fr: NOMBRE_ETAPA.fr[id] || "" }));
+}
+
+// Si falta el francés se usa el español: es mejor que un hueco.
 function nombreEtapa(e) {
-  if (idioma === "fr" && NOMBRE_ETAPA.fr[e]) return NOMBRE_ETAPA.fr[e];
-  return e.replace(/^\d+-/, "").replace(/-/g, " ");
+  if (idioma === "fr" && e.fr) return e.fr;
+  return e.es || legible(e.id);
+}
+function descEtapa(e) {
+  return (idioma === "fr" ? (e.desc_fr || e.desc_es) : e.desc_es) || "";
 }
 
 function pintar() {
@@ -316,13 +338,13 @@ function pintar() {
     sec.querySelector(".meta").textContent = meta;
     sec.querySelector(".alb-sub").textContent = a.fotos.length + " " + d.fotos;
 
-    // Agrupado por etapa, en el orden que tenga guardado el álbum.
-    const guardado = Array.isArray(a.ordenEtapas) ? a.ordenEtapas : [];
-    const secuencia = [...guardado.filter((e) => ETAPAS.includes(e)),
-                       ...ETAPAS.filter((e) => !guardado.includes(e))];
-    const orden = secuencia.filter((e) => a.fotos.some((f) => f.etapa === e));
-    const sueltas = a.fotos.filter((f) => !ETAPAS.includes(f.etapa));
-    const grupos = orden.map((e) => [e, a.fotos.filter((f) => f.etapa === e)]);
+    // Agrupado por categoría, en el orden que tenga el álbum. Las vacías no
+    // aparecen, y lo que apunte a una categoría borrada cae en «otras».
+    const cats = etapasDe(a);
+    const ids = cats.map((e) => e.id);
+    const grupos = cats.map((e) => [e, a.fotos.filter((f) => f.etapa === e.id)])
+                       .filter(([, fs]) => fs.length);
+    const sueltas = a.fotos.filter((f) => !ids.includes(f.etapa));
     if (sueltas.length) grupos.push([null, sueltas]);
 
     grupos.forEach(([etapa, fs]) => {
@@ -332,6 +354,13 @@ function pintar() {
                      <div class="rejilla"></div>`;
       g.querySelector("b").textContent = etapa ? nombreEtapa(etapa) : d.sinEtapa;
       g.querySelector("span").textContent = fs.length;
+      const txt = etapa ? descEtapa(etapa) : "";
+      if (txt) {
+        const p = document.createElement("p");
+        p.className = "etapa-desc";
+        p.textContent = txt;
+        g.insertBefore(p, g.querySelector(".rejilla"));
+      }
       const rej = g.querySelector(".rejilla");
       fs.forEach((f) => {
         const k = planas.length;
