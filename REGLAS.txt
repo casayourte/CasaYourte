@@ -19,32 +19,37 @@ service cloud.firestore {
     function admin() {
       return activo() && yo().rol == 'admin';
     }
-    function editor() {
-      return activo() && yo().rol in ['admin', 'editor'];
+    // Un permiso concreto. El administrador los tiene todos por definición.
+    function con(p) {
+      return activo() && (yo().rol == 'admin' || yo().permisos[p] == true);
     }
-    function fotografo() {
-      return activo() && yo().rol in ['admin', 'editor', 'fotografo'];
+    function inv() {
+      return get(/databases/$(database)/documents/invitaciones/$(request.auth.token.email.lower())).data;
     }
 
     // ---------- usuarios ----------
+    // Modelo: UNA cuenta admin, y colaboradores con permisos explícitos.
+    // El rol y los permisos son DATOS: cambiarlos no requiere republicar esto.
+
     match /usuarios/{uid} {
 
-      // Cada uno puede leer su propio documento. El administrador, todos.
+      // Cada uno lee el suyo. El administrador, todos.
       allow read: if request.auth != null && (request.auth.uid == uid || admin());
 
-      // Alta por invitación: sólo podés crear TU propio documento, con TU mail,
-      // si existe una invitación para ese mail, y con EL ROL QUE DICE LA
-      // INVITACIÓN. Esto es lo que impide que alguien se ponga admin a sí mismo.
+      // Alta por invitación: sólo TU propio documento, con TU mail, si existe
+      // invitación para ese mail, y con EL ROL Y LOS PERMISOS que dice la
+      // invitación. Esto impide que alguien se dé permisos a sí mismo.
       allow create: if request.auth != null
         && request.auth.uid == uid
         && request.resource.data.email == request.auth.token.email.lower()
         && request.resource.data.activo == true
         && exists(/databases/$(database)/documents/invitaciones/$(request.auth.token.email.lower()))
-        && request.resource.data.rol ==
-           get(/databases/$(database)/documents/invitaciones/$(request.auth.token.email.lower())).data.rol;
+        && request.resource.data.rol == inv().rol
+        && request.resource.data.permisos == inv().permisos;
 
-      // Sólo el administrador cambia roles y suspende. Y no puede cambiarse el
-      // rol ni suspenderse a sí mismo: evita quedarse afuera por accidente.
+      // Sólo el administrador cambia roles, permisos y activo. Y no puede
+      // quitarse a sí mismo el rol ni desactivarse: es la forma más rápida de
+      // quedarse afuera del propio panel sin manera de volver.
       allow update: if admin()
         && (uid != request.auth.uid
             || (request.resource.data.rol == resource.data.rol
@@ -54,9 +59,10 @@ service cloud.firestore {
     }
 
     // ---------- invitaciones ----------
-    // El id del documento es el mail invitado, en minúsculas.
+    // El id del documento es el mail invitado, en minúsculas. Lleva el rol y
+    // los permisos que va a recibir quien se registre con ese mail.
     match /invitaciones/{mail} {
-      // La persona invitada necesita poder leer la suya antes de tener permisos.
+      // La persona invitada necesita leer la suya ANTES de tener permisos.
       allow read: if admin()
                   || (request.auth != null && request.auth.token.email.lower() == mail);
       allow create, update: if admin();
@@ -68,25 +74,30 @@ service cloud.firestore {
     // ---------- álbumes y fotos ----------
     match /albums/{album} {
       allow read: if true;                 // público: alimenta el sitio
-      allow create, update, delete: if editor();
+      allow create, update, delete: if con('albumes');
 
       match /fotos/{foto} {
         allow read: if true;
-        allow create, update, delete: if fotografo();
+        allow create, update, delete: if con('albumes');
       }
     }
 
-    // ---------- textos del sitio ----------
-    match /sitio/{doc} {
-      allow read: if true;
-      allow write: if editor();
+    // ---------- cálculos de taller ----------
+    // Uno por cliente. NO son públicos: llevan datos de gente y medidas de
+    // obra. Sólo quien tenga el permiso 'calculo' los ve y los escribe.
+    match /calculos/{id} {
+      allow read, create, update, delete: if con('calculo');
     }
 
-    // ---------- lo publicado ----------
-    // Sólo el administrador pasa un borrador a publicado.
-    match /publicado/{doc} {
+    // ---------- el sitio ----------
+    // sitio/publicado ES el sitio: lo que se escribe acá lo ve el público en
+    // el acto. Ya no hay borrador ni exportación a un archivo del repositorio.
+    //
+    // Por eso el permiso 'contenido' ahora significa «puede cambiar el sitio
+    // público». No hay paso de revisión: quien lo tiene, publica.
+    match /sitio/{doc} {
       allow read: if true;
-      allow write: if admin();
+      allow write: if con('contenido');
     }
 
     // ---------- todo lo demás, cerrado ----------

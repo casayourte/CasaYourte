@@ -945,7 +945,7 @@ const PROC_SRC=["assets/p01.jpg","assets/p02.jpg","assets/p03.jpg","assets/p04.j
    minutos de vida. Este botón borra las dos primeras y recarga sin
    caché. La de GitHub no se puede forzar: si un cambio recién subido no
    aparece, hay que esperar un par de minutos. */
-if (/[?&]dev=1|[?&]borrador=1/.test(location.search)) {
+if (/[?&]dev=1/.test(location.search)) {
   const b = document.createElement("button");
   b.type = "button";
   b.textContent = "Recargar";
@@ -976,32 +976,27 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
 </script>
 <script>
 /* ─────────────────────────────────────────────────────────────
-   DE DÓNDE SALE EL CONTENIDO · una sola autoridad
+   EL CONTENIDO DEL SITIO
 
-     1º  contenido.json del repositorio   ← ESTO manda
-     2º  los textos de este mismo archivo ← respaldo si el JSON no carga
+   La autoridad es Firestore, documento sitio/publicado. Guardar en el
+   panel cambia el sitio en el acto.
 
-   Y nada más. El circuito es de una sola dirección:
+   Hasta agosto de 2026 la autoridad era el contenido.json del
+   repositorio, y Firestore guardaba un borrador aparte que había que
+   exportar y subir a mano. Esa costura entre los dos estados produjo
+   más errores que ninguna otra parte del sistema: exportaciones que
+   perdían los reemplazos de imagen, un borrador viejo que borraba
+   claves nuevas, y una caché que servía el archivo anterior. Con un
+   solo estado, esa clase entera de errores deja de existir.
 
-     editar en el panel → se guarda en Firestore (para no perderlo)
-       → Exportar JSON → subirlo al repositorio → cambia el sitio
-
-   Antes esto leía Firestore primero, y era una trampa: si la base tenía
-   una versión y el JSON otra, el sitio mostraba la de la base y parecía
-   que el archivo subido no había servido de nada. Firestore es el
-   cuaderno de trabajo; el repositorio es lo publicado.
-
-   Excepción: con ?borrador=1 se lee el borrador de Firestore, para poder
-   ver cómo quedaría ANTES de subir el JSON. Se lee por REST, en una sola
-   petición y sin cargar el SDK.
+   El contenido.json sigue en el repositorio como respaldo, por si
+   Firestore no responde.
    ───────────────────────────────────────────────────────────── */
 (function () {
   // Dentro del editor visual la página NO busca su contenido: lo escribe el
   // editor desde el iframe padre. Si buscara, pisaría lo que se está editando
   // justo cuando llega la respuesta.
   if (/[?&]edit=1/.test(location.search)) { paint(document.documentElement.lang); return; }
-
-  var VER_BORRADOR = /[?&]borrador=1/.test(location.search);
 
   // Firestore NO admite arrays dentro de arrays, y la tabla de diámetros
   // lo es. Lo que no es texto viaja como "json:" + JSON.
@@ -1062,57 +1057,61 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
   // del navegador, pero NO la de GitHub Pages, que sirve los archivos con unos
   // minutos de vida: un cambio recién subido no aparecía. El parámetro la
   // saltea sin perder del todo el cacheo.
-  var MINUTO = Math.floor(Date.now() / 60000);
-  var cadena = fetch("contenido.json?v=" + MINUTO, { cache: "no-store" })
-    .then(function (r) { if (!r.ok) throw 0; return r.json(); })
-    .then(function (j) {
-      if (j && j.textos) aplicarTextos(j.textos);
-      // Los reemplazos de imagen elegidos desde el panel. Antes esto sólo
-      // corría en la vista previa del borrador, así que en el sitio
-      // publicado la foto elegida no aparecía nunca.
-      if (j && j.reemplazos) aplicarImagenes(j.reemplazos);
-    })
-    .catch(function () { /* nivel 2: los textos de este archivo ya están puestos */ });
+  // ═══════════════════════════════════════════════════════════════
+  //  DE DÓNDE SALEN LOS TEXTOS
+  //
+  //  1 · Firestore, documento sitio/publicado   ← LA AUTORIDAD
+  //  2 · contenido.json del repositorio          ← respaldo
+  //  3 · los textos escritos en este archivo     ← último respaldo
+  //
+  //  Se lee por REST y no con el SDK: el sitio público no carga Firebase.
+  //  Guardar en el panel cambia el sitio en el acto; ya no hay que exportar
+  //  un JSON ni subirlo a ningún lado. Antes había dos estados —borrador y
+  //  publicado— y toda la costura entre ellos fue la fuente de más errores
+  //  que cualquier otra parte del sistema.
+  // ═══════════════════════════════════════════════════════════════
+  var REST = "https://firestore.googleapis.com/v1/projects/casayourte-mauro"
+    + "/databases/(default)/documents/sitio/publicado"
+    + "?key=AIzaSyDDD_xvpC4I_ec2OZymyDqVsm1K0ISTr4Q";
 
-  // ── vista previa del borrador, sólo con ?borrador=1 ──
-  if (VER_BORRADOR) {
-    var REST = "https://firestore.googleapis.com/v1/projects/casayourte-mauro"
-      + "/databases/(default)/documents/sitio/borrador"
-      + "?key=AIzaSyDDD_xvpC4I_ec2OZymyDqVsm1K0ISTr4Q";
+  function valor(v) {
+    if (!v || typeof v !== "object") return undefined;
+    if ("stringValue" in v) return v.stringValue;
+    if ("booleanValue" in v) return v.booleanValue;
+    if ("integerValue" in v) return Number(v.integerValue);
+    if ("doubleValue" in v) return v.doubleValue;
+    if ("nullValue" in v) return null;
+    if ("arrayValue" in v) return (v.arrayValue.values || []).map(valor);
+    if ("mapValue" in v) return mapa(v.mapValue.fields || {});
+    return undefined;
+  }
+  function mapa(f) {
+    var o = {};
+    for (var k in f) { var x = valor(f[k]); if (x !== undefined) o[k] = x; }
+    return o;
+  }
 
-    function valor(v) {
-      if (!v || typeof v !== "object") return undefined;
-      if ("stringValue" in v) return v.stringValue;
-      if ("booleanValue" in v) return v.booleanValue;
-      if ("integerValue" in v) return Number(v.integerValue);
-      if ("doubleValue" in v) return v.doubleValue;
-      if ("nullValue" in v) return null;
-      if ("arrayValue" in v) return (v.arrayValue.values || []).map(valor);
-      if ("mapValue" in v) return mapa(v.mapValue.fields || {});
-      return undefined;
-    }
-    function mapa(f) {
-      var o = {};
-      for (var k in f) { var x = valor(f[k]); if (x !== undefined) o[k] = x; }
-      return o;
-    }
-
-    cadena = cadena
-      .then(function () { return fetch(REST, { cache: "no-store" }); })
+  function delRepositorio() {
+    // El parámetro por minuto saltea la caché de GitHub Pages, que sirve los
+    // archivos con unos minutos de vida.
+    var MINUTO = Math.floor(Date.now() / 60000);
+    return fetch("contenido.json?v=" + MINUTO, { cache: "no-store" })
       .then(function (r) { if (!r.ok) throw 0; return r.json(); })
       .then(function (j) {
-        var d = mapa((j && j.fields) || {});
-        aplicarTextos(d);
-        aplicarImagenes(d.imagenes);
-        var aviso = document.createElement("div");
-        aviso.textContent = "Vista previa del borrador · esto todavía no está publicado";
-        aviso.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:98;"
-          + "background:#7A2C3C;color:#EFE8DA;font-family:var(--mono);font-size:.6rem;"
-          + "letter-spacing:.14em;text-transform:uppercase;text-align:center;padding:.5rem";
-        document.body.appendChild(aviso);
-      })
-      .catch(function () { /* sin borrador: se queda lo del JSON */ });
+        if (j && j.textos) aplicarTextos(j.textos);
+        if (j && j.reemplazos) aplicarImagenes(j.reemplazos);
+      });
   }
+
+  var cadena = fetch(REST, { cache: "no-store" })
+    .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+    .then(function (j) {
+      var d = mapa((j && j.fields) || {});
+      if (!aplicarTextos(d)) throw 0;      // documento vacío: vale el respaldo
+      aplicarImagenes(d.imagenes);
+    })
+    .catch(function () { return delRepositorio(); })
+    .catch(function () { /* nivel 3: los textos de este archivo ya están puestos */ });
 
   cadena.then(function () { paint(document.documentElement.lang); });
 })();

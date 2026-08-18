@@ -12,7 +12,7 @@
 
 export const CY = {};
 
-CY.VERSION = 'nucleo-9';
+CY.VERSION = 'nucleo-10';
 
 // ═════════════════════════════════════════════════════════════
 //  BOTÓN ATRÁS DE ANDROID
@@ -305,10 +305,10 @@ CY.ROLES = {
 CY.PERMISOS = [
   { id:'albumes',   label:'Álbumes de obra', icono:'photo_library',
     detalle:'Crear álbumes, subir fotos, ordenarlas y escribir sus textos.' },
-  { id:'contenido', label:'Contenido del sitio', icono:'edit_note',
-    detalle:'Editar los textos del catálogo y elegir las imágenes desde los álbumes.' },
-  { id:'publicar',  label:'Publicar', icono:'publish',
-    detalle:'Exportar el contenido para el repositorio y marcar álbumes como públicos.' },
+  { id:'contenido', label:'Editar el sitio público', icono:'edit_note',
+    detalle:'Cambiar los textos y las imágenes del catálogo. Lo que guarde se ve en el acto: no hay paso de revisión.' },
+  { id:'publicar',  label:'Publicar álbumes', icono:'publish',
+    detalle:'Marcar un álbum de obra para que aparezca en el sitio.' },
   { id:'calculo',   label:'Cálculo de taller', icono:'straighten',
     detalle:'Ver y usar la calculadora de piezas.' },
 ];

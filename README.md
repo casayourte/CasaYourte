@@ -77,25 +77,22 @@ innecesariamente molesto.
 
 ## Cómo se cambia el contenido
 
-El circuito es de una sola dirección:
+**El sitio lee Firestore.** Se edita en `editar.html` —la página real— y se toca
+**Publicar**. Eso es todo: el sitio cambia en el acto.
 
 ```
-editás en el panel o en editar.html
-  → Guardar     deja los cambios en Firestore, para que no se pierdan
-  → Exportar    descarga contenido.json
-  → lo subís al repositorio
-  → cambia el sitio
+sitio/publicado   en Firestore   ← LA AUTORIDAD, lo que ve el público
+contenido.json    en el repo     ← respaldo, si Firestore no responde
+los textos del index.html        ← último respaldo
 ```
 
-**El `contenido.json` del repositorio es lo publicado. Firestore es el cuaderno de
-trabajo.** El sitio no lee la base, salvo que se lo pidas con `?borrador=1`.
+Hasta agosto de 2026 era al revés: la autoridad era `contenido.json`, Firestore guardaba un
+borrador, y había que exportar el JSON y subirlo a mano. Esa costura entre los dos estados
+produjo más errores que ninguna otra parte del sistema. **Con un solo estado, esa clase de
+errores deja de existir.**
 
-Dos caminos para editar, y los dos escriben el mismo borrador:
-
-- **`editar.html`** (ojo 👁 en el panel) · la página real, tocás y escribís encima. Las
-  fotos se cambian eligiendo del álbum. No edita listas ni la tabla de precios.
-- **Panel → Contenido del sitio** (lápiz ✎) · todos los textos por formulario,
-  incluidas las listas y la tabla.
+**No hay paso de revisión.** Quien tenga el permiso de contenido publica directo. Es a
+propósito: dos estados fue lo que se acaba de retirar.
 
 ### Cambiar una imagen · dos caminos distintos
 
@@ -130,13 +127,13 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 
 | Archivo | Constante | Valor de esta versión |
 |---|---|---|
-| `nucleo.js` | `CY.VERSION` | `nucleo-9` |
-| `sw.js` | `VERSION` | `cy-shell-v18` |
+| `nucleo.js` | `CY.VERSION` | `nucleo-10` |
+| `sw.js` | `VERSION` | `cy-shell-v19` |
 | `admin.html` | `PANEL` | `admin-11` |
-| `editar.html` | `EDITOR` | `editar-3` |
+| `editar.html` | `EDITOR` | `editar-4` |
 | `calculo.html` | `CY.PANEL` | `calculo-8` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-2` |
-| `diagnostico.html` | `CY.PANEL` | `diagnostico-2` |
+| `diagnostico.html` | `CY.PANEL` | `diagnostico-3` |
 
 Si el panel muestra un número distinto al de esta tabla, ese archivo no se subió o está
 cacheado. El botón ↻ del avatar borra las cachés.

@@ -40,9 +40,10 @@
 // v12 (16-ago-2026) — las dos capas del techo se calculan separadas.
 // v13 (16-ago-2026) — la apertura de la base sale de la condición de paralelismo.
 // v14 (16-ago-2026) — el ancho del montante se deriva del espesor del trei.
+// v19 (18-ago-2026) — el sitio lee Firestore: se retira el borrador y la exportación.
 // v3 (10-ago-2026) — cambiaron admin.html y nucleo.js: entra la sección de
 //   contenido del sitio.
-const VERSION = 'cy-shell-v18';
+const VERSION = 'cy-shell-v19';
 
 const SHELL = [
   './admin.html',

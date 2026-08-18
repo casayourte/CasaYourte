@@ -104,7 +104,8 @@ button{cursor:pointer}
 <section id="login">
   <h1>Editar el sitio</h1>
   <p>Vas a ver el sitio tal cual, y vas a poder tocar cualquier texto o foto para
-  cambiarla. Hace falta tu cuenta.</p>
+  cambiarla. <b>Lo que publiques se ve en el acto</b>: no hay que exportar ni subir
+  nada. Hace falta tu cuenta.</p>
   <label><span class="k">Mail</span>
     <input id="mail" type="email" inputmode="email" autocomplete="username"></label>
   <label><span class="k">Contraseña</span>
@@ -133,8 +134,7 @@ button{cursor:pointer}
 
   <div id="barra">
     <span class="cuenta" id="cuenta">Tocá un texto o una foto para editarla</span>
-    <button class="btn" id="guardar">Guardar</button>
-    <button class="btn p" id="exportar">Exportar</button>
+    <button class="btn p" id="guardar">Publicar</button>
     <button class="btn" id="salir">✕</button>
   </div>
 </div>
@@ -165,7 +165,7 @@ import { CY } from "./nucleo.js";
 const $ = (id) => document.getElementById(id);
 
 // Sello de este archivo, para saber si quedó viejo en la caché.
-const EDITOR = "editar-3";
+const EDITOR = "editar-4";
 CY.PANEL = EDITOR;
 
 /* ═══════════════════════════════════════════════════════════════
@@ -214,7 +214,7 @@ $("entrar").addEventListener("click", async () => {
   finally { b.disabled = false; b.textContent = "Entrar"; }
 });
 $("salir").addEventListener("click", () => {
-  if (sucio() && !confirm("Tenés cambios sin guardar. ¿Salir igual?")) return;
+  if (sucio() && !confirm("Tenés cambios sin publicar. ¿Salir igual?")) return;
   location.href = "admin.html";
 });
 
@@ -241,11 +241,11 @@ async function cargarContenido() {
   BASE = await r.json();
   ["es", "fr"].forEach(l => ORDEN[l] = Object.keys((BASE.textos || {})[l] || {}));
 
-  const d = await getDoc(doc(db, "sitio", "borrador"));
+  const d = await getDoc(doc(db, "sitio", "publicado"));
   if (d.exists() && d.data().es) {
     const x = d.data();
-    // MEZCLA, no reemplazo: el borrador manda para lo que tiene y el archivo
-    // del repositorio completa el resto. Un borrador guardado antes de que
+    // MEZCLA, no reemplazo: lo publicado manda para lo que tiene y el archivo
+    // del repositorio completa el resto. Un documento guardado antes de que
     // existiera una clave no puede hacerla desaparecer.
     CONT = {
       es: { ...(BASE.textos.es || {}), ...decodMapa(x.es) },
@@ -275,7 +275,7 @@ function contar() {
   const total = n + im;
   c.classList.toggle("sucio", total > 0);
   c.textContent = total
-    ? `${n} texto${n === 1 ? "" : "s"}${im ? ` y ${im} imagen${im === 1 ? "" : "es"}` : ""} sin guardar`
+    ? `${n} texto${n === 1 ? "" : "s"}${im ? ` y ${im} imagen${im === 1 ? "" : "es"}` : ""} sin publicar`
     : "Tocá un texto o una foto para editarla";
   $("guardar").disabled = total === 0;
 }
@@ -470,7 +470,7 @@ function abrirHojaLista(clave, esTabla) {
     if (cerrarLista) cerrarLista();
     pintarEnIframe();
     contar();
-    aviso("Aplicado. Falta guardar.");
+    aviso("Aplicado. Falta publicar.");
   });
 }
 
@@ -487,7 +487,7 @@ async function abrirHoja(slot) {
     delete CONT.imagenes[slotActual];
     const im = doc_.querySelector('img[data-slot="' + slotActual + '"]');
     if (im) { const o = ORIG.imagenes[slotActual]; im.src = o ? CY.url(o, 1200) : "assets/" + slotActual + ".jpg"; }
-    contar(); cerrar(); aviso("Vuelve la imagen del repositorio. Falta guardar.");
+    contar(); cerrar(); aviso("Vuelve la imagen del repositorio. Falta publicar.");
   };
   $("h-rej").innerHTML = '<p class="vacio">Cargando…</p>';
   try {
@@ -544,7 +544,7 @@ function elegir(f) {
   if (im) { const u = CY.url(f.public_id, 1200); im.dataset.src = u; im.src = u; }
   contar();
   $("h-cerrar").click();
-  aviso("Imagen cambiada. Falta guardar.");
+  aviso("Imagen cambiada. Falta publicar.");
 }
 
 /* ---------- guardar ---------- */
@@ -552,57 +552,20 @@ $("guardar").addEventListener("click", async () => {
   const b = $("guardar"); b.disabled = true; b.textContent = "…";
   try {
     // El mapa completo con setDoc: nunca updateDoc de una clave con punto.
-    await setDoc(doc(db, "sitio", "borrador"), {
+    // Esto ES el sitio: no hay borrador ni exportación. Lo que se guarda acá
+    // lo ve cualquiera que entre a casayourte.com en el acto.
+    await setDoc(doc(db, "sitio", "publicado"), {
       es: codifMapa(CONT.es), fr: codifMapa(CONT.fr),
       imagenes: CONT.imagenes, idiomas: ["es", "fr"],
       guardado: serverTimestamp(), guardadoPor: yo.email,
     });
     ORIG = JSON.parse(JSON.stringify(CONT));
     contar();
-    aviso("Guardado en la base. Para que lo vea el público: Exportar y subir el archivo.");
+    aviso("Publicado. Ya se ve en el sitio.");
   } catch (e) { aviso(CY.explicar(e), true); }
-  finally { b.textContent = "Guardar"; contar(); }
+  finally { b.textContent = "Publicar"; contar(); }
 });
 
-/* ---------- exportar ---------- */
-function enOrden(l) {
-  const o = {}, vistas = new Set();
-  (ORDEN[l] || []).forEach(k => { if (k in CONT[l]) { o[k] = CONT[l][k]; vistas.add(k); } });
-  Object.keys(CONT[l]).forEach(k => { if (!vistas.has(k)) o[k] = CONT[l][k]; });
-  return o;
-}
-
-function bajar(texto, nombre, tipo) {
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([texto], { type: tipo }));
-  a.download = nombre; a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-}
-
-$("exportar").addEventListener("click", async () => {
-  // Red de seguridad: nunca exportar con menos texto del que hay publicado.
-  const faltan = ["es", "fr"].flatMap((l) =>
-    Object.keys(BASE.textos[l] || {}).filter((k) => !(k in CONT[l])).map((k) => l + ":" + k));
-  if (faltan.length) {
-    aviso(`No se exporta: faltarían ${faltan.length} textos que están en el repositorio. `
-      + "Recargá la página del editor.", true);
-    return;
-  }
-  if (sucio() && !confirm("Tenés cambios sin guardar.\n\nSe van a incluir en el archivo. ¿Seguir?"))
-    return;
-  const salida = {
-    proyecto: BASE.proyecto || "CasaYourte",
-    generadoPor: EDITOR,
-    generadoEl: new Date().toISOString().slice(0, 16).replace("T", " "),
-    idiomas: BASE.idiomas || ["es", "fr"],
-    textos: { es: enOrden("es"), fr: enOrden("fr") },
-    reemplazos: { ...(CONT.imagenes || {}) },
-    imagenes: BASE.imagenes || [],
-    logo: BASE.logo, video: BASE.video, proceso: BASE.proceso,
-  };
-  bajar(JSON.stringify(salida, null, 2), "contenido.json", "application/json");
-  aviso("contenido.json descargado. Subilo al repositorio y el sitio cambia.");
-});
 </script>
 </body>
 </html>

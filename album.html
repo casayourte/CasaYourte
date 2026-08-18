@@ -395,20 +395,30 @@ addEventListener("keydown", (e) => {
 (function () {
   // Igual que en el index: dentro del editor no se busca el contenido.
   if (/[?&]edit=1/.test(location.search)) return;
-  var MINUTO = Math.floor(Date.now() / 60000);
-  fetch("contenido.json?v=" + MINUTO, { cache: "no-store" })
-    .then(function (r) { if (!r.ok) throw 0; return r.json(); })
-    .then(function (j) {
-      ["es", "fr"].forEach(function (l) {
-        var d = (j.textos || {})[l] || {};
-        Object.keys(d).forEach(function (k) {
-          if (k.indexOf("alb.") === 0) T[l][k.slice(4)] = d[k];
-        });
+
+  function usar(d) {
+    var hubo = false;
+    ["es", "fr"].forEach(function (l) {
+      var x = d[l] || {};
+      Object.keys(x).forEach(function (k) {
+        if (k.indexOf("alb.") === 0) { T[l][k.slice(4)] = x[k]; hubo = true; }
       });
-      pintarTextos();
-      if (albumes.length) pintar();
+    });
+    if (hubo) { pintarTextos(); if (albumes.length) pintar(); }
+    return hubo;
+  }
+
+  // 1 · Firestore, que es la autoridad · 2 · el JSON del repositorio
+  fetch(BASE + "sitio/publicado?key=" + CLAVE, { cache: "no-store" })
+    .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+    .then(function (j) { if (!usar(mapa((j && j.fields) || {}))) throw 0; })
+    .catch(function () {
+      var MINUTO = Math.floor(Date.now() / 60000);
+      return fetch("contenido.json?v=" + MINUTO, { cache: "no-store" })
+        .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+        .then(function (j) { usar(j.textos || {}); });
     })
-    .catch(function () { /* quedan los textos de respaldo */ });
+    .catch(function () { /* quedan los textos de respaldo de este archivo */ });
 })();
 
 cargar();

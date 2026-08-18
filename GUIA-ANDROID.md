@@ -13,15 +13,14 @@ Conviene hacerlo con wifi y el celular cargando. La subida de `assets/` son 5 MB
 
 Repositorio: `github.com/casayourte/CasaYourte`
 
-## A1 · Los seis archivos de la raíz
+## A1 · Los archivos de la raíz
 
-En el repositorio: **Add file → Upload files**.
-
-Toca *choose your files* y seleccioná los seis juntos desde tu gestor de archivos:
+En el repositorio: **Add file → Upload files**, y soltá todo lo que va suelto en la raíz.
 
 ```
 index.html        album.html       admin.html
-editar.html       sembrar.html     contenido.json
+editar.html       calculo.html     usuarios.html
+diagnostico.html  contenido.json   estilos.css
 firebase-init.js  nucleo.js        sw.js
 manifest.json     CNAME            REGLAS.txt
 README.md         GUIA-ANDROID.md
@@ -29,11 +28,7 @@ README.md         GUIA-ANDROID.md
 
 Y los tres iconos: `icono-192.png`, `icono-512.png`, `apple-touch-icon.png`.
 
-Abajo, en *Commit changes*, escribí `primera carga` y toca **Commit changes**.
-
-> Si el selector de archivos no te deja marcar varios, mantené presionado el primero y
-> después tocá los demás. En algunos gestores hay que entrar por *Archivos* y no por
-> *Galería*.
+Al terminar, **Commit changes**.
 
 ## A2 · Crear la carpeta assets
 
