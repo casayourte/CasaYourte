@@ -133,7 +133,7 @@ button{cursor:pointer}
   </div>
 
   <div id="barra">
-    <span class="cuenta" id="cuenta">Tocá un texto o una foto para editarla</span>
+    <span class="cuenta" id="cuenta">Tocá un texto o una foto · ▲▼ mueve el bloque</span>
     <button class="btn p" id="guardar">Publicar</button>
     <button class="btn" id="salir">✕</button>
   </div>
@@ -165,7 +165,7 @@ import { CY } from "./nucleo.js";
 const $ = (id) => document.getElementById(id);
 
 // Sello de este archivo, para saber si quedó viejo en la caché.
-const EDITOR = "editar-4";
+const EDITOR = "editar-5";
 CY.PANEL = EDITOR;
 
 /* ═══════════════════════════════════════════════════════════════
@@ -187,7 +187,7 @@ const PAGS = {
 
 let pag = "index";
 let idioma = "es";
-let CONT = null;        // { es:{}, fr:{}, imagenes:{} }
+let CONT = null;        // { es:{}, fr:{}, imagenes:{}, orden:{} }
 let ORIG = null;
 let ORDEN = { es: [], fr: [] };
 let BASE = null;        // el contenido.json del repositorio, tal cual
@@ -251,10 +251,12 @@ async function cargarContenido() {
       es: { ...(BASE.textos.es || {}), ...decodMapa(x.es) },
       fr: { ...(BASE.textos.fr || {}), ...decodMapa(x.fr) },
       imagenes: { ...(BASE.reemplazos || {}), ...(x.imagenes || {}) },
+      orden: { ...(BASE.orden || {}), ...(x.orden || {}) },
     };
   } else {
     CONT = { es: { ...BASE.textos.es }, fr: { ...BASE.textos.fr },
-             imagenes: { ...(BASE.reemplazos || {}) } };
+             imagenes: { ...(BASE.reemplazos || {}) },
+             orden: { ...(BASE.orden || {}) } };
   }
   ORIG = JSON.parse(JSON.stringify(CONT));
 }
@@ -271,12 +273,18 @@ function contar() {
   }));
   const im = Object.keys({ ...ORIG.imagenes, ...CONT.imagenes })
     .filter(k => (CONT.imagenes[k] || "") !== (ORIG.imagenes[k] || "")).length;
+  const or = Object.keys({ ...ORIG.orden, ...CONT.orden })
+    .filter(k => (CONT.orden[k] || "") !== (ORIG.orden[k] || "")).length;
   const c = $("cuenta");
-  const total = n + im;
+  const total = n + im + or;
   c.classList.toggle("sucio", total > 0);
+  const partes = [];
+  if (n) partes.push(`${n} texto${n === 1 ? "" : "s"}`);
+  if (im) partes.push(`${im} imagen${im === 1 ? "" : "es"}`);
+  if (or) partes.push(`${or} orden${or === 1 ? "" : "es"}`);
   c.textContent = total
-    ? `${n} texto${n === 1 ? "" : "s"}${im ? ` y ${im} imagen${im === 1 ? "" : "es"}` : ""} sin publicar`
-    : "Tocá un texto o una foto para editarla";
+    ? partes.join(" y ") + " sin publicar"
+    : "Tocá un texto o una foto · ▲▼ mueve el bloque";
   $("guardar").disabled = total === 0;
 }
 
@@ -327,11 +335,34 @@ function preparar() {
       letter-spacing:.08em;background:#DCA96B;color:#181614;padding:2px 4px;border-radius:2px;
       pointer-events:none}
     a{pointer-events:none!important}
+    /* Las flechas van encima del bloque y no empujan nada: en modo edición
+       la página tiene que seguir viéndose igual que en el sitio. */
+    .cy-ord{position:absolute;top:6px;left:6px;z-index:12;display:flex;align-items:center;
+      gap:1px;background:rgba(24,22,20,.93);border:1px solid #4A4238;border-radius:999px;
+      padding:2px;font:500 10px/1 ui-monospace,monospace;color:#EFE8DA;
+      box-shadow:0 2px 10px rgba(0,0,0,.4)}
+    .cy-ord button{background:none;border:0;color:#DCA96B;font-size:14px;line-height:1;
+      padding:5px 8px;cursor:pointer;border-radius:999px;pointer-events:auto}
+    .cy-ord button:disabled{opacity:.28}
+    .cy-ord .n{min-width:16px;text-align:center;color:#A89E8C;letter-spacing:.06em}
+    details.mas{outline:1px dotted rgba(220,169,107,.35);outline-offset:4px}
   `;
   doc_.head.appendChild(st);
 
+  // Todo lo desplegable se abre y se queda abierto: si se cerrara al tocar el
+  // título, no habría forma de escribir adentro con el pulgar.
+  doc_.querySelectorAll("details").forEach((d) => {
+    d.open = true;
+    d.addEventListener("toggle", () => { if (!d.open) d.open = true; });
+  });
+
+  // El orden guardado se aplica antes de poner los controles.
+  aplicarOrdenEnIframe();
+
   // El contenido que se está editando manda sobre lo que trajo la página.
   pintarEnIframe();
+
+  ponerFlechas();
 
   // Los textos: se editan tocándolos.
   doc_.querySelectorAll("[" + cfg.attr + "]").forEach((el) => {
@@ -381,6 +412,75 @@ function preparar() {
     ? `Listo. ${fotos.length} imágenes y los textos se pueden tocar.`
     : "Listo para editar.");
   contar();
+}
+
+/* ---------- mover un bloque ----------
+   No hay arrastre con el dedo (§3.6): la pulsación sostenida abre el menú de
+   Android. Se mueve con flechas, y el número dice en qué posición quedó.
+
+   Sólo se reordena DENTRO de un grupo —los cinco de la trayectoria, los ocho
+   diferenciales, las cuatro líneas de oferta—. Las secciones del sitio y su
+   orden no se tocan: eso sí podría romper la página.
+
+   Lo que se guarda es una lista de identificadores: "s3,s1,s2,s4,s5". */
+
+const bloquesDe = (cont) => [...cont.querySelectorAll(":scope > [data-bloque]")];
+
+function aplicarOrdenEnIframe() {
+  Object.keys(CONT.orden || {}).forEach((g) => {
+    const cont = doc_.querySelector('[data-grupo="' + g + '"]');
+    if (!cont) return;
+    String(CONT.orden[g]).split(",").map(x => x.trim()).filter(Boolean).forEach((id) => {
+      const el = cont.querySelector(':scope > [data-bloque="' + id + '"]');
+      if (el) cont.appendChild(el);   // los nombrados quedan en ese orden
+    });
+  });
+}
+
+function numerar(cont) {
+  const hijos = bloquesDe(cont);
+  hijos.forEach((el, i) => {
+    const c = el.querySelector(":scope > .cy-ord");
+    if (!c) return;
+    c.querySelector(".n").textContent = (i + 1) + "/" + hijos.length;
+    c.querySelector(".sube").disabled = i === 0;
+    c.querySelector(".baja").disabled = i === hijos.length - 1;
+  });
+}
+
+function mover(cont, el, dir) {
+  const hijos = bloquesDe(cont);
+  const i = hijos.indexOf(el), j = i + dir;
+  if (i < 0 || j < 0 || j >= hijos.length) return;
+  if (dir < 0) cont.insertBefore(el, hijos[j]);
+  else cont.insertBefore(hijos[j], el);
+  CONT.orden[cont.dataset.grupo] = bloquesDe(cont).map(x => x.dataset.bloque).join(",");
+  numerar(cont);
+  contar();
+  el.scrollIntoView({ block: "center", behavior: "smooth" });
+}
+
+function ponerFlechas() {
+  doc_.querySelectorAll("[data-grupo]").forEach((cont) => {
+    bloquesDe(cont).forEach((el) => {
+      if (el.querySelector(":scope > .cy-ord")) return;
+      // El estilo se consulta con la ventana del iframe, no con la del editor.
+      const vista = doc_.defaultView || window;
+      if (vista.getComputedStyle(el).position === "static") el.style.position = "relative";
+      const c = doc_.createElement("div");
+      c.className = "cy-ord";
+      c.innerHTML = '<button type="button" class="sube" aria-label="Subir">&#9650;</button>'
+                  + '<span class="n"></span>'
+                  + '<button type="button" class="baja" aria-label="Bajar">&#9660;</button>';
+      c.addEventListener("click", (ev) => {
+        const b = ev.target.closest("button"); if (!b) return;
+        ev.preventDefault(); ev.stopPropagation();
+        mover(cont, el, b.classList.contains("sube") ? -1 : 1);
+      }, true);
+      el.insertBefore(c, el.firstChild);
+    });
+    numerar(cont);
+  });
 }
 
 // Se escribe CONT dentro de la página, con las mismas reglas que usa el sitio.
@@ -556,7 +656,7 @@ $("guardar").addEventListener("click", async () => {
     // lo ve cualquiera que entre a casayourte.com en el acto.
     await setDoc(doc(db, "sitio", "publicado"), {
       es: codifMapa(CONT.es), fr: codifMapa(CONT.fr),
-      imagenes: CONT.imagenes, idiomas: ["es", "fr"],
+      imagenes: CONT.imagenes, orden: CONT.orden, idiomas: ["es", "fr"],
       guardado: serverTimestamp(), guardadoPor: yo.email,
     });
     ORIG = JSON.parse(JSON.stringify(CONT));

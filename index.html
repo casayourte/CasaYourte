@@ -297,6 +297,74 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
   .reveal,.reveal.in{opacity:1;transform:none;transition:none}
 }
 :focus-visible{outline:2px solid var(--blond);outline-offset:3px}
+
+/* ---------- desplegables ----------
+   El sitio muestra el titular con su foto; el cuerpo del texto se abre
+   tocando. Menos texto a la vista, el mismo contenido adentro. */
+.hide{display:none!important}
+.mas{margin:0}
+.mas>summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:.5rem;
+  font-family:var(--mono);font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--blond);padding:.5rem 0;user-select:none}
+.mas>summary::-webkit-details-marker{display:none}
+.mas>summary::after{content:"+";font-size:1rem;line-height:1;font-weight:500}
+.mas[open]>summary::after{content:"\2212"}
+.mas>summary:focus-visible{outline:2px solid var(--blond);outline-offset:3px}
+.mas .cuerpo{padding-top:.2rem}
+.paper .mas>summary{color:var(--burg)}
+.mas .idea-cols{margin-top:0}
+@media(min-width:900px){.mas .idea-cols p:first-child{grid-column:auto;font-size:1rem;
+  color:#c2b9a7;max-width:none}}
+
+/* ---------- álbumes publicados, dentro del sitio ---------- */
+.alb-lista{margin-top:clamp(2rem,5vw,3rem);display:grid;gap:clamp(1.8rem,4vw,2.6rem)}
+.alb-estado{color:#8d8474}
+.alb-uno{border-top:1px solid #3b342c;padding-top:1.1rem}
+.alb-cab{display:flex;align-items:baseline;gap:.5rem .9rem;flex-wrap:wrap;width:100%;
+  background:none;border:0;color:inherit;text-align:left;padding:0;cursor:pointer}
+.alb-tit{font-family:var(--disp);font-weight:500;font-size:clamp(1.3rem,3vw,1.9rem);
+  line-height:1.05;letter-spacing:-.015em;flex:1 1 12ch;margin:0}
+.alb-meta{font-family:var(--mono);font-size:.6rem;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--blond)}
+.alb-mas{font-family:var(--mono);font-size:.6rem;letter-spacing:.13em;text-transform:uppercase;
+  color:#a89e8c;border-bottom:1px solid #4a4238;padding-bottom:.15rem}
+.alb-cab:hover .alb-mas{color:var(--wool);border-color:var(--blond)}
+/* La tira se desliza con el dedo: un álbum por gesto, sin controles. */
+.alb-tira{display:flex;gap:.5rem;overflow-x:auto;overscroll-behavior-x:contain;
+  scroll-snap-type:x mandatory;margin-top:1rem;padding-bottom:.5rem;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none}
+.alb-tira::-webkit-scrollbar{display:none}
+.alb-foto{flex:0 0 min(78vw,340px);scroll-snap-align:center;aspect-ratio:4/3;position:relative;
+  padding:0;overflow:hidden;background:var(--ink-2);border:1px solid #3b342c;cursor:zoom-in}
+.alb-foto img{transition:transform .5s cubic-bezier(.2,.7,.2,1)}
+.alb-foto:hover img{transform:scale(1.04)}
+.alb-foto .pie{position:absolute;left:0;right:0;bottom:0;padding:1.6rem .7rem .6rem;
+  text-align:left;font-size:.8rem;line-height:1.35;color:var(--wool);
+  background:linear-gradient(180deg,rgba(12,10,8,0),rgba(12,10,8,.9));
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.alb-rej{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+  gap:.9rem .5rem;margin-top:1rem}
+@media(min-width:900px){.alb-rej{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}}
+.alb-item{padding:0;background:none;border:0;color:inherit;text-align:left;cursor:zoom-in}
+.alb-item .marco{aspect-ratio:4/3;overflow:hidden;background:var(--ink-2);border:1px solid #3b342c}
+.alb-item .cap{display:block;font-size:.8rem;line-height:1.4;color:#b7ae9d;margin-top:.45rem}
+.alb-item .et{display:block;font-family:var(--mono);font-size:.55rem;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--blond);margin-top:.35rem}
+
+/* ---------- visor de fotos ---------- */
+#visor{position:fixed;inset:0;z-index:60;background:rgba(12,10,8,.97);display:flex;
+  flex-direction:column}
+#visor img{flex:1;min-height:0;width:100%;height:auto;object-fit:contain;background:#000}
+#visor .pie{padding:.9rem var(--pad) calc(1rem + env(safe-area-inset-bottom,0px));
+  display:flex;gap:.8rem;align-items:flex-start;border-top:1px solid #35302a;background:var(--ink)}
+#visor .txt{flex:1;min-width:0;font-size:.9rem;color:#b7ae9d;line-height:1.45}
+#visor .txt b{display:block;font-family:var(--mono);font-size:.56rem;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--blond);margin-bottom:.25rem;font-weight:500}
+#visor .nav{display:flex;gap:.35rem;flex:none}
+#visor button{font-family:var(--mono);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;
+  background:none;border:1px solid #4a4238;color:var(--wool);padding:.55rem .75rem;
+  border-radius:2px;cursor:pointer;min-width:2.6rem}
+#visor button:hover{border-color:var(--blond)}
 </style>
 </head>
 <body>
@@ -347,9 +415,14 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
   <h2 class="idea-h" data-i="id.title"></h2>
   <div class="idea-cols">
     <p data-i="id.b1"></p>
-    <p data-i="id.b2"></p>
-    <p data-i="id.b3"></p>
   </div>
+  <details class="mas">
+    <summary><span data-i="ui.mas">Leer más</span></summary>
+    <div class="cuerpo idea-cols">
+      <p data-i="id.b2"></p>
+      <p data-i="id.b3"></p>
+    </div>
+  </details>
   <p class="idea-k" data-i="id.k"></p>
 </section>
 
@@ -357,7 +430,10 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
 <section class="wrap proc-sec">
   <span class="eyebrow" data-i="pr.eyebrow"></span>
   <h2 style="font-size:clamp(2rem,5.5vw,3.6rem);max-width:26ch" data-i="pr.title"></h2>
-  <p class="lede" style="margin-top:1.5rem;color:#c2b9a7" data-i="pr.lede"></p>
+  <details class="mas">
+    <summary><span data-i="ui.mas">Leer más</span></summary>
+    <p class="lede cuerpo" style="color:#c2b9a7" data-i="pr.lede"></p>
+  </details>
 
   <figure class="proc" id="proc">
     <div class="proc-stage" id="proc-stage"></div>
@@ -380,28 +456,41 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
 <section class="wrap paper">
   <span class="eyebrow" data-i="traj.eyebrow"></span>
   <h2 style="font-size:clamp(2rem,5.5vw,3.6rem);max-width:24ch" data-i="traj.title"></h2>
-  <p class="lede" style="margin-top:1.5rem;color:#4b443a" data-i="traj.lede"></p>
+  <details class="mas">
+    <summary><span data-i="ui.mas">Leer más</span></summary>
+    <p class="lede cuerpo" style="color:#4b443a" data-i="traj.lede"></p>
+  </details>
 
-  <div class="steps">
-    <article class="step reveal">
+  <div class="steps" data-grupo="traj">
+    <article class="step reveal" data-bloque="s1">
       <div class="step-fig"><img data-slot="traj1" src="assets/traj1.jpg" alt="" loading="lazy" decoding="async"></div>
-      <div><span class="yr" data-i="s1.yr"></span><h3 data-i="s1.t"></h3><p data-i="s1.b"></p></div>
+      <div><span class="yr" data-i="s1.yr"></span><h3 data-i="s1.t"></h3>
+        <details class="mas"><summary><span data-i="ui.mas">Leer más</span></summary>
+          <p class="cuerpo" data-i="s1.b"></p></details></div>
     </article>
-    <article class="step reveal">
+    <article class="step reveal" data-bloque="s2">
       <div class="step-fig"><img data-slot="traj2" src="assets/traj2.jpg" alt="" loading="lazy" decoding="async"></div>
-      <div><span class="yr" data-i="s2.yr"></span><h3 data-i="s2.t"></h3><p data-i="s2.b"></p></div>
+      <div><span class="yr" data-i="s2.yr"></span><h3 data-i="s2.t"></h3>
+        <details class="mas"><summary><span data-i="ui.mas">Leer más</span></summary>
+          <p class="cuerpo" data-i="s2.b"></p></details></div>
     </article>
-    <article class="step reveal">
+    <article class="step reveal" data-bloque="s3">
       <div class="step-fig"><img data-slot="traj3" src="assets/traj3.jpg" alt="" loading="lazy" decoding="async"></div>
-      <div><span class="yr" data-i="s3.yr"></span><h3 data-i="s3.t"></h3><p data-i="s3.b"></p></div>
+      <div><span class="yr" data-i="s3.yr"></span><h3 data-i="s3.t"></h3>
+        <details class="mas"><summary><span data-i="ui.mas">Leer más</span></summary>
+          <p class="cuerpo" data-i="s3.b"></p></details></div>
     </article>
-    <article class="step reveal">
+    <article class="step reveal" data-bloque="s4">
       <div class="step-fig"><img data-slot="traj4" src="assets/traj4.jpg" alt="" loading="lazy" decoding="async"></div>
-      <div><span class="yr" data-i="s4.yr"></span><h3 data-i="s4.t"></h3><p data-i="s4.b"></p></div>
+      <div><span class="yr" data-i="s4.yr"></span><h3 data-i="s4.t"></h3>
+        <details class="mas"><summary><span data-i="ui.mas">Leer más</span></summary>
+          <p class="cuerpo" data-i="s4.b"></p></details></div>
     </article>
-    <article class="step reveal">
+    <article class="step reveal" data-bloque="s5">
       <div class="step-fig"><img data-slot="traj5" src="assets/traj5.jpg" alt="" loading="lazy" decoding="async"></div>
-      <div><span class="yr" data-i="s5.yr"></span><h3 data-i="s5.t"></h3><p data-i="s5.b"></p></div>
+      <div><span class="yr" data-i="s5.yr"></span><h3 data-i="s5.t"></h3>
+        <details class="mas"><summary><span data-i="ui.mas">Leer más</span></summary>
+          <p class="cuerpo" data-i="s5.b"></p></details></div>
     </article>
   </div>
 </section>
@@ -410,40 +499,59 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
 <section class="wrap">
   <span class="eyebrow" data-i="dif.eyebrow"></span>
   <h2 style="font-size:clamp(2rem,5.5vw,3.6rem);max-width:26ch" data-i="dif.title"></h2>
-  <p class="lede" style="margin-top:1.5rem;color:#c2b9a7" data-i="dif.lede"></p>
+  <details class="mas">
+    <summary><span data-i="ui.mas">Leer más</span></summary>
+    <p class="lede cuerpo" style="color:#c2b9a7" data-i="dif.lede"></p>
+  </details>
 
-  <div class="diffs">
-    <article class="diff reveal">
+  <div class="diffs" data-grupo="dif">
+    <article class="diff reveal" data-bloque="d1">
       <div class="diff-fig"><img data-slot="dif1" src="assets/dif1.jpg" alt="" loading="lazy" decoding="async"></div>
-      <span class="spec" data-i="d1.s"></span><h3 data-i="d1.t"></h3><p data-i="d1.b"></p>
+      <span class="spec" data-i="d1.s"></span><h3 data-i="d1.t"></h3>
+      <details class="mas"><summary><span data-i="ui.mas">Leer más</span></summary>
+        <p class="cuerpo" data-i="d1.b"></p></details>
     </article>
-    <article class="diff reveal">
+    <article class="diff reveal" data-bloque="d2">
       <div class="diff-fig"><img data-slot="dif2" src="assets/dif2.jpg" alt="" loading="lazy" decoding="async"></div>
-      <span class="spec" data-i="d2.s"></span><h3 data-i="d2.t"></h3><p data-i="d2.b"></p>
+      <span class="spec" data-i="d2.s"></span><h3 data-i="d2.t"></h3>
+      <details class="mas"><summary><span data-i="ui.mas">Leer más</span></summary>
+        <p class="cuerpo" data-i="d2.b"></p></details>
     </article>
-    <article class="diff reveal">
+    <article class="diff reveal" data-bloque="d3">
       <div class="diff-fig"><img data-slot="dif3" src="assets/dif3.jpg" alt="" loading="lazy" decoding="async"></div>
-      <span class="spec" data-i="d3.s"></span><h3 data-i="d3.t"></h3><p data-i="d3.b"></p>
+      <span class="spec" data-i="d3.s"></span><h3 data-i="d3.t"></h3>
+      <details class="mas"><summary><span data-i="ui.mas">Leer más</span></summary>
+        <p class="cuerpo" data-i="d3.b"></p></details>
     </article>
-    <article class="diff reveal">
+    <article class="diff reveal" data-bloque="d4">
       <div class="diff-fig"><img data-slot="dif4" src="assets/dif4.jpg" alt="" loading="lazy" decoding="async"></div>
-      <span class="spec" data-i="d4.s"></span><h3 data-i="d4.t"></h3><p data-i="d4.b"></p>
+      <span class="spec" data-i="d4.s"></span><h3 data-i="d4.t"></h3>
+      <details class="mas"><summary><span data-i="ui.mas">Leer más</span></summary>
+        <p class="cuerpo" data-i="d4.b"></p></details>
     </article>
-    <article class="diff reveal">
+    <article class="diff reveal" data-bloque="d5">
       <div class="diff-fig"><img data-slot="dif5" src="assets/dif5.jpg" alt="" loading="lazy" decoding="async"></div>
-      <span class="spec" data-i="d5.s"></span><h3 data-i="d5.t"></h3><p data-i="d5.b"></p>
+      <span class="spec" data-i="d5.s"></span><h3 data-i="d5.t"></h3>
+      <details class="mas"><summary><span data-i="ui.mas">Leer más</span></summary>
+        <p class="cuerpo" data-i="d5.b"></p></details>
     </article>
-    <article class="diff reveal">
+    <article class="diff reveal" data-bloque="d6">
       <div class="diff-fig"><img data-slot="dif6" src="assets/dif6.jpg" alt="" loading="lazy" decoding="async"></div>
-      <span class="spec" data-i="d6.s"></span><h3 data-i="d6.t"></h3><p data-i="d6.b"></p>
+      <span class="spec" data-i="d6.s"></span><h3 data-i="d6.t"></h3>
+      <details class="mas"><summary><span data-i="ui.mas">Leer más</span></summary>
+        <p class="cuerpo" data-i="d6.b"></p></details>
     </article>
-    <article class="diff reveal">
+    <article class="diff reveal" data-bloque="d7">
       <div class="diff-fig"><img data-slot="dif7" src="assets/dif7.jpg" alt="" loading="lazy" decoding="async"></div>
-      <span class="spec" data-i="d7.s"></span><h3 data-i="d7.t"></h3><p data-i="d7.b"></p>
+      <span class="spec" data-i="d7.s"></span><h3 data-i="d7.t"></h3>
+      <details class="mas"><summary><span data-i="ui.mas">Leer más</span></summary>
+        <p class="cuerpo" data-i="d7.b"></p></details>
     </article>
-    <article class="diff reveal">
+    <article class="diff reveal" data-bloque="d8">
       <div class="diff-fig"><img data-slot="dif8" src="assets/dif8.jpg" alt="" loading="lazy" decoding="async"></div>
-      <span class="spec" data-i="d8.s"></span><h3 data-i="d8.t"></h3><p data-i="d8.b"></p>
+      <span class="spec" data-i="d8.s"></span><h3 data-i="d8.t"></h3>
+      <details class="mas"><summary><span data-i="ui.mas">Leer más</span></summary>
+        <p class="cuerpo" data-i="d8.b"></p></details>
     </article>
   </div>
 </section>
@@ -452,7 +560,10 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
 <section class="wrap paper">
   <span class="eyebrow" data-i="in.eyebrow"></span>
   <h2 style="font-size:clamp(2rem,5.5vw,3.6rem);max-width:26ch" data-i="in.title"></h2>
-  <p class="lede" style="margin-top:1.5rem;color:#4b443a" data-i="in.lede"></p>
+  <details class="mas">
+    <summary><span data-i="ui.mas">Leer más</span></summary>
+    <p class="lede cuerpo" style="color:#4b443a" data-i="in.lede"></p>
+  </details>
   <div class="intgrid">
     <figure class="int-main"><img data-slot="int1" src="assets/int1.jpg" alt="" loading="lazy" decoding="async"></figure>
     <div class="int-side">
@@ -468,24 +579,35 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
 <section class="wrap offer">
   <span class="eyebrow" data-i="of.eyebrow"></span>
   <h2 style="font-size:clamp(2rem,5.5vw,3.6rem);max-width:24ch" data-i="of.title"></h2>
-  <p class="lede" style="margin-top:1.5rem;color:#e8d9dd" data-i="of.lede"></p>
+  <details class="mas">
+    <summary><span data-i="ui.mas">Leer más</span></summary>
+    <p class="lede cuerpo" style="color:#e8d9dd" data-i="of.lede"></p>
+  </details>
 
-  <div class="lines">
-    <article class="line reveal">
+  <div class="lines" data-grupo="of">
+    <article class="line reveal" data-bloque="o1">
       <span class="line-no" data-i="o1.n"></span><h3 data-i="o1.t"></h3>
-      <p data-i="o1.b"></p><ul data-list="o1.l"></ul><span class="tag" data-i="o1.g"></span>
+      <details class="mas"><summary><span data-i="ui.mas">Leer más</span></summary>
+        <div class="cuerpo"><p data-i="o1.b"></p><ul data-list="o1.l"></ul></div></details>
+      <span class="tag" data-i="o1.g"></span>
     </article>
-    <article class="line reveal">
+    <article class="line reveal" data-bloque="o2">
       <span class="line-no" data-i="o2.n"></span><h3 data-i="o2.t"></h3>
-      <p data-i="o2.b"></p><ul data-list="o2.l"></ul><span class="tag" data-i="o2.g"></span>
+      <details class="mas"><summary><span data-i="ui.mas">Leer más</span></summary>
+        <div class="cuerpo"><p data-i="o2.b"></p><ul data-list="o2.l"></ul></div></details>
+      <span class="tag" data-i="o2.g"></span>
     </article>
-    <article class="line reveal">
+    <article class="line reveal" data-bloque="o3">
       <span class="line-no" data-i="o3.n"></span><h3 data-i="o3.t"></h3>
-      <p data-i="o3.b"></p><ul data-list="o3.l"></ul><span class="tag" data-i="o3.g"></span>
+      <details class="mas"><summary><span data-i="ui.mas">Leer más</span></summary>
+        <div class="cuerpo"><p data-i="o3.b"></p><ul data-list="o3.l"></ul></div></details>
+      <span class="tag" data-i="o3.g"></span>
     </article>
-    <article class="line reveal">
+    <article class="line reveal" data-bloque="o4">
       <span class="line-no" data-i="o4.n"></span><h3 data-i="o4.t"></h3>
-      <p data-i="o4.b"></p><ul data-list="o4.l"></ul><span class="tag" data-i="o4.g"></span>
+      <details class="mas"><summary><span data-i="ui.mas">Leer más</span></summary>
+        <div class="cuerpo"><p data-i="o4.b"></p><ul data-list="o4.l"></ul></div></details>
+      <span class="tag" data-i="o4.g"></span>
     </article>
   </div>
 </section>
@@ -496,9 +618,14 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
     <div>
       <span class="eyebrow" data-i="co.eyebrow"></span>
       <p class="quote" data-i="co.quote"></p>
-      <p style="color:#c2b9a7" data-i="co.b1"></p>
-      <p style="color:#c2b9a7" data-i="co.b2"></p>
-      <p class="small" data-i="co.b3"></p>
+      <details class="mas">
+        <summary><span data-i="ui.mas">Leer más</span></summary>
+        <div class="cuerpo">
+          <p style="color:#c2b9a7" data-i="co.b1"></p>
+          <p style="color:#c2b9a7" data-i="co.b2"></p>
+          <p class="small" data-i="co.b3"></p>
+        </div>
+      </details>
     </div>
     <div class="duo-fig"><img data-slot="co" src="assets/co.jpg" alt="" loading="lazy" decoding="async"></div>
   </div>
@@ -513,27 +640,45 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
     <div>
       <span class="eyebrow" data-i="ws.eyebrow"></span>
       <h2 style="font-size:clamp(1.8rem,4.5vw,3rem);max-width:22ch" data-i="ws.title"></h2>
-      <p style="margin-top:1.3rem;color:#4b443a" data-i="ws.b1"></p>
-      <p style="color:#4b443a" data-i="ws.b2"></p>
+      <details class="mas" style="margin-top:.8rem">
+        <summary><span data-i="ui.mas">Leer más</span></summary>
+        <div class="cuerpo">
+          <p style="color:#4b443a" data-i="ws.b1"></p>
+          <p style="color:#4b443a" data-i="ws.b2"></p>
+        </div>
+      </details>
     </div>
   </div>
 
-  <h3 style="margin-top:clamp(3rem,7vw,5rem);font-size:clamp(1.4rem,3vw,2rem)" data-i="ficha.title"></h3>
-  <table class="tbl">
-    <thead><tr>
-      <th data-i="ficha.h1"></th><th data-i="ficha.h2"></th>
-      <th data-i="ficha.h3"></th><th data-i="ficha.h4"></th>
-    </tr></thead>
-    <tbody data-rows="ficha.rows"></tbody>
-  </table>
-  <p class="small" style="margin-top:1.2rem;max-width:60ch" data-i="ficha.note"></p>
+  <details class="mas" style="margin-top:clamp(2.5rem,6vw,4rem)">
+    <summary><span data-i="ui.tabla">Ver la tabla de diámetros</span></summary>
+    <div class="cuerpo">
+      <h3 style="font-size:clamp(1.4rem,3vw,2rem)" data-i="ficha.title"></h3>
+      <table class="tbl">
+        <thead><tr>
+          <th data-i="ficha.h1"></th><th data-i="ficha.h2"></th>
+          <th data-i="ficha.h3"></th><th data-i="ficha.h4"></th>
+        </tr></thead>
+        <tbody data-rows="ficha.rows"></tbody>
+      </table>
+      <p class="small" style="margin-top:1.2rem;max-width:60ch" data-i="ficha.note"></p>
+    </div>
+  </details>
 </section>
 
-<!-- ÁLBUM -->
-<section class="wrap album-inv">
+<!-- ÁLBUM · las obras publicadas, en tiras deslizables -->
+<section class="wrap album-inv" id="albumes">
   <span class="eyebrow" data-i="al.eyebrow"></span>
   <h2 style="font-size:clamp(2rem,5.5vw,3.4rem);max-width:26ch" data-i="al.title"></h2>
-  <p class="lede" style="margin-top:1.5rem;color:#c2b9a7" data-i="al.b"></p>
+  <details class="mas">
+    <summary><span data-i="ui.mas">Leer más</span></summary>
+    <p class="lede cuerpo" style="color:#c2b9a7" data-i="al.b"></p>
+  </details>
+
+  <div class="alb-lista" id="alb-lista">
+    <p class="alb-estado mono" id="alb-estado"></p>
+  </div>
+
   <a class="album-b" href="album.html"><span data-i="al.cta"></span> →</a>
 </section>
 
@@ -577,6 +722,18 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
   <span class="mono" data-i="foot.r"></span>
 </div>
 
+<div id="visor" class="hide">
+  <img id="v-img" alt="">
+  <div class="pie">
+    <div class="txt"><b id="v-tit"></b><span id="v-cap"></span></div>
+    <div class="nav">
+      <button type="button" id="v-prev" aria-label="Anterior">&lsaquo;</button>
+      <button type="button" id="v-next" aria-label="Siguiente">&rsaquo;</button>
+      <button type="button" id="v-close" aria-label="Cerrar">&#10005;</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ---------- content ---------- */
 const T = {
@@ -587,6 +744,13 @@ es:{
  "hero.k1":"Diámetros","hero.v1":"De 2 a 12 metros, a medida",
  "hero.k2":"Probado","hero.v2":"Aro central en eucalipto: 4 años y 2 desmontajes sin deformación",
  "hero.k3":"Base","hero.v3":"Uruguay · ocho años de vida y obra en Francia",
+
+ "ui.mas":"Leer más","ui.tabla":"Ver la tabla de diámetros",
+ "ui.verTodas":"Ver todas","ui.cerrar":"Cerrar",
+ "ui.albCargando":"Buscando los álbumes publicados…",
+ "ui.albVacio":"Todavía no hay álbumes publicados.",
+ "ui.fotos":"fotos","ui.sinEtapa":"otras",
+
 "in.eyebrow":"El interior",
  "in.title":"La estructura no se esconde: es la arquitectura.",
  "in.lede":"En una yurta de catálogo el techo se tapa. Acá la primera capa triangulada queda a la vista, y con las aberturas vidriadas integradas al trei la luz entra por los costados y por arriba. Es lo que no se puede explicar con una ficha técnica.",
@@ -686,6 +850,13 @@ fr:{
  "hero.k1":"Diamètres","hero.v1":"De 2 à 12 mètres, sur mesure",
  "hero.k2":"Éprouvé","hero.v2":"Anneau central en eucalyptus : 4 ans et 2 démontages sans déformation",
  "hero.k3":"Base","hero.v3":"Uruguay · huit ans de vie et de chantiers en France",
+
+ "ui.mas":"Lire la suite","ui.tabla":"Voir le tableau des diamètres",
+ "ui.verTodas":"Voir toutes","ui.cerrar":"Fermer",
+ "ui.albCargando":"Recherche des albums publiés…",
+ "ui.albVacio":"Aucun album publié pour le moment.",
+ "ui.fotos":"photos","ui.sinEtapa":"autres",
+
 "in.eyebrow":"L'intérieur",
  "in.title":"La structure ne se cache pas : elle est l'architecture.",
  "in.lede":"Dans une yourte de catalogue, le toit est masqué. Ici la première couche triangulée reste visible, et avec les ouvertures vitrées intégrées au trei la lumière entre par les côtés et par le haut. C'est ce qu'aucune fiche technique ne sait expliquer.",
@@ -803,6 +974,23 @@ function paint(lang){
   document.querySelectorAll(".lang button").forEach(b=>
     b.setAttribute("aria-pressed", String(b.dataset.set===lang)));
 }
+/* ---------- el orden de los bloques ----------
+   Los grupos que se pueden reordenar desde el editor llevan data-grupo, y
+   cada bloque de adentro data-bloque. El orden guardado es una lista de
+   identificadores separados por coma: "s3,s1,s2,s4,s5". Lo que no esté
+   nombrado queda donde estaba. Nunca se mueve una sección entera: sólo se
+   reordena dentro de un grupo, que es lo que no puede romper la página. */
+function aplicarOrden(orden){
+  Object.keys(orden||{}).forEach(g=>{
+    const cont=document.querySelector('[data-grupo="'+g+'"]'); if(!cont) return;
+    String(orden[g]).split(",").map(x=>x.trim()).filter(Boolean).forEach(id=>{
+      // :scope evita que la parte del ancestro se resuelva contra el documento
+      const el=cont.querySelector(':scope > [data-bloque="'+id+'"]');
+      if(el) cont.appendChild(el);
+    });
+  });
+}
+
 document.querySelectorAll(".lang button").forEach(b=>
   b.addEventListener("click",()=>{
     paint(b.dataset.set);
@@ -973,6 +1161,243 @@ const io=new IntersectionObserver(es=>es.forEach(e=>{
   if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}
 }),{rootMargin:"0px 0px -8% 0px"});
 document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
+
+/* ═══════════════════════════════════════════════════════════════
+   LOS ÁLBUMES PUBLICADOS, DENTRO DEL SITIO
+
+   Cada álbum marcado como público es una tira que se desliza con el
+   dedo. Tocando una foto se abre el visor con su leyenda; tocando el
+   título se despliegan todas las fotos del álbum con sus detalles.
+
+   Se lee por REST, igual que album.html y por la misma razón (§3.26):
+   el visitante no carga el SDK de Firebase para ver un catálogo. Y no
+   se pide nada hasta que la sección se acerca a la pantalla: quien no
+   baja hasta acá no gasta un byte en esto.
+
+   Nada se muestra sin marca explícita (§3.43): el álbum tiene que
+   tener 'publico' y la foto 'usar'.
+   ═══════════════════════════════════════════════════════════════ */
+(function () {
+  const FS = "https://firestore.googleapis.com/v1/projects/casayourte-mauro"
+           + "/databases/(default)/documents/";
+  const CLAVE = "AIzaSyDDD_xvpC4I_ec2OZymyDqVsm1K0ISTr4Q";
+  const CLOUD = "kbjqcnpa";
+  const EDITANDO = /[?&]edit=1/.test(location.search);
+
+  const seccion = document.getElementById("albumes");
+  const lista   = document.getElementById("alb-lista");
+  const estado  = document.getElementById("alb-estado");
+  if (!seccion || !lista) return;
+
+  const txt = (k) => (T[document.documentElement.lang] || T.es)[k] || "";
+  const mini = (pid, w) => "https://res.cloudinary.com/" + CLOUD
+    + "/image/upload/f_auto,q_auto,w_" + w + ",ar_4:3,c_fill,g_auto/" + pid;
+  const grande = (pid) => "https://res.cloudinary.com/" + CLOUD
+    + "/image/upload/f_auto,q_auto,w_1600,c_limit/" + pid;
+
+  /* ---------- REST ---------- */
+  function valor(v) {
+    if (!v || typeof v !== "object") return undefined;
+    if ("stringValue"  in v) return v.stringValue;
+    if ("booleanValue" in v) return v.booleanValue;
+    if ("integerValue" in v) return Number(v.integerValue);
+    if ("doubleValue"  in v) return v.doubleValue;
+    if ("nullValue"    in v) return null;
+    if ("arrayValue"   in v) return (v.arrayValue.values || []).map(valor);
+    if ("mapValue"     in v) return mapa(v.mapValue.fields || {});
+    return undefined;
+  }
+  function mapa(f) {
+    const o = {};
+    for (const k in f) { const x = valor(f[k]); if (x !== undefined) o[k] = x; }
+    return o;
+  }
+  async function traer(ruta) {
+    const r = await fetch(FS + ruta + "?key=" + CLAVE + "&pageSize=300", { cache: "no-store" });
+    if (!r.ok) throw new Error(r.status);
+    const j = await r.json();
+    return (j.documents || []).map((d) => ({ id: d.name.split("/").pop(), ...mapa(d.fields || {}) }));
+  }
+
+  /* ---------- categorías ----------
+     La lista vive en el álbum (§3.44). Los álbumes anteriores a la T37 no la
+     tienen: se muestra el identificador legible, que es lo que hay. */
+  const legible = (id) => String(id).replace(/^\d+-/, "").replace(/-/g, " ");
+  function nombreEtapa(a, id) {
+    if (!id) return "";
+    const e = (Array.isArray(a.etapas) ? a.etapas : []).find((x) => x && x.id === id);
+    if (!e) return legible(id);
+    return (document.documentElement.lang === "fr" ? (e.fr || e.es) : e.es) || legible(id);
+  }
+  const leyenda = (f) =>
+    (document.documentElement.lang === "fr" ? (f.cap_fr || f.cap_es) : f.cap_es) || "";
+  const alterno = (f) =>
+    (document.documentElement.lang === "fr" ? (f.alt_fr || f.alt_es) : f.alt_es) || "";
+
+  /* ---------- estado ---------- */
+  let ALB = [];        // álbumes con sus fotos
+  let planas = [];     // todas las fotos en orden, para el visor
+  let iVisor = 0;
+  let abiertos = {};   // qué álbumes están desplegados
+
+  /* ---------- pintar ---------- */
+  function pintar() {
+    if (!ALB.length) return;
+    lista.innerHTML = "";
+    planas = [];
+
+    ALB.forEach((a) => {
+      const art = document.createElement("article");
+      art.className = "alb-uno";
+      art.innerHTML =
+        '<button type="button" class="alb-cab">' +
+          '<h3 class="alb-tit"></h3>' +
+          '<span class="alb-meta"></span>' +
+          '<span class="alb-mas"></span>' +
+        '</button>' +
+        '<div class="alb-tira"></div>' +
+        '<div class="alb-rej hide"></div>';
+
+      art.querySelector(".alb-tit").textContent = a.titulo || a.id;
+      art.querySelector(".alb-meta").textContent =
+        [a.anio, a.diametro, a.lugar].filter(Boolean).join(" · ");
+
+      const tira = art.querySelector(".alb-tira");
+      const rej  = art.querySelector(".alb-rej");
+      const mas  = art.querySelector(".alb-mas");
+
+      // Cada foto entra una sola vez en la lista del visor, aunque se dibuje
+      // dos veces —en la tira y en la rejilla—: el índice es el mismo.
+      const indices = a.fotos.map((f) => {
+        const k = planas.length;
+        planas.push({ ...f, album: a.titulo || a.id, etapaTxt: nombreEtapa(a, f.etapa) });
+        return k;
+      });
+
+      a.fotos.slice(0, 14).forEach((f, i) => {
+        const b = document.createElement("button");
+        b.type = "button"; b.className = "alb-foto";
+        b.innerHTML = '<img loading="lazy" decoding="async" alt=""><span class="pie"></span>';
+        const im = b.querySelector("img");
+        im.src = mini(f.public_id, 520);
+        im.alt = alterno(f);
+        const pie = b.querySelector(".pie");
+        const l = leyenda(f);
+        if (l) pie.textContent = l; else pie.remove();
+        b.addEventListener("click", () => abrirVisor(indices[i]));
+        tira.appendChild(b);
+      });
+
+      a.fotos.forEach((f, i) => {
+        const b = document.createElement("button");
+        b.type = "button"; b.className = "alb-item";
+        b.innerHTML = '<span class="marco"><img loading="lazy" decoding="async" alt=""></span>'
+                    + '<span class="et"></span><span class="cap"></span>';
+        const im = b.querySelector("img");
+        im.src = mini(f.public_id, 420);
+        im.alt = alterno(f);
+        b.querySelector(".et").textContent = nombreEtapa(a, f.etapa) || txt("ui.sinEtapa");
+        const cap = b.querySelector(".cap");
+        const l = leyenda(f);
+        if (l) cap.textContent = l; else cap.remove();
+        b.addEventListener("click", () => abrirVisor(indices[i]));
+        rej.appendChild(b);
+      });
+
+      function rotular() {
+        const ab = !!abiertos[a.id];
+        rej.classList.toggle("hide", !ab);
+        tira.classList.toggle("hide", ab);
+        mas.textContent = ab ? txt("ui.cerrar")
+          : txt("ui.verTodas") + " · " + a.fotos.length + " " + txt("ui.fotos");
+      }
+      art.querySelector(".alb-cab").addEventListener("click", () => {
+        abiertos[a.id] = !abiertos[a.id];
+        rotular();
+      });
+      rotular();
+
+      lista.appendChild(art);
+    });
+  }
+
+  /* ---------- visor ---------- */
+  const visor = document.getElementById("visor");
+  function abrirVisor(i) {
+    if (EDITANDO || !planas.length) return;
+    iVisor = (i + planas.length) % planas.length;
+    const f = planas[iVisor];
+    document.getElementById("v-img").src = grande(f.public_id);
+    document.getElementById("v-img").alt = alterno(f);
+    document.getElementById("v-tit").textContent =
+      [f.album, f.etapaTxt].filter(Boolean).join(" · ");
+    document.getElementById("v-cap").textContent = leyenda(f);
+    if (visor.classList.contains("hide")) {
+      visor.classList.remove("hide");
+      document.body.style.overflow = "hidden";
+      // El botón Atrás de Android cierra el visor en lugar de salir del sitio.
+      history.pushState({ visor: 1 }, "");
+    }
+  }
+  function cerrarVisor(porAtras) {
+    visor.classList.add("hide");
+    document.body.style.overflow = "";
+    if (!porAtras && history.state && history.state.visor) history.back();
+  }
+  addEventListener("popstate", () => {
+    if (!visor.classList.contains("hide")) cerrarVisor(true);
+  });
+  document.getElementById("v-close").addEventListener("click", () => cerrarVisor());
+  document.getElementById("v-prev").addEventListener("click", () => abrirVisor(iVisor - 1));
+  document.getElementById("v-next").addEventListener("click", () => abrirVisor(iVisor + 1));
+  addEventListener("keydown", (e) => {
+    if (visor.classList.contains("hide")) return;
+    if (e.key === "Escape") cerrarVisor();
+    if (e.key === "ArrowLeft") abrirVisor(iVisor - 1);
+    if (e.key === "ArrowRight") abrirVisor(iVisor + 1);
+  });
+
+  /* ---------- traer ---------- */
+  let pedido = false;
+  async function cargar() {
+    if (pedido) return; pedido = true;
+    estado.textContent = txt("ui.albCargando");
+    try {
+      const todos = await traer("albums");
+      const publicos = todos.filter((a) => a.publico === true)
+        .sort((a, b) => String(b.anio || "").localeCompare(String(a.anio || ""))
+          || String(a.titulo || a.id).localeCompare(String(b.titulo || b.id), "es"));
+
+      ALB = [];
+      for (const a of publicos.slice(0, 8)) {
+        let fotos = [];
+        try { fotos = await traer("albums/" + a.id + "/fotos"); } catch (e) { fotos = []; }
+        fotos = fotos.filter((f) => !f.eliminada && f.usar === true && f.public_id)
+                     .sort((x, y) => (x.orden || 0) - (y.orden || 0));
+        if (fotos.length) ALB.push({ ...a, fotos });
+      }
+      if (!ALB.length) { estado.textContent = txt("ui.albVacio"); return; }
+      pintar();
+    } catch (e) {
+      // Sin álbumes el sitio sigue entero: la sección se queda con su invitación.
+      estado.textContent = txt("ui.albVacio");
+    }
+  }
+
+  // Se pide recién cuando la sección se acerca.
+  if ("IntersectionObserver" in window) {
+    const obs = new IntersectionObserver((es) => es.forEach((e) => {
+      if (e.isIntersecting) { obs.disconnect(); cargar(); }
+    }), { rootMargin: "600px 0px" });
+    obs.observe(seccion);
+  } else {
+    addEventListener("load", cargar);
+  }
+
+  // Al cambiar de idioma se vuelven a escribir las leyendas y los rótulos.
+  const _paint = paint;
+  paint = function (l) { _paint(l); if (ALB.length) pintar(); };
+})();
 </script>
 <script>
 /* ─────────────────────────────────────────────────────────────
@@ -1100,6 +1525,7 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
       .then(function (j) {
         if (j && j.textos) aplicarTextos(j.textos);
         if (j && j.reemplazos) aplicarImagenes(j.reemplazos);
+        if (j && j.orden) aplicarOrden(j.orden);
       });
   }
 
@@ -1109,6 +1535,7 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
       var d = mapa((j && j.fields) || {});
       if (!aplicarTextos(d)) throw 0;      // documento vacío: vale el respaldo
       aplicarImagenes(d.imagenes);
+      aplicarOrden(d.orden);
     })
     .catch(function () { return delRepositorio(); })
     .catch(function () { /* nivel 3: los textos de este archivo ya están puestos */ });
