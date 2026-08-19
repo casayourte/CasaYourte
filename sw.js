@@ -45,9 +45,10 @@
 // v21 (18-ago-2026) — las categorías de cada álbum se editan desde el panel.
 // v22 (18-ago-2026) — en la grilla, el tacho reemplaza al lápiz.
 // v23 (18-ago-2026) — la lista de categorías se dibuja: 'div div' se comía las filas.
+// v24 (19-ago-2026) — selección múltiple en la grilla: mostrar, mover y quitar.
 // v3 (10-ago-2026) — cambiaron admin.html y nucleo.js: entra la sección de
 //   contenido del sitio.
-const VERSION = 'cy-shell-v23';
+const VERSION = 'cy-shell-v24';
 
 const SHELL = [
   './admin.html',

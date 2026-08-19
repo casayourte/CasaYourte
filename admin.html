@@ -41,6 +41,16 @@
   background:var(--ink2);border-top:1px solid var(--line);padding:.55rem .8rem;
   display:flex;gap:.45rem;align-items:center}
 .dock select{flex:1;min-width:0}
+/* Barra de selección: se para en el mismo lugar que el dock y lo reemplaza
+   mientras haya fotos elegidas. Dos barras a la vez taparían la grilla. */
+.selbar{position:fixed;left:0;right:0;bottom:calc(var(--barra) + var(--safe));z-index:36;
+  background:var(--ink2);border-top:1px solid var(--line);padding:.55rem .8rem}
+.selbar .cab{display:flex;align-items:center;gap:.5rem;margin-bottom:.45rem}
+.selbar .cab .n{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--blond);flex:1}
+.selbar .acc{display:flex;gap:.4rem;flex-wrap:wrap}
+.selbar .acc .btn{flex:1 1 6.4rem;justify-content:center}
+.ph.sel{outline:2px solid var(--blond);outline-offset:-2px}
 .dock .btn{flex:none}
 #prog{position:fixed;inset:0;z-index:60;background:rgba(12,10,8,.94);display:grid;
   place-items:center;padding:1.4rem}
@@ -217,6 +227,21 @@
   </section>
 </div>
 
+<!-- BARRA DE SELECCIÓN -->
+<div class="selbar hide" id="selbar">
+  <div class="cab">
+    <span class="n" id="s-n"></span>
+    <button class="btn-mini" id="s-todas" style="font-size:.62rem">Todas</button>
+    <button class="btn-mini" id="s-nada" style="font-size:.62rem">Ninguna</button>
+  </div>
+  <div class="acc">
+    <button class="btn" id="s-ver"><span class="material-icons">visibility</span> Mostrar</button>
+    <button class="btn" id="s-ocu"><span class="material-icons">visibility_off</span> Ocultar</button>
+    <button class="btn" id="s-cat"><span class="material-icons">label</span> Categoría</button>
+    <button class="btn d" id="s-del"><span class="material-icons">delete_outline</span> Quitar</button>
+  </div>
+</div>
+
 <!-- UPLOAD DOCK -->
 <div class="dock hide" id="dock">
   <select id="d-etapa" aria-label="Etapa"></select>
@@ -250,7 +275,7 @@ import { CY } from "./nucleo.js";
 // Sello de ESTE archivo. El de nucleo.js no sirve para saber si admin.html
 // quedó viejo en la caché: son dos archivos distintos. Al cambiar el panel,
 // se sube este número.
-const PANEL = "admin-15";
+const PANEL = "admin-16";
 
 const CLOUD = CY.CLOUDINARY.cloud;
 const PRESET = CY.CLOUDINARY.preset;
@@ -279,6 +304,8 @@ const ETAPA_FR = {
 /* ===================== ESTADO ===================== */
 const $ = (id) => document.getElementById(id);
 let album = null, fotos = [], foto = null;
+const sel = new Set();   // ids de las fotos seleccionadas en la grilla
+let mostradas = [];      // las fotos que la grilla está dibujando ahora
 
 const slug = CY.slug;
 
@@ -306,7 +333,10 @@ function ver(v) {
   vistaActual = v;
   ["login","list","album","foto","edalb","cats","edet"]
     .forEach(x => $("v-"+x).classList.toggle("hide", x !== v));
-  $("dock").classList.toggle("hide", v !== "album" || !puede("fotos"));
+  // El dock cede el lugar a la barra de selección: es el mismo lugar.
+  $("dock").classList.toggle("hide",
+    v !== "album" || !puede("fotos") || sel.size > 0);
+  $("selbar").classList.toggle("hide", v !== "album" || sel.size === 0);
   $("back").classList.toggle("hide", v === "login" || v === "list");
   // En dos cuadros: uno para que el navegador aplique el cambio de vista y
   // sepa el alto real de la página, otro para poder desplazarse hasta ahí.
@@ -557,6 +587,7 @@ async function abrir(a) {
   $("a-titulo").textContent = a.titulo || a.id;
   opcionesEtapa($("d-etapa"), a);
   opcionesEtapa($("f-etapa"), a);
+  sel.clear();
   irA("album");
   await cargarFotos();
 }
@@ -569,6 +600,43 @@ async function cargarFotos() {
 }
 
 let verBorradas = false;
+
+/* ═══════════════════════════════════════════════════════════════
+   LA SELECCIÓN
+
+   La casilla de cada foto selecciona. Lo que antes hacía —mostrar en el
+   sitio— pasó a ser una acción de la barra de abajo, junto con quitar y
+   cambiar de categoría: son las tres cosas que se hacen de a montones.
+   Que una foto esté visible se sigue viendo en la grilla, porque las que no
+   lo están se dibujan apagadas, y se cambia de a una desde su ficha.
+
+   Las flechas, el número de posición y el orden de las categorías no tocan
+   la selección: son otra cosa y siguen funcionando igual.
+   ═══════════════════════════════════════════════════════════════ */
+function limpiarSel() { sel.clear(); pintarSel(); }
+
+function pintarSel() {
+  const n = sel.size;
+  $("s-n").textContent = n
+    ? `${n} seleccionada${n === 1 ? "" : "s"}`
+    : "";
+  $("selbar").classList.toggle("hide",
+    vistaActual !== "album" || verBorradas || n === 0);
+  $("dock").classList.toggle("hide",
+    vistaActual !== "album" || !puede("fotos") || n > 0);
+}
+
+const seleccionadas = () => mostradas.filter((f) => sel.has(f.id));
+
+// Firestore no acepta lotes de más de 500 escrituras. Un álbum puede tener
+// más fotos que eso, así que se corta y se manda por partes.
+async function enLotes(items, fn) {
+  for (let i = 0; i < items.length; i += 400) {
+    const lote = writeBatch(db);
+    items.slice(i, i + 400).forEach((x) => fn(lote, x));
+    await lote.commit();
+  }
+}
 
 // Repintar reconstruye la grilla entera, y eso pierde el scroll. Se guarda
 // antes y se restituye después, para que mover una foto con las flechas no
@@ -595,7 +663,12 @@ function pintarAlbum() {
   const vivas = fotos.filter((f) => !f.eliminada);
   const borradas = fotos.filter((f) => f.eliminada);
   const lista = verBorradas ? borradas : vivas;
+  mostradas = lista;
+  // Lo que se saca de la vista se saca de la selección: no se puede actuar
+  // sobre algo que no se está viendo.
+  [...sel].forEach((id) => { if (!lista.some((f) => f.id === id)) sel.delete(id); });
 
+  pintarSel();
   $("a-vacio").classList.toggle("hide", lista.length > 0);
   $("a-sub").textContent = [
     [album.anio, album.diametro, album.lugar].filter(Boolean).join(" · "),
@@ -723,20 +796,28 @@ function tarjetaFoto(f, i, grupo) {
     return el;
   }
 
-  // El tilde de «mostrar en el sitio» va acá, bajo la foto: es la decisión que
-  // más se toma y no tiene sentido entrar a la ficha de cada una para tomarla.
+  // La casilla selecciona. Las acciones sobre lo seleccionado están en la
+  // barra de abajo.
+  if (sel.has(f.id)) el.classList.add("sel");
   bar.innerHTML =
-    `<label class="usar" title="Mostrar esta foto en el sitio">
-       <input type="checkbox" ${f.usar ? "checked" : ""}>
-       <span class="material-icons">${f.usar ? "check_circle" : "radio_button_unchecked"}</span>
+    `<label class="usar" title="Seleccionar">
+       <input type="checkbox" ${sel.has(f.id) ? "checked" : ""}>
+       <span class="material-icons">${sel.has(f.id) ? "check_box" : "check_box_outline_blank"}</span>
      </label>
      <button class="pos" data-a="pos" aria-label="Mover a otra posición">${String(i + 1).padStart(2, "0")}</button>
      <button data-a="up" aria-label="Subir">↑</button>
      <button data-a="down" aria-label="Bajar">↓</button>
      <button data-a="del" aria-label="Quitar del álbum"><span class="material-icons"
        style="font-size:15px;vertical-align:-2px">delete_outline</span></button>`;
-  bar.querySelector(".usar input").addEventListener("change", (ev) =>
-    marcarUsar(f, ev.target.checked));
+  // Se cambia sólo esta tarjeta, sin repintar la grilla: con doscientas fotos
+  // repintar en cada toque se siente.
+  bar.querySelector(".usar input").addEventListener("change", (ev) => {
+    if (ev.target.checked) sel.add(f.id); else sel.delete(f.id);
+    el.classList.toggle("sel", ev.target.checked);
+    bar.querySelector(".usar .material-icons").textContent =
+      ev.target.checked ? "check_box" : "check_box_outline_blank";
+    pintarSel();
+  });
   // Las flechas mueven DENTRO del grupo: la etapa define la sección.
   bar.querySelector('[data-a="pos"]').addEventListener("click", () => pedirPosicion(grupo, f, i));
   bar.querySelector('[data-a="up"]').addEventListener("click", () => moverEn(grupo, i, -1));
@@ -770,13 +851,109 @@ async function aPapelera(f) {
 }
 
 /* ── el tilde del catálogo, sin salir de la grilla ── */
-async function marcarUsar(f, valor) {
+/* ── las acciones sobre lo seleccionado ──
+   Todas escriben en lote: o entran todas o no entra ninguna, y un corte de
+   señal no puede dejar la mitad de la selección aplicada. */
+async function accion(hacer, aviso) {
+  const l = seleccionadas();
+  if (!l.length) return;
+  const bs = [...$("selbar").querySelectorAll("button")];
+  bs.forEach((b) => { b.disabled = true; });
   try {
-    await updateDoc(doc(db, "albums", album.id, "fotos", f.id), { usar: valor });
-    f.usar = valor;
+    await hacer(l);
+    limpiarSel();
     conScroll(pintarAlbum);
-  } catch (e) { toast(CY.explicar(e), true); conScroll(pintarAlbum); }
+    toast(aviso(l.length));
+  } catch (e) { toast(CY.explicar(e), true); }
+  finally { bs.forEach((b) => { b.disabled = false; }); }
 }
+
+async function verSel(valor) {
+  await accion(async (l) => {
+    await enLotes(l, (lote, f) =>
+      lote.update(doc(db, "albums", album.id, "fotos", f.id), { usar: valor }));
+    l.forEach((f) => { f.usar = valor; });
+  }, (n) => valor
+    ? `${n} en el sitio`
+    : `${n} fuera del sitio`);
+}
+
+$("s-ver").addEventListener("click", () => verSel(true));
+$("s-ocu").addEventListener("click", () => verSel(false));
+
+$("s-nada").addEventListener("click", () => {
+  limpiarSel();
+  conScroll(pintarAlbum);
+});
+
+$("s-todas").addEventListener("click", () => {
+  mostradas.forEach((f) => sel.add(f.id));
+  conScroll(pintarAlbum);
+});
+
+$("s-del").addEventListener("click", () => {
+  const n = seleccionadas().length;
+  if (!n) return;
+  if (!confirm(`¿Quitar ${n} foto${n === 1 ? "" : "s"} del álbum?\n\n`
+    + "Van a la papelera y se pueden recuperar. Los archivos siguen en "
+    + "Cloudinary: el panel no puede borrarlos de ahí.")) return;
+  accion(async (l) => {
+    await enLotes(l, (lote, f) =>
+      lote.update(doc(db, "albums", album.id, "fotos", f.id), {
+        eliminada: true, eliminadaEn: serverTimestamp(), eliminadaPor: yo.email,
+        usar: false,
+      }));
+    l.forEach((f) => Object.assign(f, { eliminada: true, usar: false }));
+  }, (k) => `${k} a la papelera`);
+});
+
+/* ── cambiar de categoría en montón ──
+   Las fotos que llegan se ponen al final de la categoría de destino: es la
+   única posición que se puede prometer sin adivinar dónde las quiere. */
+$("s-cat").addEventListener("click", () => {
+  const l = seleccionadas();
+  if (!l.length) return;
+  const cats = etapasDe(album);
+  const hoja = document.createElement("dialog");
+  hoja.className = "cy-hoja";
+  hoja.innerHTML =
+    `<div class="cy-hoja-caja">
+       <div class="cy-hoja-tit">Mover ${l.length} foto${l.length === 1 ? "" : "s"}</div>
+       <p style="font-size:.84rem;color:var(--dim);margin:0 0 .8rem">
+         Van al final de la categoría que elijas.</p>
+       <select id="sc-e" aria-label="Categoría"></select>
+       <div style="display:flex;gap:.5rem;margin-top:.8rem">
+         <button class="cy-hoja-x" id="sc-no" style="flex:1">Cancelar</button>
+         <button class="btn p" id="sc-si" style="flex:1">Mover</button>
+       </div>
+     </div>`;
+  document.body.appendChild(hoja);
+  const selE = hoja.querySelector("#sc-e");
+  cats.forEach((e) => {
+    const o = document.createElement("option");
+    o.value = e.id; o.textContent = e.es || legible(e.id);
+    selE.appendChild(o);
+  });
+  hoja.showModal();
+  const cerrar = CY.capaAtras(() => {
+    try { if (hoja.open) hoja.close(); } catch (e) {}
+    hoja.remove();
+  });
+  hoja.querySelector("#sc-no").addEventListener("click", () => cerrar());
+  hoja.querySelector("#sc-si").addEventListener("click", () => {
+    const destino = selE.value;
+    cerrar();
+    accion(async (list) => {
+      let base = fotos.length ? Math.max(...fotos.map((f) => f.orden || 0)) : 0;
+      const nuevos = list.map((f) => ({ f, orden: (base += 10) }));
+      await enLotes(nuevos, (lote, x) =>
+        lote.update(doc(db, "albums", album.id, "fotos", x.f.id),
+          { etapa: destino, orden: x.orden }));
+      nuevos.forEach((x) => { x.f.etapa = destino; x.f.orden = x.orden; });
+      fotos.sort((a, b) => (a.orden || 0) - (b.orden || 0));
+    }, (k) => `${k} en «${nombreEt(destino)}»`);
+  });
+});
 
 /* ═══════════════════════════════════════════════════════════════
    REUBICAR ESCRIBIENDO EL NÚMERO
@@ -877,6 +1054,7 @@ $("a-publico").addEventListener("click", async () => {
 
 $("a-papelera").addEventListener("click", () => {
   verBorradas = !verBorradas;
+  sel.clear();   // en la papelera sólo se recupera, de a una
   // Al mostrar la papelera se agregan fotos al final y el alto cambia mucho:
   // ahí sí conviene ir al principio. Al cerrarla se mantiene el lugar.
   if (verBorradas) { pintarAlbum(); window.scrollTo(0, 0); }
