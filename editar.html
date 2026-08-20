@@ -133,7 +133,7 @@ button{cursor:pointer}
   </div>
 
   <div id="barra">
-    <span class="cuenta" id="cuenta">Tocá un texto o una foto · ▲▼ mueve el bloque</span>
+    <span class="cuenta" id="cuenta">Tocá un texto o una foto · ▲▼ mueve · ＋ agrega · ✕ quita</span>
     <button class="btn p" id="guardar">Publicar</button>
     <button class="btn" id="salir">✕</button>
   </div>
@@ -165,7 +165,7 @@ import { CY } from "./nucleo.js";
 const $ = (id) => document.getElementById(id);
 
 // Sello de este archivo, para saber si quedó viejo en la caché.
-const EDITOR = "editar-5";
+const EDITOR = "editar-6";
 CY.PANEL = EDITOR;
 
 /* ═══════════════════════════════════════════════════════════════
@@ -284,7 +284,7 @@ function contar() {
   if (or) partes.push(`${or} orden${or === 1 ? "" : "es"}`);
   c.textContent = total
     ? partes.join(" y ") + " sin publicar"
-    : "Tocá un texto o una foto · ▲▼ mueve el bloque";
+    : "Tocá un texto o una foto · ▲▼ mueve · ＋ agrega · ✕ quita";
   $("guardar").disabled = total === 0;
 }
 
@@ -344,31 +344,70 @@ function preparar() {
     .cy-ord button{background:none;border:0;color:#DCA96B;font-size:14px;line-height:1;
       padding:5px 8px;cursor:pointer;border-radius:999px;pointer-events:auto}
     .cy-ord button:disabled{opacity:.28}
+    .cy-ord button.quita{color:#E9A8B0}
     .cy-ord .n{min-width:16px;text-align:center;color:#A89E8C;letter-spacing:.06em}
+    .cy-ord .sep{width:1px;height:14px;background:#4A4238;margin:0 2px}
     details.mas{outline:1px dotted rgba(220,169,107,.35);outline-offset:4px}
   `;
   doc_.head.appendChild(st);
+
+  // Si el sitio subido es anterior a esta tanda no publica su contrato y no
+  // hay bloques que mover: mejor decirlo que dejar botones que no hacen nada.
+  if (pag === "index" && !contrato())
+    aviso("El index.html del sitio es de una versión anterior: subilo para poder "
+        + "mover, agregar o quitar bloques.", true);
+
+  // La lista guardada manda, pero primero se le suman los bloques que estén
+  // en el HTML y no en ella: si un día se agrega uno a mano, el editor lo ve
+  // y la próxima publicación lo incluye en lugar de borrarlo en silencio.
+  unirBloquesDelHtml();
+
+  // El orden, las altas y las bajas se aplican con el contrato de la página.
+  aplicarEstructura();
+
+  // El contenido que se está editando manda sobre lo que trajo la página.
+  pintarEnIframe();
+
+  // Todo lo que se puede tocar: textos, listas, imágenes y los controles.
+  cablear();
+
+  // El cuadro del proceso se pausa: si sigue avanzando, no se puede tocar
+  // una foto sin que cambie abajo del dedo. Los álbumes del sitio, igual.
+  const t = doc_.getElementById("proc-toggle");
+  if (t && t.textContent.trim().toLowerCase().startsWith("pau")) t.click();
+  doc_.querySelectorAll(".alb-ctl .pausa").forEach((b) => {
+    if (b.textContent.trim().toLowerCase().startsWith("pau")) b.click();
+  });
+
+  const fotos = doc_.querySelectorAll("img[data-slot]");
+  aviso(fotos.length
+    ? `Listo. ${fotos.length} imágenes y los textos se pueden tocar.`
+    : "Listo para editar.");
+  contar();
+}
+
+/* ---------- cablear lo que se puede tocar ----------
+   Se corre al abrir la página y otra vez cada vez que cambia la estructura.
+   Cada elemento lleva su marca —data-editable, data-cy— así que volver a
+   correrlo no ata dos veces el mismo escuchador. */
+function cablear() {
+  const cfg = PAGS[pag];
 
   // Todo lo desplegable se abre y se queda abierto: si se cerrara al tocar el
   // título, no habría forma de escribir adentro con el pulgar.
   doc_.querySelectorAll("details").forEach((d) => {
     d.open = true;
+    if (d.dataset.cy) return;
+    d.dataset.cy = "1";
     d.addEventListener("toggle", () => { if (!d.open) d.open = true; });
   });
-
-  // El orden guardado se aplica antes de poner los controles.
-  aplicarOrdenEnIframe();
-
-  // El contenido que se está editando manda sobre lo que trajo la página.
-  pintarEnIframe();
-
-  ponerFlechas();
 
   // Los textos: se editan tocándolos.
   doc_.querySelectorAll("[" + cfg.attr + "]").forEach((el) => {
     const clave = cfg.prefijo + el.getAttribute(cfg.attr);
     if (!(clave in CONT[idioma])) return;
     if (Array.isArray(CONT[idioma][clave])) return;   // listas y tablas, aparte
+    if (el.dataset.editable === clave) return;        // ya está atado
     el.dataset.editable = clave;
     el.setAttribute("contenteditable", "true");
     el.setAttribute("spellcheck", "false");
@@ -385,6 +424,8 @@ function preparar() {
   // Las listas y la tabla se editan en una hoja aparte: tocar celda por celda
   // dentro de la página, en un celular, se rompe sola.
   doc_.querySelectorAll("[data-list],[data-rows]").forEach((el) => {
+    if (el.dataset.cy) return;
+    el.dataset.cy = "1";
     el.style.outline = "1px dashed rgba(220,169,107,.75)";
     el.style.cursor = "pointer";
     el.addEventListener("click", (ev) => {
@@ -395,23 +436,16 @@ function preparar() {
   });
 
   // Las imágenes: se tocan y se elige otra.
-  const fotos = doc_.querySelectorAll("img[data-slot]");
-  fotos.forEach((im) => {
+  doc_.querySelectorAll("img[data-slot]").forEach((im) => {
+    if (im.dataset.cy) return;
+    im.dataset.cy = "1";
     im.addEventListener("click", (ev) => {
       ev.preventDefault(); ev.stopPropagation();
       abrirHoja(im.dataset.slot);
     }, true);
   });
 
-  // El cuadro del proceso se pausa: si sigue avanzando, no se puede tocar
-  // una foto sin que cambie abajo del dedo.
-  const t = doc_.getElementById("proc-toggle");
-  if (t && t.textContent.trim().toLowerCase().startsWith("pau")) t.click();
-
-  aviso(fotos.length
-    ? `Listo. ${fotos.length} imágenes y los textos se pueden tocar.`
-    : "Listo para editar.");
-  contar();
+  ponerFlechas();
 }
 
 /* ---------- mover un bloque ----------
@@ -426,15 +460,115 @@ function preparar() {
 
 const bloquesDe = (cont) => [...cont.querySelectorAll(":scope > [data-bloque]")];
 
-function aplicarOrdenEnIframe() {
-  Object.keys(CONT.orden || {}).forEach((g) => {
-    const cont = doc_.querySelector('[data-grupo="' + g + '"]');
-    if (!cont) return;
-    String(CONT.orden[g]).split(",").map(x => x.trim()).filter(Boolean).forEach((id) => {
-      const el = cont.querySelector(':scope > [data-bloque="' + id + '"]');
-      if (el) cont.appendChild(el);   // los nombrados quedan en ese orden
+/* La página publica lo que el editor puede llamar: window.CY_SITIO. Es un
+   contrato declarado, no un interno del que colgarse. Armar un bloque nuevo
+   —copiar el molde, renombrar sus claves, darle su lugar de imagen— tiene
+   que estar escrito una sola vez, y el lugar donde va es la página, que es
+   la que sabe cómo está hecha. */
+const contrato = () => {
+  const w = $("vista").contentWindow;
+  return (w && w.CY_SITIO) || null;
+};
+
+const infoGrupo = (g) => ((contrato() || {}).GRUPOS || {})[g] || null;
+
+function aplicarEstructura() {
+  const c = contrato();
+  if (!c) return;                    // album.html no tiene grupos: no hay nada que hacer
+  c.aplicarOrden(CONT.orden || {});
+}
+
+// Los bloques que estén en el HTML y no en la lista guardada se suman al
+// final. Nunca al revés: una lista vieja no puede hacer desaparecer algo
+// que el archivo trae (§3.35).
+function unirBloquesDelHtml() {
+  const c = contrato(); if (!c) return;
+  Object.keys(c.GRUPOS).forEach((g) => {
+    const enHtml = c.ids(g);
+    if (!enHtml.length) return;
+    const guardada = String(CONT.orden[g] || "").split(",").map(x => x.trim()).filter(Boolean);
+    if (!guardada.length) {
+      // Primera vez: la lista sale del propio HTML. Eso no es un cambio que
+      // haya hecho nadie, así que también se escribe en el original y el
+      // contador no marca nada pendiente.
+      CONT.orden[g] = enHtml.join(",");
+      ORIG.orden[g] = enHtml.join(",");
+      return;
+    }
+    const union = guardada.concat(enHtml.filter((id) => !guardada.includes(id)));
+    if (union.join(",") !== guardada.join(",")) CONT.orden[g] = union.join(",");
+  });
+}
+
+// El identificador nuevo es el número siguiente al más alto que se haya
+// usado alguna vez, mirando los textos: así no se reviven las claves de un
+// bloque que se quitó.
+function idNuevo(g) {
+  const info = infoGrupo(g); if (!info) return null;
+  const re = new RegExp("^" + info.prefijo + "(\\d+)\\.");
+  let max = 0;
+  ["es", "fr"].forEach((l) => Object.keys(CONT[l]).forEach((k) => {
+    const m = re.exec(k); if (m) max = Math.max(max, Number(m[1]));
+  }));
+  String(CONT.orden[g] || "").split(",").forEach((id) => {
+    const m = new RegExp("^" + info.prefijo + "(\\d+)$").exec(id.trim());
+    if (m) max = Math.max(max, Number(m[1]));
+  });
+  return info.prefijo + (max + 1);
+}
+
+/* El bloque nace con algo escrito en cada campo, en los dos idiomas. No es
+   decoración: un elemento vacío mide cero y no hay forma de tocarlo con el
+   pulgar para escribirle adentro. */
+const SEMILLA = {
+  traj: { es:{ yr:"Año", t:"Título nuevo", b:"Texto nuevo." },
+          fr:{ yr:"Année", t:"Nouveau titre", b:"Nouveau texte." } },
+  dif:  { es:{ s:"Dato técnico", t:"Título nuevo", b:"Texto nuevo." },
+          fr:{ s:"Donnée technique", t:"Nouveau titre", b:"Nouveau texte." } },
+  of:   { es:{ n:"Línea", t:"Título nuevo", b:"Texto nuevo.", g:"Etiqueta",
+               l:["Primer punto"] },
+          fr:{ n:"Ligne", t:"Nouveau titre", b:"Nouveau texte.", g:"Étiquette",
+               l:["Premier point"] } },
+};
+
+function agregarBloque(g, despuesDe) {
+  const info = infoGrupo(g); if (!info) return;
+  const id = idNuevo(g);
+  ["es", "fr"].forEach((l) => {
+    const sem = ((SEMILLA[g] || {})[l]) || {};
+    info.claves.forEach((k) => { CONT[l][id + "." + k] = sem[k] !== undefined ? sem[k] : "Texto"; });
+    (info.listas || []).forEach((k) => {
+      CONT[l][id + "." + k] = Array.isArray(sem[k]) ? [...sem[k]] : ["Punto"];
     });
   });
+  const lista = String(CONT.orden[g] || "").split(",").map(x => x.trim()).filter(Boolean);
+  const i = lista.indexOf(despuesDe);
+  lista.splice(i < 0 ? lista.length : i + 1, 0, id);
+  CONT.orden[g] = lista.join(",");
+  rehacer();
+  aviso("Bloque agregado" + (info.slot ? ". Tocá el marco para elegirle una foto." : "."));
+}
+
+function quitarBloque(g, id) {
+  if (!confirm("¿Quitar este bloque del sitio?\n\nSus textos quedan guardados: si lo volvés "
+             + "a agregar, vuelven con él.")) return;
+  const lista = String(CONT.orden[g] || "").split(",").map(x => x.trim()).filter(Boolean);
+  const i = lista.indexOf(id);
+  if (i < 0) return;
+  if (lista.length === 1) return aviso("Un grupo no puede quedar sin ningún bloque", true);
+  lista.splice(i, 1);
+  CONT.orden[g] = lista.join(",");
+  rehacer();
+  aviso("Bloque quitado. Falta publicar.");
+}
+
+// Después de cualquier cambio de estructura: se reconstruye la página, se le
+// escribe el contenido y se vuelve a cablear lo que se puede tocar.
+function rehacer() {
+  aplicarEstructura();
+  pintarEnIframe();
+  cablear();
+  contar();
 }
 
 function numerar(cont) {
@@ -445,6 +579,7 @@ function numerar(cont) {
     c.querySelector(".n").textContent = (i + 1) + "/" + hijos.length;
     c.querySelector(".sube").disabled = i === 0;
     c.querySelector(".baja").disabled = i === hijos.length - 1;
+    c.querySelector(".quita").disabled = hijos.length === 1;
   });
 }
 
@@ -471,10 +606,16 @@ function ponerFlechas() {
       c.className = "cy-ord";
       c.innerHTML = '<button type="button" class="sube" aria-label="Subir">&#9650;</button>'
                   + '<span class="n"></span>'
-                  + '<button type="button" class="baja" aria-label="Bajar">&#9660;</button>';
+                  + '<button type="button" class="baja" aria-label="Bajar">&#9660;</button>'
+                  + '<span class="sep"></span>'
+                  + '<button type="button" class="suma" aria-label="Agregar otro">&#65291;</button>'
+                  + '<button type="button" class="quita" aria-label="Quitar">&#10005;</button>';
       c.addEventListener("click", (ev) => {
         const b = ev.target.closest("button"); if (!b) return;
         ev.preventDefault(); ev.stopPropagation();
+        const g = cont.dataset.grupo, id = el.dataset.bloque;
+        if (b.classList.contains("suma")) return agregarBloque(g, id);
+        if (b.classList.contains("quita")) return quitarBloque(g, id);
         mover(cont, el, b.classList.contains("sube") ? -1 : 1);
       }, true);
       el.insertBefore(c, el.firstChild);

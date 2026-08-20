@@ -329,19 +329,31 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
 .alb-mas{font-family:var(--mono);font-size:.6rem;letter-spacing:.13em;text-transform:uppercase;
   color:#a89e8c;border-bottom:1px solid #4a4238;padding-bottom:.15rem}
 .alb-cab:hover .alb-mas{color:var(--wool);border-color:var(--blond)}
-/* La tira se desliza con el dedo: un álbum por gesto, sin controles. */
-.alb-tira{display:flex;gap:.5rem;overflow-x:auto;overscroll-behavior-x:contain;
-  scroll-snap-type:x mandatory;margin-top:1rem;padding-bottom:.5rem;
-  -webkit-overflow-scrolling:touch;scrollbar-width:none}
-.alb-tira::-webkit-scrollbar{display:none}
-.alb-foto{flex:0 0 min(78vw,340px);scroll-snap-align:center;aspect-ratio:4/3;position:relative;
-  padding:0;overflow:hidden;background:var(--ink-2);border:1px solid #3b342c;cursor:zoom-in}
-.alb-foto img{transition:transform .5s cubic-bezier(.2,.7,.2,1)}
-.alb-foto:hover img{transform:scale(1.04)}
-.alb-foto .pie{position:absolute;left:0;right:0;bottom:0;padding:1.6rem .7rem .6rem;
-  text-align:left;font-size:.8rem;line-height:1.35;color:var(--wool);
-  background:linear-gradient(180deg,rgba(12,10,8,0),rgba(12,10,8,.9));
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+/* El álbum pasa solo, con desvanecimiento, y se puede tomar el control.
+   Es el mismo cuadro del proceso: una sola caja, las fotos superpuestas y
+   la que toca con opacidad 1. Sin deslizamiento horizontal, que en un
+   celular pelea con el desplazamiento de la página. */
+.alb-caja{margin:1rem 0 0}
+.alb-stage{position:relative;aspect-ratio:4/3;overflow:hidden;background:#0E0C0A;
+  border:1px solid #3b342c;cursor:zoom-in}
+.alb-stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+  opacity:0;transition:opacity .9s ease}
+.alb-stage img.on{opacity:1}
+.alb-bar{display:flex;gap:3px;margin-top:.5rem}
+.alb-bar i{flex:1;height:2px;background:#3b342c;cursor:pointer;transition:background .3s}
+.alb-bar i.on{background:var(--blond)}
+.alb-pie{display:flex;gap:.7rem;align-items:baseline;margin-top:.8rem;min-height:2.8em}
+.alb-et{font-family:var(--mono);font-size:.58rem;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--blond);flex:none;padding-top:.2rem;max-width:11ch}
+.alb-cap{font-size:.88rem;color:#c2b9a7;line-height:1.45}
+.alb-ctl{display:flex;gap:.4rem;margin-top:.5rem;align-items:center}
+.alb-ctl button{font-family:var(--mono);font-size:.62rem;letter-spacing:.12em;
+  text-transform:uppercase;background:none;border:1px solid #4a4238;color:#a89e8c;
+  padding:.45rem .75rem;border-radius:2px;cursor:pointer;min-width:2.6rem}
+.alb-ctl button:hover{border-color:var(--blond);color:var(--wool)}
+.alb-n{font-family:var(--mono);font-size:.58rem;letter-spacing:.12em;color:#8d8474;
+  margin-left:auto}
+@media(prefers-reduced-motion:reduce){.alb-stage img{transition:none}}
 .alb-rej{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
   gap:.9rem .5rem;margin-top:1rem}
 @media(min-width:900px){.alb-rej{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}}
@@ -750,6 +762,7 @@ es:{
  "ui.albCargando":"Buscando los álbumes publicados…",
  "ui.albVacio":"Todavía no hay álbumes publicados.",
  "ui.fotos":"fotos","ui.sinEtapa":"otras",
+ "ui.pausa":"Pausa","ui.seguir":"Seguir",
 
 "in.eyebrow":"El interior",
  "in.title":"La estructura no se esconde: es la arquitectura.",
@@ -856,6 +869,7 @@ fr:{
  "ui.albCargando":"Recherche des albums publiés…",
  "ui.albVacio":"Aucun album publié pour le moment.",
  "ui.fotos":"photos","ui.sinEtapa":"autres",
+ "ui.pausa":"Pause","ui.seguir":"Reprendre",
 
 "in.eyebrow":"L'intérieur",
  "in.title":"La structure ne se cache pas : elle est l'architecture.",
@@ -974,22 +988,95 @@ function paint(lang){
   document.querySelectorAll(".lang button").forEach(b=>
     b.setAttribute("aria-pressed", String(b.dataset.set===lang)));
 }
-/* ---------- el orden de los bloques ----------
-   Los grupos que se pueden reordenar desde el editor llevan data-grupo, y
-   cada bloque de adentro data-bloque. El orden guardado es una lista de
-   identificadores separados por coma: "s3,s1,s2,s4,s5". Lo que no esté
-   nombrado queda donde estaba. Nunca se mueve una sección entera: sólo se
-   reordena dentro de un grupo, que es lo que no puede romper la página. */
+/* ---------- los bloques repetibles ----------
+   Tres grupos de la página son listas de lo mismo: la trayectoria, los
+   diferenciales y las líneas de oferta. Cada uno lleva data-grupo en su
+   contenedor y data-bloque en cada elemento.
+
+   Lo que se guarda es la lista de identificadores, en orden:
+   "s3,s1,s2,s6". Esa lista MANDA: lo que no está en ella no se muestra, y
+   lo que está y no existe en el HTML se construye copiando el primer
+   bloque del grupo y cambiando sus claves. Así el editor puede mover,
+   agregar y quitar sin tocar este archivo.
+
+   Consecuencia que hay que tener presente: si alguna vez se agrega un
+   bloque a mano acá, hay que agregarlo también desde el editor, o la
+   lista guardada lo va a dejar afuera.
+
+   El número del identificador es también el de la imagen: s7 usa el
+   lugar traj7, d9 usa dif9. Un nombre, un lugar, un archivo. */
+const GRUPOS = {
+  traj: { prefijo:"s", slot:"traj", claves:["yr","t","b"], listas:[] },
+  dif:  { prefijo:"d", slot:"dif",  claves:["s","t","b"],  listas:[] },
+  of:   { prefijo:"o", slot:null,   claves:["n","t","b","g"], listas:["l"] },
+};
+
+// Un pixel transparente: el bloque nuevo se ve como un marco vacío y se
+// puede tocar para elegirle una foto.
+const VACIA = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
+
+// El molde se toma al cargar la página, antes de que nadie la toque.
+const MOLDE = {};
+Object.keys(GRUPOS).forEach(g=>{
+  const cont=document.querySelector('[data-grupo="'+g+'"]');
+  if(!cont) return;
+  const uno=cont.querySelector(':scope > [data-bloque]');
+  if(uno) MOLDE[g]=uno.cloneNode(true);
+});
+
+const numeroDe = (id) => (String(id).match(/\d+$/) || ["0"])[0];
+
+function crearBloque(g,id){
+  const molde=MOLDE[g]; if(!molde) return null;
+  const el=molde.cloneNode(true);
+  el.dataset.bloque=id;
+  // La animación de entrada no corre sobre algo que se agrega después: sin
+  // esto el bloque nuevo se quedaría invisible para siempre.
+  el.classList.remove("reveal","in");
+  // Restos del editor, por si el molde se hubiera copiado ya intervenido.
+  el.querySelectorAll(".cy-ord").forEach(x=>x.remove());
+  el.querySelectorAll("[contenteditable]").forEach(x=>{
+    x.removeAttribute("contenteditable"); delete x.dataset.editable;
+  });
+  el.querySelectorAll("[data-i]").forEach(x=>{
+    x.dataset.i = id + "." + x.dataset.i.split(".").slice(1).join(".");
+    x.textContent = "";                    // el texto lo pone el contenido
+  });
+  el.querySelectorAll("[data-list]").forEach(x=>{
+    x.dataset.list = id + "." + x.dataset.list.split(".").slice(1).join(".");
+    x.innerHTML = "";
+  });
+  const im=el.querySelector("img[data-slot]");
+  if(im){
+    if(GRUPOS[g].slot){ im.dataset.slot = GRUPOS[g].slot + numeroDe(id); im.src = VACIA; im.alt=""; }
+    else im.remove();
+  }
+  return el;
+}
+
 function aplicarOrden(orden){
-  Object.keys(orden||{}).forEach(g=>{
+  Object.keys(GRUPOS).forEach(g=>{
     const cont=document.querySelector('[data-grupo="'+g+'"]'); if(!cont) return;
-    String(orden[g]).split(",").map(x=>x.trim()).filter(Boolean).forEach(id=>{
+    const lista=((orden||{})[g]||"").split(",").map(x=>x.trim()).filter(Boolean);
+    if(!lista.length) return;              // sin lista guardada, queda el HTML
+    lista.forEach(id=>{
       // :scope evita que la parte del ancestro se resuelva contra el documento
-      const el=cont.querySelector(':scope > [data-bloque="'+id+'"]');
+      let el=cont.querySelector(':scope > [data-bloque="'+id+'"]');
+      if(!el) el=crearBloque(g,id);
       if(el) cont.appendChild(el);
+    });
+    [...cont.querySelectorAll(':scope > [data-bloque]')].forEach(el=>{
+      if(!lista.includes(el.dataset.bloque)) el.remove();
     });
   });
 }
+
+/* Lo único que el editor puede llamar de esta página. Es un contrato
+   declarado a propósito, no un interno del que colgarse: si mañana cambia
+   la forma de armar un bloque, cambia acá y el editor no se entera. */
+window.CY_SITIO = { version:1, GRUPOS, aplicarOrden,
+  ids:(g)=>{ const c=document.querySelector('[data-grupo="'+g+'"]');
+    return c ? [...c.querySelectorAll(':scope > [data-bloque]')].map(x=>x.dataset.bloque) : []; } };
 
 document.querySelectorAll(".lang button").forEach(b=>
   b.addEventListener("click",()=>{
@@ -1239,12 +1326,23 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
   let planas = [];     // todas las fotos en orden, para el visor
   let iVisor = 0;
   let abiertos = {};   // qué álbumes están desplegados
+  let pases = [];      // un pase de fotos por álbum
+  let visorAbierto = false;
 
-  /* ---------- pintar ---------- */
+  /* ---------- pintar ----------
+     Cada álbum es un cuadro que pasa solo, con desvanecimiento, y tres
+     botones: anterior, pausa y siguiente. Avanza únicamente mientras
+     está en pantalla —si el visitante está leyendo otra parte, se
+     detiene y no gasta datos— y las fotos se cargan de a una, nunca
+     todas juntas. */
+  const CADA = 4200;
+
   function pintar() {
     if (!ALB.length) return;
     lista.innerHTML = "";
     planas = [];
+    pases.forEach(p => p.parar());
+    pases = [];
 
     ALB.forEach((a) => {
       const art = document.createElement("article");
@@ -1255,39 +1353,95 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
           '<span class="alb-meta"></span>' +
           '<span class="alb-mas"></span>' +
         '</button>' +
-        '<div class="alb-tira"></div>' +
+        '<figure class="alb-caja">' +
+          '<div class="alb-stage"></div>' +
+          '<div class="alb-bar"></div>' +
+          '<figcaption class="alb-pie"><span class="alb-et"></span>' +
+            '<span class="alb-cap"></span></figcaption>' +
+          '<div class="alb-ctl">' +
+            '<button type="button" class="atras" aria-label="Anterior">&lsaquo;</button>' +
+            '<button type="button" class="pausa"></button>' +
+            '<button type="button" class="sigue" aria-label="Siguiente">&rsaquo;</button>' +
+            '<span class="alb-n"></span>' +
+          '</div>' +
+        '</figure>' +
         '<div class="alb-rej hide"></div>';
 
       art.querySelector(".alb-tit").textContent = a.titulo || a.id;
       art.querySelector(".alb-meta").textContent =
         [a.anio, a.diametro, a.lugar].filter(Boolean).join(" · ");
 
-      const tira = art.querySelector(".alb-tira");
-      const rej  = art.querySelector(".alb-rej");
-      const mas  = art.querySelector(".alb-mas");
+      const caja  = art.querySelector(".alb-caja");
+      const stage = art.querySelector(".alb-stage");
+      const bar   = art.querySelector(".alb-bar");
+      const rej   = art.querySelector(".alb-rej");
+      const mas   = art.querySelector(".alb-mas");
 
       // Cada foto entra una sola vez en la lista del visor, aunque se dibuje
-      // dos veces —en la tira y en la rejilla—: el índice es el mismo.
+      // dos veces —en el cuadro y en la rejilla—: el índice es el mismo.
       const indices = a.fotos.map((f) => {
         const k = planas.length;
         planas.push({ ...f, album: a.titulo || a.id, etapaTxt: nombreEtapa(a, f.etapa) });
         return k;
       });
 
-      a.fotos.slice(0, 14).forEach((f, i) => {
-        const b = document.createElement("button");
-        b.type = "button"; b.className = "alb-foto";
-        b.innerHTML = '<img loading="lazy" decoding="async" alt=""><span class="pie"></span>';
-        const im = b.querySelector("img");
-        im.src = mini(f.public_id, 520);
-        im.alt = alterno(f);
-        const pie = b.querySelector(".pie");
-        const l = leyenda(f);
-        if (l) pie.textContent = l; else pie.remove();
-        b.addEventListener("click", () => abrirVisor(indices[i]));
-        tira.appendChild(b);
+      const imgs = [], ticks = [];
+      a.fotos.forEach((f, i) => {
+        const im = document.createElement("img");
+        im.decoding = "async"; im.alt = alterno(f);
+        im.dataset.src = mini(f.public_id, 900);   // se carga cuando le toca
+        stage.appendChild(im); imgs.push(im);
+        const t = document.createElement("i"); t.dataset.va = i;
+        bar.appendChild(t); ticks.push(t);
       });
 
+      const pase = {
+        cur: 0, timer: null, visible: false, manual: false,
+        cargar(i) { const im = imgs[i]; if (im && !im.src && im.dataset.src) im.src = im.dataset.src; },
+        ver(i) {
+          const n = imgs.length; if (!n) return;
+          this.cur = (i + n) % n;
+          this.cargar(this.cur); this.cargar((this.cur + 1) % n);
+          imgs.forEach((im, k) => im.classList.toggle("on", k === this.cur));
+          ticks.forEach((t, k) => t.classList.toggle("on", k === this.cur));
+          const f = a.fotos[this.cur];
+          art.querySelector(".alb-et").textContent = nombreEtapa(a, f.etapa) || txt("ui.sinEtapa");
+          art.querySelector(".alb-cap").textContent = leyenda(f);
+          art.querySelector(".alb-n").textContent = (this.cur + 1) + "/" + n;
+        },
+        parar() { if (this.timer) clearInterval(this.timer); this.timer = null; },
+        /* Un solo lugar decide si el pase corre. Pasa solo si está en
+           pantalla, si nadie tocó Pausa, si el álbum no está desplegado y
+           si el visor está cerrado. El botón dice lo que decidió la
+           persona, no lo que hace el reloj: salirse de la pantalla no
+           tiene por qué escribir «Seguir» en un botón que nadie tocó. */
+        correr() {
+          const debe = this.visible && !this.manual && !abiertos[a.id]
+                    && !visorAbierto && imgs.length > 1;
+          if (debe && !this.timer) this.timer = setInterval(() => this.ver(this.cur + 1), CADA);
+          if (!debe) this.parar();
+          const b = art.querySelector(".pausa");
+          if (b) b.textContent = this.manual ? txt("ui.seguir") : txt("ui.pausa");
+        },
+      };
+      pases.push(pase);
+
+      art.querySelector(".alb-ctl").addEventListener("click", (e) => {
+        const b = e.target.closest("button"); if (!b) return;
+        if (b.classList.contains("pausa")) { pase.manual = !pase.manual; pase.correr(); }
+        else {
+          // Tomar el control con las flechas detiene el pase automático.
+          pase.manual = true; pase.correr();
+          pase.ver(pase.cur + (b.classList.contains("atras") ? -1 : 1));
+        }
+      });
+      bar.addEventListener("click", (e) => {
+        const t = e.target.closest("i"); if (!t) return;
+        pase.manual = true; pase.correr(); pase.ver(Number(t.dataset.va));
+      });
+      stage.addEventListener("click", () => abrirVisor(indices[pase.cur]));
+
+      // Rejilla desplegada: todas las fotos con su categoría y su detalle.
       a.fotos.forEach((f, i) => {
         const b = document.createElement("button");
         b.type = "button"; b.className = "alb-item";
@@ -1307,17 +1461,25 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
       function rotular() {
         const ab = !!abiertos[a.id];
         rej.classList.toggle("hide", !ab);
-        tira.classList.toggle("hide", ab);
+        caja.classList.toggle("hide", ab);
         mas.textContent = ab ? txt("ui.cerrar")
           : txt("ui.verTodas") + " · " + a.fotos.length + " " + txt("ui.fotos");
+        pase.correr();
       }
       art.querySelector(".alb-cab").addEventListener("click", () => {
         abiertos[a.id] = !abiertos[a.id];
         rotular();
       });
-      rotular();
 
       lista.appendChild(art);
+      pase.ver(0); rotular();
+
+      if ("IntersectionObserver" in window) {
+        const ob = new IntersectionObserver((es) => es.forEach((e) => {
+          pase.visible = e.isIntersecting; pase.correr();
+        }), { threshold: 0.25 });
+        ob.observe(caja);
+      } else { pase.visible = true; pase.correr(); }
     });
   }
 
@@ -1334,6 +1496,7 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
     document.getElementById("v-cap").textContent = leyenda(f);
     if (visor.classList.contains("hide")) {
       visor.classList.remove("hide");
+      visorAbierto = true; pases.forEach(p => p.correr());
       document.body.style.overflow = "hidden";
       // El botón Atrás de Android cierra el visor en lugar de salir del sitio.
       history.pushState({ visor: 1 }, "");
@@ -1341,6 +1504,7 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
   }
   function cerrarVisor(porAtras) {
     visor.classList.add("hide");
+    visorAbierto = false; pases.forEach(p => p.correr());
     document.body.style.overflow = "";
     if (!porAtras && history.state && history.state.visor) history.back();
   }
@@ -1524,8 +1688,8 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
       .then(function (r) { if (!r.ok) throw 0; return r.json(); })
       .then(function (j) {
         if (j && j.textos) aplicarTextos(j.textos);
-        if (j && j.reemplazos) aplicarImagenes(j.reemplazos);
         if (j && j.orden) aplicarOrden(j.orden);
+        if (j && j.reemplazos) aplicarImagenes(j.reemplazos);
       });
   }
 
@@ -1534,8 +1698,8 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
     .then(function (j) {
       var d = mapa((j && j.fields) || {});
       if (!aplicarTextos(d)) throw 0;      // documento vacío: vale el respaldo
-      aplicarImagenes(d.imagenes);
       aplicarOrden(d.orden);
+      aplicarImagenes(d.imagenes);
     })
     .catch(function () { return delRepositorio(); })
     .catch(function () { /* nivel 3: los textos de este archivo ya están puestos */ });
