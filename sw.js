@@ -46,13 +46,21 @@
 // v22 (18-ago-2026) — en la grilla, el tacho reemplaza al lápiz.
 // v23 (18-ago-2026) — la lista de categorías se dibuja: 'div div' se comía las filas.
 // v24 (19-ago-2026) — selección múltiple en la grilla: mostrar, mover y quitar.
-// v3 (10-ago-2026) — cambiaron admin.html y nucleo.js: entra la sección de
-//   contenido del sitio.
-const VERSION = 'cy-shell-v24';
+// v25 (21-ago-2026) — entra traducir.html; editar.html mueve, agrega y quita
+//   bloques del sitio; nucleo.js suma la pantalla al menú; usuarios.html deja
+//   de prometer que desactivar impide entrar.
+//
+// Dos cosas de este registro, para que no confundan a quien lo lea:
+//   · faltan v15 a v18. Esas versiones se publicaron y no se anotaron acá.
+//     No se inventan: quedan como hueco a la vista.
+//   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
+//     que repetía y contradecía a la de arriba. Se retiró en la v25.
+const VERSION = 'cy-shell-v25';
 
 const SHELL = [
   './admin.html',
   './editar.html',
+  './traducir.html',
   './usuarios.html',
   './calculo.html',
   './diagnostico.html',

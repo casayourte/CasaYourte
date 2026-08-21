@@ -93,7 +93,7 @@ import { db, auth, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc,
          crearCuentaAuth } from './firebase-init.js';
 import { CY } from './nucleo.js';
 
-CY.PANEL = 'usuarios-2';
+CY.PANEL = 'usuarios-3';
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace('./admin.html')); };
 
 const yo = await CY.arrancar({ db, auth, doc, getDoc, onAuthStateChanged }, 'usuarios');
@@ -144,10 +144,14 @@ function render() {
     </div>`).join('') : '<div class="vacio">Sin usuarios.</div>';
 
   $('invits').innerHTML = invits.length ? invits.map((i) => `
-    <div class="tarj lista-tarj">
+    <div class="tarj lista-tarj" style="flex-wrap:wrap">
       <div class="crece"><b>${esc(i.mail)}</b>
         <div class="sub">${esc(i.rol === 'admin' ? 'Administrador' : 'Colaborador')}</div></div>
       <button class="btn d" data-anu="${esc(i.mail)}">Anular</button>
+      <!-- Los permisos de la invitación no son un detalle: al registrarse, la
+           cuenta se crea con EXACTAMENTE estos, y las reglas lo verifican.
+           Si acá no se ven, se está invitando a ciegas. -->
+      <div class="chips" style="flex-basis:100%">${chips(i)}</div>
     </div>`).join('') : '<div class="vacio">Ninguna pendiente.</div>';
 }
 
@@ -162,8 +166,15 @@ document.addEventListener('click', async (ev) => {
 
 async function alternar(uid) {
   const x = usuarios.find((y) => y.uid === uid);
+  // Lo que hace y lo que NO hace, dicho como es: 'activo: false' corta la
+  // escritura en el acto, pero la sesión sigue viva y la persona puede
+  // seguir entrando y mirando. Prometer que no va a poder entrar es peor
+  // que no decir nada: se confía en un candado que no está puesto. Para
+  // cerrar la cuenta de verdad está 'Disable account' en Authentication.
   if (!confirm(x.activo
-    ? `¿Desactivar a ${x.nombre}?\n\nNo va a poder entrar hasta que lo reactives.`
+    ? `¿Desactivar a ${x.nombre}?\n\nDeja de poder guardar y cambiar cosas en el acto.\n\n`
+      + `OJO: va a poder seguir entrando y mirando. Para cerrarle la cuenta del todo hay `
+      + `que deshabilitarla en Authentication, desde la consola de Firebase.`
     : `¿Reactivar a ${x.nombre}?`)) return;
   try {
     await updateDoc(doc(db, 'usuarios', uid), { activo: !x.activo, actualizado: serverTimestamp() });

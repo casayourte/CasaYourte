@@ -12,7 +12,7 @@
 
 export const CY = {};
 
-CY.VERSION = 'nucleo-10';
+CY.VERSION = 'nucleo-11';
 
 // ═════════════════════════════════════════════════════════════
 //  BOTÓN ATRÁS DE ANDROID
@@ -289,10 +289,16 @@ CY.subirImagen = async function (file, carpeta, etiquetas) {
 //  Acá sólo se OCULTA lo que no corresponde; lo que de verdad
 //  impide escribir son las reglas del servidor.
 // ═════════════════════════════════════════════════════════════
+// ⚠ HERENCIA DEL MODELO ANTERIOR. Los tres roles fijos se retiraron en la
+// T26: ahora hay UNA cuenta administradora y permisos explícitos (CY.PERMISOS,
+// abajo). Esto queda sólo para leer un usuario viejo que todavía diga
+// 'editor' o 'fotografo' y poder nombrarlo en pantalla. Nada decide nada acá:
+// quien decide es CY.puede, y por debajo las reglas de Firestore.
+// Se retira cuando no quede ningún usuario con esos roles.
 CY.ROLES = {
   admin:     { n: 'Administrador', d: 'Todo, incluido usuarios y publicar' },
-  editor:    { n: 'Editor',        d: 'Textos del sitio y álbumes. No publica ni toca usuarios' },
-  fotografo: { n: 'Fotógrafo',     d: 'Sólo subir y ordenar fotos' }
+  editor:    { n: 'Editor',        d: 'Rol viejo · sus permisos son los que tenga tildados' },
+  fotografo: { n: 'Fotógrafo',     d: 'Rol viejo · sus permisos son los que tenga tildados' }
 };
 
 // ═════════════════════════════════════════════════════════════
@@ -325,6 +331,14 @@ CY.NAV = [
   { id:'calculo',  label:'Cálculo de taller', corto:'Cálculo', icono:'straighten',
     href:'./calculo.html',     grupo:'directo', perm:'calculo' },
 
+  // Traducir NO va en la barra de abajo: cuatro pestañas y «Más» ya es el
+  // límite de lo que se toca con el pulgar. Y no es trabajo de todos los
+  // días: se hace por tandas, cuando hay texto nuevo en español.
+  // Pide 'contenido' porque escribe en sitio/*, igual que el editor.
+  { id:'traducir', label:'Traducir al francés', icono:'translate',
+    href:'./traducir.html',    grupo:'contenido', perm:'contenido',
+    detalle:'Sacar los textos en español y traer el francés traducido.' },
+
   { id:'sitio',    label:'Ver el sitio', icono:'public',
     href:'./index.html',       grupo:'ver' },
   { id:'albpub',   label:'Ver los álbumes públicos', icono:'collections',
@@ -338,8 +352,9 @@ CY.NAV = [
 ];
 
 CY.GRUPOS = [
-  { id:'ver',     label:'Ver como visitante' },
-  { id:'ajustes', label:'Ajustes' },
+  { id:'contenido', label:'El sitio público' },
+  { id:'ver',       label:'Ver como visitante' },
+  { id:'ajustes',   label:'Ajustes' },
 ];
 
 CY.usuario = null;

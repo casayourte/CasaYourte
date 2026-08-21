@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>CasaYourte · Traducir el sitio</title>
+<link rel="icon" href="./icono-192.png">
+<link rel="stylesheet" href="./estilos.css">
+<!-- La barra del núcleo dibuja iconos: sin esta fuente salen escritos como
+     palabras. estilos.css da la forma, no la fuente. -->
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..700,0..100,0..1&family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Sólo lo propio de esta pantalla. El resto sale de estilos.css. */
+.paso{background:var(--ink2);border:1px solid var(--line);border-radius:var(--r);
+  padding:.9rem;margin-bottom:.7rem}
+.paso>h2{display:flex;align-items:baseline;gap:.5rem;font-size:1.05rem;margin-bottom:.15rem}
+.paso>h2 .n{font-family:var(--mono);font-size:.62rem;color:var(--blond);flex:none}
+.paso>.gris{margin-bottom:.7rem}
+
+.cuadro{display:grid;grid-template-columns:repeat(auto-fit,minmax(88px,1fr));gap:.4rem;
+  margin:.7rem 0}
+.cuadro div{background:var(--ink3);border-radius:var(--r-s);padding:.55rem .5rem}
+.cuadro b{display:block;font-family:var(--mono);font-size:1.05rem;color:var(--wool);
+  line-height:1.1}
+.cuadro span{display:block;font-size:.68rem;color:var(--dim);margin-top:.15rem;line-height:1.25}
+.cuadro div.ojo b{color:var(--wip)}
+.cuadro div.mal b{color:#E9A8B0}
+
+textarea.json{font-family:var(--mono);font-size:.7rem;line-height:1.4;min-height:8rem;
+  white-space:pre;overflow-wrap:normal;overflow-x:auto}
+
+/* ── la revisión, pieza por pieza ── */
+.rev{border-top:1px solid var(--line);padding:.7rem 0}
+.rev:first-child{border-top:0}
+.rev .cab{display:flex;gap:.55rem;align-items:flex-start}
+.rev .cab input{flex:none;margin-top:.2rem;width:auto}
+.rev .donde{font-family:var(--mono);font-size:.56rem;letter-spacing:.1em;color:var(--blond);
+  text-transform:uppercase;line-height:1.35;flex:1;min-width:0}
+.rev .par{margin:.4rem 0 0 1.6rem;font-size:.85rem;line-height:1.4}
+.rev .par i{display:block;font-family:var(--mono);font-size:.52rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--dim2);font-style:normal;margin-bottom:.1rem}
+.rev .es{color:var(--dim)}
+.rev .vieja{color:var(--dim2);text-decoration:line-through}
+.rev .nueva{color:var(--wool)}
+.rev.fuera{opacity:.45}
+
+#horno{position:absolute;left:-9999px;top:0;width:1024px;height:800px;border:0;
+  visibility:hidden}
+</style>
+</head>
+<body>
+
+<div id="nav"></div>
+
+<div id="app" class="hide">
+  <div class="contenedor">
+
+    <!-- ── 1 · REUNIR ─────────────────────────────────────── -->
+    <section class="paso">
+      <h2><span class="n">1</span> Reunir lo que hay en español</h2>
+      <p class="gris">Los textos del sitio, los nombres de las categorías de cada álbum y
+        las leyendas de las fotos publicadas.</p>
+
+      <div class="seg" id="alcance">
+        <button data-v="publicado" class="on">Sólo lo publicado</button>
+        <button data-v="todo">Todo, incluso lo oculto</button>
+      </div>
+
+      <div class="cuadro" id="cuadro">
+        <div><b id="c-total">—</b><span>piezas de texto</span></div>
+        <div class="mal"><b id="c-falta">—</b><span>sin francés</span></div>
+        <div class="ojo"><b id="c-viejo">—</b><span>el español cambió</span></div>
+        <div><b id="c-hecho">—</b><span>al día</span></div>
+      </div>
+
+      <div class="fila-btn">
+        <button class="btn" id="releer">Volver a leer</button>
+        <button class="btn" id="basar">Dar por al día</button>
+      </div>
+      <p class="ayuda" id="estado">Leyendo…</p>
+      <p class="ayuda">«Dar por al día» anota, para todo lo que ya tiene francés, con
+        qué español se tradujo. Desde ahí en adelante, si cambiás un texto en español,
+        acá aparece que su francés quedó viejo.</p>
+    </section>
+
+    <!-- ── 2 · EXPORTAR ───────────────────────────────────── -->
+    <section class="paso">
+      <h2><span class="n">2</span> Llevarlo a traducir</h2>
+      <p class="gris">Se arma un JSON con cada texto y su contexto: en qué sección está,
+        qué papel cumple y qué largo tiene que respetar. Eso es lo que se le pasa a quien
+        traduce.</p>
+
+      <div class="seg" id="quePasa">
+        <button data-v="pendiente" class="on">Lo que falta</button>
+        <button data-v="todo">Todo</button>
+      </div>
+
+      <label><span class="k">En partes de</span>
+        <select id="tamParte">
+          <option value="0">una sola parte</option>
+          <option value="30">30 piezas</option>
+          <option value="60" selected>60 piezas</option>
+          <option value="120">120 piezas</option>
+        </select>
+        <span class="ayuda">Un archivo enorme se traduce peor y se pega peor. Cada parte
+          se traduce por separado y se trae de a una.</span>
+      </label>
+
+      <label id="cajaParte" class="hide"><span class="k">Parte</span>
+        <select id="parte"></select>
+      </label>
+
+      <label><span class="k">Notas para quien traduce</span>
+        <textarea id="notas" placeholder="Tratar de usted. No traducir «toono» ni «trei»…"></textarea>
+        <span class="ayuda">Se guardan y viajan dentro del archivo.</span>
+      </label>
+
+      <div class="fila-btn">
+        <button class="btn p" id="copiar">Copiar</button>
+        <button class="btn" id="bajar">Descargar</button>
+        <button class="btn" id="verJson">Ver</button>
+      </div>
+      <p class="ayuda" id="tam"></p>
+      <textarea id="salida" class="json hide" readonly></textarea>
+    </section>
+
+    <!-- ── 3 · TRAER LA TRADUCCIÓN ────────────────────────── -->
+    <section class="paso">
+      <h2><span class="n">3</span> Traer el francés</h2>
+      <p class="gris">Pegá el JSON que te devolvieron. No se escribe nada todavía: primero
+        se revisa pieza por pieza.</p>
+
+      <label><span class="k">JSON traducido</span>
+        <textarea id="entrada" class="json" placeholder='{ "piezas": [ { "id": "sitio:s1.t", "fr": "…" } ] }'></textarea>
+      </label>
+      <div class="fila-btn">
+        <button class="btn" id="archivo">Desde un archivo</button>
+        <button class="btn p" id="revisar">Revisar</button>
+      </div>
+      <input id="fich" type="file" accept=".json,application/json,text/plain" class="hide">
+      <p class="ayuda" id="leido"></p>
+    </section>
+
+    <!-- ── 4 · REVISIÓN Y ESCRITURA ───────────────────────── -->
+    <section class="paso hide" id="pasoRev">
+      <h2><span class="n">4</span> Revisar y aplicar</h2>
+      <p class="gris" id="resumenRev"></p>
+      <div class="fila-btn" style="margin-bottom:.6rem">
+        <button class="btn" id="todas">Marcar todas</button>
+        <button class="btn" id="ninguna">Ninguna</button>
+      </div>
+      <div id="revLista"></div>
+      <div class="fila-btn" style="margin-top:.8rem">
+        <button class="btn p ancho" id="aplicar">Aplicar a la base</button>
+      </div>
+      <p class="ayuda" id="progreso"></p>
+    </section>
+
+  </div>
+</div>
+
+<iframe id="horno" title="lectura del sitio"></iframe>
+
+<script type="module">
+import { db, auth, doc, getDoc, getDocs, setDoc, collection, serverTimestamp,
+         onAuthStateChanged, signOut } from "./firebase-init.js";
+import { CY } from "./nucleo.js";
+
+const $ = (id) => document.getElementById(id);
+
+// Sello de este archivo, para saber si quedó viejo en la caché (§3.34).
+const TRADUCTOR = "traducir-2";
+CY.PANEL = TRADUCTOR;
+
+/* ═══════════════════════════════════════════════════════════════
+   TRADUCIR EL SITIO
+
+   Mauro escribe en español. El francés se traduce aparte y después lo
+   corrige alguien de lengua materna. Esta pantalla hace las dos puntas
+   de ese camino y nada más: saca el español con su contexto y mete el
+   francés que vuelve.
+
+   Lo que se saca no es una lista de frases sueltas. Una frase sin saber
+   dónde vive se traduce mal: no se sabe si es un título que tiene que
+   entrar en dos renglones, una etiqueta de tres palabras o el cuerpo de
+   un párrafo. Por eso cada pieza viaja con su sección, su papel y el
+   largo del original.
+
+   El contexto NO se escribe a mano acá. Se lee del propio index.html en
+   un iframe, en el orden en que aparece en la página. Si mañana el sitio
+   cambia, esto lo refleja sin tocar nada (es la misma idea del editor).
+
+   Lo que se sabe de cada traducción se guarda en sitio/traduccion: la
+   huella del español con el que se tradujo. Sin eso no hay forma de
+   distinguir «no está traducido» de «se tradujo y después cambió el
+   español», que es el caso que se cuela sin que nadie lo note.
+   ═══════════════════════════════════════════════════════════════ */
+
+let BASE = null;          // contenido.json, el respaldo del repositorio
+let SITIO = null;         // sitio/publicado, tal como está
+let HUELLAS = {};         // id → huella del español ya traducido
+let NOTAS = "";           // notas de Mauro para quien traduce
+let PIEZAS = [];          // todo lo traducible, en orden de lectura
+let CAMBIOS = [];         // lo que trajo el JSON y todavía no se escribió
+let alcance = "publicado";
+let quePasa = "pendiente";
+
+/* ---------- textos con forma ---------- */
+const decod = (v) => (typeof v === "string" && v.slice(0, 5) === "json:")
+  ? (() => { try { return JSON.parse(v.slice(5)); } catch (e) { return v; } })() : v;
+const codif = (v) => (typeof v === "string") ? v : "json:" + JSON.stringify(v);
+const decodMapa = (m) => { const o = {}; Object.keys(m || {}).forEach(k => o[k] = decod(m[k])); return o; };
+const codifMapa = (m) => { const o = {}; Object.keys(m || {}).forEach(k => o[k] = codif(m[k])); return o; };
+
+/* La huella: alcanza con detectar que el español cambió. No es criptografía,
+   es un número que cambia cuando cambia el texto. */
+function huella(v) {
+  const s = typeof v === "string" ? v : JSON.stringify(v);
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return (h >>> 0).toString(36);
+}
+
+// El aviso, la sesión, el permiso y la navegación son del núcleo: una
+// pantalla del panel no tiene su propia pantalla de entrada ni su propia
+// barra (§3.31). Si esta se viera distinta de las otras, sería que no está
+// llamando a esto.
+const aviso = (t, malo) => CY.aviso(t, malo);
+
+CY.alSalir = async () => {
+  if (CAMBIOS.length && !confirm("Trajiste una traducción y no la aplicaste. ¿Salir igual?")) return;
+  await signOut(auth);
+  location.replace("./admin.html");
+};
+
+// 'contenido' es el mismo permiso que pide el editor, y por la misma razón:
+// esto escribe en sitio/*, y lo que se escribe ahí se ve en el acto.
+CY.arrancar({ db, auth, doc, getDoc, onAuthStateChanged }, "traducir", "contenido")
+  .then(async () => {
+    $("app").classList.remove("hide");
+    await reunir();
+  })
+  .catch(() => {});   // arrancar ya redirigió y explicó
+
+/* ═══════════════════════════════════════════════════════════════
+   1 · REUNIR
+   ═══════════════════════════════════════════════════════════════ */
+
+const estado = (t) => { $("estado").textContent = t; };
+
+$("releer").addEventListener("click", () => reunir());
+document.querySelectorAll("#alcance button").forEach(b =>
+  b.addEventListener("click", () => {
+    document.querySelectorAll("#alcance button").forEach(x => x.classList.remove("on"));
+    b.classList.add("on"); alcance = b.dataset.v; reunir();
+  }));
+document.querySelectorAll("#quePasa button").forEach(b =>
+  b.addEventListener("click", () => {
+    document.querySelectorAll("#quePasa button").forEach(x => x.classList.remove("on"));
+    b.classList.add("on"); quePasa = b.dataset.v; armarPartes();
+  }));
+
+async function reunir() {
+  try {
+    estado("Leyendo el contenido del sitio…");
+    const r = await fetch("contenido.json?v=" + Date.now(), { cache: "no-store" });
+    BASE = await r.json();
+
+    const d = await getDoc(doc(db, "sitio", "publicado"));
+    const x = d.exists() ? d.data() : {};
+    // MEZCLA, no reemplazo (§3.35): lo publicado manda y el archivo completa.
+    SITIO = {
+      es: { ...((BASE.textos || {}).es || {}), ...decodMapa(x.es) },
+      fr: { ...((BASE.textos || {}).fr || {}), ...decodMapa(x.fr) },
+      imagenes: { ...(BASE.reemplazos || {}), ...(x.imagenes || {}) },
+      orden: { ...(BASE.orden || {}), ...(x.orden || {}) },
+    };
+
+    const t = await getDoc(doc(db, "sitio", "traduccion"));
+    HUELLAS = t.exists() ? (t.data().huellas || {}) : {};
+    NOTAS = t.exists() ? (t.data().notas || "") : "";
+    if (!$("notas").value) $("notas").value = NOTAS;
+
+    estado("Leyendo la página para saber dónde vive cada texto…");
+    const mapa = await contextoDelSitio();
+
+    estado("Leyendo los álbumes…");
+    const deAlbums = await piezasDeAlbums();
+
+    PIEZAS = piezasDelSitio(mapa).concat(deAlbums);
+    PIEZAS.forEach(p => {
+      const h = huella(p.es);
+      p.huella = h;
+      p.estado = !tieneAlgo(p.fr) ? "falta"
+               : (HUELLAS[p.id] && HUELLAS[p.id] !== h) ? "viejo" : "hecho";
+    });
+
+    pintarCuadro();
+    armarPartes();
+    estado("Listo. " + PIEZAS.length + " piezas leídas.");
+  } catch (e) {
+    estado("");
+    aviso(CY.explicar(e), true);
+  }
+}
+
+const tieneAlgo = (v) => Array.isArray(v)
+  ? v.some(x => tieneAlgo(x))
+  : String(v == null ? "" : v).trim() !== "";
+
+function pintarCuadro() {
+  const c = (e) => PIEZAS.filter(p => p.estado === e).length;
+  $("c-total").textContent = PIEZAS.length;
+  $("c-falta").textContent = c("falta");
+  $("c-viejo").textContent = c("viejo");
+  $("c-hecho").textContent = c("hecho");
+}
+
+/* ---------- el contexto sale de la página, no de una tabla ----------
+   Se abre index.html en un iframe oculto con edit=1 —así no pide el
+   contenido a Firestore, que acá no hace falta— y se recorre en orden de
+   lectura. De cada elemento con clave se anota en qué sección está, en qué
+   bloque y qué papel cumple. */
+function contextoDelSitio() {
+  return new Promise((listo) => {
+    const f = $("horno");
+    let cerrado = false;
+    const terminar = (m) => { if (!cerrado) { cerrado = true; listo(m); } };
+    // Si la página no carga, se sigue igual: el contexto queda más pobre,
+    // pero no se pierde el trabajo.
+    const reloj = setTimeout(() => terminar({}), 12000);
+    f.onload = () => {
+      clearTimeout(reloj);
+      try { terminar(leerContexto(f)); }
+      catch (e) { terminar({}); }
+    };
+    f.src = "index.html?edit=1&v=" + Date.now();
+  });
+}
+
+const PAPEL = [
+  ["eyebrow", "antetítulo"], ["lede", "bajada"], ["yr", "año"],
+  ["spec", "dato técnico"], ["line-no", "número"], ["tag", "etiqueta"],
+  ["quote", "cita"], ["small", "nota al pie"], ["k", "etiqueta de ficha"],
+  ["v", "valor de ficha"],
+];
+const CORTOS = ["antetítulo", "año", "dato técnico", "número", "etiqueta",
+                "etiqueta de ficha", "botón", "título", "título de sección"];
+
+function papelDe(el) {
+  for (const [cls, nombre] of PAPEL) if (el.classList.contains(cls)) return nombre;
+  const t = el.tagName.toLowerCase();
+  if (t === "h1" || t === "h2") return "título de sección";
+  if (t === "h3" || t === "h4") return "título";
+  if (t === "a" || t === "button") return "botón";
+  if (t === "ul" || t === "ol") return "lista";
+  if (t === "tbody" || t === "table") return "tabla";
+  if (t === "li") return "punto de lista";
+  return "párrafo";
+}
+
+function leerContexto(f) {
+  const win = f.contentWindow, d = f.contentDocument;
+  // Los bloques se ordenan como están publicados, así el orden de lectura
+  // del archivo es el orden real del sitio.
+  if (win.CY_SITIO && win.CY_SITIO.aplicarOrden) win.CY_SITIO.aplicarOrden(SITIO.orden);
+
+  const mapa = {};
+  let n = 0;
+  d.querySelectorAll("[data-i],[data-list],[data-rows]").forEach((el) => {
+    const clave = el.dataset.i || el.dataset.list || el.dataset.rows;
+    if (!clave || mapa[clave]) return;
+    const sec = el.closest("section");
+    const tituloSec = sec && sec.querySelector("h1[data-i],h2[data-i]");
+    const bloque = el.closest("[data-bloque]");
+    const tituloBl = bloque && bloque.querySelector("h3[data-i]");
+    mapa[clave] = {
+      n: n++,
+      papel: papelDe(el),
+      seccionClave: tituloSec ? tituloSec.dataset.i : null,
+      bloqueClave: (tituloBl && tituloBl.dataset.i !== clave) ? tituloBl.dataset.i : null,
+      bloque: bloque ? bloque.dataset.bloque : null,
+    };
+  });
+  return mapa;
+}
+
+// El texto de un título puede traer <em>: para nombrar una sección alcanza
+// con las palabras.
+const plano = (v) => String(v == null ? "" : v).replace(/<[^>]+>/g, "").trim();
+
+function piezasDelSitio(mapa) {
+  const claves = Object.keys(SITIO.es);
+  // Primero lo que está en la página, en orden de lectura; después el resto.
+  claves.sort((a, b) => {
+    const A = mapa[a] ? mapa[a].n : 9e6, B = mapa[b] ? mapa[b].n : 9e6;
+    return A - B || a.localeCompare(b);
+  });
+
+  return claves.filter(k => tieneAlgo(SITIO.es[k])).map((k) => {
+    const m = mapa[k] || {};
+    const partes = [];
+    if (m.seccionClave) partes.push(plano(SITIO.es[m.seccionClave]));
+    if (m.bloqueClave) partes.push(plano(SITIO.es[m.bloqueClave]));
+    partes.push(m.papel || papelDeClave(k));
+    return {
+      id: "sitio:" + k,
+      donde: partes.filter(Boolean).join(" · ") || "Sitio",
+      tipo: m.papel || papelDeClave(k),
+      es: SITIO.es[k],
+      fr: SITIO.fr[k],
+      ref: { que: "sitio", clave: k },
+    };
+  });
+}
+
+// Para las claves que no aparecen en la página —cosas de la portada del
+// navegador, la página de álbumes— el nombre sale de la propia clave.
+const FAMILIA = {
+  "meta": "datos para buscadores", "nav": "navegación", "ui": "interfaz",
+  "alb": "página de álbumes", "ct": "contacto", "hero": "portada",
+};
+function papelDeClave(k) {
+  const fam = k.split(".")[0];
+  return FAMILIA[fam] ? FAMILIA[fam] : "texto del sitio";
+}
+
+/* ---------- los álbumes ---------- */
+async function piezasDeAlbums() {
+  const out = [];
+  const snap = await getDocs(collection(db, "albums"));
+  const albums = [];
+  snap.forEach(d => albums.push({ id: d.id, ...d.data() }));
+  // Sin orderBy (§3.10): se ordena acá.
+  albums.sort((a, b) => String(b.anio || "").localeCompare(String(a.anio || ""))
+    || String(a.titulo || a.id).localeCompare(String(b.titulo || b.id), "es"));
+
+  for (const a of albums) {
+    if (alcance === "publicado" && a.publico !== true) continue;
+    const nombre = a.titulo || a.id;
+
+    // Las categorías del álbum: su nombre y su descripción (§3.44).
+    (Array.isArray(a.etapas) ? a.etapas : []).forEach((e) => {
+      if (!e || !e.id) return;
+      if (tieneAlgo(e.es)) out.push({
+        id: "etapa:" + a.id + ":" + e.id + ":nombre",
+        donde: nombre + " · categoría",
+        tipo: "etiqueta", es: e.es, fr: e.fr,
+        ref: { que: "etapa", album: a.id, etapa: e.id, campo: "fr" },
+      });
+      if (tieneAlgo(e.desc_es)) out.push({
+        id: "etapa:" + a.id + ":" + e.id + ":desc",
+        donde: nombre + " · " + plano(e.es) + " · descripción",
+        tipo: "párrafo", es: e.desc_es, fr: e.desc_fr,
+        ref: { que: "etapa", album: a.id, etapa: e.id, campo: "desc_fr" },
+      });
+    });
+
+    const fs = await getDocs(collection(db, "albums", a.id, "fotos"));
+    const fotos = [];
+    fs.forEach(d => fotos.push({ id: d.id, ...d.data() }));
+    fotos.sort((x, y) => (x.orden || 0) - (y.orden || 0));
+
+    fotos.forEach((f) => {
+      if (f.eliminada) return;
+      if (alcance === "publicado" && f.usar !== true) return;
+      const et = ((Array.isArray(a.etapas) ? a.etapas : []).find(e => e && e.id === f.etapa) || {}).es
+              || (f.etapa ? String(f.etapa).replace(/^\d+-/, "").replace(/-/g, " ") : "");
+      if (tieneAlgo(f.cap_es)) out.push({
+        id: "foto:" + a.id + ":" + f.id + ":cap",
+        donde: nombre + (et ? " · " + et : "") + " · leyenda de foto",
+        tipo: "leyenda", es: f.cap_es, fr: f.cap_fr,
+        ref: { que: "foto", album: a.id, foto: f.id, campo: "cap_fr" },
+      });
+      if (tieneAlgo(f.alt_es)) out.push({
+        id: "foto:" + a.id + ":" + f.id + ":alt",
+        donde: nombre + (et ? " · " + et : "") + " · descripción de la imagen para quien no la ve",
+        tipo: "texto alternativo", es: f.alt_es, fr: f.alt_fr,
+        ref: { que: "foto", album: a.id, foto: f.id, campo: "alt_fr" },
+      });
+    });
+  }
+  return out;
+}
+
+/* Sin esto, el estado de una traducción sólo se puede adivinar. Lo que
+   existía antes de esta pantalla no tiene registro: se toma una vez, a
+   mano, como línea de base, y de ahí en adelante el registro se mantiene
+   solo cada vez que se aplica una traducción. */
+$("basar").addEventListener("click", async () => {
+  const conFrances = PIEZAS.filter(p => tieneAlgo(p.fr));
+  if (!conFrances.length) return aviso("No hay nada traducido todavía", true);
+  const nuevas = conFrances.filter(p => HUELLAS[p.id] !== p.huella).length;
+  if (!nuevas) return aviso("Ya estaba todo anotado.");
+  if (!confirm("Se van a dar por buenas " + nuevas + " traducciones que ya existen.\n\n"
+             + "No cambia ningún texto: sólo anota que ese francés corresponde a ese "
+             + "español, para poder avisarte cuando el español cambie.")) return;
+  const b = $("basar"); b.disabled = true;
+  try {
+    conFrances.forEach(p => HUELLAS[p.id] = p.huella);
+    await setDoc(doc(db, "sitio", "traduccion"), {
+      huellas: HUELLAS, notas: $("notas").value.trim(),
+      actualizado: serverTimestamp(), actualizadoPor: CY.usuario.email,
+    });
+    PIEZAS.forEach(p => {
+      p.estado = !tieneAlgo(p.fr) ? "falta"
+               : (HUELLAS[p.id] && HUELLAS[p.id] !== p.huella) ? "viejo" : "hecho";
+    });
+    pintarCuadro(); armarPartes();
+    aviso("Anotado. " + nuevas + " traducciones quedan como línea de base.");
+  } catch (e) { aviso(CY.explicar(e), true); }
+  finally { b.disabled = false; }
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   2 · EXPORTAR
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Lo que va adentro del archivo para quien traduce. Se escribe acá y no en
+   el chat de cada vez: una instrucción que se reescribe cada vez da una
+   traducción distinta cada vez. */
+const INSTRUCCIONES = [
+  "Traducí del español de Uruguay al francés de Francia. Es el sitio de un taller que construye yurtas: artesanal, técnico y sobrio. No es publicidad.",
+  "Devolvé SOLO un JSON con la misma forma: { \"piezas\": [ { \"id\": …, \"fr\": … } ] }. Sin explicaciones fuera del JSON.",
+  "El campo \"id\" se copia tal cual. Si una pieza no la sabés traducir, dejala afuera del JSON en lugar de inventar.",
+  "Respetá el tipo: si el español es una lista, devolvé una lista con la misma cantidad de elementos; si es una tabla, la misma cantidad de filas y de columnas.",
+  "Las etiquetas <em> del original se conservan en la traducción, alrededor de lo que corresponda en francés.",
+  "Las piezas cortas —títulos, etiquetas, años, botones— tienen que entrar en el mismo lugar en pantalla. Mirá \"cabe_en\" y no te pases: el francés estira, y un título de dos renglones que pasa a cuatro rompe la página.",
+  "Buscá en internet cómo se dice cada término de construcción de yurtas en el mundo francófono antes de decidir. La jerga del oficio no se traduce palabra por palabra.",
+  "Usá el modo de tratamiento formal (vous) con quien lee el sitio.",
+  "Dejá los nombres propios, los topónimos y las palabras del oficio que ya están en el glosario tal como están.",
+  "Marcá en \"dudas\" cualquier pieza donde la traducción dependa de algo que no se ve desde acá.",
+];
+
+/* Punto de partida, no verdad revelada: son los términos que el propio
+   proyecto ya usa en francés en la página de álbumes. Quien traduce los
+   respeta; quien corrige después, si sabe más, los cambia. */
+const GLOSARIO = {
+  "yurta": "yourte",
+  "toono": "toono (couronne centrale) · no se traduce",
+  "trei": "trei · no se traduce",
+  "plancher": "plancher",
+  "perchas": "perches",
+  "anillo periférico": "anneau périphérique",
+  "lonas y costura": "toiles et couture",
+  "aislación": "isolation",
+  "aberturas y umbrales": "ouvertures et seuils",
+  "skydome": "skydome",
+  "terreno y apoyos": "terrain et appuis",
+  "taller": "atelier",
+  "obra": "chantier",
+  "equipo y obra": "équipe et chantier",
+  "desmontaje": "démontage",
+  "douglas": "douglas",
+  "CasaYourte": "CasaYourte · nunca se traduce",
+};
+
+function paraExportar() {
+  return PIEZAS.filter(p => quePasa === "todo" || p.estado !== "hecho");
+}
+
+function armarPartes() {
+  const lista = paraExportar();
+  const tam = Number($("tamParte").value) || 0;
+  const sel = $("parte");
+  const n = tam ? Math.ceil(lista.length / tam) : 1;
+  sel.innerHTML = "";
+  for (let i = 0; i < n; i++) {
+    const o = document.createElement("option");
+    o.value = i;
+    o.textContent = (i + 1) + " de " + n;
+    sel.appendChild(o);
+  }
+  $("cajaParte").classList.toggle("hide", n <= 1);
+  pintarSalida();
+}
+$("tamParte").addEventListener("change", armarPartes);
+$("parte").addEventListener("change", pintarSalida);
+$("notas").addEventListener("input", pintarSalida);
+
+function archivoExport() {
+  const lista = paraExportar();
+  const tam = Number($("tamParte").value) || 0;
+  const i = Number($("parte").value) || 0;
+  const trozo = tam ? lista.slice(i * tam, (i + 1) * tam) : lista;
+  const n = tam ? Math.ceil(lista.length / tam) : 1;
+
+  return {
+    casayourte: "traduccion",
+    version: TRADUCTOR,
+    generado: new Date().toISOString(),
+    de: "es", a: "fr",
+    parte: (i + 1) + "/" + n,
+    instrucciones: INSTRUCCIONES,
+    glosario: GLOSARIO,
+    notas: $("notas").value.trim(),
+    piezas: trozo.map(p => {
+      const o = {
+        id: p.id,
+        donde: p.donde,
+        tipo: p.tipo,
+        estado: p.estado === "viejo" ? "el español cambió después de traducir" : p.estado,
+        es: p.es,
+      };
+      if (typeof p.es === "string" && CORTOS.includes(p.tipo))
+        o.cabe_en = p.es.length + " caracteres en español";
+      if (tieneAlgo(p.fr)) o.fr_actual = p.fr;
+      return o;
+    }),
+  };
+}
+
+function pintarSalida() {
+  if (!PIEZAS.length) { $("tam").textContent = ""; $("salida").value = ""; return; }
+  const j = JSON.stringify(archivoExport(), null, 1);
+  $("salida").value = j;
+  const kb = (new Blob([j]).size / 1024).toFixed(1);
+  $("tam").textContent = archivoExport().piezas.length + " piezas · " + kb + " KB";
+}
+
+$("verJson").addEventListener("click", () => $("salida").classList.toggle("hide"));
+
+$("copiar").addEventListener("click", async () => {
+  const j = $("salida").value;
+  if (!j) return aviso("Todavía no hay nada para copiar", true);
+  try {
+    await navigator.clipboard.writeText(j);
+    aviso("Copiado. Pegalo en el chat donde se traduce.");
+  } catch (e) {
+    // Si el navegador no deja copiar sin gesto directo, se muestra y se
+    // selecciona: copiar a mano siempre funciona.
+    $("salida").classList.remove("hide");
+    $("salida").focus(); $("salida").select();
+    aviso("No pude copiar solo: quedó seleccionado para copiar a mano.", true);
+  }
+});
+
+$("bajar").addEventListener("click", () => {
+  const j = $("salida").value;
+  if (!j) return aviso("Todavía no hay nada para descargar", true);
+  const p = archivoExport().parte.replace("/", "-de-");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([j], { type: "application/json" }));
+  a.download = "casayourte-es-fr-" + p + ".json";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   3 · TRAER LA TRADUCCIÓN
+   ═══════════════════════════════════════════════════════════════ */
+
+$("archivo").addEventListener("click", () => $("fich").click());
+$("fich").addEventListener("change", async () => {
+  const f = $("fich").files[0]; if (!f) return;
+  $("entrada").value = await f.text();
+  $("leido").textContent = f.name + " · " + (f.size / 1024).toFixed(1) + " KB";
+  revisar();
+});
+
+$("revisar").addEventListener("click", revisar);
+
+/* Se aceptan las tres formas en que puede volver un JSON, porque quien lo
+   devuelve no siempre respeta la que se pidió y perder el trabajo por eso
+   sería absurdo:
+     { piezas:[{id, fr}] }   ·   [{id, fr}]   ·   { "id": "fr" } */
+function leerTraduccion(txt) {
+  let j;
+  try { j = JSON.parse(txt); }
+  catch (e) {
+    // A veces vuelve envuelto en ```json … ```
+    const m = /\{[\s\S]*\}|\[[\s\S]*\]/.exec(txt);
+    if (!m) throw new Error("Eso no es un JSON válido.");
+    j = JSON.parse(m[0]);
+  }
+  let filas = [];
+  if (Array.isArray(j)) filas = j;
+  else if (Array.isArray(j.piezas)) filas = j.piezas;
+  else filas = Object.keys(j).map(k => ({ id: k, fr: j[k] }));
+  return filas.map(f => ({ id: f.id, fr: f.fr !== undefined ? f.fr : f.fr_nuevo }))
+              .filter(f => f.id);
+}
+
+function mismoMolde(es, fr) {
+  if (Array.isArray(es)) {
+    if (!Array.isArray(fr) || fr.length !== es.length) return false;
+    return es.every((x, i) => mismoMolde(x, fr[i]));
+  }
+  return typeof fr === "string";
+}
+
+function revisar() {
+  const txt = $("entrada").value.trim();
+  if (!txt) return aviso("Pegá primero el JSON traducido", true);
+  let filas;
+  try { filas = leerTraduccion(txt); }
+  catch (e) { return aviso(e.message, true); }
+
+  const porId = {};
+  PIEZAS.forEach(p => porId[p.id] = p);
+
+  CAMBIOS = [];
+  const problemas = [];
+  filas.forEach((f) => {
+    const p = porId[f.id];
+    if (!p) return problemas.push("no existe: " + f.id);
+    if (!tieneAlgo(f.fr)) return;                       // vacío: no se escribe
+    if (!mismoMolde(p.es, f.fr))
+      return problemas.push("no tiene la forma del original: " + f.id);
+    if (JSON.stringify(f.fr) === JSON.stringify(p.fr)) return;  // igual a lo que ya hay
+    CAMBIOS.push({ pieza: p, nueva: f.fr, marcada: true });
+  });
+
+  $("pasoRev").classList.toggle("hide", !CAMBIOS.length);
+  if (!CAMBIOS.length) {
+    aviso(problemas.length ? problemas[0] : "No hay nada nuevo para escribir.", !!problemas.length);
+    $("leido").textContent = problemas.join(" · ");
+    return;
+  }
+  $("resumenRev").textContent = CAMBIOS.length + " piezas para escribir"
+    + (problemas.length ? " · " + problemas.length + " se descartaron: " + problemas.join(", ") : "");
+  pintarRevision();
+  $("pasoRev").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+const muestra = (v) => Array.isArray(v)
+  ? v.map(x => Array.isArray(x) ? x.join(" | ") : x).join("  ·  ")
+  : String(v == null ? "" : v);
+
+function pintarRevision() {
+  const cont = $("revLista");
+  cont.innerHTML = "";
+  CAMBIOS.forEach((c, i) => {
+    const d = document.createElement("div");
+    d.className = "rev";
+    d.innerHTML =
+      '<div class="cab"><input type="checkbox" class="tilde" ' + (c.marcada ? "checked" : "") + '>'
+      + '<span class="donde"></span></div>'
+      + '<div class="par es"><i>español</i><span class="v-es"></span></div>'
+      + (tieneAlgo(c.pieza.fr) ? '<div class="par vieja"><i>francés de ahora</i><span class="v-vieja"></span></div>' : "")
+      + '<div class="par nueva"><i>francés nuevo</i><span class="v-nueva"></span></div>';
+    d.querySelector(".donde").textContent = c.pieza.donde + " · " + c.pieza.id;
+    d.querySelector(".v-es").textContent = muestra(c.pieza.es);
+    if (tieneAlgo(c.pieza.fr)) d.querySelector(".v-vieja").textContent = muestra(c.pieza.fr);
+    d.querySelector(".v-nueva").textContent = muestra(c.nueva);
+    d.querySelector(".tilde").addEventListener("change", (e) => {
+      c.marcada = e.target.checked;
+      d.classList.toggle("fuera", !c.marcada);
+      contarMarcadas();
+    });
+    cont.appendChild(d);
+  });
+  contarMarcadas();
+}
+
+function contarMarcadas() {
+  const n = CAMBIOS.filter(c => c.marcada).length;
+  $("aplicar").disabled = n === 0;
+  $("aplicar").textContent = n ? "Aplicar " + n + " a la base" : "Nada marcado";
+}
+
+$("todas").addEventListener("click", () => { CAMBIOS.forEach(c => c.marcada = true); pintarRevision(); });
+$("ninguna").addEventListener("click", () => { CAMBIOS.forEach(c => c.marcada = false); pintarRevision(); });
+
+/* ═══════════════════════════════════════════════════════════════
+   4 · ESCRIBIR
+   ═══════════════════════════════════════════════════════════════ */
+
+$("aplicar").addEventListener("click", async () => {
+  const marcadas = CAMBIOS.filter(c => c.marcada);
+  if (!marcadas.length) return;
+  if (!confirm("Se va a escribir el francés de " + marcadas.length + " piezas.\n\n"
+             + "El español no se toca. En el sitio se ve en el acto.")) return;
+
+  const b = $("aplicar"); b.disabled = true;
+  const paso = (t) => { $("progreso").textContent = t; };
+
+  try {
+    const delSitio = marcadas.filter(c => c.pieza.ref.que === "sitio");
+    const deFotos  = marcadas.filter(c => c.pieza.ref.que === "foto");
+    const deEtapas = marcadas.filter(c => c.pieza.ref.que === "etapa");
+
+    /* El sitio: el mapa fr completo con setDoc, nunca updateDoc de una clave
+       con punto (§3.28). Y se vuelve a leer el documento justo antes de
+       escribir, para no pisar algo que se haya publicado desde el editor
+       mientras esta pantalla estaba abierta. */
+    if (delSitio.length) {
+      paso("Escribiendo los textos del sitio…");
+      const d = await getDoc(doc(db, "sitio", "publicado"));
+      const x = d.exists() ? d.data() : {};
+      const fr = { ...((BASE.textos || {}).fr || {}), ...decodMapa(x.fr) };
+      delSitio.forEach(c => fr[c.pieza.ref.clave] = c.nueva);
+      await setDoc(doc(db, "sitio", "publicado"), {
+        ...x,
+        fr: codifMapa(fr),
+        guardado: serverTimestamp(),
+        guardadoPor: CY.usuario.email,
+      });
+    }
+
+    // Las fotos: una escritura por foto, mezclando (no se toca nada más de
+    // la foto). Van de a una para poder mostrar el avance y no dejar la
+    // pantalla muda si son muchas.
+    let n = 0;
+    for (const c of deFotos) {
+      paso("Escribiendo leyendas… " + (++n) + "/" + deFotos.length);
+      await setDoc(doc(db, "albums", c.pieza.ref.album, "fotos", c.pieza.ref.foto),
+                   { [c.pieza.ref.campo]: c.nueva }, { merge: true });
+    }
+
+    // Las categorías viven en un array dentro del álbum: se reescribe el
+    // array entero de cada álbum tocado, una sola vez.
+    const porAlbum = {};
+    deEtapas.forEach(c => (porAlbum[c.pieza.ref.album] ||= []).push(c));
+    for (const id of Object.keys(porAlbum)) {
+      paso("Escribiendo categorías de " + id + "…");
+      const d = await getDoc(doc(db, "albums", id));
+      if (!d.exists()) continue;
+      const etapas = (d.data().etapas || []).map((e) => {
+        const mias = porAlbum[id].filter(c => c.pieza.ref.etapa === e.id);
+        if (!mias.length) return e;
+        const copia = { ...e };
+        mias.forEach(c => copia[c.pieza.ref.campo] = c.nueva);
+        return copia;
+      });
+      await setDoc(doc(db, "albums", id), { etapas }, { merge: true });
+    }
+
+    // Recién ahora se anota con qué español se tradujo cada pieza. Si esto
+    // falla, las traducciones ya están escritas: lo único que se pierde es
+    // saber cuáles quedaron viejas.
+    paso("Anotando el estado de la traducción…");
+    marcadas.forEach(c => { c.pieza.fr = c.nueva; HUELLAS[c.pieza.id] = c.pieza.huella; });
+    try {
+      await setDoc(doc(db, "sitio", "traduccion"), {
+        huellas: HUELLAS, notas: $("notas").value.trim(),
+        actualizado: serverTimestamp(), actualizadoPor: CY.usuario.email,
+      });
+    } catch (e) {
+      aviso("Se escribió la traducción, pero no el registro: " + CY.explicar(e), true);
+    }
+
+    PIEZAS.forEach(p => {
+      p.estado = !tieneAlgo(p.fr) ? "falta"
+               : (HUELLAS[p.id] && HUELLAS[p.id] !== p.huella) ? "viejo" : "hecho";
+    });
+    pintarCuadro();
+    armarPartes();
+
+    CAMBIOS = [];
+    $("pasoRev").classList.add("hide");
+    $("entrada").value = "";
+    paso("");
+    aviso("Listo. " + marcadas.length + " piezas en francés, ya en el sitio.");
+  } catch (e) {
+    paso("");
+    aviso(CY.explicar(e), true);
+  } finally {
+    b.disabled = false; contarMarcadas();
+  }
+});
+
+</script>
+</body>
+</html>
