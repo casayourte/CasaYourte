@@ -48,7 +48,8 @@
 // v24 (19-ago-2026) — selección múltiple en la grilla: mostrar, mover y quitar.
 // v25 (21-ago-2026) — entra traducir.html; editar.html mueve, agrega y quita
 //   bloques del sitio; nucleo.js suma la pantalla al menú; usuarios.html deja
-//   de prometer que desactivar impide entrar.
+//   de prometer que desactivar impide entrar; traducir.html avisa cuando el
+//   español cambió después de traducirse.
 //
 // Dos cosas de este registro, para que no confundan a quien lo lea:
 //   · faltan v15 a v18. Esas versiones se publicaron y no se anotaron acá.
