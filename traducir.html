@@ -38,6 +38,7 @@ textarea.json{font-family:var(--mono);font-size:.7rem;line-height:1.4;min-height
   text-transform:uppercase;color:var(--dim2)}
 .av .qué{display:block;color:var(--wip);font-size:.78rem;margin-top:.15rem}
 .av .txt{display:block;color:var(--dim);margin-top:.15rem}
+.av .prop{display:block;color:var(--wool);margin-top:.3rem}
 
 /* ── la revisión, pieza por pieza ── */
 .rev{border-top:1px solid var(--line);padding:.7rem 0}
@@ -109,14 +110,19 @@ textarea.json{font-family:var(--mono);font-size:.7rem;line-height:1.4;min-height
     <!-- ── 2 · EXPORTAR ───────────────────────────────────── -->
     <section class="paso">
       <h2><span class="n">2</span> Llevarlo a revisar y traducir</h2>
-      <p class="gris">Se arma un JSON con cada texto y su contexto: en qué sección está,
-        qué papel cumple y qué largo tiene que respetar. Eso es lo que se le pasa a quien
-        traduce.</p>
+      <p class="gris">Se arma un JSON con <b>todo el sitio</b>: cada texto con su
+        contexto —en qué sección está, qué papel cumple, si se ve de entrada o está
+        dentro de un desplegable— y el mapa de las secciones en el orden en que se leen.
+        Con eso se puede revisar la ortografía, la coherencia entre secciones y cómo se
+        presenta la información, además de traducir.</p>
 
       <div class="seg" id="quePasa">
-        <button data-v="pendiente" class="on">Lo que falta</button>
-        <button data-v="todo">Todo</button>
+        <button data-v="todo" class="on">Todo el sitio</button>
+        <button data-v="pendiente">Sólo lo que falta</button>
       </div>
+      <p class="ayuda">Para revisar hace falta el sitio entero: la coherencia y el orden
+        no se pueden juzgar mirando piezas sueltas. «Sólo lo que falta» sirve cuando ya
+        revisaste y sólo querés traducir lo nuevo.</p>
 
       <label><span class="k">En partes de</span>
         <select id="tamParte">
@@ -164,6 +170,15 @@ textarea.json{font-family:var(--mono);font-size:.7rem;line-height:1.4;min-height
       <p class="ayuda" id="leido"></p>
     </section>
 
+    <!-- ── EL INFORME ─────────────────────────────────────── -->
+    <section class="paso hide" id="pasoInforme">
+      <h2><span class="n">·</span> Lo que hay para decidir</h2>
+      <p class="gris">Coherencia, estructura y tono. Esto <b>no se escribe solo</b>:
+        son observaciones para resolver a mano, con el editor. Quedan acá mientras
+        tengas la pantalla abierta.</p>
+      <div id="informe"></div>
+    </section>
+
     <!-- ── 4 · REVISIÓN Y ESCRITURA ───────────────────────── -->
     <section class="paso hide" id="pasoRev">
       <h2><span class="n">4</span> Revisar y aplicar</h2>
@@ -192,7 +207,7 @@ import { CY } from "./nucleo.js";
 const $ = (id) => document.getElementById(id);
 
 // Sello de este archivo, para saber si quedó viejo en la caché (§3.34).
-const TRADUCTOR = "traducir-4";
+const TRADUCTOR = "traducir-5";
 CY.PANEL = TRADUCTOR;
 
 /* ═══════════════════════════════════════════════════════════════
@@ -239,9 +254,10 @@ let ORIGEN = {};          // id → el español con el que se tradujo, tal cual
 let HUELLAS = {};         // id → huella, del registro anterior a traducir-3
 let NOTAS = "";           // notas de Mauro para quien traduce
 let PIEZAS = [];          // todo lo traducible, en orden de lectura
+let MAPA = [];            // las secciones del sitio, en orden
 let CAMBIOS = [];         // lo que trajo el JSON y todavía no se escribió
 let alcance = "publicado";
-let quePasa = "pendiente";
+let quePasa = "todo";
 
 /* ---------- textos con forma ---------- */
 const decod = (v) => (typeof v === "string" && v.slice(0, 5) === "json:")
@@ -483,6 +499,7 @@ function leerContexto(f) {
   // del archivo es el orden real del sitio.
   if (win.CY_SITIO && win.CY_SITIO.aplicarOrden) win.CY_SITIO.aplicarOrden(SITIO.orden);
 
+  const secciones = [...d.querySelectorAll("section")];
   const mapa = {};
   let n = 0;
   d.querySelectorAll("[data-i],[data-list],[data-rows]").forEach((el) => {
@@ -492,16 +509,41 @@ function leerContexto(f) {
     const tituloSec = sec && sec.querySelector("h1[data-i],h2[data-i]");
     const bloque = el.closest("[data-bloque]");
     const tituloBl = bloque && bloque.querySelector("h3[data-i]");
+    const grupo = el.closest("[data-grupo]");
     mapa[clave] = {
       n: n++,
       papel: papelDe(el),
+      // A la vista o adentro de un desplegable. Es el dato central para
+      // discutir qué se muestra primero y qué queda para quien quiera
+      // profundizar: sin esto, el archivo es una lista plana y no se puede
+      // opinar sobre cómo se presenta.
+      nivel: el.closest("details") ? "desplegable" : "superficie",
+      seccion: sec ? secciones.indexOf(sec) : -1,
       seccionClave: tituloSec ? tituloSec.dataset.i : null,
       bloqueClave: (tituloBl && tituloBl.dataset.i !== clave) ? tituloBl.dataset.i : null,
       bloque: bloque ? bloque.dataset.bloque : null,
+      grupo: grupo ? grupo.dataset.grupo : null,
+    };
+  });
+
+  // El mapa del sitio: las secciones en el orden en que se leen, con lo que
+  // cada una muestra antes de que nadie toque nada.
+  MAPA = secciones.map((sec, i) => {
+    const t = sec.querySelector("h1[data-i],h2[data-i]");
+    const ceja = sec.querySelector(".eyebrow[data-i]");
+    const g = sec.querySelector("[data-grupo]");
+    return {
+      n: i,
+      seccion: t ? t.dataset.i : (sec.id || "sin-titulo"),
+      antetitulo: ceja ? ceja.dataset.i : null,
+      grupo: g ? g.dataset.grupo : null,
+      bloques: g ? [...g.querySelectorAll(":scope > [data-bloque]")].map(x => x.dataset.bloque) : null,
     };
   });
   return mapa;
 }
+
+const palabras = (v) => muestra(v).trim().split(/\s+/).filter(Boolean).length;
 
 // El texto de un título puede traer <em>: para nombrar una sección alcanza
 // con las palabras.
@@ -525,6 +567,10 @@ function piezasDelSitio(mapa) {
       id: "sitio:" + k,
       donde: partes.filter(Boolean).join(" · ") || "Sitio",
       tipo: m.papel || papelDeClave(k),
+      nivel: m.nivel || null,
+      seccion: m.seccion !== undefined ? m.seccion : -1,
+      bloque: m.bloque || null,
+      grupo: m.grupo || null,
       es: SITIO.es[k],
       fr: SITIO.fr[k],
       ref: { que: "sitio", clave: k },   // la clave sirve para es y para fr
@@ -689,23 +735,53 @@ function avisosDe(p) {
 /* Lo que va adentro del archivo para quien traduce. Se escribe acá y no en
    el chat de cada vez: una instrucción que se reescribe cada vez da una
    traducción distinta cada vez. */
-const INSTRUCCIONES = [
-  "Este archivo sirve para DOS cosas a la vez: revisar el español y traducir al francés. Hacé las dos en la misma pasada.",
-  "Traducí del español de Uruguay al francés de Francia. Es el sitio de un taller que construye yurtas: artesanal, técnico y sobrio. No es publicidad.",
-  "REVISIÓN DEL ESPAÑOL: devolvé \"es\" SÓLO cuando haya algo objetivamente mal — una falta de ortografía, una tilde, una concordancia, puntuación, un espacio de más, un término del oficio usado de dos maneras distintas en el sitio, una cifra que se contradice con otra pieza. NO reescribas por gusto: la voz es de quien lo escribió y no se toca. Si no hay nada que corregir, no mandes \"es\".",
-  "Cuando devuelvas \"es\", agregá \"motivo\" con una línea que diga qué se corrigió. Se lee antes de aceptar el cambio.",
-  "Si corregís el español de una pieza, devolvé TAMBIÉN su \"fr\" al día con esa corrección: si no, el francés queda traduciendo un texto que ya no existe.",
-  "Devolvé SOLO un JSON con la misma forma: { \"piezas\": [ { \"id\": …, \"es\": …, \"fr\": …, \"motivo\": … } ] }. Sin explicaciones fuera del JSON.",
-  "El campo \"id\" se copia tal cual. Si una pieza no la sabés traducir, dejala afuera del JSON en lugar de inventar.",
-  "Respetá el tipo: si el español es una lista, devolvé una lista con la misma cantidad de elementos; si es una tabla, la misma cantidad de filas y de columnas.",
-  "Las etiquetas <em> del original se conservan en la traducción, alrededor de lo que corresponda en francés.",
-  "Las piezas cortas —títulos, etiquetas, años, botones— tienen que entrar en el mismo lugar en pantalla. Mirá \"cabe_en\" y no te pases: el francés estira, y un título de dos renglones que pasa a cuatro rompe la página.",
-  "Buscá en internet cómo se dice cada término de construcción de yurtas en el mundo francófono antes de decidir. La jerga del oficio no se traduce palabra por palabra.",
-  "Usá el modo de tratamiento formal (vous) con quien lee el sitio.",
-  "Dejá los nombres propios, los topónimos y las palabras del oficio que ya están en el glosario tal como están.",
-  "Si una pieza trae \"es_anterior\", su \"fr_actual\" traduce ESE texto viejo: compará los dos españoles, y cambiá del francés sólo lo que se movió. Que se note lo menos posible que hubo dos manos.",
-  "Marcá en \"dudas\" cualquier pieza donde la traducción dependa de algo que no se ve desde acá.",
-];
+const INSTRUCCIONES = {
+  que_es: "Este archivo es TODO el contenido publicado del sitio de CasaYourte, en español, en el mismo orden en que se lee. Es un taller que construye yurtas en Uruguay, con ocho años de obra en Francia. Se pide una revisión editorial completa, no sólo una traducción.",
+
+  cuatro_trabajos: [
+    "1 · ORTOGRAFÍA Y GRAMÁTICA. Faltas, tildes, concordancias, puntuación, espacios. Español de Uruguay.",
+    "2 · COHERENCIA. Leé el sitio ENTERO antes de opinar sobre una parte: un término del oficio usado de dos maneras distintas, una cifra que contradice a otra, algo que se afirma en una sección y se niega en otra, una idea repetida con otras palabras en dos lugares.",
+    "3 · ESTRUCTURA. Mirá 'mapa' y el campo 'nivel' de cada pieza. El sitio muestra el titular con su foto y guarda el cuerpo en un desplegable. Decí qué debería estar en la superficie y qué debería bajar, qué sección va antes que cuál, qué bloque sobra o le falta contexto. El objetivo es que quien llega entienda rápido y que quien quiera profundizar pueda hacerlo — sin que el que sólo mira tenga que leer todo.",
+    "4 · TRADUCCIÓN al francés de Francia. Traducí el USO, no la palabra: buscá cómo se dice cada término de construcción de yurtas en el mundo francófono antes de decidir. Tratamiento de usted (vous).",
+  ],
+
+  tono: "El sitio tiene que mostrar un desarrollo técnico largo SIN presumir. Nada de superlativos, nada de lenguaje de catálogo, nada de 'innovador' ni 'único'. Lo que convence es el dato concreto y el porqué de cada decisión. Si una frase se está vendiendo en lugar de explicando, decilo en el informe.",
+
+  reglas_de_correccion: [
+    "Devolvé 'es' SÓLO cuando haya algo objetivamente mal. NO reescribas por gusto: la voz es de quien lo escribió.",
+    "Cuando devuelvas 'es', agregá 'motivo' con una línea que diga qué se corrigió.",
+    "Si corregís el español de una pieza, devolvé TAMBIÉN su 'fr' al día con esa corrección.",
+    "Respetá el tipo: si el español es una lista, devolvé una lista con la misma cantidad de elementos; si es una tabla, la misma cantidad de filas y columnas.",
+    "Las etiquetas <em> del original se conservan.",
+    "Las piezas cortas —títulos, etiquetas, años, botones— tienen que entrar en el mismo lugar en pantalla. Mirá 'cabe_en'.",
+    "Si una pieza trae 'es_anterior', su 'fr_actual' traduce ESE texto viejo: cambiá del francés sólo lo que se movió.",
+    "Los nombres propios y las palabras del glosario quedan como están.",
+  ],
+
+  formato_de_respuesta: {
+    como: "Devolvé UN SOLO objeto JSON, sin texto afuera y sin ```. Tres campos, los tres opcionales: 'piezas', 'orden', 'informe'. Lo que no tengas, no lo mandes.",
+    ejemplo: {
+      piezas: [
+        { id: "sitio:s1.t", es: "El taller", motivo: "sobraba un espacio", fr: "L'atelier" },
+        { id: "foto:yurta-x:abc123:cap", fr: "Fixation du trei au plancher" },
+        { id: "sitio:of.l", es: ["Primer punto", "Segundo punto"], fr: ["Premier point", "Deuxième point"] },
+      ],
+      orden: { dif: "d3,d1,d2,d4,d5,d6,d7,d8" },
+      informe: [
+        { tema: "coherencia", donde: "sitio:d4.b y sitio:in.lede",
+          dice: "El grosor del aislante aparece como 24 cm en un lado y 20 en otro.",
+          propongo: "Verificar cuál es y unificar." },
+        { tema: "estructura", donde: "sección Diferenciales",
+          dice: "Ocho bloques seguidos, todos del mismo peso, cansan antes de la mitad.",
+          propongo: "Dejar tres en la superficie y los otros cinco tras un desplegable." },
+      ],
+    },
+    piezas: "Cambios de texto que la página escribe en la base. El 'id' se copia TAL CUAL. Sólo las piezas que cambian; el resto no se manda.",
+    orden: "Sólo si proponés reordenar. Es la lista COMPLETA de identificadores del grupo, separados por coma, en el orden nuevo. Grupos posibles: 'traj' (trayectoria), 'dif' (diferenciales), 'of' (líneas de oferta). Se aplica sólo si el dueño del sitio lo acepta.",
+    informe: "Todo lo que NO es un cambio de texto: coherencia, estructura, tono, dudas. No se escribe en ningún lado, se lee. Cuatro campos: tema, donde, dice, propongo. Sé concreto y decí siempre por qué.",
+  },
+};
+
 
 /* Punto de partida, no verdad revelada: son los términos que el propio
    proyecto ya usa en francés en la página de álbumes. Quien traduce los
@@ -769,11 +845,26 @@ function archivoExport() {
     instrucciones: INSTRUCCIONES,
     glosario: GLOSARIO,
     notas: $("notas").value.trim(),
+    // El mapa va SIEMPRE entero, aunque el archivo salga por partes: sin el
+    // sitio completo a la vista no se puede opinar sobre coherencia ni sobre
+    // en qué orden se presenta la información.
+    mapa: MAPA,
+    resumen: {
+      piezas_en_el_sitio: PIEZAS.length,
+      en_la_superficie: PIEZAS.filter(x => x.nivel === "superficie").length,
+      en_desplegables: PIEZAS.filter(x => x.nivel === "desplegable").length,
+      palabras_en_la_superficie: PIEZAS.filter(x => x.nivel === "superficie")
+        .reduce((n, x) => n + palabras(x.es), 0),
+      palabras_en_total: PIEZAS.reduce((n, x) => n + palabras(x.es), 0),
+      orden_de_los_grupos: SITIO.orden,
+    },
     piezas: trozo.map(p => {
       const o = {
         id: p.id,
         donde: p.donde,
         tipo: p.tipo,
+        nivel: p.nivel || undefined,
+        bloque: p.bloque || undefined,
         estado: p.estado === "viejo" ? "el español cambió después de traducir" : p.estado,
         es: p.es,
       };
@@ -855,13 +946,17 @@ function leerTraduccion(txt) {
   let filas = [];
   if (Array.isArray(j)) filas = j;
   else if (Array.isArray(j.piezas)) filas = j.piezas;
-  else filas = Object.keys(j).map(k => ({ id: k, fr: j[k] }));
-  return filas.map(f => ({
-    id: f.id,
-    fr: f.fr !== undefined ? f.fr : f.fr_nuevo,
-    es: f.es !== undefined ? f.es : f.es_sugerido,
-    motivo: f.motivo || f.razon || "",
-  })).filter(f => f.id);
+  else if (!j.orden && !j.informe) filas = Object.keys(j).map(k => ({ id: k, fr: j[k] }));
+  return {
+    piezas: filas.map(f => ({
+      id: f.id,
+      fr: f.fr !== undefined ? f.fr : f.fr_nuevo,
+      es: f.es !== undefined ? f.es : f.es_sugerido,
+      motivo: f.motivo || f.razon || "",
+    })).filter(f => f.id),
+    orden: (j && typeof j.orden === "object" && !Array.isArray(j.orden)) ? j.orden : {},
+    informe: Array.isArray(j && j.informe) ? j.informe : [],
+  };
 }
 
 function mismoMolde(es, fr) {
@@ -875,9 +970,12 @@ function mismoMolde(es, fr) {
 function revisar() {
   const txt = $("entrada").value.trim();
   if (!txt) return aviso("Pegá primero el JSON traducido", true);
-  let filas;
-  try { filas = leerTraduccion(txt); }
+  let vuelta;
+  try { vuelta = leerTraduccion(txt); }
   catch (e) { return aviso(e.message, true); }
+  const filas = vuelta.piezas;
+
+  pintarInforme(vuelta.informe);
 
   const porId = {};
   PIEZAS.forEach(p => porId[p.id] = p);
@@ -901,13 +999,33 @@ function revisar() {
   });
   CAMBIOS.sort((a, b) => (a.idioma === b.idioma) ? 0 : (a.idioma === "es" ? -1 : 1));
 
+  /* El orden propuesto va PRIMERO y desmarcado. Mover ocho bloques cambia
+     cómo se lee el sitio entero, y eso no se acepta de corrido junto con
+     una tilde: hay que ir hasta ahí y tildarlo a propósito. */
+  Object.keys(vuelta.orden).forEach((g) => {
+    const nueva = String(vuelta.orden[g]).split(",").map(x => x.trim()).filter(Boolean);
+    const actual = String(SITIO.orden[g] || "").split(",").map(x => x.trim()).filter(Boolean);
+    if (!nueva.length) return;
+    if (!actual.length) return problemas.push("grupo que no existe: " + g);
+    // Reordenar es cambiar el orden, no la lista: los mismos bloques, todos.
+    const faltan = actual.filter(x => !nueva.includes(x));
+    const sobran = nueva.filter(x => !actual.includes(x));
+    if (faltan.length || sobran.length)
+      return problemas.push("el orden de '" + g + "' no tiene los mismos bloques"
+        + (faltan.length ? " (faltan " + faltan.join(",") + ")" : "")
+        + (sobran.length ? " (sobran " + sobran.join(",") + ")" : ""));
+    if (nueva.join(",") === actual.join(",")) return;
+    CAMBIOS.unshift({ orden: g, nueva: nueva.join(","), antes: actual.join(","),
+                      marcada: false, motivo: "" });
+  });
+
   $("pasoRev").classList.toggle("hide", !CAMBIOS.length);
   if (!CAMBIOS.length) {
     aviso(problemas.length ? problemas[0] : "No hay nada nuevo para escribir.", !!problemas.length);
     $("leido").textContent = problemas.join(" · ");
     return;
   }
-  const nEs = CAMBIOS.filter(c => c.idioma === "es").length;
+  const nEs = CAMBIOS.filter(c => !c.orden && c.idioma === "es").length;
   $("resumenRev").textContent =
     (nEs ? nEs + " en español y " + (CAMBIOS.length - nEs) + " en francés" : CAMBIOS.length + " en francés")
     + " para escribir"
@@ -926,6 +1044,25 @@ function pintarRevision() {
   CAMBIOS.forEach((c, i) => {
     const d = document.createElement("div");
     d.className = "rev";
+    if (c.orden) {
+      d.innerHTML =
+        '<div class="cab"><input type="checkbox" class="tilde">'
+        + '<span class="donde"></span><span class="idi esp">orden</span></div>'
+        + '<div class="par vieja"><i>orden de ahora</i><span class="v-vieja"></span></div>'
+        + '<div class="par nueva"><i>orden propuesto</i><span class="v-nueva"></span></div>';
+      d.querySelector(".donde").textContent = "Reordenar los bloques del grupo «" + c.orden + "»";
+      d.querySelector(".v-vieja").textContent = c.antes;
+      d.querySelector(".v-nueva").textContent = c.nueva;
+      d.classList.add("fuera");
+      d.querySelector(".tilde").addEventListener("change", (e) => {
+        c.marcada = e.target.checked;
+        d.classList.toggle("fuera", !c.marcada);
+        contarMarcadas();
+      });
+      cont.appendChild(d);
+      return;
+    }
+
     const esES = c.idioma === "es";
     const antes = c.pieza[c.idioma];
     d.innerHTML =
@@ -952,6 +1089,30 @@ function pintarRevision() {
   contarMarcadas();
 }
 
+/* El informe no toca la base. Son las observaciones que necesitan una
+   decisión: coherencia, estructura, tono. Se leen y se resuelven a mano,
+   con el editor. Escribirlas automáticamente sería reescribir el sitio
+   sin que nadie lo haya mirado. */
+function pintarInforme(informe) {
+  const caja = $("informe");
+  caja.innerHTML = "";
+  caja.classList.toggle("hide", !informe.length);
+  $("pasoInforme").classList.toggle("hide", !informe.length);
+  if (!informe.length) return;
+  informe.forEach((o) => {
+    const d = document.createElement("div");
+    d.className = "av";
+    d.innerHTML = '<span class="donde"></span><span class="qué"></span>'
+                + '<span class="txt"></span><span class="prop"></span>';
+    d.querySelector(".donde").textContent =
+      [o.tema, o.donde].filter(Boolean).join(" · ") || "observación";
+    d.querySelector(".qué").textContent = o.dice || o.observacion || "";
+    d.querySelector(".txt").textContent = "";
+    d.querySelector(".prop").textContent = o.propongo ? "→ " + o.propongo : "";
+    caja.appendChild(d);
+  });
+}
+
 function contarMarcadas() {
   const n = CAMBIOS.filter(c => c.marcada).length;
   $("aplicar").disabled = n === 0;
@@ -968,25 +1129,28 @@ $("ninguna").addEventListener("click", () => { CAMBIOS.forEach(c => c.marcada = 
 $("aplicar").addEventListener("click", async () => {
   const marcadas = CAMBIOS.filter(c => c.marcada);
   if (!marcadas.length) return;
-  const conEs = marcadas.filter(c => c.idioma === "es").length;
-  if (!confirm("Se van a escribir " + marcadas.length + " piezas"
-             + (conEs ? ", de las cuales " + conEs + " CAMBIAN EL TEXTO EN ESPAÑOL" : "")
+  const conEs = marcadas.filter(c => !c.orden && c.idioma === "es").length;
+  const conOrden = marcadas.filter(c => c.orden).length;
+  if (!confirm("Se van a escribir " + marcadas.length + " cambios"
+             + (conEs ? ", de los cuales " + conEs + " CAMBIAN EL TEXTO EN ESPAÑOL" : "")
+             + (conOrden ? " y " + conOrden + " REORDENAN BLOQUES DEL SITIO" : "")
              + ".\n\nEn el sitio se ve en el acto.")) return;
 
   const b = $("aplicar"); b.disabled = true;
   const paso = (t) => { $("progreso").textContent = t; };
 
   try {
-    const delSitio = marcadas.filter(c => c.pieza.ref.que === "sitio");
-    const deFotos  = marcadas.filter(c => c.pieza.ref.que === "foto");
-    const deEtapas = marcadas.filter(c => c.pieza.ref.que === "etapa");
+    const deOrden  = marcadas.filter(c => c.orden);
+    const delSitio = marcadas.filter(c => !c.orden && c.pieza.ref.que === "sitio");
+    const deFotos  = marcadas.filter(c => !c.orden && c.pieza.ref.que === "foto");
+    const deEtapas = marcadas.filter(c => !c.orden && c.pieza.ref.que === "etapa");
 
     /* El sitio: el mapa fr completo con setDoc, nunca updateDoc de una clave
        con punto (§3.28). Y se vuelve a leer el documento justo antes de
        escribir, para no pisar algo que se haya publicado desde el editor
        mientras esta pantalla estaba abierta. */
-    if (delSitio.length) {
-      paso("Escribiendo los textos del sitio…");
+    if (delSitio.length || deOrden.length) {
+      paso("Escribiendo en el sitio…");
       const d = await getDoc(doc(db, "sitio", "publicado"));
       const x = d.exists() ? d.data() : {};
       const mapas = {
@@ -994,10 +1158,15 @@ $("aplicar").addEventListener("click", async () => {
         fr: { ...((BASE.textos || {}).fr || {}), ...decodMapa(x.fr) },
       };
       delSitio.forEach(c => mapas[c.idioma][c.pieza.ref.clave] = c.nueva);
+      // El orden vive en el mismo documento y lo escribe el editor: se lee
+      // de nuevo acá y se mezcla, para no pisar un movimiento reciente.
+      const orden = { ...(x.orden || {}) };
+      deOrden.forEach(c => { orden[c.orden] = c.nueva; SITIO.orden[c.orden] = c.nueva; });
       await setDoc(doc(db, "sitio", "publicado"), {
         ...x,
         es: codifMapa(mapas.es),
         fr: codifMapa(mapas.fr),
+        orden,
         guardado: serverTimestamp(),
         guardadoPor: CY.usuario.email,
       });
@@ -1055,8 +1224,8 @@ $("aplicar").addEventListener("click", async () => {
 
        Corregir una palabra en español sin rehacer el francés deja las dos
        versiones diciendo cosas distintas. El sistema tiene que saberlo. */
-    marcadas.forEach(c => { c.pieza[c.idioma] = c.nueva; });
-    marcadas.filter(c => c.idioma === "fr")
+    marcadas.filter(c => !c.orden).forEach(c => { c.pieza[c.idioma] = c.nueva; });
+    marcadas.filter(c => !c.orden && c.idioma === "fr")
             .forEach(c => { ORIGEN[c.pieza.id] = c.pieza.es; });
     try { await guardarRegistro(); }
     catch (e) {
