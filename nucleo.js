@@ -12,7 +12,7 @@
 
 export const CY = {};
 
-CY.VERSION = 'nucleo-11';
+CY.VERSION = 'nucleo-13';
 
 // ═════════════════════════════════════════════════════════════
 //  BOTÓN ATRÁS DE ANDROID
@@ -141,17 +141,203 @@ CY.ENTREGA = 'f_auto,q_auto,w_2000';
 CY.MAX_LADO = 2000;
 CY.CALIDAD = 0.85;
 
+/* ── SECUENCIAS Y VIDEOS CORTOS ───────────────────────────────
+   Hay tres medios y cada uno tiene su camino:
+
+     foto      · se achica en el teléfono y se sube (§3.5)
+     secuencia · GIF animado: se sube TAL CUAL
+     video     · se sube tal cual, a la otra punta de Cloudinary
+
+   Por qué el animado no se achica: CY.reducir dibuja la imagen en un
+   canvas y la vuelve a codificar en JPEG, y un canvas tiene UN cuadro.
+   Hasta hoy, un GIF que pasaba por ahí se subía convertido en una foto
+   quieta, sin error y sin aviso — la peor forma de fallar, porque nadie
+   la ve hasta que mira el sitio. Ahora se sube entero, y a cambio se le
+   ponen límites, que es lo único que queda cuando no se puede achicar.
+
+   DE DÓNDE SALEN LOS NÚMEROS
+
+   · 100 cuadros · no es elegido: es el techo de Cloudinary para
+     transformar al vuelo. Un GIF más largo se entrega TRUNCO, sin
+     ningún error. Mejor no dejarlo entrar.
+   · 8 MB de GIF · decisión nuestra. Un GIF es un formato viejo y pesa
+     como diez veces lo mismo en video.
+   · 25 MB de video · Cloudinary acepta hasta 100 MB en el plan
+     gratuito, PERO sólo transforma al vuelo hasta 40. Un video de 60 MB
+     entra a la cuenta y después no se puede entregar achicado: hay que
+     pedir la conversión por adelantado, que este sistema no hace. Se
+     corta bien por debajo de ese borde.
+   · 20 segundos · para que el sitio no se vuelva pesado hay que fijar
+     lo que dura, no sólo lo que pesa: un minuto en buena calidad son
+     varios megas por más que se entregue optimizado. Veinte segundos
+     alcanzan para mostrar cómo se levanta un trei.
+
+   Lo que se ENTREGA es otra cosa y pesa mucho menos que lo guardado:
+   f_auto,q_auto,w_900 sobre un video de 20 s deja unos pocos cientos de
+   kilobytes. El original queda como respaldo. */
+CY.MEDIO = {
+  gif:   { maxPeso:  8 * 1024 * 1024, maxCuadros: 100 },
+  video: { maxPeso: 25 * 1024 * 1024, maxSegundos: 20 },
+};
+
+/* Cuenta los cuadros de un GIF recorriendo su estructura. NO se buscan
+   bytes sueltos: el 0x2C que marca un cuadro también aparece dentro de
+   los datos comprimidos, y contarlo de ahí daría de más. */
+CY.cuadrosDeGif = function (buffer) {
+  const b = new Uint8Array(buffer);
+  if (b.length < 13) return 0;
+  if (String.fromCharCode(b[0], b[1], b[2]) !== 'GIF') return 0;
+
+  let i = 6;
+  const packed = b[i + 4];
+  i += 7;                                                  // pantalla lógica
+  if (packed & 0x80) i += 3 * (1 << ((packed & 7) + 1));   // tabla global
+
+  // Cada sub-bloque dice su largo; el 0 cierra la cadena.
+  const saltarSubBloques = () => {
+    while (i < b.length) { const n = b[i++]; if (n === 0) return; i += n; }
+  };
+
+  let cuadros = 0;
+  while (i < b.length) {
+    const marca = b[i++];
+    if (marca === 0x3B) break;                             // fin
+    if (marca === 0x21) { i++; saltarSubBloques(); continue; }   // extensión
+    if (marca === 0x2C) {                                  // un cuadro
+      cuadros++;
+      const p = b[i + 8];
+      i += 9;
+      if (p & 0x80) i += 3 * (1 << ((p & 7) + 1));         // tabla local
+      i++;                                                 // código LZW
+      saltarSubBloques();
+      continue;
+    }
+    break;                        // byte inesperado: se corta, no se adivina
+  }
+  return cuadros;
+};
+
+const mb = (n) => (n / 1048576).toFixed(1).replace('.', ',') + ' MB';
+
+/**
+ * Cuánto dura un video, leído por el propio navegador antes de subir
+ * nada. Si el teléfono no sabe leer ese formato devuelve 0, y entonces
+ * el único límite que queda es el peso: no se rechaza por una duración
+ * que no se pudo medir.
+ */
+CY.medirVideo = function (file) {
+  return new Promise((listo) => {
+    let url;
+    const v = document.createElement('video');
+    const terminar = (r) => {
+      if (url) URL.revokeObjectURL(url);
+      v.removeAttribute('src'); listo(r);
+    };
+    const reloj = setTimeout(() => terminar({ segundos: 0, ancho: 0, alto: 0 }), 6000);
+    v.preload = 'metadata';
+    v.onloadedmetadata = () => {
+      clearTimeout(reloj);
+      terminar({ segundos: v.duration || 0, ancho: v.videoWidth, alto: v.videoHeight });
+    };
+    v.onerror = () => { clearTimeout(reloj); terminar({ segundos: 0, ancho: 0, alto: 0 }); };
+    try { url = URL.createObjectURL(file); v.src = url; }
+    catch (e) { clearTimeout(reloj); terminar({ segundos: 0, ancho: 0, alto: 0 }); }
+  });
+};
+
+/**
+ * Qué es este archivo y si se puede subir.
+ * Devuelve { clase, cuadros, segundos, peso, problema }.
+ * clase: 'foto' · 'secuencia' · 'video'
+ * Si hay 'problema', no se sube: el texto es para mostrarlo tal cual.
+ */
+CY.mirarMedio = async function (file) {
+  const r = { clase: 'foto', cuadros: 0, segundos: 0, peso: file.size, problema: null };
+  const nombre = file.name || '';
+  const tipo = file.type || '';
+
+  if (tipo.indexOf('video/') === 0 || /\.(mp4|mov|m4v|webm|3gp)$/i.test(nombre)) {
+    r.clase = 'video';
+    const lim = CY.MEDIO.video;
+    const m = await CY.medirVideo(file);
+    r.segundos = Math.round(m.segundos);
+    if (file.size > lim.maxPeso)
+      r.problema = `El video pesa ${mb(file.size)} y el límite es ${mb(lim.maxPeso)}. `
+        + 'Recortalo, o grabalo en menor calidad desde la cámara.';
+    else if (r.segundos > lim.maxSegundos)
+      r.problema = `El video dura ${r.segundos} segundos y el límite es ${lim.maxSegundos}. `
+        + 'Es un álbum de obra, no una película: mostrá el momento y cortá.';
+    return r;
+  }
+
+  const esGif = tipo === 'image/gif' || /\.gif$/i.test(nombre);
+  if (!esGif) return r;
+
+  r.cuadros = CY.cuadrosDeGif(await file.arrayBuffer());
+  if (r.cuadros <= 1) return r;          // un GIF de un cuadro es una foto común
+  r.clase = 'secuencia';
+
+  const lim = CY.MEDIO.gif;
+  if (file.size > lim.maxPeso)
+    r.problema = `La secuencia pesa ${mb(file.size)} y el límite es ${mb(lim.maxPeso)}. `
+      + 'Un GIF pesa muchísimo: si podés, subí el video en lugar del GIF y pesa diez veces menos.';
+  else if (r.cuadros > lim.maxCuadros)
+    r.problema = `La secuencia tiene ${r.cuadros} cuadros y el límite es ${lim.maxCuadros}. `
+      + 'Más que eso se entrega cortada sin avisar, así que no se sube.';
+  return r;
+};
+
 /** URL de entrega para un public_id, al ancho que se pida. */
 CY.url = function (publicId, ancho) {
   const tr = ancho ? `f_auto,q_auto,w_${ancho},c_limit` : CY.ENTREGA;
   return `https://res.cloudinary.com/${CY.CLOUDINARY.cloud}/image/upload/${tr}/${publicId}`;
 };
 
-/** Miniatura cuadrada-ish recortada al punto de interés. */
-CY.miniatura = function (publicId, ancho) {
+/**
+ * Miniatura cuadrada-ish recortada al punto de interés.
+ * Para una secuencia devuelve UN CUADRO QUIETO, y es a propósito: una
+ * grilla con doce animaciones a la vez es ilegible y pesa como doce
+ * videos. La animación se ve al abrir la foto, no en la lista.
+ * El f_jpg no es un descuido: es la única forma segura de pedir algo
+ * quieto, porque un JPEG no puede animarse. Con f_auto volvería a salir
+ * animada en los navegadores que lo soportan.
+ */
+CY.miniatura = function (publicId, ancho, clase) {
   const w = ancho || 400;
+  const c = CY.CLOUDINARY.cloud;
+  // Un video vive en la otra punta de Cloudinary y su miniatura es un
+  // cuadro sacado del segundo cero.
+  if (clase === 'video')
+    return `https://res.cloudinary.com/${c}/video/upload/`
+      + `so_0,q_auto,w_${w},ar_4:3,c_fill/${publicId}.jpg`;
+  const fmt = clase === 'secuencia' ? 'f_jpg' : 'f_auto';
+  return `https://res.cloudinary.com/${c}/image/upload/`
+    + `${fmt},q_auto,w_${w},ar_4:3,c_fill,g_auto/${publicId}`;
+};
+
+/**
+ * URL de una secuencia, animada. Sin recorte: el recorte cuadro a cuadro
+ * con gravedad automática se calcula por cuadro, cuesta caro y puede
+ * bailar. Se limita el ancho y nada más.
+ * f_auto entrega WebP animado donde se puede, que pesa mucho menos que
+ * el GIF original, y GIF donde no.
+ */
+CY.urlAnimada = function (publicId, ancho) {
   return `https://res.cloudinary.com/${CY.CLOUDINARY.cloud}/image/upload/`
-    + `f_auto,q_auto,w_${w},ar_4:3,c_fill,g_auto/${publicId}`;
+    + `f_auto,q_auto,w_${ancho || 900},c_limit/${publicId}`;
+};
+
+/**
+ * El video, ya achicado y optimizado para entregar. Lo que pesa acá no
+ * es lo que pesa el original: un video de 20 s a 900 px de ancho con
+ * q_auto queda en unos pocos cientos de kilobytes.
+ * Nunca se pone a reproducir solo en una lista: eso lo decide la
+ * pantalla, con preload="none" y el cartel quieto hasta que alguien
+ * toca.
+ */
+CY.urlVideo = function (publicId, ancho) {
+  return `https://res.cloudinary.com/${CY.CLOUDINARY.cloud}/video/upload/`
+    + `f_auto,q_auto,w_${ancho || 900},c_limit/${publicId}.mp4`;
 };
 
 CY.esCloudinary = (url) => typeof url === 'string'
@@ -203,8 +389,11 @@ CY.pedirImagenes = function (opciones) {
       + '<button type="button" data-cy="camara" class="cy-hoja-b">Tomar foto</button>'
       + '<button type="button" data-cy="archivo" class="cy-hoja-b">Elegir de la galería</button>'
       + '<button type="button" data-cy="cancelar" class="cy-hoja-x">Cancelar</button>'
+      // La galería ofrece fotos, GIF y videos. La cámara sigue sacando
+      // fotos: filmar y subir en el mismo gesto es la forma más rápida de
+      // mandar cien megas sin querer.
       + '<input type="file" accept="image/*" capture="environment" data-cy="inCamara" hidden>'
-      + '<input type="file" accept="image/*" multiple data-cy="inArchivo" hidden>'
+      + '<input type="file" accept="image/*,video/*" multiple data-cy="inArchivo" hidden>'
       + '</div>';
     document.body.appendChild(hoja);
     hoja.showModal();
@@ -264,15 +453,31 @@ CY.reducir = async function (file) {
   return { blob, ancho: w, alto: h };
 };
 
-/** Sube a Cloudinary y devuelve el resultado crudo. */
+/**
+ * Sube a Cloudinary y devuelve el resultado crudo.
+ * Una foto se achica antes de salir. Una secuencia se sube entera: no hay
+ * forma de reducirla en el teléfono sin perder la animación.
+ */
 CY.subirImagen = async function (file, carpeta, etiquetas) {
-  const { blob, ancho, alto } = await CY.reducir(file);
+  const medio = await CY.mirarMedio(file);
+  if (medio.problema) throw new Error(medio.problema);
+
+  let blob, ancho, alto;
+  if (medio.clase === 'foto') {
+    ({ blob, ancho, alto } = await CY.reducir(file));
+  } else {
+    blob = file; ancho = 0; alto = 0;      // las medidas las devuelve Cloudinary
+  }
+
   const fd = new FormData();
   fd.append('file', blob);
   fd.append('upload_preset', CY.CLOUDINARY.preset);
   if (carpeta) fd.append('folder', carpeta);
   if (etiquetas && etiquetas.length) fd.append('tags', etiquetas.join(','));
-  const r = await fetch(`https://api.cloudinary.com/v1_1/${CY.CLOUDINARY.cloud}/image/upload`,
+  // Un video NO entra por la punta de imágenes: es otro endpoint, otro
+  // límite de tamaño y otra forma de entrega.
+  const punta = medio.clase === 'video' ? 'video' : 'image';
+  const r = await fetch(`https://api.cloudinary.com/v1_1/${CY.CLOUDINARY.cloud}/${punta}/upload`,
     { method: 'POST', body: fd });
   const j = await r.json();
   if (!r.ok) {
@@ -281,7 +486,15 @@ CY.subirImagen = async function (file, carpeta, etiquetas) {
       ? `El preset "${CY.CLOUDINARY.preset}" no existe o no es unsigned. Crealo en Cloudinary: Settings → Upload → Add upload preset.`
       : m);
   }
-  return { ...j, origAncho: ancho, origAlto: alto, pesoSubido: blob.size };
+  return {
+    ...j,
+    origAncho: ancho || j.width, origAlto: alto || j.height,
+    pesoSubido: blob.size,
+    // Lo que la pantalla que guarda en Firestore necesita saber para
+    // volver a armar la URL correcta más tarde. Sin 'clase' guardada, el
+    // sitio no puede distinguir una foto de un video y arma mal la URL.
+    clase: medio.clase, cuadros: medio.cuadros, segundos: medio.segundos,
+  };
 };
 
 // ═════════════════════════════════════════════════════════════

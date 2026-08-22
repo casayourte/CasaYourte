@@ -83,10 +83,17 @@ main{max-width:1400px;margin:0 auto;padding:0 var(--pad) calc(4rem + var(--safe)
 .foto img{transition:transform .5s cubic-bezier(.2,.7,.2,1)}
 .foto:hover img{transform:scale(1.04)}
 
+/* La marca de lo que se mueve, sobre la miniatura. */
+.foto{position:relative}
+.foto .medio{position:absolute;left:.3rem;top:.3rem;font-family:var(--mono);
+  font-size:.52rem;letter-spacing:.08em;background:rgba(12,10,8,.82);color:var(--wool);
+  padding:.15rem .34rem;border-radius:3px;pointer-events:none}
+
 /* ---- visor ---- */
 #visor{position:fixed;inset:0;z-index:60;background:rgba(12,10,8,.96);
   display:flex;flex-direction:column;padding:0}
-#visor img{flex:1;min-height:0;width:100%;height:auto;object-fit:contain;background:#000}
+#visor img,#visor video{flex:1;min-height:0;width:100%;height:auto;
+  object-fit:contain;background:#000}
 #visor .pie{padding:.9rem var(--pad) calc(1rem + var(--safe));display:flex;gap:.8rem;
   align-items:flex-start;border-top:1px solid var(--line);background:var(--ink)}
 #visor .txt{flex:1;min-width:0;font-size:.9rem;color:var(--dim);line-height:1.45}
@@ -133,6 +140,7 @@ main{max-width:1400px;margin:0 auto;padding:0 var(--pad) calc(4rem + var(--safe)
 
 <div id="visor" class="hide">
   <img id="v-img" alt="">
+  <video id="v-video" class="hide" controls playsinline preload="none"></video>
   <div class="pie">
     <div class="txt"><b id="v-etapa"></b><span id="v-cap"></span></div>
     <div class="nav">
@@ -239,10 +247,25 @@ async function traer(ruta) {
   return (j.documents || []).map((d) => ({ id: idDe(d.name), ...mapa(d.fields || {}) }));
 }
 
+/* Tres medios, tres formas de armar la URL (se guardan en 'clase'):
+     foto      · imagen común
+     secuencia · GIF animado, que se entrega animado sólo al abrirlo
+     video     · vive en la otra punta de Cloudinary
+
+   La miniatura SIEMPRE queda quieta, sea lo que sea. Una rejilla con
+   veinte cosas moviéndose no se puede mirar y pesa como veinte videos.
+   El f_jpg de la secuencia no es un descuido: un JPEG no puede animarse,
+   y es la única forma segura de pedir un cuadro solo. */
 const urlFoto = (pid, w) =>
   `https://res.cloudinary.com/${CLOUD}/image/upload/f_auto,q_auto,w_${w},c_limit/${pid}`;
-const urlMini = (pid, w) =>
-  `https://res.cloudinary.com/${CLOUD}/image/upload/f_auto,q_auto,w_${w},ar_4:3,c_fill,g_auto/${pid}`;
+const urlAnimada = (pid, w) =>
+  `https://res.cloudinary.com/${CLOUD}/image/upload/f_auto,q_auto,w_${w},c_limit/${pid}`;
+const urlVideo = (pid, w) =>
+  `https://res.cloudinary.com/${CLOUD}/video/upload/f_auto,q_auto,w_${w},c_limit/${pid}.mp4`;
+const urlMini = (pid, w, clase) => clase === "video"
+  ? `https://res.cloudinary.com/${CLOUD}/video/upload/so_0,q_auto,w_${w},ar_4:3,c_fill/${pid}.jpg`
+  : `https://res.cloudinary.com/${CLOUD}/image/upload/`
+    + `${clase === "secuencia" ? "f_jpg" : "f_auto"},q_auto,w_${w},ar_4:3,c_fill,g_auto/${pid}`;
 
 /* ---------- textos ---------- */
 function pintarTextos() {
@@ -369,8 +392,17 @@ function pintar() {
         b.type = "button"; b.className = "foto";
         b.innerHTML = '<img loading="lazy" decoding="async" alt="">';
         const im = b.querySelector("img");
-        im.src = urlMini(f.public_id, 420);
+        im.src = urlMini(f.public_id, 420, f.clase);
         im.alt = (idioma === "fr" ? f.alt_fr : f.alt_es) || "";
+        // Se avisa que eso se mueve ANTES de tocarlo: quien está con datos
+        // contados decide si lo abre.
+        if (f.clase === "video" || f.clase === "secuencia") {
+          const m = document.createElement("span");
+          m.className = "medio";
+          m.textContent = f.clase === "video"
+            ? "▶ " + (f.segundos ? f.segundos + "s" : "") : "GIF";
+          b.appendChild(m);
+        }
         b.addEventListener("click", () => abrirVisor(k));
         rej.appendChild(b);
       });
@@ -391,7 +423,24 @@ const visor = document.getElementById("visor");
 function abrirVisor(i) {
   iVisor = (i + planas.length) % planas.length;
   const f = planas[iVisor];
-  document.getElementById("v-img").src = urlFoto(f.public_id, 1600);
+  const img = document.getElementById("v-img");
+  const vid = document.getElementById("v-video");
+
+  // Un video NO arranca solo, y no se descarga hasta que alguien lo toca:
+  // preload="none" con el cuadro quieto de cartel. Alguien que abre el
+  // álbum para mirar fotos no tiene por qué gastar datos en un video que
+  // no pidió.
+  vid.pause();
+  if (f.clase === "video") {
+    img.classList.add("hide"); vid.classList.remove("hide");
+    vid.poster = urlMini(f.public_id, 900, "video");
+    vid.src = urlVideo(f.public_id, 1200);
+  } else {
+    vid.classList.add("hide"); vid.removeAttribute("src"); img.classList.remove("hide");
+    // Acá sí se anima: es lo que la persona vino a ver.
+    img.src = f.clase === "secuencia"
+      ? urlAnimada(f.public_id, 1200) : urlFoto(f.public_id, 1600);
+  }
   document.getElementById("v-etapa").textContent =
     [f.album, f.etapa ? nombreEtapa(f.etapa) : ""].filter(Boolean).join(" · ");
   document.getElementById("v-cap").textContent =
@@ -404,6 +453,8 @@ function abrirVisor(i) {
   }
 }
 function cerrarVisor(porAtras) {
+  // Sin esto el video sigue sonando con el visor cerrado.
+  try { document.getElementById("v-video").pause(); } catch (e) { /* no había */ }
   visor.classList.add("hide");
   document.body.style.overflow = "";
   if (!porAtras && history.state && history.state.visor) history.back();

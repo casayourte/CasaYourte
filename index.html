@@ -366,7 +366,8 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
 /* ---------- visor de fotos ---------- */
 #visor{position:fixed;inset:0;z-index:60;background:rgba(12,10,8,.97);display:flex;
   flex-direction:column}
-#visor img{flex:1;min-height:0;width:100%;height:auto;object-fit:contain;background:#000}
+#visor img,#visor video{flex:1;min-height:0;width:100%;height:auto;
+  object-fit:contain;background:#000}
 #visor .pie{padding:.9rem var(--pad) calc(1rem + env(safe-area-inset-bottom,0px));
   display:flex;gap:.8rem;align-items:flex-start;border-top:1px solid #35302a;background:var(--ink)}
 #visor .txt{flex:1;min-width:0;font-size:.9rem;color:#b7ae9d;line-height:1.45}
@@ -736,6 +737,7 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
 
 <div id="visor" class="hide">
   <img id="v-img" alt="">
+  <video id="v-video" class="hide" controls playsinline preload="none"></video>
   <div class="pie">
     <div class="txt"><b id="v-tit"></b><span id="v-cap"></span></div>
     <div class="nav">
@@ -1277,10 +1279,24 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
   if (!seccion || !lista) return;
 
   const txt = (k) => (T[document.documentElement.lang] || T.es)[k] || "";
-  const mini = (pid, w) => "https://res.cloudinary.com/" + CLOUD
-    + "/image/upload/f_auto,q_auto,w_" + w + ",ar_4:3,c_fill,g_auto/" + pid;
+  /* Tres medios (el campo 'clase' de cada foto): foto · secuencia · video.
+     En la PORTADA nada se mueve solo salvo el pase de fotos, que es de
+     cuadros quietos. Un video acá sería una descarga que nadie pidió:
+     alguien que entra a leer no tiene por qué gastar datos en eso.
+     Se mueve dentro del visor, cuando lo tocan. */
+  const mini = (pid, w, clase) => clase === "video"
+    ? "https://res.cloudinary.com/" + CLOUD
+      + "/video/upload/so_0,q_auto,w_" + w + ",ar_4:3,c_fill/" + pid + ".jpg"
+    : "https://res.cloudinary.com/" + CLOUD + "/image/upload/"
+      + (clase === "secuencia" ? "f_jpg" : "f_auto")
+      + ",q_auto,w_" + w + ",ar_4:3,c_fill,g_auto/" + pid;
   const grande = (pid) => "https://res.cloudinary.com/" + CLOUD
     + "/image/upload/f_auto,q_auto,w_1600,c_limit/" + pid;
+  const animada = (pid) => "https://res.cloudinary.com/" + CLOUD
+    + "/image/upload/f_auto,q_auto,w_1200,c_limit/" + pid;
+  const video = (pid) => "https://res.cloudinary.com/" + CLOUD
+    + "/video/upload/f_auto,q_auto,w_1200,c_limit/" + pid + ".mp4";
+  const seMueve = (f) => f.clase === "video" || f.clase === "secuencia";
 
   /* ---------- REST ---------- */
   function valor(v) {
@@ -1389,7 +1405,7 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
       a.fotos.forEach((f, i) => {
         const im = document.createElement("img");
         im.decoding = "async"; im.alt = alterno(f);
-        im.dataset.src = mini(f.public_id, 900);   // se carga cuando le toca
+        im.dataset.src = mini(f.public_id, 900, f.clase);   // se carga cuando le toca
         stage.appendChild(im); imgs.push(im);
         const t = document.createElement("i"); t.dataset.va = i;
         bar.appendChild(t); ticks.push(t);
@@ -1405,7 +1421,10 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
           imgs.forEach((im, k) => im.classList.toggle("on", k === this.cur));
           ticks.forEach((t, k) => t.classList.toggle("on", k === this.cur));
           const f = a.fotos[this.cur];
-          art.querySelector(".alb-et").textContent = nombreEtapa(a, f.etapa) || txt("ui.sinEtapa");
+          const et = nombreEtapa(a, f.etapa) || txt("ui.sinEtapa");
+          // Se avisa que eso se mueve antes de tocarlo.
+          art.querySelector(".alb-et").textContent = seMueve(f)
+            ? et + (f.clase === "video" ? " · ▶" : " · GIF") : et;
           art.querySelector(".alb-cap").textContent = leyenda(f);
           art.querySelector(".alb-n").textContent = (this.cur + 1) + "/" + n;
         },
@@ -1448,9 +1467,11 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
         b.innerHTML = '<span class="marco"><img loading="lazy" decoding="async" alt=""></span>'
                     + '<span class="et"></span><span class="cap"></span>';
         const im = b.querySelector("img");
-        im.src = mini(f.public_id, 420);
+        im.src = mini(f.public_id, 420, f.clase);
         im.alt = alterno(f);
-        b.querySelector(".et").textContent = nombreEtapa(a, f.etapa) || txt("ui.sinEtapa");
+        b.querySelector(".et").textContent =
+          (seMueve(f) ? (f.clase === "video" ? "▶ " : "GIF · ") : "")
+          + (nombreEtapa(a, f.etapa) || txt("ui.sinEtapa"));
         const cap = b.querySelector(".cap");
         const l = leyenda(f);
         if (l) cap.textContent = l; else cap.remove();
@@ -1489,8 +1510,22 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
     if (EDITANDO || !planas.length) return;
     iVisor = (i + planas.length) % planas.length;
     const f = planas[iVisor];
-    document.getElementById("v-img").src = grande(f.public_id);
-    document.getElementById("v-img").alt = alterno(f);
+    const img = document.getElementById("v-img");
+    const vid = document.getElementById("v-video");
+
+    // preload="none": el video no se baja hasta que alguien le da play.
+    // Se ve el cuadro quieto de cartel y nada más.
+    vid.pause();
+    if (f.clase === "video") {
+      img.classList.add("hide"); vid.classList.remove("hide");
+      vid.poster = mini(f.public_id, 900, "video");
+      vid.src = video(f.public_id);
+    } else {
+      vid.classList.add("hide"); vid.removeAttribute("src");
+      img.classList.remove("hide");
+      img.src = f.clase === "secuencia" ? animada(f.public_id) : grande(f.public_id);
+      img.alt = alterno(f);
+    }
     document.getElementById("v-tit").textContent =
       [f.album, f.etapaTxt].filter(Boolean).join(" · ");
     document.getElementById("v-cap").textContent = leyenda(f);
@@ -1503,6 +1538,8 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
     }
   }
   function cerrarVisor(porAtras) {
+    // Sin esto el video sigue sonando con el visor cerrado.
+    try { document.getElementById("v-video").pause(); } catch (e) { /* no había */ }
     visor.classList.add("hide");
     visorAbierto = false; pases.forEach(p => p.correr());
     document.body.style.overflow = "";

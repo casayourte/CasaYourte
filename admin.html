@@ -30,6 +30,9 @@
   max-width:calc(100% - .56rem);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ph.off img{opacity:.35}
 .ph.borrada img{opacity:.22}
+.ph .medio{position:absolute;top:.28rem;left:.28rem;font-family:var(--mono);
+  font-size:.52rem;letter-spacing:.08em;background:rgba(12,10,8,.82);color:#EFE8DA;
+  padding:.12rem .3rem;border-radius:3px;pointer-events:none}
 .ph .flag{position:absolute;top:.28rem;right:.28rem;font-size:.7rem;
   background:rgba(24,22,20,.86);border-radius:3px;padding:.05rem .28rem}
 .etapa-tit{display:flex;align-items:baseline;gap:.5rem;margin:1.2rem 0 .5rem;
@@ -176,6 +179,9 @@
   <!-- PHOTO EDIT -->
   <section id="v-foto" class="hide">
     <img id="f-img" style="width:100%;border-radius:8px;margin-bottom:1rem" alt="">
+    <video id="f-video" class="hide" controls playsinline preload="metadata"
+           style="width:100%;border-radius:8px;margin-bottom:1rem;background:#000"></video>
+    <p id="f-medio" class="ayuda hide" style="margin-top:-.6rem"></p>
     <label><span class="k">Etapa</span><select id="f-etapa"></select></label>
     <label><span class="k">Texto alternativo · español</span><input id="f-alt-es"></label>
     <label><span class="k">Texto alternativo · francés</span><input id="f-alt-fr"></label>
@@ -275,7 +281,7 @@ import { CY } from "./nucleo.js";
 // Sello de ESTE archivo. El de nucleo.js no sirve para saber si admin.html
 // quedó viejo en la caché: son dos archivos distintos. Al cambiar el panel,
 // se sube este número.
-const PANEL = "admin-16";
+const PANEL = "admin-17";
 
 const CLOUD = CY.CLOUDINARY.cloud;
 const PRESET = CY.CLOUDINARY.preset;
@@ -780,11 +786,18 @@ function tarjetaFoto(f, i, grupo) {
   const el = document.createElement("div");
   el.className = "ph" + (f.usar ? "" : " off") + (f.eliminada ? " borrada" : "");
   el.dataset.foto = f.id;
+  // La miniatura de un video o de una secuencia es un cuadro QUIETO: una
+  // grilla con doce cosas moviéndose no se puede leer, y pesa como doce
+  // videos. El movimiento se ve al abrir, no en la lista.
+  const marca = f.clase === "video"
+    ? `<span class="medio" title="Video">▶ ${f.segundos ? f.segundos + "s" : ""}</span>`
+    : f.clase === "secuencia" ? '<span class="medio" title="Secuencia animada">GIF</span>' : "";
   el.innerHTML =
     `<img loading="lazy" alt="">
+     ${marca}
      ${f.personas ? '<span class="flag" title="Gente identificable">👤</span>' : ""}
      <div class="bar"></div>`;
-  el.querySelector("img").src = CY.miniatura(f.public_id, 400);
+  el.querySelector("img").src = CY.miniatura(f.public_id, 400, f.clase);
   const bar = el.querySelector(".bar");
 
   if (f.eliminada) {
@@ -1304,7 +1317,26 @@ $("c-nueva").addEventListener("click", () => {
 /* ===================== EDITAR FOTO ===================== */
 function editar(f) {
   foto = f;
-  $("f-img").src = urlCloud(f.public_id, 900);
+  // Acá sí se ve moverse: es donde se decide si la toma sirve.
+  const esVideo = f.clase === "video";
+  $("f-img").classList.toggle("hide", esVideo);
+  $("f-video").classList.toggle("hide", !esVideo);
+  if (esVideo) {
+    $("f-video").poster = CY.miniatura(f.public_id, 900, "video");
+    $("f-video").src = CY.urlVideo(f.public_id, 900);
+  } else {
+    $("f-video").removeAttribute("src");
+    $("f-img").src = f.clase === "secuencia"
+      ? CY.urlAnimada(f.public_id, 900)
+      : urlCloud(f.public_id, 900);
+  }
+  const nota = $("f-medio");
+  nota.classList.toggle("hide", !f.clase || f.clase === "foto");
+  nota.textContent = esVideo
+    ? `Video de ${f.segundos || "?"} segundos. En el sitio no arranca solo: se ve el cuadro quieto hasta que alguien lo toca.`
+    : f.clase === "secuencia"
+      ? `Secuencia de ${f.cuadros || "?"} cuadros. En la grilla y en el índice se ve quieta; se anima al abrirla.`
+      : "";
   opcionesEtapa($("f-etapa"), album);
   // Puede apuntar a una categoría borrada a mano en la base: se agrega como
   // opción para no cambiarla sin querer al guardar cualquier otra cosa.
@@ -1319,7 +1351,11 @@ function editar(f) {
   $("f-cap-es").value = f.cap_es || ""; $("f-cap-fr").value = f.cap_fr || "";
   $("f-usar").checked = !!f.usar; $("f-personas").checked = !!f.personas;
   // Al volver, se repinta y se deja a la vista la foto que se estaba editando.
-  irA("foto", () => { pintarAlbum(); aLaVista(f.id); });
+  irA("foto", () => {
+    // Si no se para, el video sigue sonando abajo de la grilla.
+    try { $("f-video").pause(); } catch (e) { /* no estaba reproduciendo */ }
+    pintarAlbum(); aLaVista(f.id);
+  });
 }
 
 $("f-guardar").addEventListener("click", async () => {
@@ -1391,16 +1427,29 @@ async function subir(files) {
       const j = await CY.subirImagen(files[i], carpeta, tags);
 
       orden += 10;
+      // 'clase' decide todo lo que viene después: con qué URL se arma la
+      // miniatura, si el sitio pone un <img> o un <video>, si anima o no.
+      // Sin este campo el sitio no puede distinguir un video de una foto,
+      // y una foto rota no se nota hasta que alguien mira el álbum.
       const nueva = {
         public_id: j.public_id, ancho: j.width, alto: j.height, bytes: j.bytes,
+        clase: j.clase || "foto",
         etapa, orden, usar: false, personas: false,
         alt_es: "", alt_fr: "", cap_es: "", cap_fr: "", creado: serverTimestamp(),
       };
+      if (j.clase === "video") nueva.segundos = j.segundos || 0;
+      if (j.clase === "secuencia") nueva.cuadros = j.cuadros || 0;
       const ref = await addDoc(collection(db, "albums", album.id, "fotos"), nueva);
       fotos.push({ id: ref.id, ...nueva });
       ultimaSubida = ref.id;
       ok++;
-      paso(`✓ ${(files[i].size / 1048576).toFixed(1)}MB → ${(j.pesoSubido / 1048576).toFixed(2)}MB  ${j.width}×${j.height}`);
+      // Un video o una secuencia suben SIN achicar: decir «→ 8.00MB» como si
+      // se hubiera reducido sería mentir sobre lo que se acaba de mandar.
+      paso(j.clase === "foto"
+        ? `✓ ${(files[i].size / 1048576).toFixed(1)}MB → ${(j.pesoSubido / 1048576).toFixed(2)}MB  ${j.width}×${j.height}`
+        : `✓ ${j.clase} · ${(j.pesoSubido / 1048576).toFixed(1)}MB sin achicar`
+          + (j.segundos ? ` · ${j.segundos}s` : "")
+          + (j.cuadros ? ` · ${j.cuadros} cuadros` : ""));
     } catch (err) {
       mal++; paso(`✗ ${files[i].name}: ${err.message}`);
     }
