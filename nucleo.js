@@ -12,7 +12,7 @@
 
 export const CY = {};
 
-CY.VERSION = 'nucleo-13';
+CY.VERSION = 'nucleo-14';
 
 // ═════════════════════════════════════════════════════════════
 //  BOTÓN ATRÁS DE ANDROID
@@ -548,9 +548,9 @@ CY.NAV = [
   // límite de lo que se toca con el pulgar. Y no es trabajo de todos los
   // días: se hace por tandas, cuando hay texto nuevo en español.
   // Pide 'contenido' porque escribe en sitio/*, igual que el editor.
-  { id:'traducir', label:'Traducir al francés', icono:'translate',
+  { id:'traducir', label:'Revisar y traducir', icono:'translate',
     href:'./traducir.html',    grupo:'contenido', perm:'contenido',
-    detalle:'Sacar los textos en español y traer el francés traducido.' },
+    detalle:'Auditar lo escrito en español y traer el francés traducido.' },
 
   { id:'sitio',    label:'Ver el sitio', icono:'public',
     href:'./index.html',       grupo:'ver' },
