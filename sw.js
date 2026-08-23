@@ -52,7 +52,8 @@
 //   español cambió después de traducirse; el núcleo, admin.html, album.html e
 //   index.html reconocen secuencias GIF y videos cortos, con límites;
 //   traducir.html se vuelve una revisión editorial: baja el sitio entero con
-//   su estructura, corrige español y francés a la vez, y recibe un informe.
+//   su estructura, corrige español y francés a la vez, y recibe un informe;
+//   la tabla de referencias pierde la columna de precios.
 //
 // Dos cosas de este registro, para que no confundan a quien lo lea:
 //   · faltan v15 a v18. Esas versiones se publicaron y no se anotaron acá.

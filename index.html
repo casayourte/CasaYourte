@@ -669,8 +669,12 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
       <h3 style="font-size:clamp(1.4rem,3vw,2rem)" data-i="ficha.title"></h3>
       <table class="tbl">
         <thead><tr>
+          <!-- Sin columna de precio: todo se acuerda por proyecto, y una
+               columna que repite «a consultar» promete un dato que no da.
+               La clave ficha.h4 queda sin uso, no se borra: si algún día
+               vuelve a haber una cuarta columna, el texto sigue ahí. -->
           <th data-i="ficha.h1"></th><th data-i="ficha.h2"></th>
-          <th data-i="ficha.h3"></th><th data-i="ficha.h4"></th>
+          <th data-i="ficha.h3"></th>
         </tr></thead>
         <tbody data-rows="ficha.rows"></tbody>
       </table>

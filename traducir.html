@@ -207,7 +207,7 @@ import { CY } from "./nucleo.js";
 const $ = (id) => document.getElementById(id);
 
 // Sello de este archivo, para saber si quedó viejo en la caché (§3.34).
-const TRADUCTOR = "traducir-5";
+const TRADUCTOR = "traducir-6";
 CY.PANEL = TRADUCTOR;
 
 /* ═══════════════════════════════════════════════════════════════
@@ -991,7 +991,21 @@ function revisar() {
     // más cuidado: tocan el sitio en el idioma de quien lo escribió.
     [["es", f.es], ["fr", f.fr]].forEach(([idioma, valor]) => {
       if (!tieneAlgo(valor)) return;                    // vacío: no se escribe
-      if (!mismoMolde(p.es, valor))
+      // La forma —cuántos elementos tiene una lista, cuántas columnas una
+      // tabla— tiene que ser la MISMA EN LOS DOS IDIOMAS. Eso es lo que
+      // importa, y no que nunca cambie: sacar una columna de la tabla es un
+      // cambio legítimo, siempre que venga en español y en francés a la vez.
+      // Si el español cambia de forma, el francés TIENE que venir con él: si
+      // no, la tabla queda con cuatro títulos y tres columnas. Se comprueba
+      // ANTES que la forma, para que el aviso diga lo que de verdad falta y
+      // no un genérico «no tiene la forma del original».
+      if (idioma === "es" && !mismoMolde(p.es, valor)
+          && tieneAlgo(p.fr) && !tieneAlgo(f.fr))
+        return problemas.push("cambia la forma y no trae el francés: " + f.id);
+      const molde = (idioma === "es" && tieneAlgo(f.fr)) ? f.fr
+                  : (idioma === "fr" && tieneAlgo(f.es)) ? f.es
+                  : p.es;
+      if (!mismoMolde(molde, valor))
         return problemas.push("no tiene la forma del original: " + f.id + " (" + idioma + ")");
       if (igual(valor, p[idioma])) return;              // igual a lo que ya hay
       CAMBIOS.push({ pieza: p, idioma, nueva: valor, motivo: f.motivo || "", marcada: true });
