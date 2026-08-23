@@ -59,7 +59,8 @@
 //   solo el idioma y recuerda lo que la persona elija; entran robots.txt y
 //   sitemap.xml, y las imágenes del index dejan de tener alt vacío; el
 //   registro de traducción se guarda codificado (Firestore rechaza arrays
-//   dentro de arrays, y la tabla de referencias es exactamente eso).
+//   dentro de arrays, y la tabla de referencias es exactamente eso); la
+//   portada ordena las fotos del álbum igual que el panel.
 //
 // Dos cosas de este registro, para que no confundan a quien lo lea:
 //   · faltan v15 a v18. Esas versiones se publicaron y no se anotaron acá.

@@ -1387,6 +1387,33 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
     return (j.documents || []).map((d) => ({ id: d.name.split("/").pop(), ...mapa(d.fields || {}) }));
   }
 
+  /* ---------- el orden de las fotos ----------
+     El campo 'orden' NO alcanza por sí solo. El panel y la página de álbumes
+     muestran las fotos AGRUPADAS por categoría, y dentro de cada grupo por
+     'orden'. Cuando se mueve una foto de categoría, o se reordena un grupo,
+     los números de un grupo pueden quedar intercalados con los de otro: da
+     igual mientras se agrupe, porque nadie ve el orden global.
+
+     Acá, en la portada, las fotos se muestran seguidas, sin títulos de
+     categoría. Ordenarlas sólo por 'orden' las mezclaba entre categorías y la
+     secuencia no se parecía a la que se armó en el panel.
+
+     Así que se ordena igual que allá: primero la categoría —en el orden que
+     tenga el álbum— y después el 'orden' dentro de ella. Lo que apunte a una
+     categoría que ya no existe va al final, que es donde el panel también lo
+     pone. */
+  function ordenarComoElPanel(a, fotos) {
+    const cats = (Array.isArray(a.etapas) && a.etapas.length)
+      ? a.etapas.filter((e) => e && e.id).map((e) => e.id)
+      : (Array.isArray(a.ordenEtapas) ? a.ordenEtapas : []);
+    const lugar = (f) => {
+      const i = cats.indexOf(f.etapa);
+      return i < 0 ? cats.length : i;      // sin categoría conocida, al final
+    };
+    return fotos.slice().sort((x, y) =>
+      lugar(x) - lugar(y) || (x.orden || 0) - (y.orden || 0));
+  }
+
   /* ---------- categorías ----------
      La lista vive en el álbum (§3.44). Los álbumes anteriores a la T37 no la
      tienen: se muestra el identificador legible, que es lo que hay. */
@@ -1638,8 +1665,8 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
       for (const a of publicos.slice(0, 8)) {
         let fotos = [];
         try { fotos = await traer("albums/" + a.id + "/fotos"); } catch (e) { fotos = []; }
-        fotos = fotos.filter((f) => !f.eliminada && f.usar === true && f.public_id)
-                     .sort((x, y) => (x.orden || 0) - (y.orden || 0));
+        fotos = ordenarComoElPanel(a,
+          fotos.filter((f) => !f.eliminada && f.usar === true && f.public_id));
         if (fotos.length) ALB.push({ ...a, fotos });
       }
       if (!ALB.length) { estado.textContent = txt("ui.albVacio"); return; }
