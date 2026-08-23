@@ -236,7 +236,7 @@ import { CY } from "./nucleo.js";
 const $ = (id) => document.getElementById(id);
 
 // Sello de este archivo, para saber si quedó viejo en la caché (§3.34).
-const TRADUCTOR = "traducir-8";
+const TRADUCTOR = "traducir-9";
 CY.PANEL = TRADUCTOR;
 
 /* ═══════════════════════════════════════════════════════════════
@@ -410,7 +410,9 @@ async function reunir() {
     };
 
     const t = await getDoc(doc(db, "sitio", "traduccion"));
-    ORIGEN  = t.exists() ? (t.data().origen || {}) : {};
+    // Se decodifica igual que los textos del sitio: adentro hay listas y una
+    // tabla, y viajan como texto.
+    ORIGEN  = t.exists() ? decodMapa(t.data().origen || {}) : {};
     HUELLAS = t.exists() ? (t.data().huellas || {}) : {};
     NOTAS = t.exists() ? (t.data().notas || "") : "";
     if (!$("notas").value) $("notas").value = NOTAS;
@@ -731,7 +733,13 @@ async function piezasDeAlbums() {
    vez que se publica, y se llevaría puesto cualquier campo que no conozca. */
 async function guardarRegistro() {
   await setDoc(doc(db, "sitio", "traduccion"), {
-    origen: ORIGEN, huellas: HUELLAS, notas: $("notas").value.trim(),
+    /* codifMapa NO es una formalidad acá: Firestore RECHAZA un array dentro
+       de otro array, y la tabla de referencias del sitio es exactamente eso
+       —filas de columnas—. Guardarla cruda hacía fallar la escritura ENTERA
+       del registro, con un error que sólo dice «formato que Firestore no
+       acepta» y no nombra el campo. Es la misma razón por la que el mapa de
+       textos del sitio se guarda codificado (§3.28). */
+    origen: codifMapa(ORIGEN), huellas: HUELLAS, notas: $("notas").value.trim(),
     actualizado: serverTimestamp(), actualizadoPor: CY.usuario.email,
   });
 }

@@ -57,7 +57,9 @@
 //   escritura deja de depender del confirm() del navegador; el botón de
 //   aplicar se duplica arriba y se escucha por delegación; el sitio elige
 //   solo el idioma y recuerda lo que la persona elija; entran robots.txt y
-//   sitemap.xml, y las imágenes del index dejan de tener alt vacío.
+//   sitemap.xml, y las imágenes del index dejan de tener alt vacío; el
+//   registro de traducción se guarda codificado (Firestore rechaza arrays
+//   dentro de arrays, y la tabla de referencias es exactamente eso).
 //
 // Dos cosas de este registro, para que no confundan a quien lo lea:
 //   · faltan v15 a v18. Esas versiones se publicaron y no se anotaron acá.
