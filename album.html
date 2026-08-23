@@ -8,10 +8,39 @@
 <link rel="canonical" href="https://casayourte.com/album.html">
 <link rel="alternate" hreflang="es" href="https://casayourte.com/album.html">
 <link rel="alternate" hreflang="fr" href="https://casayourte.com/album.html?lang=fr">
+<link rel="alternate" hreflang="x-default" href="https://casayourte.com/album.html">
+<meta name="author" content="Mauro Gastaldello">
 <meta property="og:type" content="website">
+<meta property="og:site_name" content="CasaYourte">
+<meta property="og:locale" content="es_UY">
+<meta property="og:locale:alternate" content="fr_FR">
+<meta property="og:url" content="https://casayourte.com/album.html">
 <meta property="og:title" content="Álbumes de obra · CasaYourte">
 <meta property="og:description" content="Cada yurta paso a paso, del taller a la yurta habitada.">
 <meta property="og:image" content="https://casayourte.com/assets/hero.jpg">
+<meta property="og:image:alt" content="Yurta terminada con deck perimetral curvo y grandes aberturas vidriadas">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Álbumes de obra · CasaYourte">
+<meta name="twitter:description" content="Cada yurta paso a paso, del taller a la yurta habitada.">
+<meta name="twitter:image" content="https://casayourte.com/assets/hero.jpg">
+
+<!-- Las fotos de los álbumes llegan por REST después de cargar la página, así
+     que en el HTML no hay ninguna: un buscador que no ejecute JavaScript ve
+     una página vacía. Esto le dice al menos QUÉ es esta página y de quién es,
+     y la ata al negocio declarado en la portada. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "@id": "https://casayourte.com/album.html#album",
+  "name": "Álbumes de obra · CasaYourte",
+  "description": "Archivo fotográfico de cada yurta construida por CasaYourte, ordenado por etapa de obra: terreno y apoyos, plancher, trei, anillo periférico, toono, techo, lonas, aislación, aberturas y skydome.",
+  "inLanguage": ["es", "fr"],
+  "isPartOf": { "@id": "https://casayourte.com/#casayourte" },
+  "about": { "@id": "https://casayourte.com/#casayourte" },
+  "author": { "@type": "Person", "name": "Mauro Gastaldello" }
+}
+</script>
 <link rel="icon" href="./icono-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..800,0..100,0..1;1,9..144,300..800,0..100,0..1&family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>

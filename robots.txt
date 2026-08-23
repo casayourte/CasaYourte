@@ -1,0 +1,32 @@
+# CasaYourte · casayourte.com
+#
+# El sitio público son dos páginas. Todo lo demás de este dominio es el
+# panel de trabajo: pide contraseña, no tiene nada que un buscador pueda
+# mostrar, y aparecer en Google no le hace ningún favor a nadie.
+#
+# Ojo con lo que esto NO hace: no protege nada. Es un cartel, no una
+# puerta. Lo que protege el panel son las reglas de Firestore y el login.
+# Si mañana se agrega una pantalla al panel, se agrega también acá.
+
+User-agent: *
+Allow: /$
+Allow: /index.html
+Allow: /album.html
+Allow: /assets/
+
+Disallow: /admin.html
+Disallow: /editar.html
+Disallow: /traducir.html
+Disallow: /usuarios.html
+Disallow: /calculo.html
+Disallow: /diagnostico.html
+Disallow: /contenido.json
+Disallow: /REGLAS.txt
+Disallow: /*.md$
+
+# Los buscadores de imágenes sí son bienvenidos: es un oficio que se
+# mira, y las fotos de obra son la mitad de lo que hay para mostrar.
+User-agent: Googlebot-Image
+Allow: /
+
+Sitemap: https://casayourte.com/sitemap.xml

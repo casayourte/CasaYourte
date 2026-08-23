@@ -56,7 +56,8 @@
 //   la tabla de referencias pierde la columna de precios; la confirmación de
 //   escritura deja de depender del confirm() del navegador; el botón de
 //   aplicar se duplica arriba y se escucha por delegación; el sitio elige
-//   solo el idioma y recuerda lo que la persona elija.
+//   solo el idioma y recuerda lo que la persona elija; entran robots.txt y
+//   sitemap.xml, y las imágenes del index dejan de tener alt vacío.
 //
 // Dos cosas de este registro, para que no confundan a quien lo lea:
 //   · faltan v15 a v18. Esas versiones se publicaron y no se anotaron acá.
