@@ -216,7 +216,63 @@ const NOMBRE_ETAPA = {
   },
 };
 
-let idioma = /[?&]lang=fr/.test(location.search) ? "fr" : "es";
+/* ---------- qué idioma mostrar ----------
+   Se pidió: que quien entra desde Francia o Bélgica vea el sitio en
+   francés. NO se hace por IP, y no es por pereza:
+
+     · la IP necesita preguntarle a un servicio de terceros, que es una
+       petición más antes de poder pintar la página, que a veces falla y
+       que se entera de quién visita el sitio;
+     · y responde la pregunta equivocada. Lo que importa no es dónde está
+       el aparato sino en qué idioma lee la persona. Un francés de
+       vacaciones en Uruguay leería en español; un uruguayo en París,
+       en francés. Los dos al revés de lo que quieren.
+
+   Se miran dos señales que el navegador ya tiene, sin pedir nada a nadie:
+     1. el idioma configurado en el teléfono;
+     2. la zona horaria, que sí dice dónde está el aparato y cubre el caso
+        de un teléfono en inglés dentro de Francia o Bélgica.
+
+   Y por encima de las dos manda lo que la persona haya elegido: si tocó
+   ES o FR alguna vez, eso gana siempre. Una preferencia explícita no se
+   discute con una deducción.
+
+   El orden es: lo elegido > la dirección (?lang=fr) > la deducción. */
+const ZONAS_FR = ["Europe/Paris", "Europe/Brussels", "Indian/Reunion",
+                  "America/Martinique", "America/Guadeloupe", "America/Cayenne"];
+
+function idiomaDeducido() {
+  try {
+    const idiomas = navigator.languages || [navigator.language || ""];
+    if (idiomas.some(l => String(l).toLowerCase().indexOf("fr") === 0)) return "fr";
+    const zona = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+    if (ZONAS_FR.indexOf(zona) >= 0) return "fr";
+  } catch (e) { /* un navegador viejo: queda el español */ }
+  return "es";
+}
+
+function idiomaElegido() {
+  try { return localStorage.getItem("cy-idioma"); } catch (e) { return null; }
+}
+
+function recordarIdioma(l) {
+  try { localStorage.setItem("cy-idioma", l); } catch (e) { /* modo privado */ }
+}
+
+function idiomaInicial() {
+  // El editor abre el sitio en un iframe del MISMO ORIGEN, así que comparte
+  // el localStorage con el sitio público. Sin esta línea, haber tocado FR
+  // una vez en el sitio haría que el editor abriera en francés mientras se
+  // está editando el español. En modo edición manda la dirección y nada más.
+  const editando = /[?&]edit=1/.test(location.search);
+  const guardado = editando ? null : idiomaElegido();
+  if (guardado === "es" || guardado === "fr") return guardado;
+  if (/[?&]lang=fr/.test(location.search)) return "fr";
+  if (/[?&]lang=es/.test(location.search)) return "es";
+  return editando ? "es" : idiomaDeducido();
+}
+
+let idioma = idiomaInicial();
 let albumes = [];
 let planas = [];   // todas las fotos en orden, para el visor
 let iVisor = 0;
@@ -282,6 +338,7 @@ function pintarTextos() {
 document.querySelectorAll(".lang button").forEach((b) =>
   b.addEventListener("click", () => {
     idioma = b.dataset.set;
+    recordarIdioma(idioma);
     const u = new URL(location.href);
     if (idioma === "fr") u.searchParams.set("lang", "fr"); else u.searchParams.delete("lang");
     history.replaceState(null, "", u);
