@@ -54,7 +54,8 @@
 //   traducir.html se vuelve una revisión editorial: baja el sitio entero con
 //   su estructura, corrige español y francés a la vez, y recibe un informe;
 //   la tabla de referencias pierde la columna de precios; la confirmación de
-//   escritura deja de depender del confirm() del navegador.
+//   escritura deja de depender del confirm() del navegador; el botón de
+//   aplicar se duplica arriba y se escucha por delegación.
 //
 // Dos cosas de este registro, para que no confundan a quien lo lea:
 //   · faltan v15 a v18. Esas versiones se publicaron y no se anotaron acá.

@@ -206,13 +206,19 @@ textarea.json{font-family:var(--mono);font-size:.7rem;line-height:1.4;min-height
     <section class="paso hide" id="pasoRev">
       <h2><span class="n">4</span> Revisar y aplicar</h2>
       <p class="gris" id="resumenRev"></p>
+      <!-- El mismo botón arriba y abajo. Arriba porque después de mirar
+           veinte cambios nadie quiere volver a bajar hasta el final; y
+           porque si algo tapa uno de los dos, el otro sigue estando. -->
+      <div class="fila-btn" style="margin-bottom:.6rem">
+        <button class="btn p aplicar-ya">Aplicar a la base</button>
+      </div>
       <div class="fila-btn" style="margin-bottom:.6rem">
         <button class="btn" id="todas">Marcar todas</button>
         <button class="btn" id="ninguna">Ninguna</button>
       </div>
       <div id="revLista"></div>
       <div class="fila-btn" style="margin-top:.8rem">
-        <button class="btn p ancho" id="aplicar">Aplicar a la base</button>
+        <button class="btn p ancho aplicar-ya" id="aplicar">Aplicar a la base</button>
       </div>
       <p class="ayuda" id="progreso"></p>
     </section>
@@ -230,7 +236,7 @@ import { CY } from "./nucleo.js";
 const $ = (id) => document.getElementById(id);
 
 // Sello de este archivo, para saber si quedó viejo en la caché (§3.34).
-const TRADUCTOR = "traducir-7";
+const TRADUCTOR = "traducir-8";
 CY.PANEL = TRADUCTOR;
 
 /* ═══════════════════════════════════════════════════════════════
@@ -303,6 +309,30 @@ function huella(v) {
 // barra (§3.31). Si esta se viera distinta de las otras, sería que no está
 // llamando a esto.
 const aviso = (t, malo) => CY.aviso(t, malo);
+
+/* Con ?diag=1 la pantalla dice, arriba de todo, QUÉ elemento recibió cada
+   toque. Sirve para una sola cosa: distinguir «el código falla» de «el
+   toque nunca llegó al botón», que desde afuera se ven igual y llevan a
+   arreglar lo que no está roto. */
+if (/[?&]diag=1/.test(location.search)) {
+  const linea = document.createElement("div");
+  linea.style.cssText = "position:fixed;top:0;left:0;right:0;z-index:999;"
+    + "background:#DCA96B;color:#181614;font:600 12px/1.4 ui-monospace,monospace;"
+    + "padding:.4rem .6rem;pointer-events:none;white-space:pre-line";
+  linea.textContent = "diagnóstico · tocá el botón";
+  document.body.appendChild(linea);
+  const contar = { n: 0 };
+  addEventListener("pointerdown", (e) => {
+    const t = e.target;
+    const cerca = t.closest && t.closest(".aplicar-ya");
+    linea.textContent = "toque " + (++contar.n) + " → "
+      + (t.tagName || "?").toLowerCase()
+      + (t.id ? "#" + t.id : "")
+      + (t.className && typeof t.className === "string" ? "." + t.className.split(" ").join(".") : "")
+      + (cerca ? "  ✓ ES EL BOTÓN DE APLICAR" : "")
+      + (cerca && cerca.disabled ? "  (pero está deshabilitado)" : "");
+  }, true);
+}
 
 /* Preguntar antes de algo irreversible, sin depender del navegador.
    Devuelve una promesa que resuelve en true o false. Entra en la pila del
@@ -1178,8 +1208,10 @@ function pintarInforme(informe) {
 
 function contarMarcadas() {
   const n = CAMBIOS.filter(c => c.marcada).length;
-  $("aplicar").disabled = n === 0;
-  $("aplicar").textContent = n ? "Aplicar " + n + " a la base" : "Nada marcado";
+  document.querySelectorAll(".aplicar-ya").forEach((b) => {
+    b.disabled = n === 0;
+    b.textContent = n ? "Aplicar " + n + " a la base" : "Nada marcado";
+  });
 }
 
 $("todas").addEventListener("click", () => { CAMBIOS.forEach(c => c.marcada = true); pintarRevision(); });
@@ -1189,7 +1221,14 @@ $("ninguna").addEventListener("click", () => { CAMBIOS.forEach(c => c.marcada = 
    4 · ESCRIBIR
    ═══════════════════════════════════════════════════════════════ */
 
-$("aplicar").addEventListener("click", async () => {
+/* El clic se escucha en el documento y no en el botón.
+   Si un elemento se dibuja después, o si son dos botones iguales, o si
+   alguno queda tapado a medias, el camino sigue siendo uno solo. */
+document.addEventListener("click", (ev) => {
+  if (ev.target.closest && ev.target.closest(".aplicar-ya")) aplicar();
+});
+
+async function aplicar() {
   // Lo primero es contestar. Si algo falla más adelante, al menos se sabe
   // que el toque llegó: la última vez el síntoma fue «no hace nada», y eso
   // no distingue un error de un botón muerto.
@@ -1319,7 +1358,7 @@ $("aplicar").addEventListener("click", async () => {
   } finally {
     b.disabled = false; contarMarcadas();
   }
-});
+}
 
 </script>
 </body>
