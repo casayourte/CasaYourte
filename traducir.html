@@ -60,11 +60,34 @@ textarea.json{font-family:var(--mono);font-size:.7rem;line-height:1.4;min-height
 .rev .nueva{color:var(--wool)}
 .rev.fuera{opacity:.45}
 
+/* La confirmación es de la página, no del navegador.
+   El confirm() del sistema se puede APAGAR: Chrome ofrece «impedir que esta
+   página cree más diálogos», y desde ese momento devuelve «no» sin mostrar
+   nada. El botón más importante de la pantalla quedaba sin hacer nada y sin
+   explicar por qué. Esto no se puede apagar. */
+#confirmar{position:fixed;inset:0;z-index:300;background:rgba(12,10,8,.8);
+  display:flex;align-items:flex-end;justify-content:center;
+  padding:1rem 1rem calc(1rem + var(--safe))}
+#confirmar .caja{background:var(--ink2);border:1px solid var(--line);
+  border-radius:var(--r);padding:1rem;max-width:32rem;width:100%;
+  box-shadow:0 -8px 40px rgba(0,0,0,.6)}
+#confirmar p{font-size:.92rem;line-height:1.5;margin:0 0 .9rem;white-space:pre-line}
+
 #horno{position:absolute;left:-9999px;top:0;width:1024px;height:800px;border:0;
   visibility:hidden}
 </style>
 </head>
 <body>
+
+<div id="confirmar" class="hide">
+  <div class="caja">
+    <p id="conf-txt"></p>
+    <div class="fila-btn">
+      <button class="btn" id="conf-no">Cancelar</button>
+      <button class="btn p" id="conf-si">Sí, hacerlo</button>
+    </div>
+  </div>
+</div>
 
 <div id="nav"></div>
 
@@ -207,7 +230,7 @@ import { CY } from "./nucleo.js";
 const $ = (id) => document.getElementById(id);
 
 // Sello de este archivo, para saber si quedó viejo en la caché (§3.34).
-const TRADUCTOR = "traducir-6";
+const TRADUCTOR = "traducir-7";
 CY.PANEL = TRADUCTOR;
 
 /* ═══════════════════════════════════════════════════════════════
@@ -281,8 +304,34 @@ function huella(v) {
 // llamando a esto.
 const aviso = (t, malo) => CY.aviso(t, malo);
 
+/* Preguntar antes de algo irreversible, sin depender del navegador.
+   Devuelve una promesa que resuelve en true o false. Entra en la pila del
+   botón Atrás (§3.11), así que Atrás cancela. */
+function preguntar(texto) {
+  return new Promise((resolver) => {
+    const capa = $("confirmar");
+    $("conf-txt").textContent = texto;
+    capa.classList.remove("hide");
+    let resuelto = false;
+    const terminar = (r) => {
+      if (resuelto) return;                 // el cierre de la capa llega después
+      resuelto = true;
+      capa.classList.add("hide");
+      $("conf-si").onclick = null;
+      $("conf-no").onclick = null;
+      resolver(r);
+    };
+    // capaAtras devuelve la función que cierra: es la que hay que llamar
+    // desde los botones, y la que saca la entrada del historial (§3.11).
+    const cerrarCapa = CY.capaAtras(() => terminar(false));
+    $("conf-si").onclick = () => { terminar(true); cerrarCapa(); };
+    $("conf-no").onclick = () => { cerrarCapa(); };
+  });
+}
+
 CY.alSalir = async () => {
-  if (CAMBIOS.length && !confirm("Trajiste una traducción y no la aplicaste. ¿Salir igual?")) return;
+  if (CAMBIOS.length &&
+      !(await preguntar("Trajiste una traducción y no la aplicaste.\n\n¿Salir igual?"))) return;
   await signOut(auth);
   location.replace("./admin.html");
 };
@@ -666,9 +715,9 @@ $("basar").addEventListener("click", async () => {
   if (!conFrances.length) return aviso("No hay nada traducido todavía", true);
   const nuevas = conFrances.filter(p => !igual(ORIGEN[p.id], p.es)).length;
   if (!nuevas) return aviso("Ya estaba todo anotado.");
-  if (!confirm("Se van a dar por buenas " + nuevas + " traducciones que ya existen.\n\n"
-             + "No cambia ningún texto: sólo anota que ese francés corresponde a ese "
-             + "español, para poder avisarte cuando el español cambie.")) return;
+  if (!(await preguntar("Se van a dar por buenas " + nuevas + " traducciones que ya existen.\n\n"
+      + "No cambia ningún texto: sólo anota que ese francés corresponde a ese español, "
+      + "para poder avisarte cuando el español cambie."))) return;
   const b = $("basar"); b.disabled = true;
   try {
     conFrances.forEach(p => ORIGEN[p.id] = p.es);
@@ -1141,16 +1190,22 @@ $("ninguna").addEventListener("click", () => { CAMBIOS.forEach(c => c.marcada = 
    ═══════════════════════════════════════════════════════════════ */
 
 $("aplicar").addEventListener("click", async () => {
+  // Lo primero es contestar. Si algo falla más adelante, al menos se sabe
+  // que el toque llegó: la última vez el síntoma fue «no hace nada», y eso
+  // no distingue un error de un botón muerto.
+  $("progreso").style.color = "";
+  $("progreso").textContent = "…";
   const marcadas = CAMBIOS.filter(c => c.marcada);
-  if (!marcadas.length) return;
+  if (!marcadas.length) { $("progreso").textContent = "No hay nada marcado."; return; }
   const conEs = marcadas.filter(c => !c.orden && c.idioma === "es").length;
   const conOrden = marcadas.filter(c => c.orden).length;
-  if (!confirm("Se van a escribir " + marcadas.length + " cambios"
-             + (conEs ? ", de los cuales " + conEs + " CAMBIAN EL TEXTO EN ESPAÑOL" : "")
-             + (conOrden ? " y " + conOrden + " REORDENAN BLOQUES DEL SITIO" : "")
-             + ".\n\nEn el sitio se ve en el acto.")) return;
+  if (!(await preguntar("Se van a escribir " + marcadas.length + " cambios"
+      + (conEs ? ", de los cuales " + conEs + " CAMBIAN EL TEXTO EN ESPAÑOL" : "")
+      + (conOrden ? " y " + conOrden + " REORDENAN BLOQUES DEL SITIO" : "")
+      + ".\n\nEn el sitio se ve en el acto."))) { $("progreso").textContent = ""; return; }
 
   const b = $("aplicar"); b.disabled = true;
+  $("progreso").style.color = "";
   const paso = (t) => { $("progreso").textContent = t; };
 
   try {
@@ -1256,7 +1311,10 @@ $("aplicar").addEventListener("click", async () => {
     paso("");
     aviso("Listo. " + marcadas.length + " piezas en francés, ya en el sitio.");
   } catch (e) {
-    paso("");
+    // El aviso flotante se va a los pocos segundos. Un error al escribir en
+    // la base tiene que quedar a la vista, al lado del botón que lo produjo.
+    paso("No se pudo escribir: " + CY.explicar(e));
+    $("progreso").style.color = "var(--bad)";
     aviso(CY.explicar(e), true);
   } finally {
     b.disabled = false; contarMarcadas();
