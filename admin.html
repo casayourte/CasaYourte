@@ -185,8 +185,10 @@
     <label><span class="k">Etapa</span><select id="f-etapa"></select></label>
     <label><span class="k">Texto alternativo · español</span><input id="f-alt-es"></label>
     <label><span class="k">Texto alternativo · francés</span><input id="f-alt-fr"></label>
+    <label><span class="k">Texto alternativo · inglés</span><input id="f-alt-en"></label>
     <label><span class="k">Leyenda · español</span><textarea id="f-cap-es"></textarea></label>
     <label><span class="k">Leyenda · francés</span><textarea id="f-cap-fr"></textarea></label>
+    <label><span class="k">Leyenda · inglés</span><textarea id="f-cap-en"></textarea></label>
     <label style="display:flex;gap:.6rem;align-items:center">
       <input type="checkbox" id="f-usar" style="width:auto">
       <span style="font-size:.9rem">Mostrar esta foto en el sitio<br>
@@ -219,10 +221,12 @@
     <p class="mono" id="t-id" style="color:var(--dim);margin:0 0 1.2rem"></p>
     <label><span class="k">Nombre · español</span><input id="t-es"></label>
     <label><span class="k">Nombre · francés</span><input id="t-fr"></label>
+    <label><span class="k">Nombre · inglés</span><input id="t-en"></label>
     <label><span class="k">Descripción · español</span><textarea id="t-des"></textarea></label>
     <label><span class="k">Descripción · francés</span><textarea id="t-dfr"></textarea></label>
+    <label><span class="k">Descripción · inglés</span><textarea id="t-den"></textarea></label>
     <p class="note">La descripción se muestra arriba de las fotos de esa categoría,
-    en el sitio. Si el francés queda vacío se usa el español.</p>
+    en el sitio. Si el francés o el inglés quedan vacíos se usa el español.</p>
     <button class="btn p" id="t-guardar">Guardar</button>
     <div style="height:1.4rem"></div>
     <div id="t-mover-caja" class="hide">
@@ -281,7 +285,7 @@ import { CY } from "./nucleo.js";
 // Sello de ESTE archivo. El de nucleo.js no sirve para saber si admin.html
 // quedó viejo en la caché: son dos archivos distintos. Al cambiar el panel,
 // se sube este número.
-const PANEL = "admin-17";
+const PANEL = "admin-18";
 
 const CLOUD = CY.CLOUDINARY.cloud;
 const PRESET = CY.CLOUDINARY.preset;
@@ -294,9 +298,9 @@ const ETAPAS = ["01-terreno-y-apoyos","02-taller-piezas","03-plancher","04-trei"
   "09-lonas-y-costura","10-aislacion","11-aberturas-y-umbrales","12-skydome",
   "13-terminada-exterior","14-terminada-interior","15-equipo-y-obra","16-desmontaje"];
 
-// Los nombres en francés de las 16, sólo para derivar la lista de un álbum que
-// todavía no la tenga: una vez derivada, los nombres viven en el álbum y se
-// editan desde acá.
+// Los nombres en francés e inglés de las 16, sólo para derivar la lista de un
+// álbum que todavía no la tenga: una vez derivada, los nombres viven en el
+// álbum y se editan desde acá.
 const ETAPA_FR = {
   "01-terreno-y-apoyos":"terrain et appuis","02-taller-piezas":"atelier · pièces",
   "03-plancher":"plancher","04-trei":"trei","05-anillo-periferico":"anneau périphérique",
@@ -305,6 +309,15 @@ const ETAPA_FR = {
   "11-aberturas-y-umbrales":"ouvertures et seuils","12-skydome":"skydome",
   "13-terminada-exterior":"terminée · extérieur","14-terminada-interior":"terminée · intérieur",
   "15-equipo-y-obra":"équipe et chantier","16-desmontaje":"démontage",
+};
+const ETAPA_EN = {
+  "01-terreno-y-apoyos":"site and footings","02-taller-piezas":"workshop · pieces",
+  "03-plancher":"floor","04-trei":"trellis wall","05-anillo-periferico":"perimeter ring",
+  "06-toono":"crown wheel","07-techo-triangulos":"roof · triangles","08-perchas":"rafters",
+  "09-lonas-y-costura":"canvas and sewing","10-aislacion":"insulation",
+  "11-aberturas-y-umbrales":"openings and thresholds","12-skydome":"skydome",
+  "13-terminada-exterior":"finished · exterior","14-terminada-interior":"finished · interior",
+  "15-equipo-y-obra":"team and build","16-desmontaje":"teardown",
 };
 
 /* ===================== ESTADO ===================== */
@@ -564,8 +577,8 @@ function etapasDe(a) {
   const guardado = Array.isArray(a.ordenEtapas) ? a.ordenEtapas : [];
   const orden = [...guardado.filter((e) => base.includes(e)),
                  ...base.filter((e) => !guardado.includes(e))];
-  return orden.map((id) => ({ id, es: legible(id), fr: ETAPA_FR[id] || "",
-                              desc_es: "", desc_fr: "" }));
+  return orden.map((id) => ({ id, es: legible(id), fr: ETAPA_FR[id] || "", en: ETAPA_EN[id] || "",
+                              desc_es: "", desc_fr: "", desc_en: "" }));
 }
 
 const nombreEt = (id) => {
@@ -1191,8 +1204,10 @@ function abrirCat(id, volver) {
   $("t-id").textContent = "identificador: " + id;
   $("t-es").value = e.es || legible(id);
   $("t-fr").value = e.fr || "";
+  $("t-en").value = e.en || "";
   $("t-des").value = e.desc_es || "";
   $("t-dfr").value = e.desc_fr || "";
+  $("t-den").value = e.desc_en || "";
 
   // Si tiene fotos, borrarla obliga a decir a dónde van: ninguna foto se
   // queda sin categoría por haber borrado la que la contenía.
@@ -1219,8 +1234,9 @@ $("t-guardar").addEventListener("click", async () => {
   const nombre = $("t-es").value.trim();
   if (!nombre) return toast("El nombre en español no puede quedar vacío", true);
   const l = etapasDe(album).map((x) => x.id === catEd
-    ? { ...x, es: nombre, fr: $("t-fr").value.trim(),
-        desc_es: $("t-des").value.trim(), desc_fr: $("t-dfr").value.trim() }
+    ? { ...x, es: nombre, fr: $("t-fr").value.trim(), en: $("t-en").value.trim(),
+        desc_es: $("t-des").value.trim(), desc_fr: $("t-dfr").value.trim(),
+        desc_en: $("t-den").value.trim() }
     : x);
   const b = $("t-guardar"); b.disabled = true; b.textContent = "Guardando…";
   try {
@@ -1299,7 +1315,7 @@ $("c-nueva").addEventListener("click", () => {
     const l = etapasDe(album);
     if (l.some((x) => x.id === id)) { cerrar(); return toast("Ya existe una categoría con ese nombre", true); }
     cerrar();
-    const nueva = { id, es: nombre, fr: "", desc_es: "", desc_fr: "" };
+    const nueva = { id, es: nombre, fr: "", en: "", desc_es: "", desc_fr: "", desc_en: "" };
     try {
       await guardarEtapas([...l, nueva]);
       opcionesEtapa($("d-etapa"), album);
@@ -1348,7 +1364,9 @@ function editar(f) {
   }
   sel.value = f.etapa || sel.options[0].value;
   $("f-alt-es").value = f.alt_es || ""; $("f-alt-fr").value = f.alt_fr || "";
+  $("f-alt-en").value = f.alt_en || "";
   $("f-cap-es").value = f.cap_es || ""; $("f-cap-fr").value = f.cap_fr || "";
+  $("f-cap-en").value = f.cap_en || "";
   $("f-usar").checked = !!f.usar; $("f-personas").checked = !!f.personas;
   // Al volver, se repinta y se deja a la vista la foto que se estaba editando.
   irA("foto", () => {
@@ -1362,7 +1380,9 @@ $("f-guardar").addEventListener("click", async () => {
   const d = {
     etapa: $("f-etapa").value,
     alt_es: $("f-alt-es").value.trim(), alt_fr: $("f-alt-fr").value.trim(),
+    alt_en: $("f-alt-en").value.trim(),
     cap_es: $("f-cap-es").value.trim(), cap_fr: $("f-cap-fr").value.trim(),
+    cap_en: $("f-cap-en").value.trim(),
     usar: $("f-usar").checked, personas: $("f-personas").checked,
   };
   try {
@@ -1435,7 +1455,8 @@ async function subir(files) {
         public_id: j.public_id, ancho: j.width, alto: j.height, bytes: j.bytes,
         clase: j.clase || "foto",
         etapa, orden, usar: false, personas: false,
-        alt_es: "", alt_fr: "", cap_es: "", cap_fr: "", creado: serverTimestamp(),
+        alt_es: "", alt_fr: "", alt_en: "", cap_es: "", cap_fr: "", cap_en: "",
+        creado: serverTimestamp(),
       };
       if (j.clase === "video") nueva.segundos = j.segundos || 0;
       if (j.clase === "secuencia") nueva.cuadros = j.cuadros || 0;

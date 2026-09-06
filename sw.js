@@ -61,13 +61,17 @@
 //   registro de traducción se guarda codificado (Firestore rechaza arrays
 //   dentro de arrays, y la tabla de referencias es exactamente eso); la
 //   portada ordena las fotos del álbum igual que el panel.
+// v26 (06-sep-2026) — entra el inglés como tercer idioma del sitio: index.html
+//   y album.html suman el botón EN con sus textos; editar.html publica y edita
+//   los tres idiomas; admin.html suma nombre, descripción, texto alternativo y
+//   leyenda en inglés para categorías y fotos de álbum.
 //
 // Dos cosas de este registro, para que no confundan a quien lo lea:
 //   · faltan v15 a v18. Esas versiones se publicaron y no se anotaron acá.
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v25';
+const VERSION = 'cy-shell-v26';
 
 const SHELL = [
   './admin.html',

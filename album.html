@@ -8,12 +8,14 @@
 <link rel="canonical" href="https://casayourte.com/album.html">
 <link rel="alternate" hreflang="es" href="https://casayourte.com/album.html">
 <link rel="alternate" hreflang="fr" href="https://casayourte.com/album.html?lang=fr">
+<link rel="alternate" hreflang="en" href="https://casayourte.com/album.html?lang=en">
 <link rel="alternate" hreflang="x-default" href="https://casayourte.com/album.html">
 <meta name="author" content="Mauro Gastaldello">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="CasaYourte">
 <meta property="og:locale" content="es_UY">
 <meta property="og:locale:alternate" content="fr_FR">
+<meta property="og:locale:alternate" content="en_US">
 <meta property="og:url" content="https://casayourte.com/album.html">
 <meta property="og:title" content="Álbumes de obra · CasaYourte">
 <meta property="og:description" content="Cada yurta paso a paso, del taller a la yurta habitada.">
@@ -35,7 +37,7 @@
   "@id": "https://casayourte.com/album.html#album",
   "name": "Álbumes de obra · CasaYourte",
   "description": "Archivo fotográfico de cada yurta construida por CasaYourte, ordenado por etapa de obra: terreno y apoyos, plancher, trei, anillo periférico, toono, techo, lonas, aislación, aberturas y skydome.",
-  "inLanguage": ["es", "fr"],
+  "inLanguage": ["es", "fr", "en"],
   "isPartOf": { "@id": "https://casayourte.com/#casayourte" },
   "about": { "@id": "https://casayourte.com/#casayourte" },
   "author": { "@type": "Person", "name": "Mauro Gastaldello" }
@@ -149,6 +151,7 @@ main{max-width:1400px;margin:0 auto;padding:0 var(--pad) calc(4rem + var(--safe)
   <div class="lang" role="group" aria-label="Idioma">
     <button type="button" data-set="es" aria-pressed="true">ES</button>
     <button type="button" data-set="fr" aria-pressed="false">FR</button>
+    <button type="button" data-set="en" aria-pressed="false">EN</button>
   </div>
 </header>
 
@@ -224,6 +227,17 @@ const T = {
     fotos: "photos",
     sinEtapa: "autres",
   },
+  en: {
+    eyebrow: "Build archive",
+    titulo: "Every yurt, <em>step by step</em>.",
+    lede: "From the workshop to the lived-in yurt. Photos follow the real order of construction, grouped by stage: the perimeter ring, the crown wheel, the trellis wall, the roof, the canvas. The work as it happened, not as it looks in a catalog.",
+    cargando: "Loading albums…",
+    vacio: "No albums published yet. Check back soon.",
+    error: "Couldn't load the albums right now.",
+    volver: "← Back to the site",
+    fotos: "photos",
+    sinEtapa: "other",
+  },
 };
 
 // Las 16 etapas, en el orden de la obra. Es la misma lista del panel y del
@@ -242,6 +256,15 @@ const NOMBRE_ETAPA = {
     "11-aberturas-y-umbrales":"ouvertures et seuils","12-skydome":"skydome",
     "13-terminada-exterior":"terminée · extérieur","14-terminada-interior":"terminée · intérieur",
     "15-equipo-y-obra":"équipe et chantier","16-desmontaje":"démontage",
+  },
+  en: {
+    "01-terreno-y-apoyos":"site and footings","02-taller-piezas":"workshop · pieces",
+    "03-plancher":"floor","04-trei":"trellis wall","05-anillo-periferico":"perimeter ring",
+    "06-toono":"crown wheel","07-techo-triangulos":"roof · triangles","08-perchas":"rafters",
+    "09-lonas-y-costura":"canvas and sewing","10-aislacion":"insulation",
+    "11-aberturas-y-umbrales":"openings and thresholds","12-skydome":"skydome",
+    "13-terminada-exterior":"finished · exterior","14-terminada-interior":"finished · interior",
+    "15-equipo-y-obra":"team and build","16-desmontaje":"teardown",
   },
 };
 
@@ -276,6 +299,12 @@ function idiomaDeducido() {
     if (idiomas.some(l => String(l).toLowerCase().indexOf("fr") === 0)) return "fr";
     const zona = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
     if (ZONAS_FR.indexOf(zona) >= 0) return "fr";
+    // El inglés NO se deduce del idioma del navegador: a diferencia del
+    // francés, un teléfono configurado en inglés es habitual entre
+    // hablantes nativos de español en Uruguay, Argentina y Brasil, y
+    // deducir inglés desde ahí le mostraría el sitio equivocado a buena
+    // parte del público principal. Se llega por el botón, por ?lang=en o
+    // por una elección ya guardada.
   } catch (e) { /* un navegador viejo: queda el español */ }
   return "es";
 }
@@ -295,8 +324,9 @@ function idiomaInicial() {
   // está editando el español. En modo edición manda la dirección y nada más.
   const editando = /[?&]edit=1/.test(location.search);
   const guardado = editando ? null : idiomaElegido();
-  if (guardado === "es" || guardado === "fr") return guardado;
+  if (guardado === "es" || guardado === "fr" || guardado === "en") return guardado;
   if (/[?&]lang=fr/.test(location.search)) return "fr";
+  if (/[?&]lang=en/.test(location.search)) return "en";
   if (/[?&]lang=es/.test(location.search)) return "es";
   return editando ? "es" : idiomaDeducido();
 }
@@ -369,7 +399,7 @@ document.querySelectorAll(".lang button").forEach((b) =>
     idioma = b.dataset.set;
     recordarIdioma(idioma);
     const u = new URL(location.href);
-    if (idioma === "fr") u.searchParams.set("lang", "fr"); else u.searchParams.delete("lang");
+    if (idioma === "es") u.searchParams.delete("lang"); else u.searchParams.set("lang", idioma);
     history.replaceState(null, "", u);
     pintarTextos(); pintar();
   }));
@@ -417,16 +447,17 @@ function etapasDe(a) {
   const guardado = Array.isArray(a.ordenEtapas) ? a.ordenEtapas : [];
   const orden = [...guardado.filter((e) => ETAPAS.includes(e)),
                  ...ETAPAS.filter((e) => !guardado.includes(e))];
-  return orden.map((id) => ({ id, es: legible(id), fr: NOMBRE_ETAPA.fr[id] || "" }));
+  return orden.map((id) => ({ id, es: legible(id), fr: NOMBRE_ETAPA.fr[id] || "",
+                              en: NOMBRE_ETAPA.en[id] || "" }));
 }
 
-// Si falta el francés se usa el español: es mejor que un hueco.
+// Si falta la traducción se usa el español: es mejor que un hueco.
 function nombreEtapa(e) {
-  if (idioma === "fr" && e.fr) return e.fr;
+  if (idioma !== "es" && e[idioma]) return e[idioma];
   return e.es || legible(e.id);
 }
 function descEtapa(e) {
-  return (idioma === "fr" ? (e.desc_fr || e.desc_es) : e.desc_es) || "";
+  return (idioma !== "es" && e["desc_" + idioma]) || e.desc_es || "";
 }
 
 function pintar() {
@@ -479,7 +510,7 @@ function pintar() {
         b.innerHTML = '<img loading="lazy" decoding="async" alt="">';
         const im = b.querySelector("img");
         im.src = urlMini(f.public_id, 420, f.clase);
-        im.alt = (idioma === "fr" ? f.alt_fr : f.alt_es) || "";
+        im.alt = (idioma !== "es" && f["alt_" + idioma]) || f.alt_es || "";
         // Se avisa que eso se mueve ANTES de tocarlo: quien está con datos
         // contados decide si lo abre.
         if (f.clase === "video" || f.clase === "secuencia") {
@@ -530,7 +561,7 @@ function abrirVisor(i) {
   document.getElementById("v-etapa").textContent =
     [f.album, f.etapa ? nombreEtapa(f.etapa) : ""].filter(Boolean).join(" · ");
   document.getElementById("v-cap").textContent =
-    (idioma === "fr" ? f.cap_fr : f.cap_es) || "";
+    (idioma !== "es" && f["cap_" + idioma]) || f.cap_es || "";
   if (visor.classList.contains("hide")) {
     visor.classList.remove("hide");
     document.body.style.overflow = "hidden";
@@ -567,7 +598,7 @@ addEventListener("keydown", (e) => {
 
   function usar(d) {
     var hubo = false;
-    ["es", "fr"].forEach(function (l) {
+    ["es", "fr", "en"].forEach(function (l) {
       var x = d[l] || {};
       Object.keys(x).forEach(function (k) {
         if (k.indexOf("alb.") === 0) { T[l][k.slice(4)] = x[k]; hubo = true; }

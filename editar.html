@@ -124,6 +124,7 @@ button{cursor:pointer}
     <div class="grupo-chips" id="idiomas">
       <button type="button" data-l="es" class="on">ES</button>
       <button type="button" data-l="fr">FR</button>
+      <button type="button" data-l="en">EN</button>
     </div>
   </div>
 
@@ -165,7 +166,7 @@ import { CY } from "./nucleo.js";
 const $ = (id) => document.getElementById(id);
 
 // Sello de este archivo, para saber si quedó viejo en la caché.
-const EDITOR = "editar-6";
+const EDITOR = "editar-7";
 CY.PANEL = EDITOR;
 
 /* ═══════════════════════════════════════════════════════════════
@@ -187,9 +188,9 @@ const PAGS = {
 
 let pag = "index";
 let idioma = "es";
-let CONT = null;        // { es:{}, fr:{}, imagenes:{}, orden:{} }
+let CONT = null;        // { es:{}, fr:{}, en:{}, imagenes:{}, orden:{} }
 let ORIG = null;
-let ORDEN = { es: [], fr: [] };
+let ORDEN = { es: [], fr: [], en: [] };
 let BASE = null;        // el contenido.json del repositorio, tal cual
 let yo = null;
 let slotActual = null;
@@ -239,7 +240,7 @@ onAuthStateChanged(auth, async (u) => {
 async function cargarContenido() {
   const r = await fetch("contenido.json?v=" + Date.now(), { cache: "no-store" });
   BASE = await r.json();
-  ["es", "fr"].forEach(l => ORDEN[l] = Object.keys((BASE.textos || {})[l] || {}));
+  ["es", "fr", "en"].forEach(l => ORDEN[l] = Object.keys((BASE.textos || {})[l] || {}));
 
   const d = await getDoc(doc(db, "sitio", "publicado"));
   if (d.exists() && d.data().es) {
@@ -250,11 +251,12 @@ async function cargarContenido() {
     CONT = {
       es: { ...(BASE.textos.es || {}), ...decodMapa(x.es) },
       fr: { ...(BASE.textos.fr || {}), ...decodMapa(x.fr) },
+      en: { ...(BASE.textos.en || {}), ...decodMapa(x.en) },
       imagenes: { ...(BASE.reemplazos || {}), ...(x.imagenes || {}) },
       orden: { ...(BASE.orden || {}), ...(x.orden || {}) },
     };
   } else {
-    CONT = { es: { ...BASE.textos.es }, fr: { ...BASE.textos.fr },
+    CONT = { es: { ...BASE.textos.es }, fr: { ...BASE.textos.fr }, en: { ...BASE.textos.en },
              imagenes: { ...(BASE.reemplazos || {}) },
              orden: { ...(BASE.orden || {}) } };
   }
@@ -268,7 +270,7 @@ function sucio() {
 
 function contar() {
   let n = 0;
-  ["es", "fr"].forEach(l => Object.keys(CONT[l]).forEach(k => {
+  ["es", "fr", "en"].forEach(l => Object.keys(CONT[l]).forEach(k => {
     if (JSON.stringify(CONT[l][k]) !== JSON.stringify(ORIG[l][k])) n++;
   }));
   const im = Object.keys({ ...ORIG.imagenes, ...CONT.imagenes })
@@ -300,7 +302,7 @@ function abrirPagina() {
   };
   // sin caché, para que el editor no trabaje sobre una versión vieja
   f.src = PAGS[pag].archivo + "?edit=1&v=" + Date.now()
-        + (idioma === "fr" ? "&lang=fr" : "");
+        + (idioma === "es" ? "" : "&lang=" + idioma);
 }
 
 $("paginas").addEventListener("click", (e) => {
@@ -507,7 +509,7 @@ function idNuevo(g) {
   const info = infoGrupo(g); if (!info) return null;
   const re = new RegExp("^" + info.prefijo + "(\\d+)\\.");
   let max = 0;
-  ["es", "fr"].forEach((l) => Object.keys(CONT[l]).forEach((k) => {
+  ["es", "fr", "en"].forEach((l) => Object.keys(CONT[l]).forEach((k) => {
     const m = re.exec(k); if (m) max = Math.max(max, Number(m[1]));
   }));
   String(CONT.orden[g] || "").split(",").forEach((id) => {
@@ -522,19 +524,23 @@ function idNuevo(g) {
    pulgar para escribirle adentro. */
 const SEMILLA = {
   traj: { es:{ yr:"Año", t:"Título nuevo", b:"Texto nuevo." },
-          fr:{ yr:"Année", t:"Nouveau titre", b:"Nouveau texte." } },
+          fr:{ yr:"Année", t:"Nouveau titre", b:"Nouveau texte." },
+          en:{ yr:"Year", t:"New title", b:"New text." } },
   dif:  { es:{ s:"Dato técnico", t:"Título nuevo", b:"Texto nuevo." },
-          fr:{ s:"Donnée technique", t:"Nouveau titre", b:"Nouveau texte." } },
+          fr:{ s:"Donnée technique", t:"Nouveau titre", b:"Nouveau texte." },
+          en:{ s:"Technical data", t:"New title", b:"New text." } },
   of:   { es:{ n:"Línea", t:"Título nuevo", b:"Texto nuevo.", g:"Etiqueta",
                l:["Primer punto"] },
           fr:{ n:"Ligne", t:"Nouveau titre", b:"Nouveau texte.", g:"Étiquette",
-               l:["Premier point"] } },
+               l:["Premier point"] },
+          en:{ n:"Line", t:"New title", b:"New text.", g:"Label",
+               l:["First point"] } },
 };
 
 function agregarBloque(g, despuesDe) {
   const info = infoGrupo(g); if (!info) return;
   const id = idNuevo(g);
-  ["es", "fr"].forEach((l) => {
+  ["es", "fr", "en"].forEach((l) => {
     const sem = ((SEMILLA[g] || {})[l]) || {};
     info.claves.forEach((k) => { CONT[l][id + "." + k] = sem[k] !== undefined ? sem[k] : "Texto"; });
     (info.listas || []).forEach((k) => {
@@ -796,8 +802,8 @@ $("guardar").addEventListener("click", async () => {
     // Esto ES el sitio: no hay borrador ni exportación. Lo que se guarda acá
     // lo ve cualquiera que entre a casayourte.com en el acto.
     await setDoc(doc(db, "sitio", "publicado"), {
-      es: codifMapa(CONT.es), fr: codifMapa(CONT.fr),
-      imagenes: CONT.imagenes, orden: CONT.orden, idiomas: ["es", "fr"],
+      es: codifMapa(CONT.es), fr: codifMapa(CONT.fr), en: codifMapa(CONT.en),
+      imagenes: CONT.imagenes, orden: CONT.orden, idiomas: ["es", "fr", "en"],
       guardado: serverTimestamp(), guardadoPor: yo.email,
     });
     ORIG = JSON.parse(JSON.stringify(CONT));

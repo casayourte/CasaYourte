@@ -182,7 +182,8 @@ borrar desde el panel de Cloudinary cuando quieras, o dejarla.
 
 
 **E1 · El sitio.** Abrí `https://casayourte.com/`
-Tiene que verse el video de portada, las fotos, y el botón de francés arriba a la derecha.
+Tiene que verse el video de portada, las fotos, y los botones de francés e inglés arriba a
+la derecha.
 Si las fotos no cargan, algún nombre de `assets/` está mal escrito.
 
 **E2 · El panel sin entrar.** Abrí `admin.html`. Tiene que pedirte mail y contraseña.

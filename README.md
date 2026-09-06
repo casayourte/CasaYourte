@@ -48,7 +48,7 @@ menú ⋮ → *Agregar a la pantalla principal*.
 
 | Archivo | Qué es |
 |---|---|
-| `contenido.json` | 143 textos por idioma, español y francés, y los reemplazos de imagen |
+| `contenido.json` | 143 textos por idioma, español, francés e inglés, y los reemplazos de imagen |
 | `assets/` | las imágenes, el video y las dos láminas del cálculo |
 | `icono-192.png` · `icono-512.png` · `apple-touch-icon.png` | iconos de la app |
 | `CNAME` | declara el dominio propio. Una línea |
@@ -128,9 +128,9 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 | Archivo | Constante | Valor de esta versión |
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-10` |
-| `sw.js` | `VERSION` | `cy-shell-v19` |
-| `admin.html` | `PANEL` | `admin-11` |
-| `editar.html` | `EDITOR` | `editar-4` |
+| `sw.js` | `VERSION` | `cy-shell-v26` |
+| `admin.html` | `PANEL` | `admin-18` |
+| `editar.html` | `EDITOR` | `editar-7` |
 | `calculo.html` | `CY.PANEL` | `calculo-8` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-2` |
 | `diagnostico.html` | `CY.PANEL` | `diagnostico-3` |
@@ -156,18 +156,23 @@ El botón ↻ del panel borra las cachés y recarga.
 
 ## Idiomas
 
-Español y francés. El botón de idioma cambia el texto y también la dirección:
+Español, francés e inglés. El botón de idioma cambia el texto y también la dirección:
 
 ```
 https://casayourte.com/            español
 https://casayourte.com/?lang=fr    francés
+https://casayourte.com/?lang=en    inglés
 ```
 
-Esa segunda dirección es la que conviene compartir con clientes franceses: sin ella, para
-un buscador la versión en francés no existe.
+Esas direcciones son las que conviene compartir con clientes franceses o de habla
+inglesa: sin ellas, para un buscador esas versiones no existen.
 
-**En el editor se edita el idioma que se está viendo.** Para cambiar el francés hay que
-pasar a FR primero.
+**En el editor se edita el idioma que se está viendo.** Para cambiar el francés o el
+inglés hay que pasar a FR o EN primero.
+
+Los álbumes de obra —categorías, textos alternativos y leyendas de cada foto— se
+editan por idioma desde `admin.html`. Si el inglés (o el francés) queda vacío, el
+sitio muestra el español: nunca queda un hueco.
 
 ---
 
@@ -178,6 +183,7 @@ pasar a FR primero.
 | `?dev=1` | botón para borrar cachés y recargar limpio |
 | `?borrador=1` | muestra el borrador de la base, sin publicar, con aviso arriba |
 | `?lang=fr` | abre en francés |
+| `?lang=en` | abre en inglés |
 
 ---
 
