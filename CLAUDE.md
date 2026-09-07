@@ -133,10 +133,12 @@ citar documentación de CasaYourte.
 - **No subir acá:** cálculos, costos, márgenes, tarifas, proveedores, documentación
   interna. Este repositorio es público y los `.md` se sirven en texto plano a
   cualquiera que sepa la dirección.
-- **La tabla de sellos del `README.md` está desactualizada** (dice `nucleo-10`,
-  `cy-shell-v19`, `admin-11`, `editar-4`; los archivos dicen `nucleo-14`,
-  `cy-shell-v25`, `admin-17`, `editar-6`). **Ante una discrepancia manda el
-  archivo, no la tabla.** Corregirla es el punto A4 de `ESTADO-DE-LOS-TRES.md`.
+- **Ante una discrepancia entre la tabla de sellos del `README.md` y el sello
+  escrito adentro del archivo, manda el archivo.** La tabla es derivada: se
+  copia a mano y se desactualiza en silencio. Ya pasó — hasta el 2026-09-07
+  publicaba cinco de sus siete números viejos (era el punto A4 de
+  `ESTADO-DE-LOS-TRES.md`, ya corregido); si vuelve a pasar, se corrige la tabla,
+  no el archivo.
 - **Falta el reglamento técnico en el repositorio.** Los comentarios del código
   citan "Libro 1 §3.12" y ese Libro 1 no está acá: vive en la documentación
   interna, que es privada. Mientras tanto, lo común a los tres sitios está en
