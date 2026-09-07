@@ -1,0 +1,31 @@
+# ─────────────────────────────────────────────────────────────
+#  CasaYourte — .gitignore
+#  Regla de oro: ningún valor real de una credencial entra a
+#  este repositorio. Borrar después no alcanza: el historial de
+#  git es permanente. Ver CLAUDE.md, sección «Secretos».
+# ─────────────────────────────────────────────────────────────
+
+# Variables de entorno — nunca, en ninguna variante
+.env
+.env.*
+!.env.example
+
+# Credenciales de servicios
+*.pem
+*.key
+*-service-account*.json
+firebase-adminsdk*.json
+.firebase/
+.firebaserc
+
+# Documentación interna y datos de negocio: van fuera de este
+# repositorio, que es público (ver README.md, «No subir acá»)
+CASAYOURTE-DOCUMENTACION.md
+
+# Basura del sistema y de editores
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.vscode/
+.idea/
