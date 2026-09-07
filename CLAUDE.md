@@ -67,7 +67,14 @@ confunda con secretos y los "proteja" rompiendo el sitio.
 | Rol y permisos de cada persona | **Firestore**, colección `usuarios/{uid}` (`rol`, `activo`, `permisos`), protegida por `REGLAS.txt`. Son datos, no reglas: se cambian desde `usuarios.html` sin republicar nada |
 | Invitaciones pendientes | **Firestore**, colección `invitaciones/{mail}`, protegida por `REGLAS.txt` |
 | Cálculos de taller (datos de clientes, medidas de obra) | **Firestore**, colección `calculos/{id}`. **No son públicos**: sólo con el permiso `calculo`. Costos, márgenes, tarifas y proveedores no van a este repositorio |
-| Login de las consolas: GitHub, Firebase, Cloudinary (cuenta `casayourte@gmail.com`) | **gestor de contraseñas personal de Mauro.** En ningún repositorio ni documento |
+| Login de las consolas: GitHub, Firebase, Cloudinary | **gestor de contraseñas personal de Mauro.** En ningún repositorio ni documento. *De quién es cada cuenta* se documenta en `datos` → `secretos/casayourte.md`, no acá |
+
+**De quién son las cuentas** (titular de la consola de Firebase, de Cloudinary,
+de Netlify): **no se documenta acá.** Vive solo en el repo privado
+`casaverdecanas-blip/datos` → `secretos/casayourte.md`, sección "Titularidad de las
+cuentas". No es un secreto —la contraseña sí, y esa no está en ningún documento—
+pero es un dato de contacto, y este repositorio es público. Ver
+`PROTOCOLO-SECRETOS.md` § "Titularidad".
 
 ### Si algún día hace falta un secreto de verdad
 
