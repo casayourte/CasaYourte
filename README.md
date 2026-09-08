@@ -153,10 +153,54 @@ O sea: no es un rediseño, es **sacar un dato que ya está declarado y hacer que
 
 | | Qué | Cómo se verifica |
 |---|---|---|
-| **1** | **El catálogo manda.** `CY.IDIOMAS` en `nucleo.js` como fuente única (igual que `PERMISOS`), alimentado por `idiomas` de `contenido.json`. `index.html` y `album.html` arman desde ahí el conmutador, los `hreflang`, el `knowsLanguage` y la detección. **Sin sumar el inglés todavía.** | **El sitio tiene que comportarse exactamente igual que hoy en español y francés.** Que no cambie nada ES la prueba |
+| ~~**1**~~ | ~~El catálogo manda~~ **· HECHO el 2026-09-08.** Nace `idiomas.js`, script clásico sin dependencias que comparten `index.html` y `album.html`. Sumar un idioma es **pegar una línea** en su catálogo | ✅ Verificado en un navegador real: 10 casos, todos pasan, sin errores de JS. Ver abajo |
 | **2** | **La pantalla de traducción, para N.** `traducir.html` deja de asumir dos columnas. Es la pieza más grande y la única con lógica propia: detecta si una traducción quedó vieja comparando contra la base | Que siga detectando lo mismo con dos idiomas antes de sumar el tercero |
 | **3** | **El editor.** `editar.html` ya tiene chips de idioma; que salgan del catálogo en vez de estar escritos | Ídem |
 | **4** | **Entra el inglés.** Recién acá se suma `"en"` al catálogo, y empieza el trabajo de contenido con el orden de abajo | Los 143 textos, con el diagnóstico y la revisión del sitio publicado |
+
+### Lo que hizo la tanda 1, y lo que encontró
+
+`fr` estaba escrito a mano en una decena de lugares, y **la misma maquinaria de idioma
+estaba copiada palabra por palabra en `index.html` y en `album.html`** — `ZONAS_FR`,
+`idiomaDeducido`, `idiomaElegido`, `idiomaInicial`. Todo eso vive ahora en `idiomas.js`.
+
+Tres decisiones que conviene no deshacer, explicadas en su cabecera: **es un script
+clásico y no un módulo** (las dos páginas corren con `<script>` a secas; un módulo les
+cambiaría el orden de arranque), **no depende de nada** (el idioma se decide antes de que
+llegue el contenido) y **el conmutador se arma desde el catálogo antes de atar los
+escuchadores**.
+
+**Lo que encontró al probarlo con un tercer idioma de mentira** —y es lo que hace que la
+tanda 4 no vaya a romper nada—:
+
+- **`paint()` reventaba** si el idioma no tenía textos propios: la página quedaba en
+  blanco en vez de mostrar el español. Ahora los textos se completan **clave por clave**
+  con el idioma fuente, así que un idioma traducido a medias se publica sin dejar huecos.
+  Es la misma decisión que ya estaba tomada para las etapas y las leyendas, y que faltaba
+  para los textos.
+- **Cinco lugares más leían los textos sin respaldo**, y dos los escribían asumiendo que
+  el idioma ya existía. Todo pasa ahora por una sola función `textos(idioma)`.
+
+### Cómo se verificó
+
+Con las dos páginas servidas y un navegador de verdad, no leyendo el código:
+
+| Caso | Esperado |
+|---|---|
+| Portada, teléfono en español | ES |
+| Portada, teléfono en francés | FR |
+| Portada, teléfono en español y zona horaria de París | FR |
+| Portada `?lang=fr` | FR |
+| Portada `?lang=es` con teléfono en francés | ES (lo explícito gana) |
+| Portada `?edit=1` con teléfono en francés | ES (modo edición) |
+| Álbum, y álbum `?lang=fr` | ES / FR |
+| Tocar FR | cambia el texto, la URL suma `lang=fr`, el enlace al álbum se lo lleva |
+| Tocar ES de vuelta | vuelve el texto y la URL pierde `lang` |
+
+Los diez pasan, sin un solo error de JavaScript. **Y la prueba de que la tanda sirvió:**
+agregando `{ id: "en", ... }` al catálogo —una línea— aparecen los tres botones, la
+detección por idioma del teléfono elige inglés y `?lang=en` funciona, en las dos páginas.
+Esa línea se sacó: el inglés entra en la tanda 4, con sus textos.
 
 **Las tandas 1 a 3 no cambian nada visible, y eso es a propósito:** son refactorización
 pura, así que **cualquier diferencia que aparezca es un error**. Es la clase de tanda más
@@ -200,6 +244,7 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 | `calculo.html` | `CY.PANEL` | `calculo-8` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-3` |
 | `diagnostico.html` | `CY.PANEL` | `diagnostico-6` |
+| `idiomas.js` | `SELLO` | `idiomas-1` |
 
 *Verificados uno por uno contra los archivos el 2026-09-07; `sw.js` y `diagnostico.html` actualizados el 2026-09-08.*
 

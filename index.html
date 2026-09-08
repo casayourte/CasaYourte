@@ -756,6 +756,7 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
   </div>
 </div>
 
+<script src="idiomas.js?v=1"></script>
 <script>
 /* ---------- content ---------- */
 const T = {
@@ -996,43 +997,27 @@ fr:{
    discute con una deducción.
 
    El orden es: lo elegido > la dirección (?lang=fr) > la deducción. */
-const ZONAS_FR = ["Europe/Paris", "Europe/Brussels", "Indian/Reunion",
-                  "America/Martinique", "America/Guadeloupe", "America/Cayenne"];
-
-function idiomaDeducido() {
-  try {
-    const idiomas = navigator.languages || [navigator.language || ""];
-    if (idiomas.some(l => String(l).toLowerCase().indexOf("fr") === 0)) return "fr";
-    const zona = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
-    if (ZONAS_FR.indexOf(zona) >= 0) return "fr";
-  } catch (e) { /* un navegador viejo: queda el español */ }
-  return "es";
-}
-
-function idiomaElegido() {
-  try { return localStorage.getItem("cy-idioma"); } catch (e) { return null; }
-}
-
-function recordarIdioma(l) {
-  try { localStorage.setItem("cy-idioma", l); } catch (e) { /* modo privado */ }
-}
-
-function idiomaInicial() {
-  // El editor abre el sitio en un iframe del MISMO ORIGEN, así que comparte
-  // el localStorage con el sitio público. Sin esta línea, haber tocado FR
-  // una vez en el sitio haría que el editor abriera en francés mientras se
-  // está editando el español. En modo edición manda la dirección y nada más.
-  const editando = /[?&]edit=1/.test(location.search);
-  const guardado = editando ? null : idiomaElegido();
-  if (guardado === "es" || guardado === "fr") return guardado;
-  if (/[?&]lang=fr/.test(location.search)) return "fr";
-  if (/[?&]lang=es/.test(location.search)) return "es";
-  return editando ? "es" : idiomaDeducido();
-}
+/* La decisión de idioma vive en idiomas.js, que es la fuente única y la
+   comparten esta página y album.html. Acá quedan los nombres de siempre para
+   no tocar el resto del archivo. Ver la cabecera de idiomas.js. */
+const idiomaDeducido = () => CY_IDIOMAS.deducido();
+const idiomaElegido  = () => CY_IDIOMAS.elegido();
+const recordarIdioma = (l) => CY_IDIOMAS.recordar(l);
+const idiomaInicial  = () => CY_IDIOMAS.inicial();
 
 /* ---------- render ---------- */
+/* EL ÚNICO LUGAR DONDE SE LEEN LOS TEXTOS POR IDIOMA.
+   Un idioma sin textos propios NO puede romper la página: se completa clave por
+   clave con el idioma fuente. Es la misma decisión que ya estaba tomada para las
+   etapas y las leyendas ("si falta el francés se usa el español: es mejor que un
+   hueco"), que faltaba para los textos. Y es lo que permite publicar un idioma
+   nuevo traducido a medias sin dejar la página en blanco. */
+function textos(lang) {
+  return Object.assign({}, T[CY_IDIOMAS.fuente()] || {}, T[lang] || {});
+}
+
 function paint(lang){
-  const d=T[lang];
+  const d=textos(lang);
   document.documentElement.lang=lang;
   document.querySelectorAll("[data-i]").forEach(el=>{
     const v=d[el.dataset.i]; if(v===undefined) return;
@@ -1144,19 +1129,22 @@ window.CY_SITIO = { version:1, GRUPOS, aplicarOrden,
   ids:(g)=>{ const c=document.querySelector('[data-grupo="'+g+'"]');
     return c ? [...c.querySelectorAll(':scope > [data-bloque]')].map(x=>x.dataset.bloque) : []; } };
 
+// El conmutador se arma desde el catálogo, ANTES de atar los escuchadores:
+// al revés se atarían a botones que después se reemplazan. Los que están
+// escritos en el HTML son el respaldo para cuando el JS no corre.
+CY_IDIOMAS.pintarConmutador(document.querySelector(".lang"), idiomaInicial(), "larga");
+
 document.querySelectorAll(".lang button").forEach(b=>
   b.addEventListener("click",()=>{
     recordarIdioma(b.dataset.set);
     paint(b.dataset.set);
     // Se refleja en la URL sin recargar: así el idioma se puede compartir
     // y los buscadores tienen una dirección propia para el francés.
-    const u = new URL(location.href);
-    if (b.dataset.set === "fr") u.searchParams.set("lang","fr");
-    else u.searchParams.delete("lang");
+    const u = CY_IDIOMAS.urlCon(new URL(location.href), b.dataset.set);
     history.replaceState(null,"",u);
     // El enlace al álbum se lleva el idioma elegido.
     document.querySelectorAll('a[href^="album.html"]').forEach(a=>{
-      a.setAttribute("href", b.dataset.set==="fr" ? "album.html?lang=fr" : "album.html");
+      a.setAttribute("href", "album.html" + CY_IDIOMAS.sufijoUrl(b.dataset.set));
     });
   }));
 paint(idiomaInicial());
@@ -1254,7 +1242,7 @@ const PROC_SRC=["assets/p01.jpg","assets/p02.jpg","assets/p03.jpg","assets/p04.j
     imgs.forEach((im,k)=>im.classList.toggle("on",k===cur));
     ticks.forEach((t,k)=>t.classList.toggle("on",k===cur));
     document.getElementById("proc-n").textContent=String(cur+1).padStart(2,"0")+" / "+N;
-    const d=T[document.documentElement.lang];
+    const d=textos(document.documentElement.lang);
     document.getElementById("proc-t").textContent=d["pr.c"+(cur+1)]||"";
     load(cur); load((cur+1)%N); load((cur-1+N)%N);
   }
@@ -1343,7 +1331,7 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
   const estado  = document.getElementById("alb-estado");
   if (!seccion || !lista) return;
 
-  const txt = (k) => (T[document.documentElement.lang] || T.es)[k] || "";
+  const txt = (k) => textos(document.documentElement.lang)[k] || "";
   /* Tres medios (el campo 'clase' de cada foto): foto · secuencia · video.
      En la PORTADA nada se mueve solo salvo el pase de fotos, que es de
      cuadros quietos. Un video acá sería una descarga que nadie pidió:
@@ -1422,12 +1410,10 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
     if (!id) return "";
     const e = (Array.isArray(a.etapas) ? a.etapas : []).find((x) => x && x.id === id);
     if (!e) return legible(id);
-    return (document.documentElement.lang === "fr" ? (e.fr || e.es) : e.es) || legible(id);
+    return CY_IDIOMAS.enIdioma(e, document.documentElement.lang) || legible(id);
   }
-  const leyenda = (f) =>
-    (document.documentElement.lang === "fr" ? (f.cap_fr || f.cap_es) : f.cap_es) || "";
-  const alterno = (f) =>
-    (document.documentElement.lang === "fr" ? (f.alt_fr || f.alt_es) : f.alt_es) || "";
+  const leyenda = (f) => CY_IDIOMAS.campo(f, "cap", document.documentElement.lang);
+  const alterno = (f) => CY_IDIOMAS.campo(f, "alt", document.documentElement.lang);
 
   /* ---------- estado ---------- */
   let ALB = [];        // álbumes con sus fotos
@@ -1730,6 +1716,9 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
     var hubo = false;
     ["es", "fr"].forEach(function (l) {
       if (!d[l] || typeof d[l] !== "object") return;
+      // Un idioma que todavía no existe en T se crea: si no, publicar un
+      // idioma nuevo rompería acá antes de llegar a pintarse.
+      T[l] = T[l] || {};
       Object.keys(d[l]).forEach(function (k) { T[l][k] = decodificar(d[l][k]); });
       hubo = true;
     });

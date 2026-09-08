@@ -180,6 +180,7 @@ main{max-width:1400px;margin:0 auto;padding:0 var(--pad) calc(4rem + var(--safe)
   </div>
 </div>
 
+<script src="idiomas.js?v=1"></script>
 <script>
 /* ═══════════════════════════════════════════════════════════════
    ÁLBUM PÚBLICO
@@ -267,39 +268,13 @@ const NOMBRE_ETAPA = {
    discute con una deducción.
 
    El orden es: lo elegido > la dirección (?lang=fr) > la deducción. */
-const ZONAS_FR = ["Europe/Paris", "Europe/Brussels", "Indian/Reunion",
-                  "America/Martinique", "America/Guadeloupe", "America/Cayenne"];
-
-function idiomaDeducido() {
-  try {
-    const idiomas = navigator.languages || [navigator.language || ""];
-    if (idiomas.some(l => String(l).toLowerCase().indexOf("fr") === 0)) return "fr";
-    const zona = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
-    if (ZONAS_FR.indexOf(zona) >= 0) return "fr";
-  } catch (e) { /* un navegador viejo: queda el español */ }
-  return "es";
-}
-
-function idiomaElegido() {
-  try { return localStorage.getItem("cy-idioma"); } catch (e) { return null; }
-}
-
-function recordarIdioma(l) {
-  try { localStorage.setItem("cy-idioma", l); } catch (e) { /* modo privado */ }
-}
-
-function idiomaInicial() {
-  // El editor abre el sitio en un iframe del MISMO ORIGEN, así que comparte
-  // el localStorage con el sitio público. Sin esta línea, haber tocado FR
-  // una vez en el sitio haría que el editor abriera en francés mientras se
-  // está editando el español. En modo edición manda la dirección y nada más.
-  const editando = /[?&]edit=1/.test(location.search);
-  const guardado = editando ? null : idiomaElegido();
-  if (guardado === "es" || guardado === "fr") return guardado;
-  if (/[?&]lang=fr/.test(location.search)) return "fr";
-  if (/[?&]lang=es/.test(location.search)) return "es";
-  return editando ? "es" : idiomaDeducido();
-}
+/* La decisión de idioma vive en idiomas.js, que es la fuente única y la
+   comparten esta página y album.html. Acá quedan los nombres de siempre para
+   no tocar el resto del archivo. Ver la cabecera de idiomas.js. */
+const idiomaDeducido = () => CY_IDIOMAS.deducido();
+const idiomaElegido  = () => CY_IDIOMAS.elegido();
+const recordarIdioma = (l) => CY_IDIOMAS.recordar(l);
+const idiomaInicial  = () => CY_IDIOMAS.inicial();
 
 let idioma = idiomaInicial();
 let albumes = [];
@@ -353,8 +328,18 @@ const urlMini = (pid, w, clase) => clase === "video"
     + `${clase === "secuencia" ? "f_jpg" : "f_auto"},q_auto,w_${w},ar_4:3,c_fill,g_auto/${pid}`;
 
 /* ---------- textos ---------- */
+/* EL ÚNICO LUGAR DONDE SE LEEN LOS TEXTOS POR IDIOMA.
+   Un idioma sin textos propios NO puede romper la página: se completa clave por
+   clave con el idioma fuente. Es la misma decisión que ya estaba tomada para las
+   etapas y las leyendas ("si falta el francés se usa el español: es mejor que un
+   hueco"), que faltaba para los textos. Y es lo que permite publicar un idioma
+   nuevo traducido a medias sin dejar la página en blanco. */
+function textos(lang) {
+  return Object.assign({}, T[CY_IDIOMAS.fuente()] || {}, T[lang] || {});
+}
+
 function pintarTextos() {
-  const d = T[idioma];
+  const d = textos(idioma);
   document.documentElement.lang = idioma;
   document.querySelectorAll("[data-t]").forEach((el) => {
     const v = d[el.dataset.t];
@@ -364,13 +349,16 @@ function pintarTextos() {
   document.querySelectorAll(".lang button").forEach((b) =>
     b.setAttribute("aria-pressed", String(b.dataset.set === idioma)));
 }
+// El conmutador se arma desde el catálogo, ANTES de atar los escuchadores: al
+// revés se atarían a botones que después se reemplazan. Los que están escritos
+// en el HTML son el respaldo para cuando el JS no corre.
+CY_IDIOMAS.pintarConmutador(document.querySelector(".lang"), idioma, "corta");
+
 document.querySelectorAll(".lang button").forEach((b) =>
   b.addEventListener("click", () => {
     idioma = b.dataset.set;
     recordarIdioma(idioma);
-    const u = new URL(location.href);
-    if (idioma === "fr") u.searchParams.set("lang", "fr"); else u.searchParams.delete("lang");
-    history.replaceState(null, "", u);
+    history.replaceState(null, "", CY_IDIOMAS.urlCon(new URL(location.href), idioma));
     pintarTextos(); pintar();
   }));
 pintarTextos();
@@ -399,7 +387,7 @@ async function cargar() {
     pintar();
   } catch (e) {
     document.getElementById("main").innerHTML =
-      '<p class="estado">' + T[idioma].error + "</p>";
+      '<p class="estado">' + textos(idioma).error + "</p>";
   }
 }
 
@@ -422,16 +410,15 @@ function etapasDe(a) {
 
 // Si falta el francés se usa el español: es mejor que un hueco.
 function nombreEtapa(e) {
-  if (idioma === "fr" && e.fr) return e.fr;
-  return e.es || legible(e.id);
+  return CY_IDIOMAS.enIdioma(e, idioma) || legible(e.id);
 }
 function descEtapa(e) {
-  return (idioma === "fr" ? (e.desc_fr || e.desc_es) : e.desc_es) || "";
+  return CY_IDIOMAS.campo(e, "desc", idioma);
 }
 
 function pintar() {
   const main = document.getElementById("main");
-  const d = T[idioma];
+  const d = textos(idioma);
   if (!albumes.length) { main.innerHTML = '<p class="estado">' + d.vacio + "</p>"; return; }
 
   main.innerHTML = "";
@@ -479,7 +466,7 @@ function pintar() {
         b.innerHTML = '<img loading="lazy" decoding="async" alt="">';
         const im = b.querySelector("img");
         im.src = urlMini(f.public_id, 420, f.clase);
-        im.alt = (idioma === "fr" ? f.alt_fr : f.alt_es) || "";
+        im.alt = CY_IDIOMAS.campo(f, "alt", idioma);
         // Se avisa que eso se mueve ANTES de tocarlo: quien está con datos
         // contados decide si lo abre.
         if (f.clase === "video" || f.clase === "secuencia") {
@@ -530,7 +517,7 @@ function abrirVisor(i) {
   document.getElementById("v-etapa").textContent =
     [f.album, f.etapa ? nombreEtapa(f.etapa) : ""].filter(Boolean).join(" · ");
   document.getElementById("v-cap").textContent =
-    (idioma === "fr" ? f.cap_fr : f.cap_es) || "";
+    CY_IDIOMAS.campo(f, "cap", idioma);
   if (visor.classList.contains("hide")) {
     visor.classList.remove("hide");
     document.body.style.overflow = "hidden";
@@ -570,7 +557,8 @@ addEventListener("keydown", (e) => {
     ["es", "fr"].forEach(function (l) {
       var x = d[l] || {};
       Object.keys(x).forEach(function (k) {
-        if (k.indexOf("alb.") === 0) { T[l][k.slice(4)] = x[k]; hubo = true; }
+        // Un idioma que todavía no existe en T se crea (ver `textos`).
+        if (k.indexOf("alb.") === 0) { T[l] = T[l] || {}; T[l][k.slice(4)] = x[k]; hubo = true; }
       });
     });
     if (hubo) { pintarTextos(); if (albumes.length) pintar(); }
