@@ -335,6 +335,62 @@ Las cinco piezas de arriba **siguen mal traducidas**: esta tanda hace que se vea
 no se puedan congelar por accidente. Corregirlas es trabajo de contenido, y va con el
 orden de tres pasos de abajo.
 
+### El español y sus idiomas, en el mismo acto · `traducir-14`
+
+Lo encontró la primera vuelta de verdad. La traducción al inglés trajo **49 correcciones
+de español** —tildes, `colado`→`encolado`, concordancias— y al aplicarlas **las 49
+traducciones al francés quedaron traduciendo el texto viejo**. La pantalla las detectó
+sin fallar una: la exportación siguiente al francés las marcó las 49 con su `es_anterior`.
+Pero detectarlo después no alcanza:
+
+> «para evitar este inconveniente, hay que pasar del español a la traducción de los n
+> idiomas en el mismo acto».
+
+**Lo que faltaba no era una advertencia: era poder hacerlo de una vez.** Tres cambios:
+
+**1 · La exportación lleva lo que dicen HOY los demás idiomas.** Cada pieza suma
+`otros_idiomas` con el texto y el estado de cada idioma que no es el destino. Con eso a la
+vista, la misma respuesta puede traer el español corregido y **todos** sus idiomas.
+
+**2 · Una respuesta puede traer cualquier idioma.** Antes sólo se leía la clave del
+destino; ahora se acepta cualquiera del catálogo, se cuenta por idioma y se escribe por
+idioma. La instrucción del archivo lo pide explícitamente.
+
+**3 · Y lo que hacía falta para que el 1 y el 2 sirvieran: confirmar sin reescribir.**
+De esas 49 correcciones, **casi todas eran ortográficas y el francés ya decía lo correcto**
+— «Collage» ya traducía bien lo que en español estaba mal escrito como «colado». Pero no
+había forma de decirlo: devolver el francés tal cual se descartaba como «igual a lo que ya
+hay», y la pieza seguía marcada «el español cambió» para siempre.
+
+Ahora, cuando la respuesta trae una traducción **idéntica a la que está** y esa pieza está
+marcada «el español cambió», eso **no es «no hay cambio»: es una confirmación**. Se anota
+el registro, no se toca el texto, y en la revisión aparece como *«se confirma · el texto no
+cambia»*. Es la única forma de sacar una pieza de «desactualizada» sin reescribirle algo
+que ya estaba bien.
+
+**Y si aun así quedan idiomas afuera, el cartel lo dice antes de escribir:** «esas
+correcciones de español dejan traducciones diciendo el texto anterior (N en francés)».
+
+**Dos arrastres corregidos de paso:**
+
+| | |
+|---|---|
+| **La fila «dice ahora» no aparecía nunca en la traducción** | `pintarRevision` leía `c.pieza[c.idioma]`, de cuando cada idioma era un campo suelto de la pieza. Desde la tanda 2 hay un mapa `tr`, así que eso devolvía `undefined` para todo lo que no fuera español — justo la fila que sirve para comparar |
+| **El estado sólo se sabía calcular para el idioma destino** | `revisarEstado` miraba `destino` y escribía sobre la pieza. Ahora hay `calcularEstado(p, idioma)`, que es lo que permite preguntar por los demás |
+
+**Verificado en el banco**, con el caso exacto que pasó: una pieza con francés e inglés al
+día contra un español viejo, y una respuesta que trae el español corregido, el francés
+**idéntico** y el inglés nuevo.
+
+| Prueba | Resultado |
+|---|---|
+| La exportación al francés | trae `otros_idiomas` con el texto en inglés y su estado |
+| El resumen del paso 4 | «1 en español · 1 en français · 1 en english para escribir · **1 que se confirma sin cambiar el texto**» |
+| La ficha de la confirmación | «FRANÇAIS · **SE CONFIRMA**» y, donde iba «pasaría a decir», la explicación de que el texto no cambia |
+| Después de aplicar | la pieza pasa de `fr:viejo en:viejo` a **`fr:hecho en:hecho`** |
+| El texto en francés | **sin tocar** — sigue diciendo «Collage des pièces» |
+| Una pieza con el español cambiado y un solo idioma traído | el otro queda en `viejo`, que es lo correcto, y el cartel lo avisa antes |
+
 ### Lo que hizo la tanda 4, y lo que encontró
 
 **El inglés existe, y el sitio no lo ofrece todavía.** Eso no es un estado a medias: es lo
@@ -497,14 +553,14 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 | Archivo | Constante | Valor de esta versión |
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-14` |
-| `sw.js` | `VERSION` | `cy-shell-v34` |
+| `sw.js` | `VERSION` | `cy-shell-v35` |
 | `admin.html` | `PANEL` | `admin-17` |
 | `editar.html` | `EDITOR` | `editar-7` |
 | `calculo.html` | `CY.PANEL` | `calculo-8` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-3` |
 | `diagnostico.html` | `CY.PANEL` | `diagnostico-7` |
 | `idiomas.js` | `SELLO` | `idiomas-3` |
-| `traducir.html` | `TRADUCTOR` | `traducir-13` |
+| `traducir.html` | `TRADUCTOR` | `traducir-14` |
 
 *Verificados uno por uno contra los archivos el 2026-09-07; `sw.js` y `diagnostico.html` actualizados el 2026-09-08.*
 

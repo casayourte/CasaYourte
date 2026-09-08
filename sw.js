@@ -46,6 +46,12 @@
 // v22 (18-ago-2026) — en la grilla, el tacho reemplaza al lápiz.
 // v23 (18-ago-2026) — la lista de categorías se dibuja: 'div div' se comía las filas.
 // v24 (19-ago-2026) — selección múltiple en la grilla: mostrar, mover y quitar.
+// v35 (8-sep-2026) — traducir.html: el español y sus idiomas, en el mismo
+//   acto. La exportación lleva lo que dicen HOY los demás idiomas y una
+//   sola respuesta puede traer el español y todas sus traducciones. Y una
+//   traducción que no cambia se puede CONFIRMAR contra el español nuevo
+//   sin reescribirla. Antes, corregir el español en la vuelta de un idioma
+//   dejaba los otros diciendo el texto viejo sin que nada avisara.
 // v34 (8-sep-2026) — entra el inglés al catálogo, en preparación: existe
 //   para el panel y para traducir, y no aparece en el sitio hasta que
 //   tenga textos. Los hreflang salen del catálogo. Y el diagnóstico suma
@@ -103,7 +109,7 @@
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v34';
+const VERSION = 'cy-shell-v35';
 
 const SHELL = [
   './admin.html',

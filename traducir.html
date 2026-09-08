@@ -249,7 +249,7 @@ import { CY } from "./nucleo.js";
 const $ = (id) => document.getElementById(id);
 
 // Sello de este archivo, para saber si quedó viejo en la caché (§3.34).
-const TRADUCTOR = "traducir-13";
+const TRADUCTOR = "traducir-14";
 CY.PANEL = TRADUCTOR;
 
 /* ═══════════════════════════════════════════════════════════════
@@ -563,30 +563,36 @@ function campoDe(ref, idioma) {
    nunca estuvieron en el respaldo, así que no hay de dónde sacar
    evidencia—. «Hecho» tiene que significar «hay con qué comprobarlo», no
    «no tengo nada que objetar». */
-function revisarEstado(p) {
-  p.huella = huella(p.es);
-  p.esAnterior = null;
+/* Se calcula para CUALQUIER idioma, no sólo para el que se está traduciendo.
+   Antes esta función miraba `destino` y escribía sobre la pieza: servía para
+   pintar el cuadro y para nada más. Y hacía falta para otra cosa: corregir el
+   español deja las traducciones de TODOS los idiomas diciendo el texto viejo,
+   y para avisarlo hay que poder preguntar por cada uno. */
+function calcularEstado(p, idioma) {
+  if (!tieneAlgo(valorDe(p, idioma))) return { estado: "falta", esAnterior: null };
 
-  if (!tieneAlgo(trad(p))) { p.estado = "falta"; return; }
-
-  const orig = origenDe(p.id, destino);
-  if (orig !== undefined) {
-    p.esAnterior = igual(orig, p.es) ? null : orig;
-    p.estado = igual(orig, p.es) ? "hecho" : "viejo";
-    return;
-  }
+  const orig = origenDe(p.id, idioma);
+  if (orig !== undefined)
+    return igual(orig, p.es) ? { estado: "hecho", esAnterior: null }
+                             : { estado: "viejo", esAnterior: orig };
 
   // La huella vieja solo dice algo del francés: para cualquier otro idioma
   // daría por «al día» una traducción que nunca se hizo.
-  if (destino === IDIOMA_DE_LOS_REGISTROS_VIEJOS && HUELLAS[p.id]) {
-    p.estado = HUELLAS[p.id] === p.huella ? "hecho" : "viejo";
-    return;
-  }
+  if (idioma === IDIOMA_DE_LOS_REGISTROS_VIEJOS && HUELLAS[p.id])
+    return { estado: HUELLAS[p.id] === huella(p.es) ? "hecho" : "viejo", esAnterior: null };
 
-  const dice = loQueDiceElRespaldo(p);
-  if (dice === null) { p.estado = "sinregistro"; return; }
-  p.esAnterior = dice.esAnterior || null;
-  p.estado = dice.estado;
+  const dice = loQueDiceElRespaldo(p, idioma);
+  if (dice === null) return { estado: "sinregistro", esAnterior: null };
+  return { estado: dice.estado, esAnterior: dice.esAnterior || null };
+}
+
+/* Lo mismo, para el idioma que se está traduciendo, escrito sobre la pieza:
+   es lo que usan el cuadro, los avisos y la exportación. */
+function revisarEstado(p) {
+  p.huella = huella(p.es);
+  const r = calcularEstado(p, destino);
+  p.estado = r.estado;
+  p.esAnterior = r.esAnterior;
 }
 
 /* Lo que se tradujo antes de esta pantalla no tiene registro, pero no
@@ -602,13 +608,13 @@ function revisarEstado(p) {
    devuelve null: eso es «sin registro», no «hecho». Sólo vale para los
    textos del sitio; para los álbumes devuelve null siempre, porque nunca
    estuvieron en el respaldo. */
-function loQueDiceElRespaldo(p) {
+function loQueDiceElRespaldo(p, idioma) {
   if (p.ref.que !== "sitio" || !BASE || !BASE.textos) return null;
   const bes = (BASE.textos[FUENTE] || {})[p.ref.clave];
-  const bdest = (BASE.textos[destino] || {})[p.ref.clave];
+  const bdest = (BASE.textos[idioma] || {})[p.ref.clave];
   if (bes === undefined || bdest === undefined) return null;
-  if (igual(bes, p.es)) return { estado: "hecho" };   // el español no se tocó
-  if (!igual(bdest, trad(p))) return null;            // se movieron los dos: no se sabe
+  if (igual(bes, p.es)) return { estado: "hecho" };            // el español no se tocó
+  if (!igual(bdest, valorDe(p, idioma))) return null;          // se movieron los dos: no se sabe
   return { estado: "viejo", esAnterior: bes };
 }
 
@@ -1036,6 +1042,14 @@ function instrucciones() { return {
     "Devolvé 'es' SÓLO cuando haya algo objetivamente mal. NO reescribas por gusto: la voz es de quien lo escribió.",
     "Cuando devuelvas 'es', agregá 'motivo' con una línea que diga qué se corrigió.",
     "Si corregís el español de una pieza, devolvé TAMBIÉN su '" + destino + "' al día con esa corrección.",
+    // El español y sus idiomas van en el MISMO acto. Corregirlo en una vuelta
+    // y dejar los otros idiomas para la próxima es dejar el sitio diciendo
+    // dos cosas distintas mientras tanto, y confiar en que alguien se acuerde.
+    "Y si la pieza trae 'otros_idiomas', devolvé TAMBIÉN esos idiomas en la misma respuesta, "
+      + "cada uno con su clave ('fr', 'en', …). Si la corrección del español no cambia lo que "
+      + "ese idioma ya dice —una tilde, una coma—, devolvé su texto TAL CUAL está: eso no lo "
+      + "reescribe, lo confirma contra el español nuevo, y es la única forma de que deje de "
+      + "figurar como desactualizado.",
     "Respetá el tipo: si el español es una lista, devolvé una lista con la misma cantidad de elementos; si es una tabla, la misma cantidad de filas y columnas.",
     "Las etiquetas <em> del original se conservan.",
     "Las piezas cortas —títulos, etiquetas, años, botones— tienen que entrar en el mismo lugar en pantalla. Mirá 'cabe_en'.",
@@ -1174,6 +1188,20 @@ function archivoExport() {
       if (typeof p.es === "string" && CORTOS.includes(p.tipo))
         o.cabe_en = p.es.length + " caracteres en español";
       if (tieneAlgo(trad(p))) o[destino + "_actual"] = trad(p);
+      /* Y lo que dicen HOY los demás idiomas, con su estado. Sin esto,
+         corregir el español en esta vuelta deja las otras traducciones
+         diciendo el texto viejo, y nadie se entera hasta que le toque el
+         turno a ese idioma —que fue exactamente lo que pasó con el francés
+         al hacer la vuelta del inglés—. Con los textos a la vista, la misma
+         respuesta puede traer el español y TODOS sus idiomas al día. */
+      const otros = {};
+      CY_IDIOMAS.ids().forEach((l) => {
+        if (l === FUENTE || l === destino) return;
+        if (!tieneAlgo(valorDe(p, l))) return;
+        otros[l] = { texto: valorDe(p, l),
+                     estado: FRASE_ESTADO[calcularEstado(p, l).estado] };
+      });
+      if (Object.keys(otros).length) o.otros_idiomas = otros;
       if (p.avisos && p.avisos.length) o.revisar = p.avisos;
       return o;
     }),
@@ -1248,17 +1276,24 @@ function leerTraduccion(txt) {
   else if (Array.isArray(j.piezas)) filas = j.piezas;
   else if (!j.orden && !j.informe) filas = Object.keys(j).map(k => ({ id: k, [destino]: j[k] }));
   return {
-    piezas: filas.map(f => ({
-      id: f.id,
-      // La forma de ahora es la clave del idioma destino. Se aceptan además
-      // `<destino>_nuevo`, y `fr`/`fr_nuevo` como forma vieja, porque es como
-      // quedaron los archivos que ya circulan.
-      [destino]: [f[destino], f[destino + "_nuevo"], (destino === "fr" ? f.fr : undefined),
-                  (destino === "fr" ? f.fr_nuevo : undefined)]
-                 .find(v => v !== undefined),
-      es: f.es !== undefined ? f.es : f.es_sugerido,
-      motivo: f.motivo || f.razon || "",
-    })).filter(f => f.id),
+    /* Se acepta CUALQUIER idioma del catálogo, no sólo el destino: una misma
+       respuesta puede traer el español corregido y sus traducciones a todos
+       los idiomas. Se sigue aceptando `<idioma>_nuevo`, que es como quedaron
+       los archivos que ya circulan. */
+    piezas: filas.map((f) => {
+      const valores = {};
+      CY_IDIOMAS.ids().forEach((l) => {
+        if (l === FUENTE) return;
+        const v = [f[l], f[l + "_nuevo"]].find(x => x !== undefined);
+        if (v !== undefined) valores[l] = v;
+      });
+      return {
+        id: f.id,
+        valores,
+        es: f.es !== undefined ? f.es : f.es_sugerido,
+        motivo: f.motivo || f.razon || "",
+      };
+    }).filter(f => f.id),
     orden: (j && typeof j.orden === "object" && !Array.isArray(j.orden)) ? j.orden : {},
     informe: Array.isArray(j && j.informe) ? j.informe : [],
   };
@@ -1294,10 +1329,12 @@ function revisar() {
     // Cada idioma es un cambio aparte: se acepta uno y se rechaza el otro.
     // Los del español van primero, porque son los que hay que mirar con
     // más cuidado: tocan el sitio en el idioma de quien lo escribió.
-    // `f[destino]` es la forma de ahora; `f.fr` se sigue aceptando porque es
-    // como quedaron los archivos que ya circulan.
-    const traido = (f[destino] !== undefined) ? f[destino] : (destino === "fr" ? f.fr : undefined);
-    [[FUENTE, f.es], [destino, traido]].forEach(([idioma, valor]) => {
+    const traidos = f.valores || {};
+    // Cualquiera de las traducciones que vengan sirve de molde para el
+    // español: antes era sólo la del destino.
+    const alguna = Object.keys(traidos).map(l => traidos[l]).find(v => tieneAlgo(v));
+    [[FUENTE, f.es]].concat(Object.keys(traidos).map(l => [l, traidos[l]]))
+      .forEach(([idioma, valor]) => {
       if (!tieneAlgo(valor)) return;                    // vacío: no se escribe
       // La forma —cuántos elementos tiene una lista, cuántas columnas una
       // tabla— tiene que ser la MISMA EN LOS DOS IDIOMAS. Eso es lo que
@@ -1308,18 +1345,35 @@ function revisar() {
       // ANTES que la forma, para que el aviso diga lo que de verdad falta y
       // no un genérico «no tiene la forma del original».
       if (idioma === FUENTE && !mismoMolde(p.es, valor)
-          && tieneAlgo(trad(p)) && !tieneAlgo(traido))
+          && tieneAlgo(trad(p)) && !alguna)
         return problemas.push("cambia la forma y no trae la traducción: " + f.id);
-      const molde = (idioma === FUENTE && tieneAlgo(traido)) ? traido
+      const molde = (idioma === FUENTE && alguna) ? alguna
                   : (idioma !== FUENTE && tieneAlgo(f.es)) ? f.es
                   : p.es;
       if (!mismoMolde(molde, valor))
         return problemas.push("no tiene la forma del original: " + f.id + " (" + idioma + ")");
-      if (igual(valor, valorDe(p, idioma))) return;     // igual a lo que ya hay
+
+      /* Igual a lo que ya hay. Casi siempre no hay nada que hacer, pero hay
+         un caso que sí: la pieza está marcada «el español cambió» en ese
+         idioma, y quien tradujo dice que la traducción sigue diciendo lo
+         mismo —la corrección fue una tilde, una coma—. Eso NO es «no hay
+         cambio»: es una confirmación, y es el único modo de que la pieza
+         deje de figurar como desactualizada sin reescribirle el texto.
+         Se anota el registro y no se toca el texto. */
+      if (igual(valor, valorDe(p, idioma))) {
+        if (idioma === FUENTE) return;
+        if (calcularEstado(p, idioma).estado !== "viejo") return;
+        CAMBIOS.push({ pieza: p, idioma, nueva: valor, motivo: f.motivo || "",
+                       soloRegistro: true, marcada: true });
+        return;
+      }
       CAMBIOS.push({ pieza: p, idioma, nueva: valor, motivo: f.motivo || "", marcada: true });
     });
   });
-  CAMBIOS.sort((a, b) => (a.idioma === b.idioma) ? 0 : (a.idioma === "es" ? -1 : 1));
+  // El español primero —es lo que hay que mirar con más cuidado—, después
+  // los idiomas en el orden del catálogo.
+  const peso = (c) => c.idioma === FUENTE ? -1 : CY_IDIOMAS.ids().indexOf(c.idioma);
+  CAMBIOS.sort((a, b) => peso(a) - peso(b));
 
   /* El orden propuesto va PRIMERO y desmarcado. Mover ocho bloques cambia
      cómo se lee el sitio entero, y eso no se acepta de corrido junto con
@@ -1347,13 +1401,23 @@ function revisar() {
     $("leido").textContent = problemas.join(" · ");
     return;
   }
-  const nEs = CAMBIOS.filter(c => !c.orden && c.idioma === "es").length;
-  // Decía «francés» escrito a mano: con el inglés elegido mentía. (tanda 2)
-  const enDestino = nombreDestino().toLowerCase();
+  /* Se cuenta por idioma, porque ahora una misma respuesta puede traer
+     varios. Y las confirmaciones se cuentan aparte: no cambian ningún texto,
+     y decir «12 para escribir» cuando ocho no escriben nada es mentir sobre
+     lo que va a pasar. */
+  const nombreDe = (l) => ((CY_IDIOMAS.porId(l) || {}).larga || l).toLowerCase();
+  const partes = [];
+  CY_IDIOMAS.ids().forEach((l) => {
+    const escriben = CAMBIOS.filter(c => !c.orden && c.idioma === l && !c.soloRegistro).length;
+    if (escriben) partes.push(escriben + " en " + nombreDe(l));
+  });
+  const confirman = CAMBIOS.filter(c => c.soloRegistro).length;
+  const nOrden = CAMBIOS.filter(c => c.orden).length;
   $("resumenRev").textContent =
-    (nEs ? nEs + " en español y " + (CAMBIOS.length - nEs) + " en " + enDestino
-         : CAMBIOS.length + " en " + enDestino)
-    + " para escribir"
+    (partes.length ? partes.join(" · ") + " para escribir" : "nada para escribir")
+    + (confirman ? " · " + confirman + (confirman === 1 ? " que se confirma" : " que se confirman")
+        + " sin cambiar el texto" : "")
+    + (nOrden ? " · " + nOrden + " de orden" : "")
     + (problemas.length ? " · " + problemas.length + " se descartaron: " + problemas.join(", ") : "");
   pintarRevision();
   $("pasoRev").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1388,8 +1452,13 @@ function pintarRevision() {
       return;
     }
 
-    const esES = c.idioma === "es";
-    const antes = c.pieza[c.idioma];
+    const esES = c.idioma === FUENTE;
+    /* `c.pieza[c.idioma]` era de cuando cada idioma era un campo suelto de la
+       pieza. Desde que hay un mapa `tr`, eso devolvía undefined para todo lo
+       que no fuera español, y la fila «dice ahora» no aparecía nunca en la
+       traducción — justo la que sirve para comparar. */
+    const antes = valorDe(c.pieza, c.idioma);
+    const etiqueta = ((CY_IDIOMAS.porId(c.idioma) || {}).larga || c.idioma).toLowerCase();
     d.innerHTML =
       '<div class="cab"><input type="checkbox" class="tilde" ' + (c.marcada ? "checked" : "") + '>'
       + '<span class="donde"></span>'
@@ -1397,13 +1466,19 @@ function pintarRevision() {
       + (c.motivo ? '<div class="par motivo"><i>por qué</i><span class="v-motivo"></span></div>' : "")
       + (esES ? "" : '<div class="par es"><i>español</i><span class="v-es"></span></div>')
       + (tieneAlgo(antes) ? '<div class="par vieja"><i>dice ahora</i><span class="v-vieja"></span></div>' : "")
-      + '<div class="par nueva"><i>pasaría a decir</i><span class="v-nueva"></span></div>';
+      + (c.soloRegistro
+          ? '<div class="par motivo"><i>qué cambia</i><span class="v-conf"></span></div>'
+          : '<div class="par nueva"><i>pasaría a decir</i><span class="v-nueva"></span></div>');
     d.querySelector(".donde").textContent = c.pieza.donde + " · " + c.pieza.id;
-    d.querySelector(".idi").textContent = esES ? "español" : "francés";
+    d.querySelector(".idi").textContent = etiqueta + (c.soloRegistro ? " · se confirma" : "");
     if (c.motivo) d.querySelector(".v-motivo").textContent = c.motivo;
     if (!esES) d.querySelector(".v-es").textContent = muestra(c.pieza.es);
     if (tieneAlgo(antes)) d.querySelector(".v-vieja").textContent = muestra(antes);
-    d.querySelector(".v-nueva").textContent = muestra(c.nueva);
+    if (c.soloRegistro)
+      d.querySelector(".v-conf").textContent = "El texto no cambia. Se anota que esta "
+        + "traducción corresponde al español de ahora, y la pieza deja de figurar como "
+        + "«el español cambió».";
+    else d.querySelector(".v-nueva").textContent = muestra(c.nueva);
     d.querySelector(".tilde").addEventListener("change", (e) => {
       c.marcada = e.target.checked;
       d.classList.toggle("fuera", !c.marcada);
@@ -1468,12 +1543,41 @@ async function aplicar() {
   $("progreso").textContent = "…";
   const marcadas = CAMBIOS.filter(c => c.marcada);
   if (!marcadas.length) { $("progreso").textContent = "No hay nada marcado."; return; }
-  const conEs = marcadas.filter(c => !c.orden && c.idioma === "es").length;
+  const escriben = marcadas.filter(c => !c.orden && !c.soloRegistro);
+  const conEs = escriben.filter(c => c.idioma === FUENTE);
   const conOrden = marcadas.filter(c => c.orden).length;
-  if (!(await preguntar("Se van a escribir " + marcadas.length + " cambios"
-      + (conEs ? ", de los cuales " + conEs + " CAMBIAN EL TEXTO EN ESPAÑOL" : "")
+  const confirman = marcadas.filter(c => c.soloRegistro).length;
+
+  /* Cuántas traducciones deja viejas esta tanda. Se mira pieza por pieza y
+     por idioma: una corrección de español que ese idioma no trae al día deja
+     su traducción diciendo el texto anterior. Se dice ANTES de escribir,
+     porque después ya está hecho y sólo se ve en la próxima vuelta de ese
+     idioma —que es como el francés quedó atrasado tras la vuelta del inglés. */
+  const quedanViejas = {};
+  conEs.forEach((c) => {
+    CY_IDIOMAS.ids().forEach((l) => {
+      if (l === FUENTE) return;
+      if (!tieneAlgo(valorDe(c.pieza, l))) return;
+      if (marcadas.some(x => !x.orden && x.pieza === c.pieza && x.idioma === l)) return;
+      quedanViejas[l] = (quedanViejas[l] || 0) + 1;
+    });
+  });
+  const avisoViejas = Object.keys(quedanViejas).map((l) =>
+    quedanViejas[l] + " en " + ((CY_IDIOMAS.porId(l) || {}).larga || l).toLowerCase());
+
+  if (!(await preguntar("Se van a escribir " + escriben.length + " cambios de texto"
+      + (confirman ? ", confirmar " + confirman
+          + (confirman === 1 ? " traducción sin tocarla" : " traducciones sin tocarlas") : "")
+      + (conEs.length ? (conEs.length === 1
+            ? ", de los cuales 1 CAMBIA EL TEXTO EN ESPAÑOL"
+            : ", de los cuales " + conEs.length + " CAMBIAN EL TEXTO EN ESPAÑOL") : "")
       + (conOrden ? " y " + conOrden + " REORDENAN BLOQUES DEL SITIO" : "")
-      + ".\n\nEn el sitio se ve en el acto."))) { $("progreso").textContent = ""; return; }
+      + ".\n\nEn el sitio se ve en el acto."
+      + (avisoViejas.length
+          ? "\n\nOJO: esas correcciones de español dejan traducciones diciendo el texto "
+            + "anterior (" + avisoViejas.join(", ") + "). Van a aparecer como «el español "
+            + "cambió» la próxima vez que traduzcas a ese idioma."
+          : "")))) { $("progreso").textContent = ""; return; }
 
   const b = $("aplicar"); b.disabled = true;
   $("progreso").style.color = "";
@@ -1481,9 +1585,12 @@ async function aplicar() {
 
   try {
     const deOrden  = marcadas.filter(c => c.orden);
-    const delSitio = marcadas.filter(c => !c.orden && c.pieza.ref.que === "sitio");
-    const deFotos  = marcadas.filter(c => !c.orden && c.pieza.ref.que === "foto");
-    const deEtapas = marcadas.filter(c => !c.orden && c.pieza.ref.que === "etapa");
+    // Las confirmaciones no escriben texto: sólo anotan el registro, más
+    // abajo. Meterlas acá sería reescribir el mismo valor por nada.
+    const conTexto = marcadas.filter(c => !c.orden && !c.soloRegistro);
+    const delSitio = conTexto.filter(c => c.pieza.ref.que === "sitio");
+    const deFotos  = conTexto.filter(c => c.pieza.ref.que === "foto");
+    const deEtapas = conTexto.filter(c => c.pieza.ref.que === "etapa");
 
     /* El sitio: el mapa fr completo con setDoc, nunca updateDoc de una clave
        con punto (§3.28). Y se vuelve a leer el documento justo antes de
@@ -1493,10 +1600,12 @@ async function aplicar() {
       paso("Escribiendo en el sitio…");
       const d = await getDoc(doc(db, "sitio", "publicado"));
       const x = d.exists() ? d.data() : {};
-      // Solo los dos idiomas que esta pantalla puede tocar: el fuente y el
-      // destino. Los demás se dejan como están, en `...x`.
+      /* Los idiomas que esta tanda toca de verdad, no una lista fija: una
+         respuesta puede traer el español y varias traducciones a la vez. Los
+         que no aparecen se dejan como están, en `...x`. */
       const mapas = {};
-      [FUENTE, destino].forEach((l) => {
+      [FUENTE].concat(delSitio.map(c => c.idioma)).forEach((l) => {
+        if (mapas[l]) return;
         mapas[l] = { ...((BASE.textos || {})[l] || {}), ...decodMapa(x[l]) };
       });
       delSitio.forEach(c => mapas[c.idioma][c.pieza.ref.clave] = c.nueva);
@@ -1565,7 +1674,9 @@ async function aplicar() {
 
        Corregir una palabra en español sin rehacer el francés deja las dos
        versiones diciendo cosas distintas. El sistema tiene que saberlo. */
-    marcadas.filter(c => !c.orden).forEach(c => { ponerValor(c.pieza, c.idioma, c.nueva); });
+    conTexto.forEach(c => { ponerValor(c.pieza, c.idioma, c.nueva); });
+    /* Las confirmaciones entran acá y sólo acá: el texto no se tocó, pero SÍ
+       se anota que corresponde al español de ahora. Es todo lo que hacen. */
     marcadas.filter(c => !c.orden && c.idioma !== FUENTE)
             .forEach(c => { anotarOrigen(c.pieza.id, c.idioma, c.pieza.es); });
     try { await guardarRegistro(); }
@@ -1581,7 +1692,13 @@ async function aplicar() {
     $("pasoRev").classList.add("hide");
     $("entrada").value = "";
     paso("");
-    aviso("Listo. " + marcadas.length + " piezas en francés, ya en el sitio.");
+    const dicho = [];
+    CY_IDIOMAS.ids().forEach((l) => {
+      const n = conTexto.filter(c => c.idioma === l).length;
+      if (n) dicho.push(n + " en " + ((CY_IDIOMAS.porId(l) || {}).larga || l).toLowerCase());
+    });
+    aviso("Listo" + (dicho.length ? ". " + dicho.join(", ") + ", ya en el sitio" : "")
+      + (confirman ? " · " + confirman + " confirmadas sin tocarlas" : "") + ".");
   } catch (e) {
     // El aviso flotante se va a los pocos segundos. Un error al escribir en
     // la base tiene que quedar a la vista, al lado del botón que lo produjo.
