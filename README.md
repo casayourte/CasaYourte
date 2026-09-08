@@ -119,6 +119,42 @@ Son 32 lugares editables: esos, menos el video y el logo.
 
 ---
 
+---
+
+## Pendientes
+
+### El sitio en inglés, además de español y francés
+
+Hoy el sitio es bilingüe español/francés. Falta el **inglés**.
+
+**No es agregar un idioma a una lista, y conviene saberlo antes de empezar.** Hoy `fr`
+no es un valor: es **un nombre de campo escrito a mano** en todo el código —`p.fr`,
+`SITIO.fr`, `BASE.textos.fr`, `x.fr`—, repartido en `index.html`, `album.html`,
+`traducir.html` y `editar.html`, más `contenido.json`, los `hreflang`, el
+`knowsLanguage` del JSON-LD, el conmutador de idioma y la detección por zona horaria.
+
+Sumar `en` copiando cada uno de esos pares **duplica el trabajo y deja al cuarto idioma
+costando el doble otra vez**. Lo que corresponde es generalizar de una vez a *"español
+más N idiomas"*. Eso es una decisión estructural: **se cierra con Mauro antes de
+escribir la primera línea** (`PROTOCOLO-DESARROLLO.md` § 2.14 del repositorio `datos`).
+
+**El orden de trabajo del contenido, que no cambia y vale para cualquier idioma que se
+sume:**
+
+1. **El español es el idioma fuente.** Todo cambio de contenido se propone y se escribe
+   primero en español. No se edita una traducción para tapar algo que en realidad está
+   mal en el original.
+2. **Después, en la pantalla de traducción y corrección, se corrige primero el
+   español**: semántica y ortografía. Traducir sobre un texto con un error lo propaga a
+   todos los demás idiomas y multiplica el arreglo por la cantidad de idiomas que haya.
+3. **Recién entonces se traduce, y no palabra por palabra.** Para cada concepto y cada
+   expresión se busca la forma que **cumpla el objetivo del sitio en ese idioma**. Una
+   traducción literal que no le habla a quien la lee no sirve, por correcta que sea.
+
+> Anotado el 2026-09-08. Este `README.md` es, por ahora, el único lugar del repositorio
+> donde vive un pendiente: falta el reglamento técnico del proyecto (el «Libro 1» que
+> citan los comentarios del código y que no está acá). Cuando exista, esto se muda ahí.
+
 ## Los sellos de versión
 
 Cada archivo con lógica propia lleva su número, visible en el panel abajo del nombre. **Al
