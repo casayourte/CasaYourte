@@ -100,6 +100,11 @@ textarea.json{font-family:var(--mono);font-size:.7rem;line-height:1.4;min-height
       <p class="gris">Los textos del sitio, los nombres de las categorías de cada álbum y
         las leyendas de las fotos publicadas.</p>
 
+      <!-- Se traduce a UN idioma por vez: es como se trabaja, y así toda la
+           pantalla (estados, avisos, exportación) habla de un solo destino.
+           Con un solo idioma destino esta fila no aparece. -->
+      <div class="seg hide" id="destino"></div>
+
       <div class="seg" id="alcance">
         <button data-v="publicado" class="on">Sólo lo publicado</button>
         <button data-v="todo">Todo, incluso lo oculto</button>
@@ -107,7 +112,7 @@ textarea.json{font-family:var(--mono);font-size:.7rem;line-height:1.4;min-height
 
       <div class="cuadro" id="cuadro">
         <div><b id="c-total">—</b><span>piezas de texto</span></div>
-        <div class="mal"><b id="c-falta">—</b><span>sin francés</span></div>
+        <div class="mal"><b id="c-falta">—</b><span id="et-falta">sin traducir</span></div>
         <div class="ojo"><b id="c-viejo">—</b><span>el español cambió</span></div>
         <div><b id="c-hecho">—</b><span>al día</span></div>
         <div class="ojo"><b id="c-avisos">—</b><span>con algo para revisar</span></div>
@@ -228,6 +233,7 @@ textarea.json{font-family:var(--mono);font-size:.7rem;line-height:1.4;min-height
 
 <iframe id="horno" title="lectura del sitio"></iframe>
 
+<script src="idiomas.js?v=1"></script>
 <script type="module">
 import { db, auth, doc, getDoc, getDocs, setDoc, collection, serverTimestamp,
          onAuthStateChanged, signOut } from "./firebase-init.js";
@@ -236,7 +242,7 @@ import { CY } from "./nucleo.js";
 const $ = (id) => document.getElementById(id);
 
 // Sello de este archivo, para saber si quedó viejo en la caché (§3.34).
-const TRADUCTOR = "traducir-9";
+const TRADUCTOR = "traducir-10";
 CY.PANEL = TRADUCTOR;
 
 /* ═══════════════════════════════════════════════════════════════
@@ -279,14 +285,55 @@ CY.PANEL = TRADUCTOR;
 
 let BASE = null;          // contenido.json, el respaldo del repositorio
 let SITIO = null;         // sitio/publicado, tal como está
-let ORIGEN = {};          // id → el español con el que se tradujo, tal cual
+let ORIGEN = {};          // idioma → id → el español con el que se tradujo
+let ORIGEN_VIEJO = {};    // id → ídem, del registro anterior (siempre francés)
+
+/* Los dos registros viejos —`origen` y `huellas`— se escribieron cuando el
+   único idioma destino era el francés, así que HABLAN DE FRANCÉS y de nada
+   más. No es una suposición sobre el idioma: es un hecho sobre esos datos. */
+const IDIOMA_DE_LOS_REGISTROS_VIEJOS = "fr";
 let HUELLAS = {};         // id → huella, del registro anterior a traducir-3
 let NOTAS = "";           // notas de Mauro para quien traduce
 let PIEZAS = [];          // todo lo traducible, en orden de lectura
 let MAPA = [];            // las secciones del sitio, en orden
 let CAMBIOS = [];         // lo que trajo el JSON y todavía no se escribió
+/* El idioma al que se está traduciendo. Se trabaja a uno por vez.
+   CY_IDIOMAS es la fuente única (idiomas.js); acá no se escribe ningún
+   código de idioma a mano. */
+const FUENTE = CY_IDIOMAS.fuente();
+let destino = (CY_IDIOMAS.destinos()[0] || {}).id || FUENTE;
+
 let alcance = "publicado";
 let quePasa = "todo";
+
+/* ---------- el idioma al que se traduce ----------
+   Se pinta desde el catálogo. Con un solo idioma destino la fila no aparece:
+   hoy, con español y francés, esta pantalla se ve exactamente igual que antes.
+   Al cambiar de idioma NO se vuelve a leer el sitio: las piezas ya traen todas
+   sus traducciones en `p.tr`. Solo se recalculan los estados. */
+function pintarDestinos() {
+  const ds = CY_IDIOMAS.destinos();
+  const caja = $("destino");
+  caja.classList.toggle("hide", ds.length < 2);
+  caja.innerHTML = "";
+  ds.forEach((l) => {
+    const b = document.createElement("button");
+    b.dataset.v = l.id;
+    b.textContent = "Traducir al " + l.larga;
+    b.className = (l.id === destino) ? "on" : "";
+    caja.appendChild(b);
+  });
+  $("et-falta").textContent = "sin " + (ds.length < 2 ? "traducir" : nombreDestino().toLowerCase());
+}
+$("destino").addEventListener("click", (ev) => {
+  const b = ev.target.closest("button[data-v]");
+  if (!b || b.dataset.v === destino) return;
+  destino = b.dataset.v;
+  pintarDestinos();
+  if (!PIEZAS.length) return;
+  PIEZAS.forEach((q) => { revisarEstado(q); q.avisos = avisosDe(q); });
+  pintarCuadro(); armarPartes();
+});
 
 /* ---------- textos con forma ---------- */
 const decod = (v) => (typeof v === "string" && v.slice(0, 5) === "json:")
@@ -403,16 +450,33 @@ async function reunir() {
     const x = d.exists() ? d.data() : {};
     // MEZCLA, no reemplazo (§3.35): lo publicado manda y el archivo completa.
     SITIO = {
-      es: { ...((BASE.textos || {}).es || {}), ...decodMapa(x.es) },
-      fr: { ...((BASE.textos || {}).fr || {}), ...decodMapa(x.fr) },
       imagenes: { ...(BASE.reemplazos || {}), ...(x.imagenes || {}) },
       orden: { ...(BASE.orden || {}), ...(x.orden || {}) },
     };
+    CY_IDIOMAS.ids().forEach((l) => {
+      SITIO[l] = { ...((BASE.textos || {})[l] || {}), ...decodMapa(x[l]) };
+    });
 
     const t = await getDoc(doc(db, "sitio", "traduccion"));
     // Se decodifica igual que los textos del sitio: adentro hay listas y una
     // tabla, y viajan como texto.
-    ORIGEN  = t.exists() ? decodMapa(t.data().origen || {}) : {};
+    /* `origen` es el registro viejo: un solo valor por pieza, y ese valor
+       SIEMPRE fue el español con el que se tradujo al francés — cuando se
+       escribió no había otro idioma. Se sigue leyendo para no perder nada.
+       `origenPorIdioma` es el nuevo: id → { idioma → español de entonces }. */
+    ORIGEN_VIEJO = t.exists() ? decodMapa(t.data().origen || {}) : {};
+    ORIGEN = {};
+    const porIdioma = t.exists() ? (t.data().origenPorIdioma || {}) : {};
+    Object.keys(porIdioma).forEach((l) => { ORIGEN[l] = decodMapa(porIdioma[l]); });
+
+    /* SE SIEMBRA el registro nuevo del francés con el viejo, y el orden importa:
+       lo nuevo pisa a lo viejo, no al revés. Sin esto, `ORIGEN.fr` arrancaría
+       vacío y el primer guardado escribiría un `origen` con solo las piezas
+       tocadas en esa sesión — borrando el registro de todas las demás. Y ese
+       registro es justo lo que distingue «traducido y al día» de «el español
+       cambió después», o sea lo único que esta pantalla existe para cuidar. */
+    const L = IDIOMA_DE_LOS_REGISTROS_VIEJOS;
+    ORIGEN[L] = { ...ORIGEN_VIEJO, ...(ORIGEN[L] || {}) };
     HUELLAS = t.exists() ? (t.data().huellas || {}) : {};
     NOTAS = t.exists() ? (t.data().notas || "") : "";
     if (!$("notas").value) $("notas").value = NOTAS;
@@ -426,6 +490,7 @@ async function reunir() {
     PIEZAS = piezasDelSitio(mapa).concat(deAlbums);
     PIEZAS.forEach((p) => { revisarEstado(p); p.avisos = avisosDe(p); });
 
+    pintarDestinos();
     pintarCuadro();
     armarPartes();
     estado("Listo. " + PIEZAS.length + " piezas leídas.");
@@ -436,6 +501,29 @@ async function reunir() {
 }
 
 const igual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
+/* Lo traducido de una pieza, en el idioma destino de ahora. */
+const trad = (p) => (p.tr || {})[destino];
+
+/* El valor de una pieza en cualquier idioma: el fuente vive en `es`, los
+   demás en el mapa `tr`. Antes cada idioma era un campo suelto (p.es, p.fr). */
+const valorDe = (p, l) => (l === FUENTE) ? p.es : (p.tr || {})[l];
+function ponerValor(p, l, v) { if (l === FUENTE) p.es = v; else { p.tr = p.tr || {}; p.tr[l] = v; } }
+const nombreDestino = () => (CY_IDIOMAS.porId(destino) || {}).larga || destino;
+
+/* El español con el que se tradujo esta pieza a este idioma. Mira primero el
+   registro nuevo; si no está y el destino es el francés, cae al registro
+   viejo, que solo hablaba de francés. */
+function origenDe(id, idioma) {
+  const nuevo = (ORIGEN[idioma] || {})[id];
+  if (nuevo !== undefined) return nuevo;
+  if (idioma === "fr") return ORIGEN_VIEJO[id];
+  return undefined;
+}
+function anotarOrigen(id, idioma, valor) {
+  ORIGEN[idioma] = ORIGEN[idioma] || {};
+  ORIGEN[idioma][id] = valor;
+}
 
 /* El nombre del campo donde vive cada idioma. Una sola función: el día que
    entre un tercer idioma se cambia acá y en ningún otro lado.
@@ -459,16 +547,18 @@ function revisarEstado(p) {
   p.huella = huella(p.es);
   p.esAnterior = null;
 
-  if (!tieneAlgo(p.fr)) { p.estado = "falta"; return; }
+  if (!tieneAlgo(trad(p))) { p.estado = "falta"; return; }
 
-  const orig = ORIGEN[p.id];
+  const orig = origenDe(p.id, destino);
   if (orig !== undefined) {
     p.esAnterior = igual(orig, p.es) ? null : orig;
     p.estado = igual(orig, p.es) ? "hecho" : "viejo";
     return;
   }
 
-  if (HUELLAS[p.id]) {                       // registro anterior a traducir-3
+  // La huella vieja solo dice algo del francés: para cualquier otro idioma
+  // daría por «al día» una traducción que nunca se hizo.
+  if (destino === IDIOMA_DE_LOS_REGISTROS_VIEJOS && HUELLAS[p.id]) {
     p.estado = HUELLAS[p.id] === p.huella ? "hecho" : "viejo";
     return;
   }
@@ -488,11 +578,11 @@ function revisarEstado(p) {
    para los textos del sitio: los álbumes nunca estuvieron en el respaldo. */
 function sospechaDelRespaldo(p) {
   if (p.ref.que !== "sitio" || !BASE || !BASE.textos) return null;
-  const bes = (BASE.textos.es || {})[p.ref.clave];
-  const bfr = (BASE.textos.fr || {})[p.ref.clave];
-  if (bes === undefined || bfr === undefined) return null;
-  if (igual(bes, p.es)) return null;          // el español no se tocó
-  if (!igual(bfr, p.fr)) return null;         // el francés SÍ se tocó: no se sabe
+  const bes = (BASE.textos[FUENTE] || {})[p.ref.clave];
+  const bdest = (BASE.textos[destino] || {})[p.ref.clave];
+  if (bes === undefined || bdest === undefined) return null;
+  if (igual(bes, p.es)) return null;              // el español no se tocó
+  if (!igual(bdest, trad(p))) return null;        // la traducción SÍ se tocó: no se sabe
   return bes;
 }
 
@@ -630,19 +720,26 @@ const palabras = (v) => muestra(v).trim().split(/\s+/).filter(Boolean).length;
 // con las palabras.
 const plano = (v) => String(v == null ? "" : v).replace(/<[^>]+>/g, "").trim();
 
+/* Arma { idioma: valor } para todos los idiomas destino. */
+function mapaTrad(dame) {
+  const o = {};
+  CY_IDIOMAS.destinos().forEach((l) => { o[l.id] = dame(l.id); });
+  return o;
+}
+
 function piezasDelSitio(mapa) {
-  const claves = Object.keys(SITIO.es);
+  const claves = Object.keys(SITIO[FUENTE]);
   // Primero lo que está en la página, en orden de lectura; después el resto.
   claves.sort((a, b) => {
     const A = mapa[a] ? mapa[a].n : 9e6, B = mapa[b] ? mapa[b].n : 9e6;
     return A - B || a.localeCompare(b);
   });
 
-  return claves.filter(k => tieneAlgo(SITIO.es[k])).map((k) => {
+  return claves.filter(k => tieneAlgo(SITIO[FUENTE][k])).map((k) => {
     const m = mapa[k] || {};
     const partes = [];
-    if (m.seccionClave) partes.push(plano(SITIO.es[m.seccionClave]));
-    if (m.bloqueClave) partes.push(plano(SITIO.es[m.bloqueClave]));
+    if (m.seccionClave) partes.push(plano(SITIO[FUENTE][m.seccionClave]));
+    if (m.bloqueClave) partes.push(plano(SITIO[FUENTE][m.bloqueClave]));
     partes.push(m.papel || papelDeClave(k));
     return {
       id: "sitio:" + k,
@@ -652,9 +749,11 @@ function piezasDelSitio(mapa) {
       seccion: m.seccion !== undefined ? m.seccion : -1,
       bloque: m.bloque || null,
       grupo: m.grupo || null,
-      es: SITIO.es[k],
-      fr: SITIO.fr[k],
-      ref: { que: "sitio", clave: k },   // la clave sirve para es y para fr
+      es: SITIO[FUENTE][k],
+      // Un mapa idioma → texto, en vez de un campo `fr`: es lo que permite
+      // cambiar de idioma destino sin volver a leer todo el sitio.
+      tr: mapaTrad((l) => (SITIO[l] || {})[k]),
+      ref: { que: "sitio", clave: k },   // la clave sirve para todos los idiomas
     };
   });
 }
@@ -687,16 +786,16 @@ async function piezasDeAlbums() {
     // Las categorías del álbum: su nombre y su descripción (§3.44).
     (Array.isArray(a.etapas) ? a.etapas : []).forEach((e) => {
       if (!e || !e.id) return;
-      if (tieneAlgo(e.es)) out.push({
+      if (tieneAlgo(e[FUENTE])) out.push({
         id: "etapa:" + a.id + ":" + e.id + ":nombre",
         donde: nombre + " · categoría",
-        tipo: "etiqueta", es: e.es, fr: e.fr,
+        tipo: "etiqueta", es: e[FUENTE], tr: mapaTrad((l) => e[l]),
         ref: { que: "etapa", album: a.id, etapa: e.id, base: "nombre" },
       });
-      if (tieneAlgo(e.desc_es)) out.push({
+      if (tieneAlgo(e["desc_" + FUENTE])) out.push({
         id: "etapa:" + a.id + ":" + e.id + ":desc",
-        donde: nombre + " · " + plano(e.es) + " · descripción",
-        tipo: "párrafo", es: e.desc_es, fr: e.desc_fr,
+        donde: nombre + " · " + plano(e[FUENTE]) + " · descripción",
+        tipo: "párrafo", es: e["desc_" + FUENTE], tr: mapaTrad((l) => e["desc_" + l]),
         ref: { que: "etapa", album: a.id, etapa: e.id, base: "desc" },
       });
     });
@@ -711,16 +810,16 @@ async function piezasDeAlbums() {
       if (alcance === "publicado" && f.usar !== true) return;
       const et = ((Array.isArray(a.etapas) ? a.etapas : []).find(e => e && e.id === f.etapa) || {}).es
               || (f.etapa ? String(f.etapa).replace(/^\d+-/, "").replace(/-/g, " ") : "");
-      if (tieneAlgo(f.cap_es)) out.push({
+      if (tieneAlgo(f["cap_" + FUENTE])) out.push({
         id: "foto:" + a.id + ":" + f.id + ":cap",
         donde: nombre + (et ? " · " + et : "") + " · leyenda de foto",
-        tipo: "leyenda", es: f.cap_es, fr: f.cap_fr,
+        tipo: "leyenda", es: f["cap_" + FUENTE], tr: mapaTrad((l) => f["cap_" + l]),
         ref: { que: "foto", album: a.id, foto: f.id, base: "cap" },
       });
-      if (tieneAlgo(f.alt_es)) out.push({
+      if (tieneAlgo(f["alt_" + FUENTE])) out.push({
         id: "foto:" + a.id + ":" + f.id + ":alt",
         donde: nombre + (et ? " · " + et : "") + " · descripción de la imagen para quien no la ve",
-        tipo: "texto alternativo", es: f.alt_es, fr: f.alt_fr,
+        tipo: "texto alternativo", es: f["alt_" + FUENTE], tr: mapaTrad((l) => f["alt_" + l]),
         ref: { que: "foto", album: a.id, foto: f.id, base: "alt" },
       });
     });
@@ -731,6 +830,14 @@ async function piezasDeAlbums() {
 /* El registro de traducción, en un solo lugar. Es un documento aparte de
    sitio/publicado a propósito: el editor reescribe ese documento entero cada
    vez que se publica, y se llevaría puesto cualquier campo que no conozca. */
+/* Firestore rechaza un array dentro de otro array, así que cada mapa de
+   idioma se codifica igual que los textos del sitio. */
+function mapaDeOrigenes() {
+  const o = {};
+  Object.keys(ORIGEN).forEach((l) => { o[l] = codifMapa(ORIGEN[l]); });
+  return o;
+}
+
 async function guardarRegistro() {
   await setDoc(doc(db, "sitio", "traduccion"), {
     /* codifMapa NO es una formalidad acá: Firestore RECHAZA un array dentro
@@ -739,7 +846,14 @@ async function guardarRegistro() {
        del registro, con un error que sólo dice «formato que Firestore no
        acepta» y no nombra el campo. Es la misma razón por la que el mapa de
        textos del sitio se guarda codificado (§3.28). */
-    origen: codifMapa(ORIGEN), huellas: HUELLAS, notas: $("notas").value.trim(),
+    /* Se escriben los dos: `origenPorIdioma` es el registro de ahora, y
+       `origen` se mantiene al día para el francés para que una versión vieja
+       de esta pantalla, si quedara abierta en otro teléfono, no vea el
+       francés como sin registro y lo dé por al día. */
+    origenPorIdioma: mapaDeOrigenes(),
+    // Completo, porque se sembró con el viejo al leer.
+    origen: codifMapa(ORIGEN[IDIOMA_DE_LOS_REGISTROS_VIEJOS] || {}),
+    huellas: HUELLAS, notas: $("notas").value.trim(),
     actualizado: serverTimestamp(), actualizadoPor: CY.usuario.email,
   });
 }
@@ -749,16 +863,16 @@ async function guardarRegistro() {
    mano, como línea de base, y de ahí en adelante el registro se mantiene
    solo cada vez que se aplica una traducción. */
 $("basar").addEventListener("click", async () => {
-  const conFrances = PIEZAS.filter(p => tieneAlgo(p.fr));
-  if (!conFrances.length) return aviso("No hay nada traducido todavía", true);
-  const nuevas = conFrances.filter(p => !igual(ORIGEN[p.id], p.es)).length;
+  const conTraduccion = PIEZAS.filter(p => tieneAlgo(trad(p)));
+  if (!conTraduccion.length) return aviso("No hay nada traducido todavía a " + nombreDestino(), true);
+  const nuevas = conTraduccion.filter(p => !igual(origenDe(p.id, destino), p.es)).length;
   if (!nuevas) return aviso("Ya estaba todo anotado.");
   if (!(await preguntar("Se van a dar por buenas " + nuevas + " traducciones que ya existen.\n\n"
-      + "No cambia ningún texto: sólo anota que ese francés corresponde a ese español, "
+      + "No cambia ningún texto: sólo anota que esa traducción corresponde a ese español, "
       + "para poder avisarte cuando el español cambie."))) return;
   const b = $("basar"); b.disabled = true;
   try {
-    conFrances.forEach(p => ORIGEN[p.id] = p.es);
+    conTraduccion.forEach(p => anotarOrigen(p.id, destino, p.es));
     await guardarRegistro();
     PIEZAS.forEach((q) => { revisarEstado(q); q.avisos = avisosDe(q); });
     pintarCuadro(); armarPartes();
@@ -797,7 +911,7 @@ function avisosDe(p) {
     ? v.map(x => Array.isArray(x) ? x.join(" · ") : x).join(" · ")
     : String(v == null ? "" : v);
   const es = plano_(p.es);
-  const fr = plano_(p.fr);
+  const tr_ = plano_(trad(p));
 
   const cuenta = (t, res) => res.reduce((n, re) => n + (t.match(re) || []).length, 0);
   const fr_ = cuenta(es, SENAS_FR), es_ = cuenta(es, SENAS_ES);
@@ -811,7 +925,7 @@ function avisosDe(p) {
   if (/["']/.test(es)) av.push("comillas rectas en lugar de « » o “ ”");
   if (/\s$/.test(es) || /^\s/.test(es)) av.push("empieza o termina con un espacio");
   if (es && fr && es === fr && es.split(/\s+/).length > 3)
-    av.push("el francés es idéntico al español");
+    av.push("la traducción es idéntica al español");
   return av;
 }
 
@@ -822,14 +936,16 @@ function avisosDe(p) {
 /* Lo que va adentro del archivo para quien traduce. Se escribe acá y no en
    el chat de cada vez: una instrucción que se reescribe cada vez da una
    traducción distinta cada vez. */
-const INSTRUCCIONES = {
+function instrucciones() { return {
   que_es: "Este archivo es TODO el contenido publicado del sitio de CasaYourte, en español, en el mismo orden en que se lee. Es un taller que construye yurtas en Uruguay, con ocho años de obra en Francia. Se pide una revisión editorial completa, no sólo una traducción.",
 
   cuatro_trabajos: [
     "1 · ORTOGRAFÍA Y GRAMÁTICA. Faltas, tildes, concordancias, puntuación, espacios. Español de Uruguay.",
     "2 · COHERENCIA. Leé el sitio ENTERO antes de opinar sobre una parte: un término del oficio usado de dos maneras distintas, una cifra que contradice a otra, algo que se afirma en una sección y se niega en otra, una idea repetida con otras palabras en dos lugares.",
     "3 · ESTRUCTURA. Mirá 'mapa' y el campo 'nivel' de cada pieza. El sitio muestra el titular con su foto y guarda el cuerpo en un desplegable. Decí qué debería estar en la superficie y qué debería bajar, qué sección va antes que cuál, qué bloque sobra o le falta contexto. El objetivo es que quien llega entienda rápido y que quien quiera profundizar pueda hacerlo — sin que el que sólo mira tenga que leer todo.",
-    "4 · TRADUCCIÓN al francés de Francia. Traducí el USO, no la palabra: buscá cómo se dice cada término de construcción de yurtas en el mundo francófono antes de decidir. Tratamiento de usted (vous).",
+    // El texto de este punto sale del catálogo de idiomas: es del IDIOMA, no
+    // de esta herramienta. Ver idiomas.js.
+    "4 · " + ((CY_IDIOMAS.porId(destino) || {}).brief || ("TRADUCCIÓN a " + destino + ".")),
   ],
 
   tono: "El sitio tiene que mostrar un desarrollo técnico largo SIN presumir. Nada de superlativos, nada de lenguaje de catálogo, nada de 'innovador' ni 'único'. Lo que convence es el dato concreto y el porqué de cada decisión. Si una frase se está vendiendo en lugar de explicando, decilo en el informe.",
@@ -837,11 +953,11 @@ const INSTRUCCIONES = {
   reglas_de_correccion: [
     "Devolvé 'es' SÓLO cuando haya algo objetivamente mal. NO reescribas por gusto: la voz es de quien lo escribió.",
     "Cuando devuelvas 'es', agregá 'motivo' con una línea que diga qué se corrigió.",
-    "Si corregís el español de una pieza, devolvé TAMBIÉN su 'fr' al día con esa corrección.",
+    "Si corregís el español de una pieza, devolvé TAMBIÉN su '" + destino + "' al día con esa corrección.",
     "Respetá el tipo: si el español es una lista, devolvé una lista con la misma cantidad de elementos; si es una tabla, la misma cantidad de filas y columnas.",
     "Las etiquetas <em> del original se conservan.",
     "Las piezas cortas —títulos, etiquetas, años, botones— tienen que entrar en el mismo lugar en pantalla. Mirá 'cabe_en'.",
-    "Si una pieza trae 'es_anterior', su 'fr_actual' traduce ESE texto viejo: cambiá del francés sólo lo que se movió.",
+    "Si una pieza trae 'es_anterior', su '" + destino + "_actual' traduce ESE texto viejo: cambiá de la traducción sólo lo que se movió.",
     "Los nombres propios y las palabras del glosario quedan como están.",
   ],
 
@@ -849,9 +965,9 @@ const INSTRUCCIONES = {
     como: "Devolvé UN SOLO objeto JSON, sin texto afuera y sin ```. Tres campos, los tres opcionales: 'piezas', 'orden', 'informe'. Lo que no tengas, no lo mandes.",
     ejemplo: {
       piezas: [
-        { id: "sitio:s1.t", es: "El taller", motivo: "sobraba un espacio", fr: "L'atelier" },
-        { id: "foto:yurta-x:abc123:cap", fr: "Fixation du trei au plancher" },
-        { id: "sitio:of.l", es: ["Primer punto", "Segundo punto"], fr: ["Premier point", "Deuxième point"] },
+        { id: "sitio:s1.t", es: "El taller", motivo: "sobraba un espacio", [destino]: "…" },
+        { id: "foto:yurta-x:abc123:cap", [destino]: "…" },
+        { id: "sitio:of.l", es: ["Primer punto", "Segundo punto"], [destino]: ["…", "…"] },
       ],
       orden: { dif: "d3,d1,d2,d4,d5,d6,d7,d8" },
       informe: [
@@ -867,13 +983,15 @@ const INSTRUCCIONES = {
     orden: "Sólo si proponés reordenar. Es la lista COMPLETA de identificadores del grupo, separados por coma, en el orden nuevo. Grupos posibles: 'traj' (trayectoria), 'dif' (diferenciales), 'of' (líneas de oferta). Se aplica sólo si el dueño del sitio lo acepta.",
     informe: "Todo lo que NO es un cambio de texto: coherencia, estructura, tono, dudas. No se escribe en ningún lado, se lee. Cuatro campos: tema, donde, dice, propongo. Sé concreto y decí siempre por qué.",
   },
-};
+}; }
 
 
 /* Punto de partida, no verdad revelada: son los términos que el propio
    proyecto ya usa en francés en la página de álbumes. Quien traduce los
    respeta; quien corrige después, si sabe más, los cambia. */
-const GLOSARIO = {
+/* Un glosario por idioma: los términos del oficio no se traducen igual en
+   todos, y el de un idioma no sirve de punto de partida para otro. */
+const GLOSARIOS = { fr: {
   "yurta": "yourte",
   "toono": "toono (couronne centrale) · no se traduce",
   "trei": "trei · no se traduce",
@@ -891,7 +1009,7 @@ const GLOSARIO = {
   "desmontaje": "démontage",
   "douglas": "douglas",
   "CasaYourte": "CasaYourte · nunca se traduce",
-};
+} };
 
 function paraExportar() {
   return PIEZAS.filter(p => quePasa === "todo" || p.estado !== "hecho");
@@ -927,10 +1045,10 @@ function archivoExport() {
     casayourte: "traduccion",
     version: TRADUCTOR,
     generado: new Date().toISOString(),
-    de: "es", a: "fr",
+    de: FUENTE, a: destino,
     parte: (i + 1) + "/" + n,
-    instrucciones: INSTRUCCIONES,
-    glosario: GLOSARIO,
+    instrucciones: instrucciones(),
+    glosario: GLOSARIOS[destino] || {},
     notas: $("notas").value.trim(),
     // El mapa va SIEMPRE entero, aunque el archivo salga por partes: sin el
     // sitio completo a la vista no se puede opinar sobre coherencia ni sobre
@@ -960,7 +1078,7 @@ function archivoExport() {
       if (p.esAnterior !== null && p.esAnterior !== undefined) o.es_anterior = p.esAnterior;
       if (typeof p.es === "string" && CORTOS.includes(p.tipo))
         o.cabe_en = p.es.length + " caracteres en español";
-      if (tieneAlgo(p.fr)) o.fr_actual = p.fr;
+      if (tieneAlgo(trad(p))) o[destino + "_actual"] = trad(p);
       if (p.avisos && p.avisos.length) o.revisar = p.avisos;
       return o;
     }),
@@ -1033,11 +1151,16 @@ function leerTraduccion(txt) {
   let filas = [];
   if (Array.isArray(j)) filas = j;
   else if (Array.isArray(j.piezas)) filas = j.piezas;
-  else if (!j.orden && !j.informe) filas = Object.keys(j).map(k => ({ id: k, fr: j[k] }));
+  else if (!j.orden && !j.informe) filas = Object.keys(j).map(k => ({ id: k, [destino]: j[k] }));
   return {
     piezas: filas.map(f => ({
       id: f.id,
-      fr: f.fr !== undefined ? f.fr : f.fr_nuevo,
+      // La forma de ahora es la clave del idioma destino. Se aceptan además
+      // `<destino>_nuevo`, y `fr`/`fr_nuevo` como forma vieja, porque es como
+      // quedaron los archivos que ya circulan.
+      [destino]: [f[destino], f[destino + "_nuevo"], (destino === "fr" ? f.fr : undefined),
+                  (destino === "fr" ? f.fr_nuevo : undefined)]
+                 .find(v => v !== undefined),
       es: f.es !== undefined ? f.es : f.es_sugerido,
       motivo: f.motivo || f.razon || "",
     })).filter(f => f.id),
@@ -1076,7 +1199,10 @@ function revisar() {
     // Cada idioma es un cambio aparte: se acepta uno y se rechaza el otro.
     // Los del español van primero, porque son los que hay que mirar con
     // más cuidado: tocan el sitio en el idioma de quien lo escribió.
-    [["es", f.es], ["fr", f.fr]].forEach(([idioma, valor]) => {
+    // `f[destino]` es la forma de ahora; `f.fr` se sigue aceptando porque es
+    // como quedaron los archivos que ya circulan.
+    const traido = (f[destino] !== undefined) ? f[destino] : (destino === "fr" ? f.fr : undefined);
+    [[FUENTE, f.es], [destino, traido]].forEach(([idioma, valor]) => {
       if (!tieneAlgo(valor)) return;                    // vacío: no se escribe
       // La forma —cuántos elementos tiene una lista, cuántas columnas una
       // tabla— tiene que ser la MISMA EN LOS DOS IDIOMAS. Eso es lo que
@@ -1086,15 +1212,15 @@ function revisar() {
       // no, la tabla queda con cuatro títulos y tres columnas. Se comprueba
       // ANTES que la forma, para que el aviso diga lo que de verdad falta y
       // no un genérico «no tiene la forma del original».
-      if (idioma === "es" && !mismoMolde(p.es, valor)
-          && tieneAlgo(p.fr) && !tieneAlgo(f.fr))
-        return problemas.push("cambia la forma y no trae el francés: " + f.id);
-      const molde = (idioma === "es" && tieneAlgo(f.fr)) ? f.fr
-                  : (idioma === "fr" && tieneAlgo(f.es)) ? f.es
+      if (idioma === FUENTE && !mismoMolde(p.es, valor)
+          && tieneAlgo(trad(p)) && !tieneAlgo(traido))
+        return problemas.push("cambia la forma y no trae la traducción: " + f.id);
+      const molde = (idioma === FUENTE && tieneAlgo(traido)) ? traido
+                  : (idioma !== FUENTE && tieneAlgo(f.es)) ? f.es
                   : p.es;
       if (!mismoMolde(molde, valor))
         return problemas.push("no tiene la forma del original: " + f.id + " (" + idioma + ")");
-      if (igual(valor, p[idioma])) return;              // igual a lo que ya hay
+      if (igual(valor, valorDe(p, idioma))) return;     // igual a lo que ya hay
       CAMBIOS.push({ pieza: p, idioma, nueva: valor, motivo: f.motivo || "", marcada: true });
     });
   });
@@ -1269,10 +1395,12 @@ async function aplicar() {
       paso("Escribiendo en el sitio…");
       const d = await getDoc(doc(db, "sitio", "publicado"));
       const x = d.exists() ? d.data() : {};
-      const mapas = {
-        es: { ...((BASE.textos || {}).es || {}), ...decodMapa(x.es) },
-        fr: { ...((BASE.textos || {}).fr || {}), ...decodMapa(x.fr) },
-      };
+      // Solo los dos idiomas que esta pantalla puede tocar: el fuente y el
+      // destino. Los demás se dejan como están, en `...x`.
+      const mapas = {};
+      [FUENTE, destino].forEach((l) => {
+        mapas[l] = { ...((BASE.textos || {})[l] || {}), ...decodMapa(x[l]) };
+      });
       delSitio.forEach(c => mapas[c.idioma][c.pieza.ref.clave] = c.nueva);
       // El orden vive en el mismo documento y lo escribe el editor: se lee
       // de nuevo acá y se mezcla, para no pisar un movimiento reciente.
@@ -1280,8 +1408,7 @@ async function aplicar() {
       deOrden.forEach(c => { orden[c.orden] = c.nueva; SITIO.orden[c.orden] = c.nueva; });
       await setDoc(doc(db, "sitio", "publicado"), {
         ...x,
-        es: codifMapa(mapas.es),
-        fr: codifMapa(mapas.fr),
+        ...Object.fromEntries(Object.keys(mapas).map(l => [l, codifMapa(mapas[l])])),
         orden,
         guardado: serverTimestamp(),
         guardadoPor: CY.usuario.email,
@@ -1340,9 +1467,9 @@ async function aplicar() {
 
        Corregir una palabra en español sin rehacer el francés deja las dos
        versiones diciendo cosas distintas. El sistema tiene que saberlo. */
-    marcadas.filter(c => !c.orden).forEach(c => { c.pieza[c.idioma] = c.nueva; });
-    marcadas.filter(c => !c.orden && c.idioma === "fr")
-            .forEach(c => { ORIGEN[c.pieza.id] = c.pieza.es; });
+    marcadas.filter(c => !c.orden).forEach(c => { ponerValor(c.pieza, c.idioma, c.nueva); });
+    marcadas.filter(c => !c.orden && c.idioma !== FUENTE)
+            .forEach(c => { anotarOrigen(c.pieza.id, c.idioma, c.pieza.es); });
     try { await guardarRegistro(); }
     catch (e) {
       aviso("Se escribió la traducción, pero no el registro: " + CY.explicar(e), true);

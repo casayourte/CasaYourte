@@ -154,7 +154,7 @@ O sea: no es un rediseño, es **sacar un dato que ya está declarado y hacer que
 | | Qué | Cómo se verifica |
 |---|---|---|
 | ~~**1**~~ | ~~El catálogo manda~~ **· HECHO el 2026-09-08.** Nace `idiomas.js`, script clásico sin dependencias que comparten `index.html` y `album.html`. Sumar un idioma es **pegar una línea** en su catálogo | ✅ Verificado en un navegador real: 10 casos, todos pasan, sin errores de JS. Ver abajo |
-| **2** | **La pantalla de traducción, para N.** `traducir.html` deja de asumir dos columnas. Es la pieza más grande y la única con lógica propia: detecta si una traducción quedó vieja comparando contra la base | Que siga detectando lo mismo con dos idiomas antes de sumar el tercero |
+| ~~**2**~~ | ~~La pantalla de traducción, para N~~ **· HECHA el 2026-09-08.** Se traduce a **un idioma por vez**, elegido en una fila que solo aparece cuando hay más de uno. Las piezas llevan un mapa `tr` de traducciones en vez de un campo `fr`, y el registro de procedencia pasa a ser por idioma | ⚠️ Parcial — ver abajo |
 | **3** | **El editor.** `editar.html` ya tiene chips de idioma; que salgan del catálogo en vez de estar escritos | Ídem |
 | **4** | **Entra el inglés.** Recién acá se suma `"en"` al catálogo, y empieza el trabajo de contenido con el orden de abajo | Los 143 textos, con el diagnóstico y la revisión del sitio publicado |
 
@@ -181,6 +181,28 @@ tanda 4 no vaya a romper nada—:
 - **Cinco lugares más leían los textos sin respaldo**, y dos los escribían asumiendo que
   el idioma ya existía. Todo pasa ahora por una sola función `textos(idioma)`.
 
+### Lo que hizo la tanda 2, y lo que encontró
+
+El cambio de fondo no es de nombres: **`ORIGEN` guardaba «el español con el que se
+tradujo» por pieza, sin idioma**. Con dos idiomas destino eso no alcanza — el español
+puede corregirse después de traducir al francés y antes del inglés. Ahora es
+`origenPorIdioma`, un campo nuevo en `sitio/traduccion`; el viejo `origen` se sigue
+leyendo y manteniendo al día.
+
+Y las instrucciones para quien traduce pasaron al catálogo: *«traducí el uso, no la
+palabra; tratamiento de usted»* es del **idioma**, no de la herramienta. El glosario
+también, porque los términos del oficio no se traducen igual en todos.
+
+**Dos errores que encontró la revisión, y el primero era serio:**
+
+- **`origen` se hubiera pisado entero en el primer guardado.** `ORIGEN.fr` arranca
+  vacío y solo se llena con lo que se toca; escribirlo tal cual habría borrado el
+  registro de todas las piezas no tocadas en esa sesión — o sea justo lo que distingue
+  «traducido y al día» de «el español cambió después». Ahora el registro nuevo se
+  **siembra** con el viejo al leer.
+- **La huella vieja daba por al día un idioma que nunca se tradujo.** `huellas` se
+  escribió cuando el único destino era el francés: solo se consulta para francés.
+
 ### Cómo se verificó
 
 Con las dos páginas servidas y un navegador de verdad, no leyendo el código:
@@ -201,6 +223,13 @@ Los diez pasan, sin un solo error de JavaScript. **Y la prueba de que la tanda s
 agregando `{ id: "en", ... }` al catálogo —una línea— aparecen los tres botones, la
 detección por idioma del teléfono elige inglés y `?lang=en` funciona, en las dos páginas.
 Esa línea se sacó: el inglés entra en la tanda 4, con sus textos.
+
+**De la tanda 2, en cambio, solo se verificó una parte, y conviene decirlo:** que el
+archivo parsea, que carga en un navegador sin un solo error de JavaScript y que el
+catálogo le llega. **El cálculo de estados, la exportación y la importación no se
+ejecutaron**, porque esa pantalla exige sesión y desde donde se trabajó no hay acceso a
+Firebase. Lo que hay que mirar al abrirla: que los cuatro contadores den **los mismos
+números que antes**. Si dan distinto, algo de la lógica de estados se movió.
 
 **Las tandas 1 a 3 no cambian nada visible, y eso es a propósito:** son refactorización
 pura, así que **cualquier diferencia que aparezca es un error**. Es la clase de tanda más
@@ -238,13 +267,14 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 | Archivo | Constante | Valor de esta versión |
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-14` |
-| `sw.js` | `VERSION` | `cy-shell-v28` |
+| `sw.js` | `VERSION` | `cy-shell-v29` |
 | `admin.html` | `PANEL` | `admin-17` |
 | `editar.html` | `EDITOR` | `editar-6` |
 | `calculo.html` | `CY.PANEL` | `calculo-8` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-3` |
 | `diagnostico.html` | `CY.PANEL` | `diagnostico-6` |
-| `idiomas.js` | `SELLO` | `idiomas-1` |
+| `idiomas.js` | `SELLO` | `idiomas-2` |
+| `traducir.html` | `TRADUCTOR` | `traducir-10` |
 
 *Verificados uno por uno contra los archivos el 2026-09-07; `sw.js` y `diagnostico.html` actualizados el 2026-09-08.*
 

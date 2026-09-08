@@ -147,8 +147,8 @@ header.hero{position:relative;min-height:min(100svh,860px);display:flex;flex-dir
 .logo{width:34px;height:34px;opacity:.92;flex:none}
 .mark{text-transform:none;letter-spacing:.16em}
 .lang{display:flex;gap:0;border:1px solid #4a4238;border-radius:999px;overflow:hidden}
-.lang button{font-family:var(--mono);font-size:.63rem;letter-spacing:.16em;
-  background:none;border:0;color:#a89e8c;padding:.5rem .85rem;cursor:pointer;text-transform:uppercase}
+.lang button{font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;background:none;
+  border:0;color:#a89e8c;padding:.42rem .7rem;cursor:pointer;text-transform:uppercase}
 .lang button[aria-pressed="true"]{background:var(--blond);color:var(--ink)}
 .lang button:focus-visible{outline:2px solid var(--blond);outline-offset:2px}
 .hero-body{position:relative;z-index:3;max-width:22ch}
@@ -403,8 +403,8 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
   <div class="topbar">
     <div class="mark"><img class="logo" src="assets/logo.png" alt="CasaYourte" width="34" height="34">Casa<span>Yourte</span></div>
     <div class="lang" role="group" aria-label="Idioma / Langue">
-      <button type="button" data-set="es" aria-pressed="true">Español</button>
-      <button type="button" data-set="fr" aria-pressed="false">Français</button>
+      <button type="button" data-set="es" aria-pressed="true">ES</button>
+      <button type="button" data-set="fr" aria-pressed="false">FR</button>
     </div>
   </div>
 
@@ -1132,7 +1132,7 @@ window.CY_SITIO = { version:1, GRUPOS, aplicarOrden,
 // El conmutador se arma desde el catálogo, ANTES de atar los escuchadores:
 // al revés se atarían a botones que después se reemplazan. Los que están
 // escritos en el HTML son el respaldo para cuando el JS no corre.
-CY_IDIOMAS.pintarConmutador(document.querySelector(".lang"), idiomaInicial(), "larga");
+CY_IDIOMAS.pintarConmutador(document.querySelector(".lang"), idiomaInicial(), "corta");
 
 document.querySelectorAll(".lang button").forEach(b=>
   b.addEventListener("click",()=>{

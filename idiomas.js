@@ -46,18 +46,30 @@
       // la zona dice dónde está.
       prefijos: ["fr"],
       zonas: ["Europe/Paris", "Europe/Brussels", "Indian/Reunion",
-              "America/Martinique", "America/Guadeloupe", "America/Cayenne"]
+              "America/Martinique", "America/Guadeloupe", "America/Cayenne"],
+      // Lo que se le pide a quien traduce a este idioma. Va acá y no en la
+      // pantalla de traducción porque es del IDIOMA, no de la herramienta:
+      // traducir el uso y no la palabra, y el tratamiento, cambian con cada
+      // lengua y son la diferencia entre una traducción correcta y una que
+      // sirve. Ver README, «El orden de trabajo del contenido».
+      brief: "TRADUCCIÓN al francés de Francia. Traducí el USO, no la palabra: "
+           + "buscá cómo se dice cada término de construcción de yurtas en el mundo "
+           + "francófono antes de decidir. Tratamiento de usted (vous)."
     },
     // ↑ La coma queda a propósito: sumar un idioma tiene que ser pegar una
     //   línea acá abajo, sin tener que acordarse de tocar la de arriba.
-    // Para sumar inglés: { id:"en", corta:"EN", larga:"English", fuente:false,
-    //   prefijos:["en"], zonas:[...] }  — y sus textos en contenido.json.
+    // Para sumar inglés:
+    //   { id:"en", corta:"EN", larga:"English", fuente:false, prefijos:["en"],
+    //     zonas:[], brief:"TRANSLATION into … · qué registro, qué tratamiento" }
+    // …y sus textos en contenido.json.
   ];
 
   var CLAVE_GUARDADO = "cy-idioma";
 
   function ids() { return LISTA.map(function (l) { return l.id; }); }
   function existe(id) { return ids().indexOf(id) !== -1; }
+  function porId(id) { return LISTA.filter(function (l) { return l.id === id; })[0] || null; }
+  function destinos() { return LISTA.filter(function (l) { return !l.fuente; }); }
   function fuente() {
     var f = LISTA.filter(function (l) { return l.fuente; })[0];
     return f ? f.id : LISTA[0].id;
@@ -153,9 +165,10 @@
 
   raiz.CY_IDIOMAS = {
     enIdioma: enIdioma, campo: campo, urlCon: urlCon, sufijoUrl: sufijoUrl,
+    porId: porId, destinos: destinos,
     lista: LISTA, ids: ids, existe: existe, fuente: fuente,
     deducido: deducido, elegido: elegido, recordar: recordar,
     inicial: inicial, pintarConmutador: pintarConmutador,
-    SELLO: "idiomas-1"
+    SELLO: "idiomas-2"
   };
 })(window);
