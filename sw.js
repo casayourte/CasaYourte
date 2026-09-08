@@ -46,6 +46,8 @@
 // v22 (18-ago-2026) — en la grilla, el tacho reemplaza al lápiz.
 // v23 (18-ago-2026) — la lista de categorías se dibuja: 'div div' se comía las filas.
 // v24 (19-ago-2026) — selección múltiple en la grilla: mostrar, mover y quitar.
+// v30 (8-sep-2026) — traducir.html: quedaba una referencia suelta a `fr` que
+//   rompía la pantalla al calcular los avisos. Ver README, «Cómo se verificó».
 // v29 (8-sep-2026) — traducir.html pasa a N idiomas: se traduce a uno por
 //   vez, elegido en una fila que solo aparece cuando hay más de uno. Con
 //   español y francés la pantalla se ve y se comporta igual que antes.
@@ -83,7 +85,7 @@
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v29';
+const VERSION = 'cy-shell-v30';
 
 const SHELL = [
   './admin.html',

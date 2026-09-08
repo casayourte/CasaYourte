@@ -154,7 +154,7 @@ O sea: no es un rediseño, es **sacar un dato que ya está declarado y hacer que
 | | Qué | Cómo se verifica |
 |---|---|---|
 | ~~**1**~~ | ~~El catálogo manda~~ **· HECHO el 2026-09-08.** Nace `idiomas.js`, script clásico sin dependencias que comparten `index.html` y `album.html`. Sumar un idioma es **pegar una línea** en su catálogo | ✅ Verificado en un navegador real: 10 casos, todos pasan, sin errores de JS. Ver abajo |
-| ~~**2**~~ | ~~La pantalla de traducción, para N~~ **· HECHA el 2026-09-08.** Se traduce a **un idioma por vez**, elegido en una fila que solo aparece cuando hay más de uno. Las piezas llevan un mapa `tr` de traducciones en vez de un campo `fr`, y el registro de procedencia pasa a ser por idioma | ⚠️ Parcial — ver abajo |
+| ~~**2**~~ | ~~La pantalla de traducción, para N~~ **· HECHA el 2026-09-08.** Se traduce a **un idioma por vez**, elegido en una fila que solo aparece cuando hay más de uno. Las piezas llevan un mapa `tr` de traducciones en vez de un campo `fr`, y el registro de procedencia pasa a ser por idioma | ✅ Verificada de punta a punta contra un Firebase de mentira. Ver abajo |
 | **3** | **El editor.** `editar.html` ya tiene chips de idioma; que salgan del catálogo en vez de estar escritos | Ídem |
 | **4** | **Entra el inglés.** Recién acá se suma `"en"` al catálogo, y empieza el trabajo de contenido con el orden de abajo | Los 143 textos, con el diagnóstico y la revisión del sitio publicado |
 
@@ -224,12 +224,37 @@ agregando `{ id: "en", ... }` al catálogo —una línea— aparecen los tres bo
 detección por idioma del teléfono elige inglés y `?lang=en` funciona, en las dos páginas.
 Esa línea se sacó: el inglés entra en la tanda 4, con sus textos.
 
-**De la tanda 2, en cambio, solo se verificó una parte, y conviene decirlo:** que el
-archivo parsea, que carga en un navegador sin un solo error de JavaScript y que el
-catálogo le llega. **El cálculo de estados, la exportación y la importación no se
-ejecutaron**, porque esa pantalla exige sesión y desde donde se trabajó no hay acceso a
-Firebase. Lo que hay que mirar al abrirla: que los cuatro contadores den **los mismos
-números que antes**. Si dan distinto, algo de la lógica de estados se movió.
+### La tanda 2, y por qué hizo falta un banco de pruebas
+
+**Se entregó rota.** Parseaba, cargaba sin errores y el catálogo le llegaba — pero
+quedaba una referencia suelta a `fr` en el cálculo de avisos, y la pantalla moría con
+«fr is not defined» apenas se apretaba el botón. **Lo que falló no fue el cambio: fue la
+verificación.** Se había comprobado lo que se podía comprobar sin sesión, y justo la
+lógica que no se ejecutó era la que tenía el error. Es el § 11 del protocolo común
+diciendo lo mismo otra vez: **parsear no es correr.**
+
+La corrección de fondo fue armar un **banco de pruebas**: una copia del sitio con un
+`firebase-init.js` de mentira —un usuario fijo, unos documentos inventados, `setDoc` que
+guarda en memoria— servida en local y abierta con un navegador de verdad. Con eso la
+pantalla corre entera sin sesión y sin red, y se puede mirar el resultado.
+
+**El banco vive fuera del repositorio**, y es a propósito: este proyecto no tiene build
+ni `npm` (§ 1), y un `firebase-init.js` falso adentro sería una trampa esperando a
+alguien. Se rearma en un minuto: copiar el sitio a una carpeta aparte, reemplazar ese
+único archivo, servir con `python3 -m http.server` y abrir.
+
+**Lo que el banco probó, y no se podía probar de otra forma:**
+
+| Prueba | Resultado |
+|---|---|
+| La pantalla corre entera | 145 piezas, contadores calculados, exportación armada |
+| Con dos idiomas | 145 · 1 sin traducir · 1 viejo · 143 al día · la fila de idioma **oculta** |
+| Con tres idiomas | **exactamente los mismos números** · la fila aparece con FR y EN |
+| Al pasar a inglés | **145 en «sin traducir», 0 al día** — prueba el arreglo de las huellas: sin él, las piezas con huella vieja habrían salido «al día» en un idioma que nunca se tradujo |
+| «Dar por al día», y mirar qué se escribe | 144 claves en `origen`, **conserva las 3 del registro viejo, 3 de 3** — prueba que el arreglo del sembrado evita la pérdida de datos |
+
+Aun así, al abrirla la primera vez conviene mirar que **los cuatro contadores den los
+mismos números que antes**. El banco usa datos inventados; los de verdad son los tuyos.
 
 **Las tandas 1 a 3 no cambian nada visible, y eso es a propósito:** son refactorización
 pura, así que **cualquier diferencia que aparezca es un error**. Es la clase de tanda más
@@ -267,14 +292,14 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 | Archivo | Constante | Valor de esta versión |
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-14` |
-| `sw.js` | `VERSION` | `cy-shell-v29` |
+| `sw.js` | `VERSION` | `cy-shell-v30` |
 | `admin.html` | `PANEL` | `admin-17` |
 | `editar.html` | `EDITOR` | `editar-6` |
 | `calculo.html` | `CY.PANEL` | `calculo-8` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-3` |
 | `diagnostico.html` | `CY.PANEL` | `diagnostico-6` |
 | `idiomas.js` | `SELLO` | `idiomas-2` |
-| `traducir.html` | `TRADUCTOR` | `traducir-10` |
+| `traducir.html` | `TRADUCTOR` | `traducir-11` |
 
 *Verificados uno por uno contra los archivos el 2026-09-07; `sw.js` y `diagnostico.html` actualizados el 2026-09-08.*
 

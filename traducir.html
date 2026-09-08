@@ -242,7 +242,7 @@ import { CY } from "./nucleo.js";
 const $ = (id) => document.getElementById(id);
 
 // Sello de este archivo, para saber si quedó viejo en la caché (§3.34).
-const TRADUCTOR = "traducir-10";
+const TRADUCTOR = "traducir-11";
 CY.PANEL = TRADUCTOR;
 
 /* ═══════════════════════════════════════════════════════════════
@@ -924,7 +924,7 @@ function avisosDe(p) {
   if (/!/.test(es) && !/¡/.test(es)) av.push("falta el ¡ de apertura");
   if (/["']/.test(es)) av.push("comillas rectas en lugar de « » o “ ”");
   if (/\s$/.test(es) || /^\s/.test(es)) av.push("empieza o termina con un espacio");
-  if (es && fr && es === fr && es.split(/\s+/).length > 3)
+  if (es && tr_ && es === tr_ && es.split(/\s+/).length > 3)
     av.push("la traducción es idéntica al español");
   return av;
 }
@@ -1116,7 +1116,7 @@ $("bajar").addEventListener("click", () => {
   const p = archivoExport().parte.replace("/", "-de-");
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([j], { type: "application/json" }));
-  a.download = "casayourte-es-fr-" + p + ".json";
+  a.download = "casayourte-" + FUENTE + "-" + destino + "-" + p + ".json";
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 });
