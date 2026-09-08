@@ -155,7 +155,7 @@ O sea: no es un rediseño, es **sacar un dato que ya está declarado y hacer que
 |---|---|---|
 | ~~**1**~~ | ~~El catálogo manda~~ **· HECHO el 2026-09-08.** Nace `idiomas.js`, script clásico sin dependencias que comparten `index.html` y `album.html`. Sumar un idioma es **pegar una línea** en su catálogo | ✅ Verificado en un navegador real: 10 casos, todos pasan, sin errores de JS. Ver abajo |
 | ~~**2**~~ | ~~La pantalla de traducción, para N~~ **· HECHA el 2026-09-08.** Se traduce a **un idioma por vez**, elegido en una fila que solo aparece cuando hay más de uno. Las piezas llevan un mapa `tr` de traducciones en vez de un campo `fr`, y el registro de procedencia pasa a ser por idioma | ✅ Verificada de punta a punta contra un Firebase de mentira. Ver abajo |
-| **3** | **El editor.** `editar.html` ya tiene chips de idioma; que salgan del catálogo en vez de estar escritos | Ídem |
+| ~~**3**~~ | ~~El editor~~ **· HECHA el 2026-09-08.** `editar.html` saca los idiomas del catálogo: los chips se dibujan solos, el `?lang=` lo arma `idiomas.js`, y no queda ningún `["es","fr"]` escrito a mano | ✅ Verificada en el banco con uno, dos y tres idiomas. Ver abajo |
 | **4** | **Entra el inglés.** Recién acá se suma `"en"` al catálogo, y empieza el trabajo de contenido con el orden de abajo | Los 143 textos, con el diagnóstico y la revisión del sitio publicado |
 
 ### Lo que hizo la tanda 1, y lo que encontró
@@ -335,6 +335,46 @@ Las cinco piezas de arriba **siguen mal traducidas**: esta tanda hace que se vea
 no se puedan congelar por accidente. Corregirlas es trabajo de contenido, y va con el
 orden de tres pasos de abajo.
 
+### Lo que hizo la tanda 3, y lo que encontró
+
+`editar.html` tenía la lista `["es", "fr"]` escrita a mano en **siete lugares** —el
+contador de cambios, el armado de `CONT`, el número del bloque nuevo, la semilla, lo que
+se guarda— más los dos chips en el HTML y un `idioma === "fr" ? "&lang=fr" : ""`. Ahora
+todo eso sale del catálogo: `IDIOMAS()`, `FUENTE` y un `porIdioma()` de tres líneas.
+
+**El `?lang=` lo arma `idiomas.js`.** Su `urlCon()` ya sabía que el idioma fuente **no
+lleva** el parámetro —su URL es la canónica, la que apunta el `hreflang x-default`—, y esa
+regla estaba repetida a mano acá. Ahora es la misma para los enlaces del sitio y para el
+iframe del editor.
+
+**El estado de los chips pasa a `aria-pressed`.** Era una clase `.on` inventada acá,
+mientras `index.html`, `album.html` y `pintarConmutador()` usaban `aria-pressed`. Se
+unificó al que ya estaba en más lugares, y de paso los dos grupos de la barra —idioma y
+página— dicen en voz alta cuál está elegido, que antes no decían ninguno.
+
+**Lo que encontró, y es lo que justifica la tanda:**
+
+| | |
+|---|---|
+| **La página entera quedaba intocable en un idioma nuevo** | `cablear()` preguntaba `if (!(clave in CONT[idioma])) return`. El mapa de un idioma recién sumado arranca **vacío**, así que ninguna clave pasaba: el editor cargaba, se veía bien, y no se podía tocar un solo texto. Sin un cartel que lo explicara. Ahora las claves las declara el **idioma fuente**, que es el que tiene todo el contenido |
+| **`idiomas.js` no estaba en el `SHELL` del service worker** | y `traducir.html`, que sí está, depende de él desde la v29 (tanda 2). Sin red, la pantalla de traducción se quedaba sin catálogo. Entra ahora |
+
+**Un bloque nuevo nace en todos los idiomas del catálogo**, y para uno que no tiene semilla
+propia nace con el texto del **idioma fuente**. No se le inventa una traducción: la
+pantalla de traducción lo va a mostrar como **«sin registro»**, que es exactamente lo que
+es. Es la tanda anterior haciendo su trabajo.
+
+**Verificado en el banco:**
+
+| Prueba | Resultado |
+|---|---|
+| Con dos idiomas | los mismos dos chips, **116 textos tocables en los dos**, el `?lang=fr` igual que antes |
+| Con tres (pegando una línea al catálogo) | **tres chips**, `["es","fr","en"]` en lo que se guarda, sin tocar `editar.html` |
+| En el idioma recién sumado, con el mapa vacío | **116 tocables, los mismos que en español** — es la prueba del arreglo de arriba: sin él eran 0 |
+| Al escribir en ese idioma | cae en su propio mapa (`en`), **el español queda intacto** |
+| Un bloque nuevo con tres idiomas | nace en los tres; el tercero, con el texto del idioma fuente |
+| Al publicar | escribe `es`, `fr`, `en` e `idiomas: ["es","fr","en"]` |
+
 ### Los nombres de categoría van en minúscula · `traducir-13`
 
 Al corregir las cinco piezas de arriba apareció que la mayúscula inicial estaba mezclada:
@@ -384,9 +424,9 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 | Archivo | Constante | Valor de esta versión |
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-14` |
-| `sw.js` | `VERSION` | `cy-shell-v32` |
+| `sw.js` | `VERSION` | `cy-shell-v33` |
 | `admin.html` | `PANEL` | `admin-17` |
-| `editar.html` | `EDITOR` | `editar-6` |
+| `editar.html` | `EDITOR` | `editar-7` |
 | `calculo.html` | `CY.PANEL` | `calculo-8` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-3` |
 | `diagnostico.html` | `CY.PANEL` | `diagnostico-6` |

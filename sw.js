@@ -46,6 +46,10 @@
 // v22 (18-ago-2026) — en la grilla, el tacho reemplaza al lápiz.
 // v23 (18-ago-2026) — la lista de categorías se dibuja: 'div div' se comía las filas.
 // v24 (19-ago-2026) — selección múltiple en la grilla: mostrar, mover y quitar.
+// v33 (8-sep-2026) — editar.html saca los idiomas del catálogo: los chips
+//   se dibujan solos, el ?lang= lo arma idiomas.js, y no queda ningún
+//   ['es','fr'] escrito a mano. Y entra idiomas.js al SHELL: traducir.html
+//   depende de él desde la v29 y no estaba en esta lista.
 // v32 (8-sep-2026) — traducir.html: los nombres de las categorías de álbum
 //   van en minúscula, y la pantalla avisa sola cuál se salió de la regla,
 //   en los dos idiomas. Y el resumen del paso 4 decía «francés» escrito a
@@ -94,7 +98,7 @@
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v32';
+const VERSION = 'cy-shell-v33';
 
 const SHELL = [
   './admin.html',
@@ -107,6 +111,7 @@ const SHELL = [
   './assets/lamina-triangulo.jpg',
   './estilos.css',
   './nucleo.js',
+  './idiomas.js',
   './firebase-init.js',
   './manifest.json',
   './icono-192.png',
