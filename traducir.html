@@ -249,7 +249,7 @@ import { CY } from "./nucleo.js";
 const $ = (id) => document.getElementById(id);
 
 // Sello de este archivo, para saber si quedó viejo en la caché (§3.34).
-const TRADUCTOR = "traducir-12";
+const TRADUCTOR = "traducir-13";
 CY.PANEL = TRADUCTOR;
 
 /* ═══════════════════════════════════════════════════════════════
@@ -988,6 +988,26 @@ function avisosDe(p) {
   if (/\s$/.test(es) || /^\s/.test(es)) av.push("empieza o termina con un espacio");
   if (es && tr_ && es === tr_ && es.split(/\s+/).length > 3)
     av.push("la traducción es idéntica al español");
+
+  /* Los nombres de las categorías de álbum van en MINÚSCULA, y no es un
+     gusto: es lo que ya está escrito en más lugares (§3 del protocolo común
+     — cuando el canónico y la realidad no coinciden, gana el que está en más
+     lugares). Las 16 categorías del oficio están en minúscula en las dos
+     listas canónicas —`NOMBRE_ETAPA` de album.html y el glosario de acá—, y
+     `admin.html` bautiza cada categoría nueva con `legible(id)`, que también
+     da minúscula. Las mayúsculas que aparecen son de nombres tipeados a
+     mano por álbum.
+
+     En el álbum público no se nota —el CSS los pone en versalita igual—,
+     así que la mezcla sólo se ve en el panel y acá. Que no se note es
+     justamente por qué conviene que lo diga la pantalla: nadie lo va a
+     descubrir mirando el sitio. */
+  if (p.ref.que === "etapa" && p.ref.base === "nombre") {
+    const may = /^[A-ZÁÉÍÓÚÜÑ]/;
+    if (may.test(es)) av.push("el nombre de la categoría empieza con mayúscula (van en minúscula)");
+    if (may.test(tr_)) av.push("el nombre de la categoría en "
+      + nombreDestino().toLowerCase() + " empieza con mayúscula (van en minúscula)");
+  }
   return av;
 }
 
@@ -1328,8 +1348,11 @@ function revisar() {
     return;
   }
   const nEs = CAMBIOS.filter(c => !c.orden && c.idioma === "es").length;
+  // Decía «francés» escrito a mano: con el inglés elegido mentía. (tanda 2)
+  const enDestino = nombreDestino().toLowerCase();
   $("resumenRev").textContent =
-    (nEs ? nEs + " en español y " + (CAMBIOS.length - nEs) + " en francés" : CAMBIOS.length + " en francés")
+    (nEs ? nEs + " en español y " + (CAMBIOS.length - nEs) + " en " + enDestino
+         : CAMBIOS.length + " en " + enDestino)
     + " para escribir"
     + (problemas.length ? " · " + problemas.length + " se descartaron: " + problemas.join(", ") : "");
   pintarRevision();

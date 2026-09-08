@@ -46,6 +46,10 @@
 // v22 (18-ago-2026) — en la grilla, el tacho reemplaza al lápiz.
 // v23 (18-ago-2026) — la lista de categorías se dibuja: 'div div' se comía las filas.
 // v24 (19-ago-2026) — selección múltiple en la grilla: mostrar, mover y quitar.
+// v32 (8-sep-2026) — traducir.html: los nombres de las categorías de álbum
+//   van en minúscula, y la pantalla avisa sola cuál se salió de la regla,
+//   en los dos idiomas. Y el resumen del paso 4 decía «francés» escrito a
+//   mano: con otro idioma destino mentía.
 // v31 (8-sep-2026) — traducir.html: «al día» pasa a significar «hay con qué
 //   comprobarlo». Nace el estado «sin registro» —hay traducción y nada dice
 //   con qué español se hizo, que es el caso de casi todos los álbumes— y
@@ -90,7 +94,7 @@
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v31';
+const VERSION = 'cy-shell-v32';
 
 const SHELL = [
   './admin.html',

@@ -335,6 +335,40 @@ Las cinco piezas de arriba **siguen mal traducidas**: esta tanda hace que se vea
 no se puedan congelar por accidente. Corregirlas es trabajo de contenido, y va con el
 orden de tres pasos de abajo.
 
+### Los nombres de categoría van en minúscula · `traducir-13`
+
+Al corregir las cinco piezas de arriba apareció que la mayúscula inicial estaba mezclada:
+`Segunda versión` y `Paisaje` con mayúscula, `taller y transporte` y `toono y triangulos`
+sin. **No hizo falta elegir por gusto**, porque el proyecto ya tenía la convención escrita
+en más lugares de los que la contradicen — que es la regla del § 3 del protocolo común:
+*cuando el canónico y la realidad no coinciden, gana el que ya está escrito en más
+lugares.*
+
+| Dónde | Qué dice |
+|---|---|
+| `NOMBRE_ETAPA` en `album.html` | las 16 categorías del oficio, en francés, **todas en minúscula** |
+| el glosario de `traducir.html` | los mismos 16 términos, **en minúscula de los dos lados** |
+| `admin.html` | bautiza cada categoría nueva con `legible(id)`, que da **minúscula** |
+| los nombres tipeados a mano por álbum | la mezcla |
+
+**Y en el álbum público no se nota**, porque `.etapa-tit b` los pone en versalita igual.
+Eso es justamente por qué conviene que lo diga la pantalla: mirando el sitio nadie lo va a
+descubrir nunca; sólo se ve en el panel y en la pantalla de traducción, donde se lee como
+descuido.
+
+`traducir.html` suma la regla a las que ya comprueba sola —espacios de más, comillas
+rectas, el francés metido en el campo español— y avisa **en los dos idiomas**, porque la
+convención vale para los dos. Es un aviso, no un arreglo automático: como todas las demás
+de esa lista, la pantalla encuentra y la persona decide.
+
+De paso, un arrastre de la tanda 2: el resumen del paso 4 decía «*N* en francés» con la
+palabra escrita a mano. Con el inglés elegido iba a mentir. Ahora dice el idioma que esté
+elegido.
+
+**Verificado en el banco:** la regla marca las tres piezas preparadas para eso —una con la
+mayúscula en español, una con la mayúscula en los dos idiomas, una sólo en español—, y
+**cero falsos positivos**: no se dispara en descripciones ni en textos del sitio.
+
 ## Los sellos de versión
 
 Cada archivo con lógica propia lleva su número, visible en el panel abajo del nombre. **Al
@@ -350,14 +384,14 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 | Archivo | Constante | Valor de esta versión |
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-14` |
-| `sw.js` | `VERSION` | `cy-shell-v31` |
+| `sw.js` | `VERSION` | `cy-shell-v32` |
 | `admin.html` | `PANEL` | `admin-17` |
 | `editar.html` | `EDITOR` | `editar-6` |
 | `calculo.html` | `CY.PANEL` | `calculo-8` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-3` |
 | `diagnostico.html` | `CY.PANEL` | `diagnostico-6` |
 | `idiomas.js` | `SELLO` | `idiomas-2` |
-| `traducir.html` | `TRADUCTOR` | `traducir-12` |
+| `traducir.html` | `TRADUCTOR` | `traducir-13` |
 
 *Verificados uno por uno contra los archivos el 2026-09-07; `sw.js` y `diagnostico.html` actualizados el 2026-09-08.*
 
