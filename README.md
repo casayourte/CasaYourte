@@ -125,18 +125,27 @@ Cada archivo con lógica propia lleva su número, visible en el panel abajo del 
 subir una versión nueva hay que subir su sello**, o no hay forma de saber si el teléfono está
 sirviendo el archivo nuevo o una copia vieja de la caché.
 
+> **Esta tabla es derivada, no autoridad.** El sello que manda es el que está escrito
+> adentro del archivo y a la vista en el panel. Si los dos no coinciden, **la tabla está
+> vieja** — se copia a mano y se desactualiza en silencio. Ya pasó: hasta el 2026-09-07
+> publicaba cinco de estos siete números desactualizados, y quien la usara para
+> diagnosticar iba a concluir exactamente lo contrario de lo que pasaba.
+
 | Archivo | Constante | Valor de esta versión |
 |---|---|---|
-| `nucleo.js` | `CY.VERSION` | `nucleo-10` |
-| `sw.js` | `VERSION` | `cy-shell-v19` |
-| `admin.html` | `PANEL` | `admin-11` |
-| `editar.html` | `EDITOR` | `editar-4` |
+| `nucleo.js` | `CY.VERSION` | `nucleo-14` |
+| `sw.js` | `VERSION` | `cy-shell-v26` |
+| `admin.html` | `PANEL` | `admin-17` |
+| `editar.html` | `EDITOR` | `editar-6` |
 | `calculo.html` | `CY.PANEL` | `calculo-8` |
-| `usuarios.html` | `CY.PANEL` | `usuarios-2` |
-| `diagnostico.html` | `CY.PANEL` | `diagnostico-3` |
+| `usuarios.html` | `CY.PANEL` | `usuarios-3` |
+| `diagnostico.html` | `CY.PANEL` | `diagnostico-4` |
 
-Si el panel muestra un número distinto al de esta tabla, ese archivo no se subió o está
-cacheado. El botón ↻ del avatar borra las cachés.
+*Verificados uno por uno contra los archivos el 2026-09-07; `sw.js` y `diagnostico.html` actualizados el 2026-09-08.*
+
+Si el panel muestra un número **más alto** que el de esta tabla, la que quedó vieja es la
+tabla. Si muestra uno **más bajo**, ese teléfono está sirviendo una copia cacheada: el
+botón ↻ del avatar borra las cachés.
 
 ## Al subir código
 

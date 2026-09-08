@@ -46,6 +46,9 @@
 // v22 (18-ago-2026) — en la grilla, el tacho reemplaza al lápiz.
 // v23 (18-ago-2026) — la lista de categorías se dibuja: 'div div' se comía las filas.
 // v24 (19-ago-2026) — selección múltiple en la grilla: mostrar, mover y quitar.
+// v26 (8-sep-2026) — cambió diagnostico.html: suma las pruebas de
+//   negativas (que lo prohibido esté prohibido). Ver PROTOCOLO-DESARROLLO.md
+//   §11.3 en el repositorio `datos`.
 // v25 (21-ago-2026) — entra traducir.html; editar.html mueve, agrega y quita
 //   bloques del sitio; nucleo.js suma la pantalla al menú; usuarios.html deja
 //   de prometer que desactivar impide entrar; traducir.html avisa cuando el
@@ -67,7 +70,7 @@
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v25';
+const VERSION = 'cy-shell-v26';
 
 const SHELL = [
   './admin.html',

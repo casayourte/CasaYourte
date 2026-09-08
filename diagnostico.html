@@ -37,7 +37,7 @@ import { db, auth, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc,
          collection, serverTimestamp, onAuthStateChanged, signOut } from "./firebase-init.js";
 import { CY } from "./nucleo.js";
 
-CY.PANEL = "diagnostico-3";
+CY.PANEL = "diagnostico-4";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 const yo = await CY.arrancar({ db, auth, doc, getDoc, onAuthStateChanged }, "diag", null);
@@ -189,6 +189,66 @@ $("dg-run").addEventListener("click", async () => {
         + "el panel no puede borrarlos de ahí, se borran desde el panel de Cloudinary."
       : "Ninguna foto en la papelera.");
   } catch (e) { f.mal(explicar(e)); }
+
+
+  /* ── LAS NEGATIVAS ─────────────────────────────────────────────
+     Acá lo bueno es que FALLE. Que una lectura funcione prueba que ESA
+     lectura está permitida; NO prueba que lo prohibido esté prohibido — y eso
+     es lo único que demuestra que lo publicado en la consola es REGLAS.txt y
+     no otra cosa. El archivo del repositorio es una copia; la autoridad es la
+     consola, y pueden divergir sin aviso.
+     Ver PROTOCOLO-DESARROLLO.md §11.3 en el repositorio `datos`. */
+
+  // 9 · deny por defecto, leyendo
+  f = fila("Reglas vivas · leer una colección sin bloque");
+  try {
+    await getDocs(collection(db, "zz-diagnostico-sin-regla"));
+    f.mal("SE PUDO LEER una colección que no tiene bloque propio. El cierre "
+      + "`match /{document=**} { allow read, write: if false }` de REGLAS.txt no está "
+      + "publicado, o hay otro bloque que lo anula: la base está más abierta de lo que "
+      + "se cree. Pegá REGLAS.txt completo en la consola.");
+  } catch (e) {
+    if (e.code === "permission-denied") f.ok("Denegado, como corresponde: el cierre de REGLAS.txt está publicado.");
+    else f.ojo("No se pudo probar: " + explicar(e));
+  }
+
+  // 10 · deny por defecto, escribiendo
+  f = fila("Reglas vivas · escribir en una colección sin bloque");
+  try {
+    await setDoc(doc(db, "zz-diagnostico-sin-regla", "prueba"), { t: Date.now() });
+    f.mal("SE PUDO ESCRIBIR en una colección sin bloque propio. Borrá "
+      + "zz-diagnostico-sin-regla/prueba desde la consola y republicá REGLAS.txt.");
+  } catch (e) {
+    if (e.code === "permission-denied") f.ok("Denegado, como corresponde.");
+    else f.ojo("No se pudo probar: " + explicar(e));
+  }
+
+  // 11 · nadie se desactiva a sí mismo
+  // Es la prueba del §4.8: la única evidencia de que las reglas publicadas son
+  // las que se creen publicadas. Antes había que ir a la consola de Firebase a
+  // poner activo:false a mano (GUIA-ANDROID.md E4); ahora la corre esta línea.
+  // Es segura porque REGLAS.txt lo prohíbe: si igual pasara, se revierte acá.
+  f = fila("Reglas vivas · desactivarte a vos mismo");
+  const esAdm = CY.esAdmin();
+  try {
+    await updateDoc(doc(db, "usuarios", yo.uid), { activo: false });
+    f.mal("LA ESCRITURA PASÓ: pudiste desactivarte a vos mismo. Las reglas publicadas "
+      + "no son las de REGLAS.txt. Revirtiendo…");
+    try {
+      await updateDoc(doc(db, "usuarios", yo.uid), { activo: true });
+      f.mal("Pasó, y se revirtió: tu cuenta volvió a activo:true. Pegá REGLAS.txt "
+        + "completo en la consola antes de seguir.");
+    } catch (e2) {
+      f.mal("Pasó y NO SE PUDO REVERTIR. Poné activo:true a mano en la consola de "
+        + "Firebase, en usuarios/" + yo.uid);
+    }
+  } catch (e) {
+    if (e.code !== "permission-denied") f.ojo("No se pudo probar: " + explicar(e));
+    else if (esAdm) f.ok("Denegado: la regla está publicada y viva. Es el resultado que se busca.");
+    else f.ojo("Denegado — pero como no sos administrador, sólo prueba que un colaborador "
+      + "no escribe usuarios. La cláusula de no desactivarse a uno mismo se comprueba "
+      + "corriendo esto con una cuenta admin.");
+  }
 
   b.disabled = false; b.textContent = "Probar de nuevo";
 });
