@@ -127,16 +127,40 @@ Son 32 lugares editables: esos, menos el video y el logo.
 
 Hoy el sitio es bilingüe español/francés. Falta el **inglés**.
 
-**No es agregar un idioma a una lista, y conviene saberlo antes de empezar.** Hoy `fr`
-no es un valor: es **un nombre de campo escrito a mano** en todo el código —`p.fr`,
-`SITIO.fr`, `BASE.textos.fr`, `x.fr`—, repartido en `index.html`, `album.html`,
-`traducir.html` y `editar.html`, más `contenido.json`, los `hreflang`, el
-`knowsLanguage` del JSON-LD, el conmutador de idioma y la detección por zona horaria.
+**Decisión cerrada con Mauro el 2026-09-08: se generaliza a N idiomas, no se copia
+`fr` para hacer `en`.** Lo que sigue es el plan.
 
-Sumar `en` copiando cada uno de esos pares **duplica el trabajo y deja al cuarto idioma
-costando el doble otra vez**. Lo que corresponde es generalizar de una vez a *"español
-más N idiomas"*. Eso es una decisión estructural: **se cierra con Mauro antes de
-escribir la primera línea** (`PROTOCOLO-DESARROLLO.md` § 2.14 del repositorio `datos`).
+**Por qué la decisión, en una línea:** hoy `fr` no es un valor, es **un nombre de campo
+escrito a mano** —`p.fr`, `SITIO.fr`, `BASE.textos.fr`, `x.fr`— repartido en
+`index.html`, `album.html`, `traducir.html` y `editar.html`, más los `hreflang`, el
+`knowsLanguage` del JSON-LD, el conmutador y la detección por zona horaria. Copiar cada
+uno de esos pares para `en` duplica el trabajo y deja al cuarto idioma costando el doble
+otra vez.
+
+### Lo que hace que esto sea más barato de lo que parece
+
+1. **Los datos ya están listos.** La forma es `textos: { es: {clave: texto}, fr: {clave:
+   texto} }`, tanto en `contenido.json` como en `sitio/publicado` de Firestore. **Sumar
+   un idioma es sumar una clave: no hay ninguna migración de datos que hacer.**
+2. **El catálogo ya existe y nadie lo lee.** `contenido.json` declara
+   `"idiomas": ["es", "fr"]` desde siempre, y ningún archivo lo consulta: el código tiene
+   `fr` escrito al lado. **Hacer que ese campo sea la fuente única es, básicamente, todo
+   el trabajo.**
+
+O sea: no es un rediseño, es **sacar un dato que ya está declarado y hacer que mande**.
+
+### Las cuatro tandas
+
+| | Qué | Cómo se verifica |
+|---|---|---|
+| **1** | **El catálogo manda.** `CY.IDIOMAS` en `nucleo.js` como fuente única (igual que `PERMISOS`), alimentado por `idiomas` de `contenido.json`. `index.html` y `album.html` arman desde ahí el conmutador, los `hreflang`, el `knowsLanguage` y la detección. **Sin sumar el inglés todavía.** | **El sitio tiene que comportarse exactamente igual que hoy en español y francés.** Que no cambie nada ES la prueba |
+| **2** | **La pantalla de traducción, para N.** `traducir.html` deja de asumir dos columnas. Es la pieza más grande y la única con lógica propia: detecta si una traducción quedó vieja comparando contra la base | Que siga detectando lo mismo con dos idiomas antes de sumar el tercero |
+| **3** | **El editor.** `editar.html` ya tiene chips de idioma; que salgan del catálogo en vez de estar escritos | Ídem |
+| **4** | **Entra el inglés.** Recién acá se suma `"en"` al catálogo, y empieza el trabajo de contenido con el orden de abajo | Los 143 textos, con el diagnóstico y la revisión del sitio publicado |
+
+**Las tandas 1 a 3 no cambian nada visible, y eso es a propósito:** son refactorización
+pura, así que **cualquier diferencia que aparezca es un error**. Es la clase de tanda más
+fácil de verificar que existe, y por eso van antes del contenido.
 
 **El orden de trabajo del contenido, que no cambia y vale para cualquier idioma que se
 sume:**
