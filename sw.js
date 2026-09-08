@@ -46,6 +46,11 @@
 // v22 (18-ago-2026) — en la grilla, el tacho reemplaza al lápiz.
 // v23 (18-ago-2026) — la lista de categorías se dibuja: 'div div' se comía las filas.
 // v24 (19-ago-2026) — selección múltiple en la grilla: mostrar, mover y quitar.
+// v31 (8-sep-2026) — traducir.html: «al día» pasa a significar «hay con qué
+//   comprobarlo». Nace el estado «sin registro» —hay traducción y nada dice
+//   con qué español se hizo, que es el caso de casi todos los álbumes— y
+//   «Dar por al día» pregunta por esas aparte y ya no pisa las advertencias
+//   de «el español cambió». Ver README, ««Al día» tenía que significar algo».
 // v30 (8-sep-2026) — traducir.html: quedaba una referencia suelta a `fr` que
 //   rompía la pantalla al calcular los avisos. Ver README, «Cómo se verificó».
 // v29 (8-sep-2026) — traducir.html pasa a N idiomas: se traduce a uno por
@@ -85,7 +90,7 @@
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v30';
+const VERSION = 'cy-shell-v31';
 
 const SHELL = [
   './admin.html',

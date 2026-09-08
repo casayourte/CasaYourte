@@ -114,6 +114,7 @@ textarea.json{font-family:var(--mono);font-size:.7rem;line-height:1.4;min-height
         <div><b id="c-total">—</b><span>piezas de texto</span></div>
         <div class="mal"><b id="c-falta">—</b><span id="et-falta">sin traducir</span></div>
         <div class="ojo"><b id="c-viejo">—</b><span>el español cambió</span></div>
+        <div class="ojo"><b id="c-sinreg">—</b><span>sin registro</span></div>
         <div><b id="c-hecho">—</b><span>al día</span></div>
         <div class="ojo"><b id="c-avisos">—</b><span>con algo para revisar</span></div>
       </div>
@@ -130,9 +131,15 @@ textarea.json{font-family:var(--mono);font-size:.7rem;line-height:1.4;min-height
         aparece como <b>el español cambió</b>, con las dos versiones a la vista.</p>
       <p class="ayuda">Se detecta de dos maneras: por lo que anota esta pantalla cada vez
         que aplicás una traducción, y —para lo traducido antes de que existiera— comparando
-        con el respaldo del repositorio, donde el español y el francés se escribieron juntos.
-        «Dar por al día» sirve para el resto: da por buenas las traducciones que quedan y
-        anota con qué español se hicieron.</p>
+        con el respaldo del repositorio, donde el español y la traducción se escribieron juntos.</p>
+      <p class="ayuda">Cuando ninguna de las dos sabe nada, la pieza sale <b>sin registro</b>:
+        hay traducción, pero nadie comprobó que diga lo que dice el español de ahora. Es el
+        caso de casi todos los álbumes, que nunca estuvieron en el respaldo. <b>No</b> es lo
+        mismo que «al día», y por eso tiene su propio número.</p>
+      <p class="ayuda">«Dar por al día» sirve para eso: da por buenas las traducciones que
+        quedan y anota con qué español se hicieron. Las que están «sin registro» las pregunta
+        aparte —anotarlas es decir que están bien sin haberlas mirado—, y las marcadas «el
+        español cambió» no las toca.</p>
     </section>
 
     <!-- ── 2 · EXPORTAR ───────────────────────────────────── -->
@@ -242,7 +249,7 @@ import { CY } from "./nucleo.js";
 const $ = (id) => document.getElementById(id);
 
 // Sello de este archivo, para saber si quedó viejo en la caché (§3.34).
-const TRADUCTOR = "traducir-11";
+const TRADUCTOR = "traducir-12";
 CY.PANEL = TRADUCTOR;
 
 /* ═══════════════════════════════════════════════════════════════
@@ -276,11 +283,15 @@ CY.PANEL = TRADUCTOR;
    Las huellas viejas se siguen leyendo, para no perder lo anotado.
 
    Y para lo que se tradujo ANTES de que existiera este registro hay un
-   segundo camino, en 'sospechaDelRespaldo': contenido.json guarda el
+   segundo camino, en 'loQueDiceElRespaldo': contenido.json guarda el
    par español/francés tal como se escribieron juntos. Si hoy el español
    difiere del respaldo y el francés es idéntico al respaldo, entonces
    el español se corrigió y el francés se quedó. No hace falta ningún
    registro previo para verlo.
+
+   Y cuando ninguno de los dos caminos sabe nada, se dice: la pieza queda
+   «sin registro», no «al día». Los álbumes nunca estuvieron en el
+   respaldo, así que casi todos caen ahí.
    ═══════════════════════════════════════════════════════════════ */
 
 let BASE = null;          // contenido.json, el respaldo del repositorio
@@ -535,14 +546,23 @@ function campoDe(ref, idioma) {
   return ref.base + "_" + idioma;      // foto
 }
 
-/* Tres estados y un solo lugar donde se deciden:
-     falta  · no hay francés
-     viejo  · hay francés, pero se hizo con OTRO español
-     hecho  · el francés corresponde al español de ahora
+/* Cuatro estados y un solo lugar donde se deciden:
+     falta        · no hay traducción
+     viejo        · hay traducción, pero se hizo con OTRO español
+     hecho        · la traducción corresponde al español de ahora
+     sinregistro  · hay traducción y nada dice con qué español se hizo
 
    Se mira en este orden porque la certeza baja a cada paso: primero lo
    que anotamos nosotros, después la huella del registro viejo, y al
-   final la deducción contra el respaldo del repositorio. */
+   final la deducción contra el respaldo del repositorio.
+
+   Si ninguno de los tres sabe nada, el estado es «sin registro» y NO
+   «hecho». La diferencia no es cosmética: hasta traducir-11 una pieza sin
+   registro salía «al día» por eliminación, y así pasaron por buenas cinco
+   piezas de álbum cuyo francés dice otra cosa que el español —los álbumes
+   nunca estuvieron en el respaldo, así que no hay de dónde sacar
+   evidencia—. «Hecho» tiene que significar «hay con qué comprobarlo», no
+   «no tengo nada que objetar». */
 function revisarEstado(p) {
   p.huella = huella(p.es);
   p.esAnterior = null;
@@ -563,27 +583,33 @@ function revisarEstado(p) {
     return;
   }
 
-  const antes = sospechaDelRespaldo(p);
-  if (antes !== null) { p.esAnterior = antes; p.estado = "viejo"; return; }
-
-  p.estado = "hecho";
+  const dice = loQueDiceElRespaldo(p);
+  if (dice === null) { p.estado = "sinregistro"; return; }
+  p.esAnterior = dice.esAnterior || null;
+  p.estado = dice.estado;
 }
 
-/* Lo que se tradujo antes de esta pantalla no tiene registro, pero no está
-   perdido: contenido.json guarda el par español/francés tal como se
-   escribieron JUNTOS. Si desde entonces el español se movió y el francés no,
-   ese francés está traduciendo un texto que ya no existe.
+/* Lo que se tradujo antes de esta pantalla no tiene registro, pero no
+   siempre está perdido: contenido.json guarda el par español/traducción tal
+   como se escribieron JUNTOS. Con eso alcanza para dos veredictos:
 
-   Devuelve el español viejo, o null si no hay nada que sospechar. Sólo vale
-   para los textos del sitio: los álbumes nunca estuvieron en el respaldo. */
-function sospechaDelRespaldo(p) {
+     · el español no se movió desde el respaldo → «hecho», y es evidencia de
+       verdad: el texto con el que se tradujo está a la vista;
+     · el español se movió y la traducción no → «viejo», y devuelve el
+       español viejo para poder mostrar qué cambió.
+
+   Si se movieron los dos, o la pieza no está en el respaldo, no dice nada y
+   devuelve null: eso es «sin registro», no «hecho». Sólo vale para los
+   textos del sitio; para los álbumes devuelve null siempre, porque nunca
+   estuvieron en el respaldo. */
+function loQueDiceElRespaldo(p) {
   if (p.ref.que !== "sitio" || !BASE || !BASE.textos) return null;
   const bes = (BASE.textos[FUENTE] || {})[p.ref.clave];
   const bdest = (BASE.textos[destino] || {})[p.ref.clave];
   if (bes === undefined || bdest === undefined) return null;
-  if (igual(bes, p.es)) return null;              // el español no se tocó
-  if (!igual(bdest, trad(p))) return null;        // la traducción SÍ se tocó: no se sabe
-  return bes;
+  if (igual(bes, p.es)) return { estado: "hecho" };   // el español no se tocó
+  if (!igual(bdest, trad(p))) return null;            // se movieron los dos: no se sabe
+  return { estado: "viejo", esAnterior: bes };
 }
 
 const tieneAlgo = (v) => Array.isArray(v)
@@ -595,6 +621,7 @@ function pintarCuadro() {
   $("c-total").textContent = PIEZAS.length;
   $("c-falta").textContent = c("falta");
   $("c-viejo").textContent = c("viejo");
+  $("c-sinreg").textContent = c("sinregistro");
   $("c-hecho").textContent = c("hecho");
 
   const conAvisos = PIEZAS.filter(p => p.avisos && p.avisos.length);
@@ -861,22 +888,57 @@ async function guardarRegistro() {
 /* Sin esto, el estado de una traducción sólo se puede adivinar. Lo que
    existía antes de esta pantalla no tiene registro: se toma una vez, a
    mano, como línea de base, y de ahí en adelante el registro se mantiene
-   solo cada vez que se aplica una traducción. */
+   solo cada vez que se aplica una traducción.
+
+   Dos cuidados, y los dos salieron de verlo hacer daño:
+
+   · Las piezas marcadas «el español cambió» NO se tocan. Anotarlas era
+     borrar de un toque justamente las advertencias que esta pantalla existe
+     para dar, y el cartel decía «no cambia ningún texto» sin avisar de eso.
+   · Las piezas «sin registro» se anotarían a ciegas: nadie comprobó que su
+     traducción diga lo que dice el español de ahora. Van con su propia
+     confirmación, aparte, y se puede decir que no y anotar sólo el resto.
+     Es lo que habría evitado que cinco piezas de álbum mal traducidas
+     quedaran marcadas como correctas para siempre. */
 $("basar").addEventListener("click", async () => {
-  const conTraduccion = PIEZAS.filter(p => tieneAlgo(trad(p)));
-  if (!conTraduccion.length) return aviso("No hay nada traducido todavía a " + nombreDestino(), true);
-  const nuevas = conTraduccion.filter(p => !igual(origenDe(p.id, destino), p.es)).length;
-  if (!nuevas) return aviso("Ya estaba todo anotado.");
-  if (!(await preguntar("Se van a dar por buenas " + nuevas + " traducciones que ya existen.\n\n"
+  const traducidas = PIEZAS.filter(p => tieneAlgo(trad(p)));
+  if (!traducidas.length) return aviso("No hay nada traducido todavía a " + nombreDestino(), true);
+
+  const falta = (p) => !igual(origenDe(p.id, destino), p.es);
+  const conEvidencia = traducidas.filter(p => p.estado === "hecho" && falta(p));
+  const aCiegas = traducidas.filter(p => p.estado === "sinregistro" && falta(p));
+  const viejas = PIEZAS.filter(p => p.estado === "viejo").length;
+  if (!conEvidencia.length && !aCiegas.length) return aviso("Ya estaba todo anotado.");
+
+  if (!(await preguntar("Se van a dar por buenas " + (conEvidencia.length + aCiegas.length)
+      + " traducciones que ya existen.\n\n"
       + "No cambia ningún texto: sólo anota que esa traducción corresponde a ese español, "
-      + "para poder avisarte cuando el español cambie."))) return;
+      + "para poder avisarte cuando el español cambie."
+      + (viejas ? "\n\nLas " + viejas + " marcadas «el español cambió» quedan como están."
+                : "")))) return;
+
+  let anotar = conEvidencia;
+  if (aCiegas.length) {
+    const resto = conEvidencia.length === 1
+      ? "la única que sí tiene con qué comprobarse"
+      : "las " + conEvidencia.length + " que sí tienen con qué comprobarse";
+    const igual_ = await preguntar("De esas, " + aCiegas.length + " no tienen ningún registro: "
+      + "nadie comprobó que el texto en " + nombreDestino().toLowerCase()
+      + " diga lo que dice el español de ahora.\n\n"
+      + "Si alguna no corresponde, esto la deja marcada como correcta y no vuelve a avisarte.\n\n"
+      + "«Sí, hacerlo» las anota igual. «Cancelar» anota sólo "
+      + (conEvidencia.length ? resto : "nada") + ".");
+    if (igual_) anotar = conEvidencia.concat(aCiegas);
+  }
+  if (!anotar.length) return aviso("No se anotó nada.");
+
   const b = $("basar"); b.disabled = true;
   try {
-    conTraduccion.forEach(p => anotarOrigen(p.id, destino, p.es));
+    anotar.forEach(p => anotarOrigen(p.id, destino, p.es));
     await guardarRegistro();
     PIEZAS.forEach((q) => { revisarEstado(q); q.avisos = avisosDe(q); });
     pintarCuadro(); armarPartes();
-    aviso("Anotado. " + nuevas + " traducciones quedan como línea de base.");
+    aviso("Anotado. " + anotar.length + " traducciones quedan como línea de base.");
   } catch (e) { aviso(CY.explicar(e), true); }
   finally { b.disabled = false; }
 });
@@ -1011,9 +1073,22 @@ const GLOSARIOS = { fr: {
   "CasaYourte": "CasaYourte · nunca se traduce",
 } };
 
+/* «Sólo lo que falta» es todo lo que no está comprobado, y eso incluye lo
+   que está «sin registro»: no se sabe si su traducción corresponde, y quien
+   traduce es justamente quien puede decirlo. */
 function paraExportar() {
   return PIEZAS.filter(p => quePasa === "todo" || p.estado !== "hecho");
 }
+
+/* En el archivo que va al chat el estado se dice con palabras: «hecho» y
+   «sinregistro» no significan lo mismo para quien traduce. */
+const FRASE_ESTADO = {
+  falta: "sin traducir",
+  viejo: "el español cambió después de traducir",
+  hecho: "al día, con registro de con qué español se tradujo",
+  sinregistro: "hay traducción, pero no hay registro de con qué español se hizo: "
+             + "comprobá que diga lo que dice el español de ahora",
+};
 
 function armarPartes() {
   const lista = paraExportar();
@@ -1070,7 +1145,7 @@ function archivoExport() {
         tipo: p.tipo,
         nivel: p.nivel || undefined,
         bloque: p.bloque || undefined,
-        estado: p.estado === "viejo" ? "el español cambió después de traducir" : p.estado,
+        estado: FRASE_ESTADO[p.estado] || p.estado,
         es: p.es,
       };
       // Con el español anterior a la vista, quien traduce ajusta lo que se

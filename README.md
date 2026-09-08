@@ -277,6 +277,64 @@ sume:**
 > donde vive un pendiente: falta el reglamento técnico del proyecto (el «Libro 1» que
 > citan los comentarios del código y que no está acá). Cuando exista, esto se muda ahí.
 
+### «Al día» tenía que significar algo · `traducir-12`
+
+Al mirar la exportación real de `traducir-11` aparecieron **cinco piezas de álbum
+marcadas «al día» cuyo francés dice otra cosa que el español**:
+
+| Pieza | Español | Francés |
+|---|---|---|
+| `etapa:yurta-uruguay:04-trei:nombre` | Segunda versión | trei |
+| `etapa:yurta-simona-y-antonio:01-terreno-y-apoyos:nombre` | Paisaje | terrain et appuis |
+| `etapa:yurta-7m-toono-1m:02-taller-piezas:nombre` | taller y transporte | atelier · pièces |
+| `etapa:yurta-doble-techo:06-toono:nombre` | toono y triangulos | toono |
+| `etapa:doble-techo-1er-prototipo:04-trei:nombre` | trei y anillo | trei |
+
+**No es que la pantalla se equivocara: es que decía «hecho» donde tenía que decir «no
+sé».** Los tres caminos que sabe mirar —lo que anota la propia pantalla, la huella del
+registro viejo, y la comparación contra `contenido.json`— no aplican a los álbumes: los
+álbumes nunca estuvieron en el respaldo. Sin ninguno de los tres, la pieza caía en
+«hecho» por eliminación.
+
+**Lo que cambió:**
+
+- **Un cuarto estado, «sin registro».** Hay traducción, y nada dice con qué español se
+  hizo. Tiene su propio contador. El archivo que va al chat dice el estado con palabras,
+  no con la etiqueta interna, así que quien traduce lee «no hay registro… comprobá que
+  diga lo que dice el español de ahora» en vez de un `hecho` que no era cierto.
+- **El respaldo ahora da un veredicto, no una sospecha.** Antes devolvía «el español
+  viejo» o `null`, y el `null` mezclaba dos cosas muy distintas: *el español no se movió*
+  (que es evidencia buena) con *se movieron los dos, no se sabe*. Separadas, la segunda
+  pasa a «sin registro».
+- **«Dar por al día» dejó de ser un solo toque.** Pregunta aparte por las de «sin
+  registro» —anotarlas es decir que están bien sin haberlas mirado— y se puede decir que
+  no y anotar sólo el resto.
+- **Y dejó de pisar las advertencias.** Hasta `traducir-11` el botón anotaba **todas** las
+  piezas traducidas, incluidas las marcadas «el español cambió», con el español de ahora:
+  un toque borraba justamente las advertencias que esta pantalla existe para dar, y el
+  cartel decía «no cambia ningún texto» sin avisar de eso. Ahora no las toca.
+
+**El costo, y es a propósito:** el contador «al día» baja mucho de golpe, porque casi
+todas las piezas de álbum pasan a «sin registro». Ese número es el honesto — el de antes
+contaba como comprobado lo que nadie había comprobado.
+
+**Verificado en el banco de pruebas**, con datos armados para que cada estado tenga al
+menos una pieza:
+
+| Prueba | Resultado |
+|---|---|
+| Los cuatro estados se separan | 2 sin traducir · 2 «el español cambió» · **5 «sin registro»** · 2 al día |
+| Las que antes se colaban | `ambos_movidos` y las 3 piezas de álbum salen «sin registro», no «hecho» |
+| Las que sí tienen evidencia | siguen «al día»: la que tiene registro propio y la que el respaldo confirma |
+| Primer cartel de «Dar por al día» | avisa que **las 2 marcadas «el español cambió» quedan como están** |
+| Segundo cartel | nombra las 5 sin registro y ofrece anotar sólo la que sí se puede comprobar |
+| Al decir que no | se anotan **sólo las comprobables**; el registro viejo queda intacto y las 5 siguen sin registro |
+| Al decir que sí | las 5 pasan a «al día» — es la decisión de quien aprieta, tomada a la vista |
+
+Las cinco piezas de arriba **siguen mal traducidas**: esta tanda hace que se vean y que
+no se puedan congelar por accidente. Corregirlas es trabajo de contenido, y va con el
+orden de tres pasos de abajo.
+
 ## Los sellos de versión
 
 Cada archivo con lógica propia lleva su número, visible en el panel abajo del nombre. **Al
@@ -292,14 +350,14 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 | Archivo | Constante | Valor de esta versión |
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-14` |
-| `sw.js` | `VERSION` | `cy-shell-v30` |
+| `sw.js` | `VERSION` | `cy-shell-v31` |
 | `admin.html` | `PANEL` | `admin-17` |
 | `editar.html` | `EDITOR` | `editar-6` |
 | `calculo.html` | `CY.PANEL` | `calculo-8` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-3` |
 | `diagnostico.html` | `CY.PANEL` | `diagnostico-6` |
 | `idiomas.js` | `SELLO` | `idiomas-2` |
-| `traducir.html` | `TRADUCTOR` | `traducir-11` |
+| `traducir.html` | `TRADUCTOR` | `traducir-12` |
 
 *Verificados uno por uno contra los archivos el 2026-09-07; `sw.js` y `diagnostico.html` actualizados el 2026-09-08.*
 
