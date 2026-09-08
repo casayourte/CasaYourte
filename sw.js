@@ -46,6 +46,10 @@
 // v22 (18-ago-2026) — en la grilla, el tacho reemplaza al lápiz.
 // v23 (18-ago-2026) — la lista de categorías se dibuja: 'div div' se comía las filas.
 // v24 (19-ago-2026) — selección múltiple en la grilla: mostrar, mover y quitar.
+// v28 (8-sep-2026) — cambió diagnostico.html: el informe copiable pasa al
+//   final (como el de Rematetaller), y suma la prueba que compara la VERSION
+//   que declara este archivo contra la caché que se está sirviendo. Si no
+//   coinciden, el teléfono está mezclando archivos viejos y nuevos.
 // v27 (8-sep-2026) — diagnostico.html deja de depender de lo que
 //   diagnostica: carga firebase-init y nucleo con import() aparte, no usa
 //   CY.arrancar (que redirigía a admin.html en los cuatro casos que uno
@@ -76,7 +80,7 @@
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v27';
+const VERSION = 'cy-shell-v28';
 
 const SHELL = [
   './admin.html',

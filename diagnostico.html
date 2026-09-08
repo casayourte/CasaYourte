@@ -49,7 +49,6 @@
     No modifica nada de tus datos.</p>
     <div class="dg-acc">
       <button class="btn p" id="dg-run">Probar todo</button>
-      <button id="dg-copiar">Copiar el informe</button>
       <a class="lk" href="./admin.html">Ir al panel</a>
     </div>
 
@@ -67,6 +66,7 @@
 
     <h2 style="font-size:1rem;margin:1.6rem 0 .4rem">Para traer al chat</h2>
     <textarea id="dg-log" readonly aria-label="Informe de diagnóstico">Probando…</textarea>
+    <div class="dg-acc"><button class="p" id="dg-copiar">Copiar el informe</button></div>
   </section>
 
 
@@ -94,7 +94,7 @@
 //  desde que la página existe. Se veía como una pantalla que se quedaba
 //  cargando, no como un error.
 // ═══════════════════════════════════════════════════════════
-const SELLO = "diagnostico-5";
+const SELLO = "diagnostico-6";
 const $ = (id) => document.getElementById(id);
 
 let FB = null, CY = null, quien = null, ficha = null;
@@ -164,6 +164,24 @@ async function bloqueNavegador() {
     const k = await caches.keys();
     f.ok(k.length ? k.join(", ") : "ninguna todavía");
   });
+  // Lo primero que explica una rareza es el sello (§6). Acá el sello del shell
+  // es la VERSION del sw.js, y la prueba es que coincida con la caché que se
+  // está sirviendo: si no coinciden, el teléfono está mezclando archivos
+  // viejos y nuevos, y eso se parece a cualquier otro problema menos a lo que es.
+  await probar("El shell que se sirve", async (f) => {
+    const r = await fetch("./sw.js?d=" + Date.now(), { cache: "no-store" });
+    if (!r.ok) return f.mal("no se pudo leer sw.js: HTTP " + r.status);
+    const m = (await r.text()).match(/const\s+VERSION\s*=\s*['"]([^'"]+)['"]/);
+    if (!m) return f.ojo("sw.js no declara una VERSION reconocible");
+    const declarada = m[1];
+    const k = await caches.keys();
+    if (!k.length) return f.ojo("sw.js declara " + declarada + ", pero todavía no hay ninguna caché. "
+      + "Recargá una vez con señal.");
+    if (k.includes(declarada)) return f.ok("sw.js declara " + declarada + " y es la que se está sirviendo");
+    f.ojo("sw.js declara " + declarada + " pero la caché activa es " + k.join(", ")
+      + ". El service worker nuevo todavía no se activó: estás viendo una mezcla de archivos "
+      + "viejos y nuevos. Cerrá todas las pestañas del sitio y volvé a abrir, o tocá «Reparar» si existe.");
+  });
 }
 
 /* ═════════ 2 · Los módulos del proyecto ═════════ */
@@ -231,12 +249,18 @@ async function bloqueDatos() {
   });
   await probar("Escribir y borrar en Firestore", async (f) => {
     if (!FB) return f.ojo("hace falta firebase-init.js");
+    // Sin sesión esto SIEMPRE va a dar permission-denied, y eso no es una
+    // falla del sistema: es la regla funcionando. Decirlo, no reportarlo en rojo.
+    if (!quien) return f.ojo("hace falta una sesión: sin ella las reglas niegan toda escritura, "
+      + "que es lo correcto. Entrá por «Ir al panel» y volvé.");
     // OJO: Firestore RESERVA los identificadores con forma __algo__ y rechaza
     // la escritura con invalid-argument. El nombre no puede tener esa forma.
     const ref = FB.doc(FB.db, "albums", "zz-prueba-diagnostico");
-    await conPlazo(FB.setDoc(ref, { titulo: "prueba de diagnóstico", tipo: "obra" }), 8000);
-    await conPlazo(FB.deleteDoc(ref), 8000);
-    f.ok("escritura y borrado correctos");
+    try {
+      await conPlazo(FB.setDoc(ref, { titulo: "prueba de diagnóstico", tipo: "obra" }), 8000);
+      await conPlazo(FB.deleteDoc(ref), 8000);
+      f.ok("escritura y borrado correctos");
+    } catch (e) { f.mal(motivo(e)); }
   });
   await probar("Contenido del sitio", async (f) => {
     if (!FB) return f.ojo("hace falta firebase-init.js");
@@ -253,6 +277,7 @@ async function bloqueDatos() {
   });
   await probar("Papelera de fotos", async (f) => {
     if (!FB) return f.ojo("hace falta firebase-init.js");
+    if (!quien) return f.ojo("hace falta una sesión");
     const al = await conPlazo(FB.getDocs(FB.collection(FB.db, "albums")), 8000);
     let n = 0;
     for (const a of al.docs) {
