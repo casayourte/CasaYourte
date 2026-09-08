@@ -46,6 +46,12 @@
 // v22 (18-ago-2026) — en la grilla, el tacho reemplaza al lápiz.
 // v23 (18-ago-2026) — la lista de categorías se dibuja: 'div div' se comía las filas.
 // v24 (19-ago-2026) — selección múltiple en la grilla: mostrar, mover y quitar.
+// v27 (8-sep-2026) — diagnostico.html deja de depender de lo que
+//   diagnostica: carga firebase-init y nucleo con import() aparte, no usa
+//   CY.arrancar (que redirigía a admin.html en los cuatro casos que uno
+//   viene a averiguar), lleva estilos propios y aísla cada prueba. Corrige
+//   además un ReferenceError en la prueba 1 que, sin aislamiento, dejaba sin
+//   correr TODAS las siguientes desde que la página existe.
 // v26 (8-sep-2026) — cambió diagnostico.html: suma las pruebas de
 //   negativas (que lo prohibido esté prohibido). Ver PROTOCOLO-DESARROLLO.md
 //   §11.3 en el repositorio `datos`.
@@ -70,7 +76,7 @@
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v26';
+const VERSION = 'cy-shell-v27';
 
 const SHELL = [
   './admin.html',

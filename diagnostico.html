@@ -13,7 +13,29 @@
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
 <link rel="icon" href="./icono-192.png">
 <style>
-
+  /* Estilos propios y mínimos: si estilos.css no cargara, esta página tiene
+     que seguir siendo legible. Es la que se abre cuando algo se rompe, así que
+     no puede depender de nada del proyecto para verse (§11.2). */
+  body { font-family: system-ui, -apple-system, Arial, sans-serif; margin: 0;
+    background: #f7f5f2; color: #181614; }
+  .contenedor { max-width: 720px; margin: 0 auto; padding: 14px 14px 40px; }
+  .dg-f { display: flex; gap: 9px; align-items: flex-start; background: #fff;
+    border: 1px solid #e6e2dc; border-radius: 12px; padding: 12px; margin: 9px 0; }
+  .dg-i { flex: none; width: 1.3em; text-align: center; font-size: 1.05rem; }
+  .dg-t { min-width: 0; flex: 1; }
+  .dg-t b { display: block; font-weight: 600; font-size: .94rem; }
+  .dg-t small { display: block; font-size: .82rem; line-height: 1.45; color: #6b655d;
+    margin-top: 2px; overflow-wrap: anywhere; }
+  .dg-acc { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 4px; }
+  .dg-acc button, .dg-acc .lk { font: inherit; font-size: .9rem; padding: 10px 15px;
+    min-height: 44px; border-radius: 10px; border: 1px solid #d9d4cc; background: #fff;
+    color: #181614; cursor: pointer; text-decoration: none; display: inline-block; }
+  .dg-acc button.p { background: #181614; border-color: #181614; color: #fff; }
+  .dg-acc button[disabled] { opacity: .55; }
+  #dg-log { width: 100%; box-sizing: border-box; min-height: 190px; font-size: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; line-height: 1.45;
+    border: 1px solid #e6e2dc; border-radius: 10px; padding: 10px; background: #fbfaf8;
+    color: #181614; }
 </style>
 </head>
 <body>
@@ -25,237 +47,330 @@
     <h1 style="font-size:1.5rem;margin-bottom:.3rem">Diagnóstico</h1>
     <p class="note">Prueba las tres conexiones y dice exactamente qué arreglar si algo falla.
     No modifica nada de tus datos.</p>
-    <button class="btn p" id="dg-run">Probar todo</button>
+    <div class="dg-acc">
+      <button class="btn p" id="dg-run">Probar todo</button>
+      <button id="dg-copiar">Copiar el informe</button>
+      <a class="lk" href="./admin.html">Ir al panel</a>
+    </div>
+
+    <div class="dg-f" style="border-color:#C08A3E;background:#fffaf2;margin-top:1.1rem">
+      <span class="dg-i">⚠️</span>
+      <div class="dg-t"><b>Desactivarte a vos mismo</b>
+        <small>Intenta poner tu ficha en <code>activo: false</code>. Las reglas tienen que
+        <b>negarlo</b>: esa negativa es la prueba de que están publicadas. <b>No se pierde
+        ningún dato</b> — si por un error pasara, se revierte en el acto y se avisa. Va
+        aparte porque es la única que escribe sobre tu propia cuenta.</small>
+        <div class="dg-acc"><button id="dg-regla">Probar la regla</button></div>
+      </div>
+    </div>
     <div id="dg-out" style="margin-top:1.2rem"></div>
+
+    <h2 style="font-size:1rem;margin:1.6rem 0 .4rem">Para traer al chat</h2>
+    <textarea id="dg-log" readonly aria-label="Informe de diagnóstico">Probando…</textarea>
   </section>
 
 
 </div>
 
 <script type="module">
-import { db, auth, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc,
-         collection, serverTimestamp, onAuthStateChanged, signOut } from "./firebase-init.js";
-import { CY } from "./nucleo.js";
-
-CY.PANEL = "diagnostico-4";
-CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
-
-const yo = await CY.arrancar({ db, auth, doc, getDoc, onAuthStateChanged }, "diag", null);
-
+// ═══════════════════════════════════════════════════════════
+//  CASAYOURTE — diagnóstico. La página que se abre cuando algo se rompe.
+//  Sello: diagnostico-5
+//
+//  Tres decisiones de fondo (PROTOCOLO-DESARROLLO.md §11.2, repo `datos`):
+//   1. NO usa CY.arrancar. Esa función redirige a admin.html en CUATRO casos
+//      —sin sesión, sin ficha, inactivo, sin permiso— y los cuatro son
+//      exactamente lo que uno viene a averiguar acá. Ahora se MIRA el estado
+//      y se informa; no se echa a nadie.
+//   2. NO depende de firebase-init.js ni de nucleo.js para cargar. Los
+//      importa aparte, tarde y con red: si alguno está roto o es viejo, esta
+//      página igual abre y lo dice.
+//   3. Cada prueba va en su propio try. Hasta el 2026-09-08 no era así, y
+//      una sola línea rota cortaba todas las demás (ver abajo).
+//
+//  ⚠ Defecto que esto corrige, y vale anotarlo: la prueba 1 usaba
+//  `firebaseConfig` sin haberlo importado. Tiraba ReferenceError, y como
+//  ninguna prueba estaba aislada, de la 2 en adelante NO SE CORRÍA NINGUNA
+//  desde que la página existe. Se veía como una pantalla que se quedaba
+//  cargando, no como un error.
+// ═══════════════════════════════════════════════════════════
+const SELLO = "diagnostico-5";
 const $ = (id) => document.getElementById(id);
-const explicar = CY.explicar;
-const toast = CY.aviso;
-const puede = CY.puede;
-const CLOUD = CY.CLOUDINARY.cloud;
-const PRESET = CY.CLOUDINARY.preset;
 
-/* ===================== DIAGNÓSTICO ===================== */
-$("dg-run").addEventListener("click", async () => {
-  const out = $("dg-out"); out.innerHTML = "";
-  const b = $("dg-run"); b.disabled = true; b.textContent = "Probando…";
+let FB = null, CY = null, quien = null, ficha = null;
 
-  const fila = (nombre) => {
-    const el = document.createElement("div");
-    el.className = "card";
-    el.style.alignItems = "flex-start";
-    el.innerHTML = `<span style="font-size:1.1rem;flex:none">⏳</span>
-      <div class="grow"><h2 style="font-size:.98rem"></h2>
-      <div class="sub" style="margin-top:.2rem"></div></div>`;
-    el.querySelector("h2").textContent = nombre;
-    out.appendChild(el);
-    return {
-      ok: (m) => { el.firstChild.textContent = "✅"; el.querySelector(".sub").textContent = m; },
-      // Ni bien ni mal: algo que hay que mirar, pero no está roto.
-      ojo: (m) => { el.firstChild.textContent = "⚠️";
-        el.querySelector(".sub").textContent = m;
-        el.querySelector(".sub").style.color = "#C08A3E"; },
-      mal: (m) => { el.firstChild.textContent = "❌";
-        el.querySelector(".sub").textContent = m;
-        el.querySelector(".sub").style.color = "#E9A8B0"; },
-    };
+const informe = [];
+const anotar = (t) => { informe.push(t); $("dg-log").value = informe.join("\n"); };
+const esc = (t) => String(t == null ? "" : t)
+  .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+  .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+
+function fila(nombre) {
+  const el = document.createElement("div");
+  el.className = "dg-f";
+  el.innerHTML = '<span class="dg-i">⏳</span><div class="dg-t"><b></b><small></small></div>';
+  el.querySelector("b").textContent = nombre;
+  $("dg-out").appendChild(el);
+  const set = (ico, m) => {
+    el.querySelector(".dg-i").textContent = ico;
+    el.querySelector("small").textContent = m || "";
+    anotar(ico + " " + nombre + (m ? " — " + m : ""));
   };
+  return { ok: (m) => set("✅", m), ojo: (m) => set("⚠️", m), mal: (m) => set("❌", m) };
+}
+function grupo(t) {
+  const d = document.createElement("div");
+  d.style.cssText = "margin:18px 0 4px;font-size:.8rem;letter-spacing:.04em;text-transform:uppercase;color:#8a837a;font-weight:700";
+  d.textContent = t; $("dg-out").appendChild(d);
+  anotar("\n=== " + t.toUpperCase() + " ===");
+}
 
-  // 0 · versiones · lo primero, porque explica casi cualquier rareza
-  let f = fila("Versión del código");
-  f.ok(`panel ${PANEL} · núcleo ${CY.VERSION}`
-    + (CY.instalada() ? " · corriendo como app instalada" : ""));
+// Sin red, una lectura de Firestore no falla: espera. [casaverdecanas]
+const conPlazo = (pr, ms) => Promise.race([pr, new Promise((_, r) =>
+  setTimeout(() => r(Object.assign(new Error("sin respuesta"), { code: "plazo" })), ms))]);
 
-  // 1 · proyecto de Firebase
-  f = fila("Proyecto de Firebase");
-  f.ok(`${firebaseConfig.projectId} · conectado`);
+const motivo = (e) => {
+  const c = (e && e.code) || "";
+  if (c === "plazo") return "plazo · Firestore no contestó: no es un permiso, no se llega al servidor";
+  if (CY && CY.explicar) { try { return c ? c + " · " + CY.explicar(e) : CY.explicar(e); } catch (x) {} }
+  return (c ? c + " · " : "") + ((e && e.message) || "error");
+};
 
-  // 2 · tu usuario y tu rol
-  f = fila("Tu usuario y permisos");
-  try {
-    const d = await getDoc(doc(db, "usuarios", yo.uid));
-    if (!d.exists()) f.mal("No existe tu documento en la colección usuarios. El ID del documento tiene que ser tu UID exacto.");
-    else {
-      const u = d.data();
-      if (u.activo !== true) f.mal("Tu campo activo no es true (tiene que ser boolean, no texto).");
-      else {
-        const p = CY.PERMISOS.filter(x => (u.permisos || {})[x.id]).map(x => x.label);
-        f.ok(`${u.email} · ${u.rol === "admin" ? "administrador · todo"
-          : (p.length ? "colaborador · " + p.join(", ") : "colaborador · sin permisos")}`);
-      }
-    }
-  } catch (e) { f.mal(explicar(e)); }
+// Cada prueba aislada: que una falle no puede cortar las que siguen.
+async function probar(nombre, fn) {
+  const f = fila(nombre);
+  try { await fn(f); }
+  catch (e) { f.mal("La prueba se cortó sola: " + ((e && e.message) || e)); }
+}
 
-  // 3 · leer álbumes
-  f = fila("Leer álbumes");
-  try {
-    const snap = await getDocs(collection(db, "albums"));
-    f.ok(`${snap.size} álbumes`);
-  } catch (e) { f.mal(explicar(e)); }
+/* ═════════ 1 · El navegador y la app (sin dependencias) ═════════ */
+async function bloqueNavegador() {
+  grupo("El navegador y la app");
+  await probar("Conexión", async (f) => {
+    navigator.onLine ? f.ok("el navegador se ve en línea")
+      : f.mal("sin conexión: casi todo lo de abajo va a fallar");
+  });
+  await probar("Sello de esta pantalla", async (f) => f.ok(SELLO));
+  await probar("Modo", async (f) =>
+    f.ok(matchMedia("(display-mode: standalone)").matches
+      ? "app instalada (standalone)" : "pestaña del navegador"));
+  await probar("Service worker", async (f) => {
+    const rs = await navigator.serviceWorker.getRegistrations();
+    if (!rs.length) return f.ojo("ninguno registrado: la app no es instalable. Abrí el panel una vez con señal.");
+    const r = rs[0];
+    f.ok((r.active ? "activo" : r.installing ? "instalándose" : "en espera") + " · alcance " + r.scope);
+  });
+  await probar("Cachés", async (f) => {
+    const k = await caches.keys();
+    f.ok(k.length ? k.join(", ") : "ninguna todavía");
+  });
+}
 
-  // 4 · escribir y borrar en Firestore
-  f = fila("Escribir en Firestore");
-  try {
-    // OJO: Firestore RESERVA los identificadores con forma __algo__ y
-    // rechaza la escritura con invalid-argument. El nombre de esta prueba
-    // no puede tener esa forma.
-    const ref = doc(db, "albums", "zz-prueba-diagnostico");
-    await setDoc(ref, { titulo: "prueba de diagnóstico", tipo: "obra" });
-    await deleteDoc(ref);
-    f.ok("Escritura y borrado correctos");
-  } catch (e) { f.mal(explicar(e)); }
+/* ═════════ 2 · Los módulos del proyecto ═════════ */
+// El ?d= fuerza traerlos de la red: es la única forma de detectar uno viejo.
+// No duplica la app de Firebase — initializeApp con la misma config devuelve
+// la que ya existe, así que la sesión se conserva.
+async function bloqueModulos() {
+  grupo("Los módulos del proyecto");
+  await probar("firebase-init.js", async (f) => {
+    try { FB = await import("./firebase-init.js?d=" + Date.now()); f.ok("carga sin errores"); }
+    catch (e) { f.mal("NO CARGA: " + e.message + " · Es lo primero a arreglar: un error de sintaxis en un módulo ES deja en blanco cualquier página que lo importe."); }
+  });
+  await probar("nucleo.js", async (f) => {
+    try {
+      const m = await import("./nucleo.js?d=" + Date.now());
+      CY = m.CY; CY.PANEL = SELLO;
+      f.ok("carga sin errores · núcleo " + (CY.VERSION || "?"));
+    } catch (e) { f.mal("NO CARGA: " + e.message); }
+  });
+  await probar("Proyecto de Firebase", async (f) => {
+    if (!FB) return f.ojo("hace falta firebase-init.js");
+    // Antes esto decía `firebaseConfig.projectId` a secas, sin importarlo:
+    // tiraba ReferenceError y se llevaba puesto todo el resto.
+    const c = FB.firebaseConfig || (FB.db && FB.db.app && FB.db.app.options);
+    f.ok(c ? c.projectId + " · conectado" : "conectado (no se pudo leer la config)");
+  });
+  await probar("estilos.css", async (f) => {
+    const r = await fetch("./estilos.css?d=" + Date.now(), { cache: "no-store" });
+    r.ok ? f.ok(Math.round((await r.text()).length / 1024) + " KB")
+         : f.mal("HTTP " + r.status + ": la interfaz se ve sin estilos");
+  });
+}
 
-  // 5 · Cloudinary
-  f = fila("Cloudinary · preset de subida");
-  try {
-    const cv = document.createElement("canvas"); cv.width = cv.height = 8;
-    const ctx = cv.getContext("2d"); ctx.fillStyle = "#DCA96B"; ctx.fillRect(0, 0, 8, 8);
-    const blob = await new Promise(r => cv.toBlob(r, "image/jpeg", .5));
-    const fd = new FormData();
-    fd.append("file", blob);
-    fd.append("upload_preset", PRESET);
-    fd.append("folder", "casayourte/pruebas");
-    fd.append("tags", "prueba");
-    const r = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD}/image/upload`,
-      { method: "POST", body: fd });
-    const j = await r.json();
-    if (r.ok) f.ok(`Preset "${PRESET}" funcionando. Dejó una imagen de 8 píxeles en la carpeta "pruebas" de Cloudinary; se puede borrar o dejar.`);
-    else {
-      const m = j.error?.message || "rechazado";
-      f.mal(/preset/i.test(m)
-        ? `El preset "${PRESET}" no existe o no es unsigned. Crealo en Cloudinary: Settings → Upload → Add upload preset, con Signing mode en Unsigned.`
-        : m);
-    }
-  } catch (e) { f.mal("No se pudo contactar Cloudinary: " + e.message); }
+/* ═════════ 3 · La sesión, sin echar a nadie ═════════ */
+async function bloqueSesion() {
+  grupo("Tu sesión");
+  await probar("Sesión abierta", async (f) => {
+    if (!FB) return f.ojo("hace falta firebase-init.js");
+    if (typeof FB.auth.authStateReady === "function") await conPlazo(FB.auth.authStateReady(), 8000);
+    else await conPlazo(new Promise((res) => { const off = FB.auth.onAuthStateChanged(() => { off(); res(); }); }), 8000);
+    quien = FB.auth.currentUser;
+    if (!quien) return f.ojo("Auth arrancó bien, pero no hay nadie con la sesión abierta. Entrá por «Ir al panel» y volvé.");
+    f.ok((quien.email || "") + " · uid " + quien.uid);
+  });
+  await probar("Tu ficha en usuarios/", async (f) => {
+    if (!quien) return f.ojo("hace falta una sesión");
+    const d = await conPlazo(FB.getDoc(FB.doc(FB.db, "usuarios", quien.uid)), 8000);
+    if (!d.exists()) return f.mal("No existe tu documento en usuarios/. El ID tiene que ser tu UID exacto: " + quien.uid);
+    ficha = d.data();
+    if (ficha.activo !== true) return f.mal("Tu campo activo no es true (tiene que ser boolean, no texto). El panel te va a echar.");
+    const perms = (CY && CY.PERMISOS ? CY.PERMISOS.filter((x) => (ficha.permisos || {})[x.id]).map((x) => x.label) : []);
+    f.ok((ficha.email || "") + " · " + (ficha.rol === "admin"
+      ? "administrador — puede todo, aunque no tenga permisos tildados"
+      : (perms.length ? "colaborador · " + perms.join(", ") : "colaborador · sin permisos tildados")));
+  });
+}
 
-  // 6 · app instalable
-  f = fila("App instalable");
-  try {
-    const reg = await navigator.serviceWorker.getRegistration();
-    const man = document.querySelector('link[rel="manifest"]');
-    if (!man) f.mal("Falta el manifest.json en la página.");
-    else if (!reg) f.mal("El service worker no está registrado. Recargá la página una vez con señal.");
-    else if (CY.instalada()) f.ok("Corriendo como app instalada.");
-    else f.ok("Lista para instalar. En Chrome: menú ⋮ → Agregar a la pantalla principal.");
-  } catch (e) { f.mal("No se pudo verificar: " + e.message); }
-
-  // 7 · contenido del sitio
-  f = fila("Contenido del sitio");
-  try {
-    // La autoridad es sitio/publicado: lo que está ahí es lo que ve el
-    // público. El contenido.json del repositorio quedó como respaldo por si
-    // Firestore no responde.
-    const pu = await getDoc(doc(db, "sitio", "publicado"));
+/* ═════════ 4 · Los datos ═════════ */
+async function bloqueDatos() {
+  grupo("Los datos");
+  await probar("Leer álbumes", async (f) => {
+    if (!FB) return f.ojo("hace falta firebase-init.js");
+    const snap = await conPlazo(FB.getDocs(FB.collection(FB.db, "albums")), 8000);
+    f.ok(snap.size + " álbum(es)");
+  });
+  await probar("Escribir y borrar en Firestore", async (f) => {
+    if (!FB) return f.ojo("hace falta firebase-init.js");
+    // OJO: Firestore RESERVA los identificadores con forma __algo__ y rechaza
+    // la escritura con invalid-argument. El nombre no puede tener esa forma.
+    const ref = FB.doc(FB.db, "albums", "zz-prueba-diagnostico");
+    await conPlazo(FB.setDoc(ref, { titulo: "prueba de diagnóstico", tipo: "obra" }), 8000);
+    await conPlazo(FB.deleteDoc(ref), 8000);
+    f.ok("escritura y borrado correctos");
+  });
+  await probar("Contenido del sitio", async (f) => {
+    if (!FB) return f.ojo("hace falta firebase-init.js");
+    // La autoridad es sitio/publicado. contenido.json es respaldo.
+    const pu = await conPlazo(FB.getDoc(FB.doc(FB.db, "sitio", "publicado")), 8000);
     const np = (pu.exists() && pu.data().es) ? Object.keys(pu.data().es).length : 0;
-    const r = await fetch("contenido.json", { cache: "no-store" });
-    const j = await r.json();
+    const j = await (await fetch("./contenido.json", { cache: "no-store" })).json();
     const nj = Object.keys((j.textos || {}).es || {}).length;
-    if (!np) {
-      f.ojo(`El sitio todavía no tiene contenido propio: está mostrando el respaldo `
-        + `del repositorio, ${nj} textos. Entrá a Editar y tocá Publicar una vez.`);
-    } else {
-      const faltan = Object.keys((j.textos || {}).es || {})
-        .filter((k) => !(k in pu.data().es)).length;
-      f.ok(`publicado: ${np} textos · respaldo del repositorio: ${nj}`
-        + (faltan ? ` · ojo: ${faltan} claves del respaldo no están publicadas` : " · completo"));
-    }
-  } catch (e) { f.mal(explicar(e)); }
-
-  // 8 · archivos en la papelera
-  f = fila("Papelera de fotos");
-  try {
-    const al = await getDocs(collection(db, "albums"));
+    if (!np) return f.ojo("El sitio no tiene contenido propio: está mostrando el respaldo del repositorio, "
+      + nj + " textos. Entrá a Editar y tocá Publicar una vez.");
+    const faltan = Object.keys((j.textos || {}).es || {}).filter((k) => !(k in pu.data().es)).length;
+    f.ok("publicado: " + np + " textos · respaldo: " + nj
+      + (faltan ? " · ojo: " + faltan + " claves del respaldo no están publicadas" : " · completo"));
+  });
+  await probar("Papelera de fotos", async (f) => {
+    if (!FB) return f.ojo("hace falta firebase-init.js");
+    const al = await conPlazo(FB.getDocs(FB.collection(FB.db, "albums")), 8000);
     let n = 0;
     for (const a of al.docs) {
-      const fs = await getDocs(collection(db, "albums", a.id, "fotos"));
+      const fs = await conPlazo(FB.getDocs(FB.collection(FB.db, "albums", a.id, "fotos")), 8000);
       n += fs.docs.filter((d) => d.data().eliminada).length;
     }
-    f.ok(n
-      ? `${n} foto${n === 1 ? "" : "s"} en la papelera. Los archivos siguen en Cloudinary: `
-        + "el panel no puede borrarlos de ahí, se borran desde el panel de Cloudinary."
-      : "Ninguna foto en la papelera.");
-  } catch (e) { f.mal(explicar(e)); }
+    f.ok(n ? n + " foto(s) en la papelera. Los archivos siguen en Cloudinary: el panel no puede "
+      + "borrarlos de ahí, se borran desde el panel de Cloudinary." : "ninguna foto en la papelera");
+  });
+}
 
-
-  /* ── LAS NEGATIVAS ─────────────────────────────────────────────
-     Acá lo bueno es que FALLE. Que una lectura funcione prueba que ESA
-     lectura está permitida; NO prueba que lo prohibido esté prohibido — y eso
-     es lo único que demuestra que lo publicado en la consola es REGLAS.txt y
-     no otra cosa. El archivo del repositorio es una copia; la autoridad es la
-     consola, y pueden divergir sin aviso.
-     Ver PROTOCOLO-DESARROLLO.md §11.3 en el repositorio `datos`. */
-
-  // 9 · deny por defecto, leyendo
-  f = fila("Reglas vivas · leer una colección sin bloque");
-  try {
-    await getDocs(collection(db, "zz-diagnostico-sin-regla"));
-    f.mal("SE PUDO LEER una colección que no tiene bloque propio. El cierre "
-      + "`match /{document=**} { allow read, write: if false }` de REGLAS.txt no está "
-      + "publicado, o hay otro bloque que lo anula: la base está más abierta de lo que "
-      + "se cree. Pegá REGLAS.txt completo en la consola.");
-  } catch (e) {
-    if (e.code === "permission-denied") f.ok("Denegado, como corresponde: el cierre de REGLAS.txt está publicado.");
-    else f.ojo("No se pudo probar: " + explicar(e));
-  }
-
-  // 10 · deny por defecto, escribiendo
-  f = fila("Reglas vivas · escribir en una colección sin bloque");
-  try {
-    await setDoc(doc(db, "zz-diagnostico-sin-regla", "prueba"), { t: Date.now() });
-    f.mal("SE PUDO ESCRIBIR en una colección sin bloque propio. Borrá "
-      + "zz-diagnostico-sin-regla/prueba desde la consola y republicá REGLAS.txt.");
-  } catch (e) {
-    if (e.code === "permission-denied") f.ok("Denegado, como corresponde.");
-    else f.ojo("No se pudo probar: " + explicar(e));
-  }
-
-  // 11 · nadie se desactiva a sí mismo
-  // Es la prueba del §4.8: la única evidencia de que las reglas publicadas son
-  // las que se creen publicadas. Antes había que ir a la consola de Firebase a
-  // poner activo:false a mano (GUIA-ANDROID.md E4); ahora la corre esta línea.
-  // Es segura porque REGLAS.txt lo prohíbe: si igual pasara, se revierte acá.
-  f = fila("Reglas vivas · desactivarte a vos mismo");
-  const esAdm = CY.esAdmin();
-  try {
-    await updateDoc(doc(db, "usuarios", yo.uid), { activo: false });
-    f.mal("LA ESCRITURA PASÓ: pudiste desactivarte a vos mismo. Las reglas publicadas "
-      + "no son las de REGLAS.txt. Revirtiendo…");
-    try {
-      await updateDoc(doc(db, "usuarios", yo.uid), { activo: true });
-      f.mal("Pasó, y se revirtió: tu cuenta volvió a activo:true. Pegá REGLAS.txt "
-        + "completo en la consola antes de seguir.");
-    } catch (e2) {
-      f.mal("Pasó y NO SE PUDO REVERTIR. Poné activo:true a mano en la consola de "
-        + "Firebase, en usuarios/" + yo.uid);
+/* ═════════ 5 · Que las reglas estén vivas ═════════ */
+// Acá lo bueno es que FALLE. Que una lectura funcione prueba que ESA lectura
+// está permitida; no prueba que lo prohibido esté prohibido — y eso es lo
+// único que demuestra que lo publicado es REGLAS.txt y no otra cosa (§11.3).
+async function negativa(nombre, intento, siPasa) {
+  await probar(nombre, async (f) => {
+    if (!FB) return f.ojo("hace falta firebase-init.js");
+    try { await conPlazo(intento(), 8000); f.mal("PASÓ — " + siPasa); }
+    catch (e) {
+      (e && e.code) === "permission-denied"
+        ? f.ok("denegado, como corresponde")
+        : f.ojo("no se pudo probar: " + motivo(e));
     }
-  } catch (e) {
-    if (e.code !== "permission-denied") f.ojo("No se pudo probar: " + explicar(e));
-    else if (esAdm) f.ok("Denegado: la regla está publicada y viva. Es el resultado que se busca.");
-    else f.ojo("Denegado — pero como no sos administrador, sólo prueba que un colaborador "
-      + "no escribe usuarios. La cláusula de no desactivarse a uno mismo se comprueba "
-      + "corriendo esto con una cuenta admin.");
-  }
+  });
+}
 
+async function bloqueReglas() {
+  grupo("Que las reglas estén vivas");
+  anotar("(acá lo bueno es que FALLE: cada negativa prueba que esa regla está publicada)");
+  await negativa("Leer una colección sin bloque",
+    () => FB.getDocs(FB.collection(FB.db, "zz-diagnostico-sin-regla")),
+    "Se leyó una colección sin bloque propio. El cierre `match /{document=**} { allow read, write: if false }` "
+    + "de REGLAS.txt no está publicado, o hay otro bloque que lo anula.");
+  await negativa("Escribir en una colección sin bloque",
+    () => FB.setDoc(FB.doc(FB.db, "zz-diagnostico-sin-regla", "prueba"), { t: Date.now() }),
+    "Se escribió de verdad. Borrá zz-diagnostico-sin-regla/prueba desde la consola y republicá REGLAS.txt.");
+}
+
+/* ═════════ 6 · Cloudinary ═════════ */
+async function bloqueCloudinary() {
+  grupo("Cloudinary");
+  await probar("Preset de subida", async (f) => {
+    if (!CY || !CY.CLOUDINARY) return f.ojo("hace falta nucleo.js");
+    const { cloud, preset } = CY.CLOUDINARY;
+    const cv = document.createElement("canvas"); cv.width = cv.height = 8;
+    const ctx = cv.getContext("2d"); ctx.fillStyle = "#DCA96B"; ctx.fillRect(0, 0, 8, 8);
+    const blob = await new Promise((r) => cv.toBlob(r, "image/jpeg", .5));
+    const fd = new FormData();
+    fd.append("file", blob); fd.append("upload_preset", preset);
+    fd.append("folder", "casayourte/pruebas"); fd.append("tags", "prueba");
+    const r = await fetch("https://api.cloudinary.com/v1_1/" + cloud + "/image/upload",
+      { method: "POST", body: fd });
+    const j = await r.json();
+    if (r.ok) return f.ok('Preset "' + preset + '" funcionando. Dejó una imagen de 8 píxeles en la carpeta '
+      + '"pruebas" de Cloudinary; se puede borrar o dejar.');
+    const m = (j.error && j.error.message) || "rechazado";
+    f.mal(/preset/i.test(m)
+      ? 'El preset "' + preset + '" no existe o no es unsigned. Crealo en Cloudinary: Settings → Upload → '
+        + 'Add upload preset, con Signing mode en Unsigned.'
+      : m);
+  });
+}
+
+/* ═════════ Desactivarte a vos mismo, a pedido ═════════ */
+// Va en su propio botón porque es la única que escribe sobre tu cuenta (§11.3).
+async function reglaDeUnoMismo() {
+  const b = $("dg-regla"); b.disabled = true;
+  grupo("Desactivarte a vos mismo");
+  await probar("Desactivarte a vos mismo", async (f) => {
+    if (!FB || !quien) return f.ojo("hace falta el núcleo y una sesión abierta");
+    const esAdm = ficha && ficha.rol === "admin";
+    try {
+      await conPlazo(FB.updateDoc(FB.doc(FB.db, "usuarios", quien.uid), { activo: false }), 8000);
+      try {
+        await FB.updateDoc(FB.doc(FB.db, "usuarios", quien.uid), { activo: true });
+        f.mal("LA ESCRITURA PASÓ, y se revirtió: pudiste desactivarte a vos mismo. Las reglas publicadas "
+          + "no son las de REGLAS.txt. Tu cuenta volvió a activo:true. Pegá REGLAS.txt completo en la consola.");
+      } catch (e2) {
+        f.mal("PASÓ y NO SE PUDO REVERTIR. Poné activo:true a mano en la consola de Firebase, en usuarios/" + quien.uid);
+      }
+    } catch (e) {
+      if ((e && e.code) !== "permission-denied") return f.ojo("no se pudo probar: " + motivo(e));
+      f[esAdm ? "ok" : "ojo"](esAdm
+        ? "denegado: la regla está publicada y viva. Es el resultado que se busca."
+        : "denegado — pero como no sos administrador, esto sólo prueba que un colaborador no escribe "
+          + "usuarios. La cláusula de no desactivarse a uno mismo se comprueba con una cuenta admin.");
+    }
+  });
+  b.disabled = false;
+}
+
+/* ═════════ Arranque ═════════ */
+async function probarTodo() {
+  const b = $("dg-run"); b.disabled = true; b.textContent = "Probando…";
+  $("dg-out").innerHTML = ""; informe.length = 0;
+  anotar("CasaYourte · diagnóstico " + SELLO + " · " + new Date().toISOString());
+  anotar("url: " + location.href);
+  await bloqueNavegador();
+  await bloqueModulos();
+  await bloqueSesion();
+  await bloqueDatos();
+  await bloqueReglas();
+  await bloqueCloudinary();
+  anotar("\n— fin —");
   b.disabled = false; b.textContent = "Probar de nuevo";
+}
+
+$("dg-run").addEventListener("click", probarTodo);
+$("dg-regla").addEventListener("click", reglaDeUnoMismo);
+$("dg-copiar").addEventListener("click", async () => {
+  const ta = $("dg-log");
+  try { await navigator.clipboard.writeText(ta.value); $("dg-copiar").textContent = "Copiado ✓"; }
+  catch { ta.removeAttribute("readonly"); ta.focus(); ta.select(); $("dg-copiar").textContent = "Copialo a mano"; }
 });
 
-
 // Se corre solo al entrar: para eso se abre esta pantalla.
-$("dg-run").click();
+probarTodo();
 
 </script>
 </body>
