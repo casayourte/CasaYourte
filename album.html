@@ -225,6 +225,20 @@ const T = {
     fotos: "photos",
     sinEtapa: "autres",
   },
+  // Esto es el respaldo estático de la página, no el contenido: la autoridad
+  // es Firestore y se traduce desde traducir.html. Son nueve rótulos de la
+  // interfaz —no textos del sitio—, así que viven acá y no pasan por ahí.
+  en: {
+    eyebrow: "Build archive",
+    titulo: "Every yurt, <em>step by step</em>.",
+    lede: "From the workshop to the finished yurt. The photos follow the real order of the build, grouped by stage: the perimeter ring, the toono, the trei, the roof, the covers. The work as it happened, not as it looks in a catalogue.",
+    cargando: "Loading albums…",
+    vacio: "No albums published yet. Come back soon.",
+    error: "The albums could not be loaded right now.",
+    volver: "← Back to the site",
+    fotos: "photos",
+    sinEtapa: "other",
+  },
 };
 
 // Las 16 etapas, en el orden de la obra. Es la misma lista del panel y del
@@ -234,6 +248,11 @@ const ETAPAS = ["01-terreno-y-apoyos","02-taller-piezas","03-plancher","04-trei"
   "09-lonas-y-costura","10-aislacion","11-aberturas-y-umbrales","12-skydome",
   "13-terminada-exterior","14-terminada-interior","15-equipo-y-obra","16-desmontaje"];
 
+/* Los nombres de las 16 categorías por idioma, para los álbumes viejos que no
+   tienen su propia lista. Sólo está el francés: un idioma que se sume entra
+   acá cuando sus nombres pasen por la pantalla de traducción, no antes —son
+   términos del oficio y no se inventan desde el código. Mientras tanto caen a
+   `legible(id)`, que da el nombre en español. */
 const NOMBRE_ETAPA = {
   fr: {
     "01-terreno-y-apoyos":"terrain et appuis","02-taller-piezas":"atelier · pièces",
@@ -353,6 +372,7 @@ function pintarTextos() {
 // revés se atarían a botones que después se reemplazan. Los que están escritos
 // en el HTML son el respaldo para cuando el JS no corre.
 CY_IDIOMAS.pintarConmutador(document.querySelector(".lang"), idioma, "corta");
+CY_IDIOMAS.pintarAlternas("https://casayourte.com/album.html");
 
 document.querySelectorAll(".lang button").forEach((b) =>
   b.addEventListener("click", () => {
@@ -405,7 +425,16 @@ function etapasDe(a) {
   const guardado = Array.isArray(a.ordenEtapas) ? a.ordenEtapas : [];
   const orden = [...guardado.filter((e) => ETAPAS.includes(e)),
                  ...ETAPAS.filter((e) => !guardado.includes(e))];
-  return orden.map((id) => ({ id, es: legible(id), fr: NOMBRE_ETAPA.fr[id] || "" }));
+  // El nombre por idioma sale de NOMBRE_ETAPA, no de un `.fr` escrito acá: si
+  // mañana hay un tercer idioma con nombres propios, aparecen solos. Los que
+  // no estén caen a `legible(id)` en nombreEtapa(), que es mejor que un hueco.
+  return orden.map((id) => {
+    const e = { id, [CY_IDIOMAS.fuente()]: legible(id) };
+    Object.keys(NOMBRE_ETAPA).forEach((l) => {
+      if (NOMBRE_ETAPA[l][id]) e[l] = NOMBRE_ETAPA[l][id];
+    });
+    return e;
+  });
 }
 
 // Si falta el francés se usa el español: es mejor que un hueco.

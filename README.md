@@ -156,7 +156,7 @@ O sea: no es un rediseño, es **sacar un dato que ya está declarado y hacer que
 | ~~**1**~~ | ~~El catálogo manda~~ **· HECHO el 2026-09-08.** Nace `idiomas.js`, script clásico sin dependencias que comparten `index.html` y `album.html`. Sumar un idioma es **pegar una línea** en su catálogo | ✅ Verificado en un navegador real: 10 casos, todos pasan, sin errores de JS. Ver abajo |
 | ~~**2**~~ | ~~La pantalla de traducción, para N~~ **· HECHA el 2026-09-08.** Se traduce a **un idioma por vez**, elegido en una fila que solo aparece cuando hay más de uno. Las piezas llevan un mapa `tr` de traducciones en vez de un campo `fr`, y el registro de procedencia pasa a ser por idioma | ✅ Verificada de punta a punta contra un Firebase de mentira. Ver abajo |
 | ~~**3**~~ | ~~El editor~~ **· HECHA el 2026-09-08.** `editar.html` saca los idiomas del catálogo: los chips se dibujan solos, el `?lang=` lo arma `idiomas.js`, y no queda ningún `["es","fr"]` escrito a mano | ✅ Verificada en el banco con uno, dos y tres idiomas. Ver abajo |
-| **4** | **Entra el inglés.** Recién acá se suma `"en"` al catálogo, y empieza el trabajo de contenido con el orden de abajo | Los 143 textos, con el diagnóstico y la revisión del sitio publicado |
+| ~~**4**~~ | ~~Entra el inglés~~ **· LA PARTE DE CÓDIGO, HECHA el 2026-09-08.** `"en"` está en el catálogo **en preparación**: existe para el panel y la pantalla de traducción, y no aparece en el sitio. Queda el trabajo de contenido: los 143 textos, con el orden de abajo | ✅ Verificada en el banco, incluida la negativa: un navegador en inglés **sigue viendo el sitio en español**. Ver abajo |
 
 ### Lo que hizo la tanda 1, y lo que encontró
 
@@ -335,6 +335,79 @@ Las cinco piezas de arriba **siguen mal traducidas**: esta tanda hace que se vea
 no se puedan congelar por accidente. Corregirlas es trabajo de contenido, y va con el
 orden de tres pasos de abajo.
 
+### Lo que hizo la tanda 4, y lo que encontró
+
+**El inglés existe, y el sitio no lo ofrece todavía.** Eso no es un estado a medias: es lo
+que hacía falta. Un idioma tiene que existir **antes** de poder traducirlo —la pantalla de
+traducción no puede traducir a un idioma que no está en el catálogo—, y mientras se
+traduce nadie tiene que caer en una página mitad en un idioma y mitad en otro.
+
+Se resolvió con un campo en el catálogo:
+
+```js
+publico: false,   // en preparación
+```
+
+| Dónde | Qué ve |
+|---|---|
+| El conmutador del sitio | **ES · FR.** El inglés no está |
+| La deducción automática | **nunca** elige un idioma en preparación. Un navegador en inglés ve el sitio en español |
+| Los `hreflang` | **es, fr, x-default.** No se le anuncia a ningún buscador una versión sin traducir |
+| `?lang=en` a mano | **funciona**, para poder mirar cómo va. Y el conmutador muestra EN marcado, para poder volver |
+| El editor | **ES · FR · EN.** Es donde hay que poder escribirlo |
+| La pantalla de traducción | el inglés aparece como destino, con su `brief` |
+
+El campo se lee al revés a propósito: **sin escribir nada, un idioma es público.** Hay que
+decir `publico: false` para esconderlo, no `publico: true` para mostrarlo — así olvidarse
+del campo no esconde un idioma sin que nadie se entere. El día que el inglés esté listo se
+borra esa línea y sale a la vez en el conmutador, en la deducción y en los buscadores.
+
+**Los `hreflang` salen del catálogo.** Estaban escritos a mano en el `<head>` de dos
+páginas: sumar un idioma obligaba a acordarse de editarlos, y olvidarse no se nota nunca
+desde adentro. `pintarAlternas()` los rehace desde el catálogo, con la misma regla que ya
+usaba `urlCon()` —el idioma fuente no lleva `?lang=`, su URL es la canónica y la del
+`x-default`—. Los escritos en el HTML quedan como respaldo para un buscador que no corra
+JS, igual que los botones del conmutador.
+
+**Lo que encontró:**
+
+| | |
+|---|---|
+| **La cabecera de `idiomas.js` prometía algo que no existía** | decía *«la pantalla de diagnóstico avisa si divergen»* las listas de idiomas. `diagnostico.html` **no miraba los idiomas por ningún lado** — la palabra no aparecía una sola vez en el archivo. Ahora sí |
+| **Un `.fr` escrito a mano en `album.html`** | `etapasDe()` armaba el nombre de las 16 categorías con `NOMBRE_ETAPA.fr[id]`. Ahora recorre los idiomas que haya |
+
+**El bloque nuevo del diagnóstico** compara las **tres listas que tienen que contarse la
+misma historia y ninguna sabe de las otras**: el catálogo (`idiomas.js`), el respaldo
+(`contenido.json`) y lo publicado (`sitio/publicado`). Divergen en silencio — el sitio
+sigue andando, sólo que con un idioma de menos o con la mitad de los textos.
+
+| Prueba | Qué contesta |
+|---|---|
+| El catálogo | el sello, cuál es el idioma fuente, cuáles están en el sitio y cuáles en preparación |
+| El catálogo contra el respaldo | un idioma que el sitio **ofrece** y que `contenido.json` no tiene es un error; uno en preparación que falta, no |
+| Cuánto está traducido | cuántas claves tiene cada idioma sobre el total del fuente. Si a un idioma **del conmutador** le faltan, avisa |
+| Los `hreflang` escritos en el HTML | que el respaldo sin JS no haya quedado viejo |
+
+**Verificado en el banco**, con el navegador puesto en inglés:
+
+| Prueba | Resultado |
+|---|---|
+| Conmutador de la portada y del álbum | `["es","fr"]` — el inglés no aparece |
+| `hreflang` del `<head>` vivo | es, fr, x-default, con la portada canónica sin `?lang=` |
+| **Deducción con `navigator.languages = ["en-US"]`** | **`es`** — es la negativa que importa: sin `publico: false` habría devuelto `en` |
+| `index.html?lang=en` | pinta en inglés, `<html lang="en">`, y el conmutador muestra ES · FR · **EN** marcado |
+| Editor | tres chips |
+| Pantalla de traducción | destinos `["fr","en"]`, con el `brief` del inglés |
+| Los cuatro bloques del diagnóstico | corren y dicen lo que corresponde, incluido el aviso de un idioma público al que le faltan textos |
+
+**Lo que NO hice, y por qué:** los 143 textos del sitio en inglés, y los nombres en inglés
+de las 16 categorías de obra. Son términos del oficio y contenido del sitio: van por el
+orden de trabajo de abajo —el español primero, después la traducción que cumpla el
+objetivo del sitio en ese idioma—, con la exportación de `traducir.html`, no inventados
+desde el código. Lo único que sí traduje son los **nueve rótulos de interfaz** de
+`album.html` («Cargando los álbumes…», «Volver al sitio»), que son respaldo estático de la
+página y no pasan por la pantalla de traducción.
+
 ### Lo que hizo la tanda 3, y lo que encontró
 
 `editar.html` tenía la lista `["es", "fr"]` escrita a mano en **siete lugares** —el
@@ -424,13 +497,13 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 | Archivo | Constante | Valor de esta versión |
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-14` |
-| `sw.js` | `VERSION` | `cy-shell-v33` |
+| `sw.js` | `VERSION` | `cy-shell-v34` |
 | `admin.html` | `PANEL` | `admin-17` |
 | `editar.html` | `EDITOR` | `editar-7` |
 | `calculo.html` | `CY.PANEL` | `calculo-8` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-3` |
-| `diagnostico.html` | `CY.PANEL` | `diagnostico-6` |
-| `idiomas.js` | `SELLO` | `idiomas-2` |
+| `diagnostico.html` | `CY.PANEL` | `diagnostico-7` |
+| `idiomas.js` | `SELLO` | `idiomas-3` |
 | `traducir.html` | `TRADUCTOR` | `traducir-13` |
 
 *Verificados uno por uno contra los archivos el 2026-09-07; `sw.js` y `diagnostico.html` actualizados el 2026-09-08.*

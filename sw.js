@@ -46,6 +46,11 @@
 // v22 (18-ago-2026) — en la grilla, el tacho reemplaza al lápiz.
 // v23 (18-ago-2026) — la lista de categorías se dibuja: 'div div' se comía las filas.
 // v24 (19-ago-2026) — selección múltiple en la grilla: mostrar, mover y quitar.
+// v34 (8-sep-2026) — entra el inglés al catálogo, en preparación: existe
+//   para el panel y para traducir, y no aparece en el sitio hasta que
+//   tenga textos. Los hreflang salen del catálogo. Y el diagnóstico suma
+//   el bloque de idiomas que la cabecera de idiomas.js prometía y no
+//   existía: compara catálogo, respaldo y lo publicado.
 // v33 (8-sep-2026) — editar.html saca los idiomas del catálogo: los chips
 //   se dibujan solos, el ?lang= lo arma idiomas.js, y no queda ningún
 //   ['es','fr'] escrito a mano. Y entra idiomas.js al SHELL: traducir.html
@@ -98,7 +103,7 @@
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v33';
+const VERSION = 'cy-shell-v34';
 
 const SHELL = [
   './admin.html',

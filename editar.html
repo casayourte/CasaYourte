@@ -353,7 +353,9 @@ $("paginas").addEventListener("click", (e) => {
    engancha primero y se repinta después, el listener queda sobre botones que
    ya no están. Con un solo idioma la fila no tiene nada que elegir y se
    esconde, igual que la fila de destino de traducir.html. */
-CY_IDIOMAS.pintarConmutador($("idiomas"), idioma, "corta");
+// La lista ENTERA, no sólo los públicos: acá hay que poder escribir el idioma
+// que se está preparando, que es justamente el que el sitio todavía no ofrece.
+CY_IDIOMAS.pintarConmutador($("idiomas"), idioma, "corta", CY_IDIOMAS.lista);
 $("idiomas").classList.toggle("hide", IDIOMAS().length < 2);
 $("idiomas").addEventListener("click", (e) => {
   const b = e.target.closest("button"); if (!b) return;

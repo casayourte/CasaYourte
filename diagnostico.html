@@ -72,6 +72,10 @@
 
 </div>
 
+<!-- Clásico y antes del módulo: es el catálogo de idiomas, y esta pantalla
+     lo compara contra los datos. Ver idiomas.js. -->
+<script src="idiomas.js?v=1"></script>
+
 <script type="module">
 // ═══════════════════════════════════════════════════════════
 //  CASAYOURTE — diagnóstico. La página que se abre cuando algo se rompe.
@@ -94,7 +98,7 @@
 //  desde que la página existe. Se veía como una pantalla que se quedaba
 //  cargando, no como un error.
 // ═══════════════════════════════════════════════════════════
-const SELLO = "diagnostico-6";
+const SELLO = "diagnostico-7";
 const $ = (id) => document.getElementById(id);
 
 let FB = null, CY = null, quien = null, ficha = null;
@@ -289,7 +293,92 @@ async function bloqueDatos() {
   });
 }
 
-/* ═════════ 5 · Que las reglas estén vivas ═════════ */
+
+/* ═════════ 5 · Los idiomas ═════════
+   La cabecera de idiomas.js prometía que «la pantalla de diagnóstico avisa si
+   divergen» las listas de idiomas. No era cierto: esta pantalla no miraba los
+   idiomas por ningún lado. Se cumple acá.
+
+   Hay TRES listas que tienen que contarse la misma historia, y ninguna sabe de
+   las otras: el catálogo (idiomas.js), el respaldo (contenido.json) y lo que
+   está publicado (sitio/publicado). Divergen en silencio: el sitio sigue
+   andando, sólo que en un idioma de menos o con la mitad de los textos. */
+async function bloqueIdiomas() {
+  grupo("Los idiomas");
+
+  await probar("El catálogo", async (f) => {
+    if (typeof CY_IDIOMAS === "undefined")
+      return f.mal("No cargó idiomas.js. Sin él, index.html y album.html arrancan sin conmutador y traducir.html no sabe a qué idioma traduce.");
+    const pub = CY_IDIOMAS.publicos().map((l) => l.id);
+    const prep = CY_IDIOMAS.lista.filter((l) => !CY_IDIOMAS.esPublico(l)).map((l) => l.id);
+    f.ok(CY_IDIOMAS.SELLO + " · fuente " + CY_IDIOMAS.fuente()
+      + " · en el sitio: " + pub.join(", ")
+      + (prep.length ? " · en preparación: " + prep.join(", ") : ""));
+  });
+
+  await probar("El catálogo contra el respaldo", async (f) => {
+    if (typeof CY_IDIOMAS === "undefined") return f.ojo("hace falta idiomas.js");
+    const j = await (await fetch("./contenido.json?d=" + Date.now(), { cache: "no-store" })).json();
+    const enElRespaldo = Object.keys((j.textos || {}));
+    const pub = CY_IDIOMAS.publicos().map((l) => l.id);
+    const faltan = pub.filter((l) => enElRespaldo.indexOf(l) === -1);
+    const sobran = enElRespaldo.filter((l) => CY_IDIOMAS.ids().indexOf(l) === -1);
+    if (faltan.length) return f.mal("El catálogo ofrece " + faltan.join(", ")
+      + " y contenido.json no tiene sus textos. Sin JS o sin Firestore, ese idioma cae al español entero.");
+    if (sobran.length) return f.ojo("contenido.json tiene textos en " + sobran.join(", ")
+      + " y el catálogo no lo conoce: es texto muerto, o falta la entrada en idiomas.js.");
+    const prep = CY_IDIOMAS.lista.filter((l) => !CY_IDIOMAS.esPublico(l)).map((l) => l.id)
+      .filter((l) => enElRespaldo.indexOf(l) === -1);
+    f.ok("coinciden en " + enElRespaldo.join(", ")
+      + (prep.length ? " · " + prep.join(", ") + " todavía no, y está bien: está en preparación" : ""));
+  });
+
+  await probar("Cuánto está traducido", async (f) => {
+    if (!FB) return f.ojo("hace falta firebase-init.js");
+    if (typeof CY_IDIOMAS === "undefined") return f.ojo("hace falta idiomas.js");
+    const pu = await conPlazo(FB.getDoc(FB.doc(FB.db, "sitio", "publicado")), 8000);
+    if (!pu.exists()) return f.ojo("todavía no hay nada publicado");
+    const d = pu.data();
+    const F = CY_IDIOMAS.fuente();
+    const total = Object.keys(d[F] || {}).length;
+    if (!total) return f.ojo("lo publicado no tiene textos en el idioma fuente");
+    const partes = CY_IDIOMAS.lista.map((l) => {
+      const n = Object.keys(d[l.id] || {}).length;
+      return l.id + " " + n + "/" + total
+        + (CY_IDIOMAS.esPublico(l) ? "" : " (en preparación)");
+    });
+    // Un idioma que el sitio OFRECE y que está a medias sí es un problema:
+    // quien lo elige ve la página mitad en un idioma y mitad en otro.
+    const flojo = CY_IDIOMAS.publicos().filter((l) =>
+      Object.keys(d[l.id] || {}).length < total);
+    (flojo.length ? f.ojo : f.ok)(partes.join(" · ")
+      + (flojo.length ? " · " + flojo.map((l) => l.id).join(", ")
+          + " está en el conmutador y le faltan textos: lo que falte se ve en "
+          + F + ". La pantalla de traducción dice cuáles." : ""));
+  });
+
+  await probar("Los hreflang escritos en el HTML", async (f) => {
+    if (typeof CY_IDIOMAS === "undefined") return f.ojo("hace falta idiomas.js");
+    // Los pinta idiomas.js al cargar, pero los que están escritos en el <head>
+    // son lo único que ve un buscador que no corra JS. Que se queden viejos no
+    // se nota desde adentro nunca: por eso se comprueban.
+    const esperados = CY_IDIOMAS.publicos().map((l) => l.id).concat(["x-default"]).sort();
+    const problemas = [];
+    for (const pag of ["index.html", "album.html"]) {
+      const html = await (await fetch("./" + pag + "?d=" + Date.now(), { cache: "no-store" })).text();
+      const cabeza = html.split(/<\/head>/i)[0] || "";
+      const hay = (cabeza.match(/hreflang="([^"]+)"/g) || [])
+        .map((x) => x.replace(/.*hreflang="([^"]+)".*/, "$1")).sort();
+      if (hay.join(",") !== esperados.join(","))
+        problemas.push(pag + ": tiene [" + hay.join(", ") + "] y le corresponden [" + esperados.join(", ") + "]");
+    }
+    problemas.length
+      ? f.ojo(problemas.join(" · ") + " — el respaldo sin JS quedó viejo")
+      : f.ok("index.html y album.html declaran " + esperados.join(", "));
+  });
+}
+
+/* ═════════ 6 · Que las reglas estén vivas ═════════ */
 // Acá lo bueno es que FALLE. Que una lectura funcione prueba que ESA lectura
 // está permitida; no prueba que lo prohibido esté prohibido — y eso es lo
 // único que demuestra que lo publicado es REGLAS.txt y no otra cosa (§11.3).
@@ -380,6 +469,7 @@ async function probarTodo() {
   await bloqueModulos();
   await bloqueSesion();
   await bloqueDatos();
+  await bloqueIdiomas();
   await bloqueReglas();
   await bloqueCloudinary();
   anotar("\n— fin —");

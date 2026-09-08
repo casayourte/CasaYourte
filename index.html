@@ -1134,6 +1134,11 @@ window.CY_SITIO = { version:1, GRUPOS, aplicarOrden,
 // escritos en el HTML son el respaldo para cuando el JS no corre.
 CY_IDIOMAS.pintarConmutador(document.querySelector(".lang"), idiomaInicial(), "corta");
 
+// Y los <link hreflang> del <head> salen del mismo catálogo, para que sumar un
+// idioma no obligue a acordarse de editar dos <head> a mano. Los escritos en el
+// HTML son el respaldo para un buscador que no corra JS.
+CY_IDIOMAS.pintarAlternas("https://casayourte.com/");
+
 document.querySelectorAll(".lang button").forEach(b=>
   b.addEventListener("click",()=>{
     recordarIdioma(b.dataset.set);

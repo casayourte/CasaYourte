@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    idiomas.js — EL CATÁLOGO DE IDIOMAS DEL SITIO PÚBLICO.
-   Sello: idiomas-1
+   Sello: idiomas-3
 
    Fuente única. Para sumar un idioma se agrega UNA entrada acá abajo y se
    escriben sus textos; no se toca ninguna otra lógica.
@@ -20,8 +20,15 @@
       escrito a mano en una decena de lugares entre las dos. Por eso sumar un
       tercer idioma costaba lo que costaba.
 
-   El campo `idiomas` de contenido.json refleja esta lista. Si se agrega uno acá,
-   se agrega allá también — la pantalla de diagnóstico avisa si divergen.
+   UN IDIOMA PUEDE ESTAR EN PREPARACIÓN. `publico: false` lo deja existir para
+   el panel y la pantalla de traducción, y lo saca del conmutador del sitio, de
+   la deducción automática y de los `hreflang`. Sirve para lo que siempre pasa:
+   el idioma tiene que existir ANTES de poder traducirlo, y mientras se traduce
+   nadie tiene que caer en una página a medias. Cuando está listo se le saca el
+   `publico: false` y sale a la vez en todos lados.
+
+   El campo `idiomas` de contenido.json refleja los que ya tienen textos, no los
+   que están en preparación. La pantalla de diagnóstico compara las dos listas.
    ═══════════════════════════════════════════════════════════ */
 (function (raiz) {
   "use strict";
@@ -56,12 +63,28 @@
            + "buscá cómo se dice cada término de construcción de yurtas en el mundo "
            + "francófono antes de decidir. Tratamiento de usted (vous)."
     },
+    {
+      id: "en",
+      corta: "EN",
+      larga: "English",
+      fuente: false,
+      // EN PREPARACIÓN. Existe para el panel y la pantalla de traducción; no
+      // aparece en el conmutador del sitio, no se deduce solo y no lleva
+      // hreflang. Se le saca esta línea cuando los textos estén, y ese día
+      // sale a la vez en el conmutador, en la deducción y en los buscadores.
+      publico: false,
+      prefijos: ["en"],
+      // Sin zonas horarias a propósito: el inglés se habla en demasiados
+      // lugares como para deducirlo de dónde está la persona, y varios de
+      // esos lugares son de habla hispana. El idioma del aparato alcanza.
+      zonas: [],
+      brief: "TRANSLATION into international English. Translate the USE, not the "
+           + "word: look up how each yurt-building term is actually said in "
+           + "English before deciding. Neutral register, second person, no "
+           + "regionalisms (neither British nor US-specific)."
+    },
     // ↑ La coma queda a propósito: sumar un idioma tiene que ser pegar una
     //   línea acá abajo, sin tener que acordarse de tocar la de arriba.
-    // Para sumar inglés:
-    //   { id:"en", corta:"EN", larga:"English", fuente:false, prefijos:["en"],
-    //     zonas:[], brief:"TRANSLATION into … · qué registro, qué tratamiento" }
-    // …y sus textos en contenido.json.
   ];
 
   var CLAVE_GUARDADO = "cy-idioma";
@@ -70,6 +93,12 @@
   function existe(id) { return ids().indexOf(id) !== -1; }
   function porId(id) { return LISTA.filter(function (l) { return l.id === id; })[0] || null; }
   function destinos() { return LISTA.filter(function (l) { return !l.fuente; }); }
+  /* Los que ve quien entra al sitio. El campo se lee al revés a propósito: sin
+     escribir nada, un idioma es público — hay que decir `publico: false` para
+     esconderlo, no `publico: true` para mostrarlo. Así olvidarse del campo no
+     esconde un idioma sin que nadie se entere. */
+  function esPublico(l) { return l && l.publico !== false; }
+  function publicos() { return LISTA.filter(esPublico); }
   function fuente() {
     var f = LISTA.filter(function (l) { return l.fuente; })[0];
     return f ? f.id : LISTA[0].id;
@@ -79,10 +108,13 @@
      Se recorre el catálogo en orden, así que el que se agregue después no
      le roba la deducción a uno que ya estaba. */
   function deducido() {
+    // Sólo entre los públicos: deducir un idioma en preparación sería mandar a
+    // alguien, sin que lo pida, a la versión que todavía no está traducida.
+    var CAND = publicos();
     try {
       var delAparato = navigator.languages || [navigator.language || ""];
-      for (var i = 0; i < LISTA.length; i++) {
-        var l = LISTA[i];
+      for (var i = 0; i < CAND.length; i++) {
+        var l = CAND[i];
         if (!l.prefijos.length) continue;
         for (var j = 0; j < delAparato.length; j++) {
           var cod = String(delAparato[j]).toLowerCase();
@@ -92,8 +124,8 @@
         }
       }
       var zona = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
-      for (var m = 0; m < LISTA.length; m++) {
-        if (LISTA[m].zonas.indexOf(zona) !== -1) return LISTA[m].id;
+      for (var m = 0; m < CAND.length; m++) {
+        if (CAND[m].zonas.indexOf(zona) !== -1) return CAND[m].id;
       }
     } catch (e) { /* un navegador viejo: queda el idioma fuente */ }
     return fuente();
@@ -123,11 +155,24 @@
   }
 
   /* Rehace los botones del conmutador desde el catálogo. Los que están
-     escritos en el HTML son el respaldo para cuando el JS no corre. */
-  function pintarConmutador(contenedor, actual, formato) {
+     escritos en el HTML son el respaldo para cuando el JS no corre.
+
+     Por defecto pinta sólo los públicos: es lo que corresponde en el sitio.
+     El editor le pasa `CY_IDIOMAS.lista` entera, porque ahí sí hay que poder
+     escribir el idioma que se está preparando.
+
+     Y si el idioma actual no está en la lista que toca —alguien mirando el
+     sitio con ?lang= de un idioma en preparación—, se agrega igual: sin eso
+     el conmutador no marcaría ninguno y no habría con qué volver. */
+  function pintarConmutador(contenedor, actual, formato, lista) {
     if (!contenedor) return;
+    var muestra = (lista || publicos()).slice();
+    if (actual && !muestra.some(function (l) { return l.id === actual; })) {
+      var extra = porId(actual);
+      if (extra) muestra.push(extra);
+    }
     contenedor.innerHTML = "";
-    LISTA.forEach(function (l) {
+    muestra.forEach(function (l) {
       var b = document.createElement("button");
       b.type = "button";
       b.dataset.set = l.id;
@@ -163,12 +208,49 @@
     return (idioma && idioma !== fuente()) ? "?lang=" + idioma : "";
   }
 
+  /* Los <link rel="alternate" hreflang> salen del catálogo, igual que el
+     conmutador: si no, sumar un idioma obligaría a acordarse de editar el
+     <head> de dos páginas, y olvidarse no se nota nunca desde adentro.
+
+     Los que están escritos en el HTML son el respaldo para un buscador que no
+     corra JS. Acá se borran y se vuelven a escribir, así que no se duplican.
+
+     Sólo los PÚBLICOS: anunciarle a un buscador una versión que todavía no
+     está traducida es pedirle que la indexe a medias. El x-default apunta al
+     idioma fuente, que es la dirección canónica y la que no lleva ?lang=. */
+  function pintarAlternas(base) {
+    if (typeof document === "undefined") return;
+    var cabeza = document.head; if (!cabeza) return;
+    var u;
+    try { u = new URL(base || location.href); }
+    catch (e) { return; }
+    u.hash = "";
+    u.searchParams.delete("lang");
+    u.searchParams.delete("edit");
+    u.searchParams.delete("v");
+
+    Array.prototype.slice.call(
+      cabeza.querySelectorAll('link[rel="alternate"][hreflang]')
+    ).forEach(function (n) { n.parentNode.removeChild(n); });
+
+    var poner = function (codigo, idioma) {
+      var l = document.createElement("link");
+      l.setAttribute("rel", "alternate");
+      l.setAttribute("hreflang", codigo);
+      l.setAttribute("href", urlCon(new URL(u.href), idioma).toString());
+      cabeza.appendChild(l);
+    };
+    publicos().forEach(function (l) { poner(l.id, l.id); });
+    poner("x-default", fuente());
+  }
+
   raiz.CY_IDIOMAS = {
     enIdioma: enIdioma, campo: campo, urlCon: urlCon, sufijoUrl: sufijoUrl,
-    porId: porId, destinos: destinos,
+    porId: porId, destinos: destinos, publicos: publicos, esPublico: esPublico,
     lista: LISTA, ids: ids, existe: existe, fuente: fuente,
     deducido: deducido, elegido: elegido, recordar: recordar,
     inicial: inicial, pintarConmutador: pintarConmutador,
-    SELLO: "idiomas-2"
+    pintarAlternas: pintarAlternas,
+    SELLO: "idiomas-3"
   };
 })(window);
