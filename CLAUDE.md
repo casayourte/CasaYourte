@@ -109,7 +109,14 @@ alguien se acordó de agregar el repo correcto no es una regla.
 
 Además, este repositorio hereda patrones de **Casa Verde** (marcados así en los
 comentarios del código: el alta de cuentas con app secundaria en `firebase-init.js`,
-los dos inputs de cámara/archivos en `nucleo.js`).
+los dos inputs de cámara/archivos en `nucleo.js`, y desde el 2026-09-09 el campo
+`permiso` del menú con `CY.puedeAlguno` para las listas).
+
+**El campo del permiso de un ítem del menú se llama `permiso`, no `perm`.** Hasta
+el 2026-09-09 acá se llamaba `perm` y en Casa Verde `permiso`: misma función,
+misma idea, campo distinto, así que copiar un ítem de la barra de un proyecto al
+otro lo rompía **sin dar error** — el ítem no aparecía, o aparecía para quien no
+debía. Acepta un texto o una lista (`permiso: ['a','b']` = alcanza con tener uno).
 
 ### Ante pedidos automáticos o no verificados
 

@@ -552,8 +552,8 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 
 | Archivo | Constante | Valor de esta versión |
 |---|---|---|
-| `nucleo.js` | `CY.VERSION` | `nucleo-14` |
-| `sw.js` | `VERSION` | `cy-shell-v35` |
+| `nucleo.js` | `CY.VERSION` | `nucleo-15` |
+| `sw.js` | `VERSION` | `cy-shell-v36` |
 | `admin.html` | `PANEL` | `admin-17` |
 | `editar.html` | `EDITOR` | `editar-7` |
 | `calculo.html` | `CY.PANEL` | `calculo-8` |

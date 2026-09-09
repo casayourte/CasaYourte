@@ -12,7 +12,7 @@
 
 export const CY = {};
 
-CY.VERSION = 'nucleo-14';
+CY.VERSION = 'nucleo-15';
 
 // ═════════════════════════════════════════════════════════════
 //  BOTÓN ATRÁS DE ANDROID
@@ -535,21 +535,21 @@ CY.PERMISOS = [
 // Navegación. grupo 'directo' va en la barra de abajo; el resto en la hoja «Más».
 CY.NAV = [
   { id:'albumes',  label:'Álbumes de obra', corto:'Álbumes', icono:'photo_library',
-    href:'./admin.html',       grupo:'directo', perm:'albumes' },
+    href:'./admin.html',       grupo:'directo', permiso:'albumes' },
   // La edición del sitio es UNA sola: viendo la página real. El editor por
   // formularios se retiró en la T27 para no tener dos caminos que escriben lo
   // mismo y se desincronizan.
   { id:'editar',   label:'Editar el sitio', corto:'Editar', icono:'edit_note',
-    href:'./editar.html',      grupo:'directo', perm:'contenido' },
+    href:'./editar.html',      grupo:'directo', permiso:'contenido' },
   { id:'calculo',  label:'Cálculo de taller', corto:'Cálculo', icono:'straighten',
-    href:'./calculo.html',     grupo:'directo', perm:'calculo' },
+    href:'./calculo.html',     grupo:'directo', permiso:'calculo' },
 
   // Traducir NO va en la barra de abajo: cuatro pestañas y «Más» ya es el
   // límite de lo que se toca con el pulgar. Y no es trabajo de todos los
   // días: se hace por tandas, cuando hay texto nuevo en español.
   // Pide 'contenido' porque escribe en sitio/*, igual que el editor.
   { id:'traducir', label:'Revisar y traducir', icono:'translate',
-    href:'./traducir.html',    grupo:'contenido', perm:'contenido',
+    href:'./traducir.html',    grupo:'contenido', permiso:'contenido',
     detalle:'Auditar lo escrito en español y traer el francés traducido.' },
 
   { id:'sitio',    label:'Ver el sitio', icono:'public',
@@ -586,10 +586,24 @@ CY.puede = function (q) {
   return (u.permisos || {})[q] === true;
 };
 
+/* ¿Tiene ALGUNO de estos permisos? Viene de Casa Verde, que ya lo tenía.
+   Va por CY.puede() y no por u.permisos directo, a propósito: así hereda las
+   dos excepciones de arriba —«usuarios» nunca, y «fotos» que en realidad es
+   «albumes»—. Repetirlas acá sería la segunda copia de una regla que ya
+   existe, y las dos copias se separan sin avisar. */
+CY.puedeAlguno = function (lista) {
+  return (lista || []).some((q) => CY.puede(q));
+};
+
+/* El campo se llama `permiso`, como en Casa Verde. Antes acá se llamaba
+   `perm` y allá `permiso`: misma función, misma idea, campo distinto, así que
+   copiar un ítem del menú de un proyecto al otro lo rompía SIN ERROR — el
+   ítem no aparecía, o aparecía para quien no debía. Se unificó en la palabra
+   entera (T·2026-09-09, decisión de Mauro). */
 CY.verItem = function (it) {
   if (it.soloAdmin) return CY.esAdmin();
-  if (!it.perm) return true;
-  return CY.puede(it.perm);
+  if (!it.permiso) return true;
+  return Array.isArray(it.permiso) ? CY.puedeAlguno(it.permiso) : CY.puede(it.permiso);
 };
 
 CY.inicialesDe = function (nombre) {
