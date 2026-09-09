@@ -12,7 +12,7 @@
 
 export const CY = {};
 
-CY.VERSION = 'nucleo-15';
+CY.VERSION = 'nucleo-16';
 
 // ═════════════════════════════════════════════════════════════
 //  BOTÓN ATRÁS DE ANDROID
@@ -112,9 +112,15 @@ CY.explicar = function (e) {
 // ═════════════════════════════════════════════════════════════
 //  TEXTO
 // ═════════════════════════════════════════════════════════════
+/* Las CINCO, y la quinta no es adorno: sin escapar la comilla simple, un
+   apóstrofo dentro de un atributo escrito con comillas simples —«Cañada d'Oro»—
+   se sale del atributo y lo que sigue se interpreta como marcado.
+   Casa Verde, Rematetaller y el panel ya escapaban las cinco; éste era el único
+   de los cuatro que escapaba cuatro. Dos funciones que se llaman igual tienen
+   que hacer lo mismo (2026-09-09, primera auditoría de protocolos). */
 CY.esc = (s) => String(s == null ? '' : s)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-  .replace(/"/g, '&quot;');
+  .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
 CY.slug = (s) => String(s || '')
   .normalize('NFD').replace(/[\u0300-\u036f]/g, '')

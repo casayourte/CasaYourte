@@ -109,7 +109,7 @@
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v36';
+const VERSION = 'cy-shell-v37';
 
 const SHELL = [
   './admin.html',
