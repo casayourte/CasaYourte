@@ -67,6 +67,7 @@ confunda con secretos y los "proteja" rompiendo el sitio.
 | Rol y permisos de cada persona | **Firestore**, colección `usuarios/{uid}` (`rol`, `activo`, `permisos`), protegida por `REGLAS.txt`. Son datos, no reglas: se cambian desde `usuarios.html` sin republicar nada |
 | Invitaciones pendientes | **Firestore**, colección `invitaciones/{mail}`, protegida por `REGLAS.txt` |
 | Cálculos de taller (datos de clientes, medidas de obra) | **Firestore**, colección `calculos/{id}`. **No son públicos**: sólo con el permiso `calculo`. Costos, márgenes, tarifas y proveedores no van a este repositorio |
+| Contraseña del usuario del agente de Claude Code | **variables de entorno de Claude Code**, cargadas por Mauro en la web. El usuario vive en Firebase Authentication de `casayourte-mauro`, **sin ficha en `usuarios/`**: su acceso sale del bloque `esAgente()` de `REGLAS.txt`, que le da lectura de todo menos `calculos` e `invitaciones`. Lo usa `datos/herramientas/firestore.mjs` |
 | Login de las consolas: GitHub, Firebase, Cloudinary | **gestor de contraseñas personal de Mauro.** En ningún repositorio ni documento. *De quién es cada cuenta* se documenta en `datos` → `secretos/casayourte.md`, no acá |
 
 **De quién son las cuentas** (titular de la consola de Firebase, de Cloudinary,
@@ -173,6 +174,12 @@ verdad después del cambio.
   archivo, se sube el sello — y si cambia algo de la lista `SHELL` de `sw.js`, también
   la `VERSION` de ahí, o los teléfonos sirven una mezcla de viejo y nuevo. Ver
   `README.md`.
+- **El agente de Claude Code lee la base para compararla con el código**, y lo
+  que no lee está escrito en dos lugares: el bloque `esAgente()` de `REGLAS.txt`
+  y `selladas` del proyecto `casayourte` en `datos/herramientas/firestore.mjs`.
+  Hoy quedan afuera `calculos` e `invitaciones`. Si cambia una lista, cambia la
+  otra en la misma tanda: el archivo da el mensaje claro, la regla da la
+  garantía.
 - **La autoridad del contenido es Firestore** (`sitio/publicado`). `contenido.json` en
   el repo es respaldo, y los textos de `index.html` el último respaldo.
 - **No subir acá:** cálculos, costos, márgenes, tarifas, proveedores, documentación

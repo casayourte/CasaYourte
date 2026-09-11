@@ -1,3 +1,28 @@
+// =====================================================
+// CasaYourte — Reglas de Firestore
+// Se pegan COMPLETAS en la consola. Nunca por fragmentos.
+//
+// 11-sep-2026 · Entra el AGENTE DE CLAUDE CODE, con lectura y una bóveda.
+//   Es un usuario común de Authentication —no una cuenta de servicio, que
+//   saltearía estas reglas enteras— y existe para que un chat pueda comparar
+//   lo que hay en la base con lo que dice el código publicado: sobre todo
+//   `sitio/publicado` contra `contenido.json` y los textos de `index.html`.
+//
+//   Lee todo MENOS `calculos` e `invitaciones`. Los cálculos llevan datos de
+//   clientes y medidas de obra, y detrás costos, márgenes y tarifas; las
+//   invitaciones son mails de gente que todavía no entró. Y no escribe nada.
+//
+//   NO tiene ficha en `usuarios/`, a propósito: no es del equipo, no tiene rol
+//   ni permisos, y no aparece en la pantalla de usuarios. Su acceso sale de
+//   ese bloque y nada más.
+//
+//   La regla compara el UID y no el mail: Firebase deja que cualquiera se
+//   registre con mail y contraseña, así que una regla que abre la base «a
+//   quien tenga tal mail» se la abre a quien consiga registrar ese mail
+//   primero. El UID lo asigna Firebase y no se puede elegir. Es distinto en
+//   cada proyecto aunque la cuenta sea la misma.
+// =====================================================
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -25,6 +50,21 @@ service cloud.firestore {
     }
     function inv() {
       return get(/databases/$(database)/documents/invitaciones/$(request.auth.token.email.lower())).data;
+    }
+
+    // ---------- el agente de Claude Code ----------
+    // Ver la nota de arriba. Lectura sola, con dos colecciones afuera. La
+    // lista de abajo tiene que decir lo mismo que `selladas` del proyecto
+    // `casayourte` en datos/herramientas/firestore.mjs: el archivo da el
+    // mensaje claro, ESTA REGLA da la garantía. Si cambia una, cambia la otra
+    // en la misma tanda.
+    function esAgente() {
+      return request.auth != null
+             && request.auth.uid == 'MwuvZZQGd0WPWU8ia65dZBycEC43';
+    }
+
+    match /{coleccion}/{resto=**} {
+      allow read: if esAgente() && !(coleccion in ['calculos', 'invitaciones']);
     }
 
     // ---------- usuarios ----------
@@ -101,6 +141,10 @@ service cloud.firestore {
     }
 
     // ---------- todo lo demás, cerrado ----------
+    // Ojo con leer esto como un candado: en Firestore los permisos se SUMAN y
+    // un `if false` no le resta nada a lo de arriba. Lo que cierra de verdad
+    // es el deny por defecto — una colección sin bloque propio es inaccesible
+    // aunque este bloque no existiera. Queda escrito como recordatorio.
     match /{document=**} {
       allow read, write: if false;
     }
