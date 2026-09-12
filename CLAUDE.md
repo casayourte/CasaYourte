@@ -114,6 +114,22 @@ Las reglas que importan siguen copiadas más arriba en este archivo, a propósit
 Es el mismo motivo de siempre, y no cambia porque el reglamento sea más fácil de
 alcanzar.
 
+**Y antes de tocar código, se lee el panel.** Es la otra mitad de la
+conversación con Mauro: sus respuestas, sus correcciones y sus cambios de
+prioridad viven ahí, no en el chat.
+
+```
+node herramientas/firestore.mjs panel leer pendientes
+```
+
+Lo primero que se mira son los que tienen `tocado: true` —los editó él desde la
+última vez— y los que tienen `pregunta` sin `respuesta`, que lo están esperando.
+**Si la base contesta `permission-denied`, eso es un bloqueo y se le dice**: se
+estaría trabajando a ciegas sobre la mitad de lo que él dijo. Al cerrar se
+escribe en el panel lo hecho y la tanda. Está en
+`protocolos/PROTOCOLO-GENERAL.md` §§ 6 y 8.
+
+
 Además, este repositorio hereda patrones de **Casa Verde** (marcados así en los
 comentarios del código: el alta de cuentas con app secundaria en `firebase-init.js`,
 los dos inputs de cámara/archivos en `nucleo.js`, y desde el 2026-09-09 el campo
