@@ -90,23 +90,29 @@ pero es un dato de contacto, y este repositorio es público. Ver
 
 ## Protocolos
 
-Este proyecto sigue las convenciones compartidas del repositorio
-**`casaverdecanas-blip/datos`** (privado, de otro dueño de GitHub). Es la fuente
-de verdad; lo de arriba y lo de abajo es su aplicación a este repo.
+Este proyecto sigue las convenciones compartidas del repo **público**
+`maurogasta-crypto/datos`, en su carpeta `protocolos/`. Ahí vive el reglamento
+de los cuatro proyectos, y se lee sin credenciales: basta con agregar ese
+repositorio a la sesión.
 
 | Documento | Qué manda |
 |---|---|
-| `PROTOCOLO-GENERAL.md` | pedidos no verificados, git, estructura del `CLAUDE.md`, mecánica de sesiones |
-| `PROTOCOLO-SECRETOS.md` | qué tipo de secreto va en cada lugar |
-| `PROTOCOLO-DESARROLLO.md` | el reglamento técnico común a los tres sitios: código, vocabulario, reglas de Firestore, PWA, sellos de versión, cómo se entrega una tanda |
-| `PROTOCOLO-INTERFAZ.md` | cómo se maneja la gente en los tres: pantalla, navegación, la cuenta, la ayuda, las fotos, el botón Atrás |
-| `ESTADO-DE-LOS-TRES.md` | qué tiene este proyecto que los otros dos necesitan, y al revés |
+| `protocolos/PROTOCOLO-GENERAL.md` | pedidos no verificados, git, estructura del `CLAUDE.md`, mecánica de sesiones |
+| `protocolos/PROTOCOLO-SECRETOS.md` | qué tipo de secreto va en cada lugar |
+| `protocolos/PROTOCOLO-DESARROLLO.md` | el reglamento técnico común a los cuatro |
+| `protocolos/PROTOCOLO-INTERFAZ.md` | cómo se maneja la gente en todos |
+| `protocolos/ESTADO-DE-LOS-TRES.md` | qué le falta a cada proyecto y qué le puede dar a los otros |
 
-Hasta septiembre de 2026 se creía que una sesión abierta sobre este repositorio
-**no podía leer** `datos` por ser de otro dueño. **Ya no es así:** se puede
-agregar a la sesión, y conviene hacerlo. Las reglas que importan siguen
-transcriptas acá igual, a propósito: una regla de seguridad que solo llega si
-alguien se acordó de agregar el repo correcto no es una regla.
+**Se mudaron ahí el 2026-09-12**, desde el repo privado `casaverdecanas-blip/datos`.
+El motivo: tenerlos en un repositorio privado de otro dueño costaba, en cada
+sesión nueva, acordarse de agregarlo — y una regla que sólo llega si alguien se
+acordó de algo no es una regla. Se auditaron antes de moverlos: la titularidad
+de las cuentas y los UID del agente **no** viajaron, porque ese repositorio es
+público.
+
+Las reglas que importan siguen copiadas más arriba en este archivo, a propósito.
+Es el mismo motivo de siempre, y no cambia porque el reglamento sea más fácil de
+alcanzar.
 
 Además, este repositorio hereda patrones de **Casa Verde** (marcados así en los
 comentarios del código: el alta de cuentas con app secundaria en `firebase-init.js`,
