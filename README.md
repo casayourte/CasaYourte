@@ -614,8 +614,8 @@ pasar a FR primero.
 ## No subir acá
 
 **Los cálculos, costos, márgenes, tarifas y proveedores no van a este repositorio, que es
-público.** Van a un repositorio privado aparte. Ni siquiera sirve borrarlos después: quedan
-en el historial.
+público.** Van fuera de git. Ni siquiera sirve borrarlos después: quedan en el
+historial. De quién es cada cuenta va a la bóveda del panel (`fichas/`).
 
 Lo mismo la documentación interna del proyecto (`CASAYOURTE-DOCUMENTACION.md`).
 

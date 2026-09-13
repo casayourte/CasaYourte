@@ -68,12 +68,11 @@ confunda con secretos y los "proteja" rompiendo el sitio.
 | Invitaciones pendientes | **Firestore**, colección `invitaciones/{mail}`, protegida por `REGLAS.txt` |
 | Cálculos de taller (datos de clientes, medidas de obra) | **Firestore**, colección `calculos/{id}`. **No son públicos**: sólo con el permiso `calculo`. Costos, márgenes, tarifas y proveedores no van a este repositorio |
 | Contraseña del usuario del agente de Claude Code | **variables de entorno de Claude Code**, cargadas por Mauro en la web. El usuario vive en Firebase Authentication de `casayourte-mauro`, **sin ficha en `usuarios/`**: su acceso sale del bloque `esAgente()` de `REGLAS.txt`, que le da lectura de todo menos `calculos` e `invitaciones`. Lo usa `datos/herramientas/firestore.mjs` |
-| Login de las consolas: GitHub, Firebase, Cloudinary | **gestor de contraseñas personal de Mauro.** En ningún repositorio ni documento. *De quién es cada cuenta* se documenta en `datos` → `secretos/casayourte.md`, no acá |
+| Login de las consolas: GitHub, Firebase, Cloudinary | **gestor de contraseñas personal de Mauro.** En ningún repositorio ni documento. *De quién es cada cuenta* se documenta en la **bóveda del panel** (`fichas/`), no acá |
 
 **De quién son las cuentas** (titular de la consola de Firebase, de Cloudinary,
-de Netlify): **no se documenta acá.** Vive solo en el repo privado
-`casaverdecanas-blip/datos` → `secretos/casayourte.md`, sección "Titularidad de las
-cuentas". No es un secreto —la contraseña sí, y esa no está en ningún documento—
+de Netlify): **no se documenta acá.** Vive en la **bóveda del panel**, en la
+ficha «Titularidad de las consolas · Casa Yourte» de `fichas/`. No es un secreto —la contraseña sí, y esa no está en ningún documento—
 pero es un dato de contacto, y este repositorio es público. Ver
 `PROTOCOLO-SECRETOS.md` § "Titularidad".
 
@@ -103,7 +102,8 @@ repositorio a la sesión.
 | `protocolos/PROTOCOLO-INTERFAZ.md` | cómo se maneja la gente en todos |
 | `protocolos/ESTADO-DE-LOS-TRES.md` | qué le falta a cada proyecto y qué le puede dar a los otros |
 
-**Se mudaron ahí el 2026-09-12**, desde el repo privado `casaverdecanas-blip/datos`.
+**Se mudaron ahí el 2026-09-12**, desde el repo privado `casaverdecanas-blip/datos`,
+que se borró el 2026-09-13 una vez vacío.
 El motivo: tenerlos en un repositorio privado de otro dueño costaba, en cada
 sesión nueva, acordarse de agregarlo — y una regla que sólo llega si alguien se
 acordó de algo no es una regla. Se auditaron antes de moverlos: la titularidad
