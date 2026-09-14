@@ -382,11 +382,22 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
   background:none;border:1px solid #4a4238;color:var(--wool);padding:.55rem .75rem;
   border-radius:2px;cursor:pointer;min-width:2.6rem}
 #visor button:hover{border-color:var(--blond)}
+
+/* Una sección apagada desde el taller. No se borra del HTML: se apaga, y
+   volver a encenderla es tocar el mismo botón. */
+.cy-oculta{display:none!important}
+/* Cartel del taller: el sitio paralelo tiene que ser imposible de confundir
+   con el publicado. Va fijo, arriba de todo, y no se puede cerrar. */
+#cy-taller{position:fixed;top:0;left:0;right:0;z-index:9999;background:#7A2C3C;
+  color:#F6EFE4;font-family:var(--mono,ui-monospace,monospace);font-size:.58rem;
+  letter-spacing:.13em;text-transform:uppercase;text-align:center;
+  padding:.45rem .8rem;line-height:1.5}
+body.cy-en-taller{padding-top:1.9rem}
 </style>
 </head>
 <body>
 
-<header class="hero">
+<header class="hero" data-seccion="hero">
   <div class="hero-media" aria-hidden="true">
     <!-- El src va en el propio <video>: un <source> con un tipo MIME mal
          escrito hace que el navegador descarte el archivo sin decir nada.
@@ -421,13 +432,13 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
   </div>
 </header>
 
-<figure class="bleed" style="margin:0">
+<figure class="bleed" style="margin:0" data-seccion="foto">
   <img data-slot="hero" src="assets/hero.jpg" alt="Yurta terminada con deck perimetral curvo y grandes aberturas vidriadas">
   <figcaption class="mono" data-i="cap.hero"></figcaption>
 </figure>
 
 <!-- IDEA -->
-<section class="wrap idea-sec">
+<section class="wrap idea-sec" data-seccion="idea">
   <span class="eyebrow" data-i="id.eyebrow"></span>
   <h2 class="idea-h" data-i="id.title"></h2>
   <div class="idea-cols">
@@ -444,7 +455,7 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
 </section>
 
 <!-- PROCESO -->
-<section class="wrap proc-sec">
+<section class="wrap proc-sec" data-seccion="proceso">
   <span class="eyebrow" data-i="pr.eyebrow"></span>
   <h2 style="font-size:clamp(2rem,5.5vw,3.6rem);max-width:26ch" data-i="pr.title"></h2>
   <details class="mas">
@@ -467,10 +478,10 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
   </figure>
 </section>
 
-<div class="band"><svg data-lattice-static preserveAspectRatio="none" aria-hidden="true"></svg></div>
+<div class="band" data-banda-de="trayectoria"><svg data-lattice-static preserveAspectRatio="none" aria-hidden="true"></svg></div>
 
 <!-- TRAJECTORY -->
-<section class="wrap paper">
+<section class="wrap paper" data-seccion="trayectoria">
   <span class="eyebrow" data-i="traj.eyebrow"></span>
   <h2 style="font-size:clamp(2rem,5.5vw,3.6rem);max-width:24ch" data-i="traj.title"></h2>
   <details class="mas">
@@ -513,7 +524,7 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
 </section>
 
 <!-- DIFFERENTIALS -->
-<section class="wrap">
+<section class="wrap" data-seccion="diferencial">
   <span class="eyebrow" data-i="dif.eyebrow"></span>
   <h2 style="font-size:clamp(2rem,5.5vw,3.6rem);max-width:26ch" data-i="dif.title"></h2>
   <details class="mas">
@@ -574,7 +585,7 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
 </section>
 
 <!-- INTERIOR -->
-<section class="wrap paper">
+<section class="wrap paper" data-seccion="interior">
   <span class="eyebrow" data-i="in.eyebrow"></span>
   <h2 style="font-size:clamp(2rem,5.5vw,3.6rem);max-width:26ch" data-i="in.title"></h2>
   <details class="mas">
@@ -593,7 +604,7 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
 </section>
 
 <!-- OFFER -->
-<section class="wrap offer">
+<section class="wrap offer" data-seccion="oferta">
   <span class="eyebrow" data-i="of.eyebrow"></span>
   <h2 style="font-size:clamp(2rem,5.5vw,3.6rem);max-width:24ch" data-i="of.title"></h2>
   <details class="mas">
@@ -630,7 +641,7 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
 </section>
 
 <!-- CO-CONSTRUCTION -->
-<section class="wrap">
+<section class="wrap" data-seccion="co">
   <div class="duo">
     <div>
       <span class="eyebrow" data-i="co.eyebrow"></span>
@@ -648,10 +659,10 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
   </div>
 </section>
 
-<div class="band"><svg data-lattice-static preserveAspectRatio="none" aria-hidden="true"></svg></div>
+<div class="band" data-banda-de="taller"><svg data-lattice-static preserveAspectRatio="none" aria-hidden="true"></svg></div>
 
 <!-- WORKSHOP -->
-<section class="wrap paper">
+<section class="wrap paper" data-seccion="taller">
   <div class="duo">
     <div class="duo-fig"><img data-slot="ws" src="assets/ws.jpg" alt="Taller de CasaYourte en Uruguay durante la fabricación de piezas" loading="lazy" decoding="async"></div>
     <div>
@@ -688,7 +699,7 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
 </section>
 
 <!-- ÁLBUM · las obras publicadas, en tiras deslizables -->
-<section class="wrap album-inv" id="albumes">
+<section class="wrap album-inv" id="albumes" data-seccion="albumes">
   <span class="eyebrow" data-i="al.eyebrow"></span>
   <h2 style="font-size:clamp(2rem,5.5vw,3.4rem);max-width:26ch" data-i="al.title"></h2>
   <details class="mas">
@@ -704,7 +715,7 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
 </section>
 
 <!-- CONTACT -->
-<section class="wrap contact">
+<section class="wrap contact" data-seccion="contacto">
   <svg class="trei" data-lattice preserveAspectRatio="none" aria-hidden="true" style="opacity:.5"></svg>
   <div style="position:relative;z-index:2">
     <span class="eyebrow" style="display:inline-block" data-i="ct.eyebrow"></span>
@@ -1122,12 +1133,62 @@ function aplicarOrden(orden){
   });
 }
 
+/* ---------- las secciones de la página ----------
+   Cada hijo directo de <body> que forma parte del relato lleva data-seccion.
+   Lo que se guarda son dos listas de identificadores:
+
+     secciones: "hero,foto,idea,..."   el orden
+     ocultas:   "proceso,co"           las que no se muestran
+
+   Igual que con los bloques, la lista MANDA para el orden pero NUNCA puede
+   hacer desaparecer algo que el archivo trae: una sección que esté en el
+   HTML y no en la lista se queda donde está (§3.35).
+
+   Apagar NO es borrar. La sección sigue en el HTML con sus textos: volver a
+   encenderla es tocar el mismo botón. Por eso se usa una clase y no remove().
+
+   Las bandas decorativas (data-banda-de) viajan con su sección: si no, al
+   mover una quedaba la raya sola en el medio de la nada. */
+const enLista = (v) => String(v || "").split(",").map(x => x.trim()).filter(Boolean);
+const seccionesEl = () => [...document.querySelectorAll('body > [data-seccion]')];
+const bandaDe = (id) => document.querySelector('body > [data-banda-de="' + id + '"]');
+
+function aplicarSecciones(orden, ocultas){
+  const off = new Set(enLista(ocultas));
+  seccionesEl().forEach(el => {
+    const apagada = off.has(el.dataset.seccion);
+    el.classList.toggle("cy-oculta", apagada);
+    const b = bandaDe(el.dataset.seccion);
+    if (b) b.classList.toggle("cy-oculta", apagada);
+  });
+
+  const orden_ = enLista(orden);
+  if (!orden_.length) return;               // sin lista guardada, manda el HTML
+  // El pie y el visor no se mueven nunca: son el marco, no el relato.
+  const tope = document.querySelector("body > .foot");
+  seccionesEl().forEach(el => { if (!orden_.includes(el.dataset.seccion)) orden_.push(el.dataset.seccion); });
+  orden_.forEach(id => {
+    const el = document.querySelector('body > [data-seccion="' + id + '"]');
+    if (!el) return;
+    const b = bandaDe(id);
+    if (b) document.body.insertBefore(b, tope);
+    document.body.insertBefore(el, tope);
+  });
+}
+
 /* Lo único que el editor puede llamar de esta página. Es un contrato
    declarado a propósito, no un interno del que colgarse: si mañana cambia
    la forma de armar un bloque, cambia acá y el editor no se entera. */
-window.CY_SITIO = { version:1, GRUPOS, aplicarOrden,
+window.CY_SITIO = { version:2, GRUPOS, aplicarOrden, aplicarSecciones,
   ids:(g)=>{ const c=document.querySelector('[data-grupo="'+g+'"]');
-    return c ? [...c.querySelectorAll(':scope > [data-bloque]')].map(x=>x.dataset.bloque) : []; } };
+    return c ? [...c.querySelectorAll(':scope > [data-bloque]')].map(x=>x.dataset.bloque) : []; },
+  idsSecciones:()=> seccionesEl().map(x => x.dataset.seccion),
+  ocultasAhora:()=> seccionesEl().filter(x => x.classList.contains("cy-oculta")).map(x => x.dataset.seccion),
+  // Para que el editor pueda poner su nombre humano al lado del identificador.
+  tituloDe:(id)=>{ const el=document.querySelector('body > [data-seccion="'+id+'"]');
+    if(!el) return id;
+    const h=el.querySelector("h1,h2,h3");
+    return (h && h.textContent.trim().slice(0,42)) || id; } };
 
 // El conmutador se arma desde el catálogo, ANTES de atar los escuchadores:
 // al revés se atarían a botones que después se reemplazan. Los que están
@@ -1782,9 +1843,32 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
   //  publicado— y toda la costura entre ellos fue la fuente de más errores
   //  que cualquier otra parte del sistema.
   // ═══════════════════════════════════════════════════════════════
+  // ── EL TALLER ────────────────────────────────────────────────
+  // Con ?taller=1 esta misma página se pinta con sitio/taller en lugar de
+  // sitio/publicado. NO es un segundo sitio: es el mismo archivo leyendo otro
+  // documento. Por eso no hay nada que mantener sincronizado, que es lo que
+  // hizo fracasar el borrador de agosto de 2026.
+  //
+  // El taller es público de lectura (las reglas dejan leer sitio/*), así que
+  // el enlace se le puede pasar a alguien sin darle una cuenta. Pero no tiene
+  // que entrar a Google: lleva noindex y una barra que lo dice.
+  var TALLER = /[?&]taller=1/.test(location.search);
   var REST = "https://firestore.googleapis.com/v1/projects/casayourte-mauro"
-    + "/databases/(default)/documents/sitio/publicado"
+    + "/databases/(default)/documents/sitio/" + (TALLER ? "taller" : "publicado")
     + "?key=AIzaSyDDD_xvpC4I_ec2OZymyDqVsm1K0ISTr4Q";
+
+  if (TALLER) {
+    var m = document.createElement("meta");
+    m.name = "robots"; m.content = "noindex, nofollow";
+    document.head.appendChild(m);
+    document.addEventListener("DOMContentLoaded", function () {
+      document.body.classList.add("cy-en-taller");
+      var c = document.createElement("div");
+      c.id = "cy-taller";
+      c.textContent = "Taller · sitio piloto — esto NO es casayourte.com";
+      document.body.insertBefore(c, document.body.firstChild);
+    });
+  }
 
   function valor(v) {
     if (!v || typeof v !== "object") return undefined;
@@ -1812,6 +1896,7 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
       .then(function (j) {
         if (j && j.textos) aplicarTextos(j.textos);
         if (j && j.orden) aplicarOrden(j.orden);
+        if (j && (j.secciones || j.ocultas)) aplicarSecciones(j.secciones, j.ocultas);
         if (j && j.reemplazos) aplicarImagenes(j.reemplazos);
       });
   }
@@ -1822,6 +1907,9 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
       var d = mapa((j && j.fields) || {});
       if (!aplicarTextos(d)) throw 0;      // documento vacío: vale el respaldo
       aplicarOrden(d.orden);
+      // El orden y el apagado de secciones son estructura, no texto: viajan
+      // en dos campos propios del documento y no dentro de 'orden'.
+      aplicarSecciones(d.secciones, d.ocultas);
       aplicarImagenes(d.imagenes);
     })
     .catch(function () { return delRepositorio(); })

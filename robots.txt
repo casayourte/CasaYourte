@@ -24,6 +24,13 @@ Disallow: /contenido.json
 Disallow: /REGLAS.txt
 Disallow: /*.md$
 
+# El sitio piloto es la misma página leyendo otro documento, así que no
+# tiene dirección propia que bloquear: se pide con ?taller=1. Además de
+# esto, la página se pone sola un noindex cuando entra en ese modo, que es
+# lo que de verdad la mantiene fuera de Google.
+Disallow: /*?taller=
+Disallow: /*&taller=
+
 # Los buscadores de imágenes sí son bienvenidos: es un oficio que se
 # mira, y las fotos de obra son la mitad de lo que hay para mostrar.
 User-agent: Googlebot-Image

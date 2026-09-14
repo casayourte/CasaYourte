@@ -109,8 +109,13 @@
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v38';
+const VERSION = 'cy-shell-v39';
 
+// v39 (14-sep-2026) — entra el TALLER: index.html lee sitio/taller con
+//   ?taller=1 y sabe mover y apagar secciones (contrato CY_SITIO v2);
+//   editar.html (editar-9) suma el chip «En vivo | Taller». Va encima de la
+//   v38, de la misma fecha: dos tandas seguidas tocando el SHELL.
+//
 // v38 (14-sep-2026) — el SDK de Firebase pasa a bajarse DIFERIDO
 //   (`firebase-init.js` sello init-2, `nucleo.js` nucleo-17 con
 //   `CY.conFirebase`, y las cinco pantallas del panel esperándolo). Cambian

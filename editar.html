@@ -95,6 +95,27 @@ button{cursor:pointer}
 #hoja .pie .btn{flex:1;text-align:center}
 #hoja .vacio{color:var(--dim);font-size:.85rem;text-align:center;padding:2rem 1rem}
 
+/* La hoja de secciones usa el mismo molde que la de fotos: mismo lugar,
+   mismo gesto para cerrarla. Una pantalla, un vocabulario. */
+#hoja-sec{position:fixed;inset:0;z-index:80;background:rgba(12,10,8,.9);display:flex;
+  align-items:flex-end;justify-content:center}
+#hoja-sec .caja{background:var(--ink2);border-top:1px solid var(--line);width:min(560px,100%);
+  max-height:88%;display:flex;flex-direction:column;border-radius:14px 14px 0 0}
+.s-fila{display:flex;align-items:center;gap:.5rem;padding:.6rem .2rem;
+  border-bottom:1px solid var(--line)}
+.s-fila:last-child{border-bottom:0}
+.s-fila .nom{flex:1;min-width:0;font-size:.9rem;line-height:1.25;
+  overflow:hidden;text-overflow:ellipsis}
+.s-fila .nom b{display:block;font-family:var(--mono);font-size:.52rem;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--blond);font-weight:500}
+.s-fila.apagada .nom{color:var(--dim);text-decoration:line-through}
+.s-fila button{background:var(--ink3);border:1px solid var(--line);color:var(--wool);
+  border-radius:6px;padding:.45rem .6rem;font-size:.8rem;line-height:1;flex:none;min-width:2.1rem}
+.s-fila button[aria-pressed="true"]{background:var(--blond);border-color:var(--blond);color:var(--ink)}
+.s-fila button:disabled{opacity:.3}
+#top .modo{font-family:var(--mono);font-size:.5rem;letter-spacing:.1em;color:var(--blond)}
+body.taller #top{box-shadow:inset 0 -2px 0 var(--bad)}
+
 #aviso{position:fixed;left:.8rem;right:.8rem;bottom:calc(4.5rem + var(--safe));z-index:120;
   background:var(--blond);color:var(--ink);border-radius:6px;padding:.7rem .9rem;
   font-size:.85rem;line-height:1.4;text-align:center;opacity:0;transition:opacity .25s;
@@ -121,6 +142,10 @@ button{cursor:pointer}
   <div id="top">
     <span class="t">Casa<b>Yourte</b> <span class="mono" id="sello"
       style="color:var(--dim);font-size:.5rem"></span></span>
+    <div class="grupo-chips" id="destinos" role="group" aria-label="Dónde se guarda lo que se toca">
+      <button type="button" data-d="publicado" aria-pressed="true">En vivo</button>
+      <button type="button" data-d="taller" aria-pressed="false">Taller</button>
+    </div>
     <div class="grupo-chips" id="paginas" role="group" aria-label="Qué página se edita">
       <button type="button" data-p="index" aria-pressed="true">Sitio</button>
       <button type="button" data-p="album" aria-pressed="false">Álbumes</button>
@@ -140,6 +165,8 @@ button{cursor:pointer}
 
   <div id="barra">
     <span class="cuenta" id="cuenta">Tocá un texto o una foto · ▲▼ mueve · ＋ agrega · ✕ quita</span>
+    <button class="btn" id="secciones" hidden>Secciones</button>
+    <button class="btn" id="migrar" hidden>⇄ Al sitio</button>
     <button class="btn p" id="guardar">Publicar</button>
     <button class="btn" id="salir">✕</button>
   </div>
@@ -161,6 +188,20 @@ button{cursor:pointer}
   </div>
 </div>
 
+<div id="hoja-sec" class="hide">
+  <div class="caja">
+    <div class="hd">
+      <h2>Las secciones de la página</h2>
+      <span class="lugar">Mover con ▲▼ · el ojo apaga y enciende</span>
+    </div>
+    <div class="cuerpo"><div id="s-lista"></div></div>
+    <div class="pie">
+      <button class="btn" id="s-reset">Volver a copiar el sitio</button>
+      <button class="btn p" id="s-cerrar">Listo</button>
+    </div>
+  </div>
+</div>
+
 <div id="aviso"></div>
 
 <!-- Clásico y antes del módulo: el catálogo tiene que estar en window
@@ -176,7 +217,7 @@ import { CY } from "./nucleo.js";
 const $ = (id) => document.getElementById(id);
 
 // Sello de este archivo, para saber si quedó viejo en la caché.
-const EDITOR = "editar-8";
+const EDITOR = "editar-9";
 CY.PANEL = EDITOR;
 
 /* ═══════════════════════════════════════════════════════════════
@@ -205,9 +246,32 @@ const porIdioma = (hacer) => {
   const o = {}; IDIOMAS().forEach(l => o[l] = hacer(l)); return o;
 };
 
+/* ═══════════════════════════════════════════════════════════════
+   DÓNDE SE ESCRIBE: EL SITIO O EL TALLER
+
+   sitio/publicado  ES el sitio. Guardar ahí lo ve el público en el acto.
+   sitio/taller     es el sitio piloto. Nadie lo ve salvo quien tenga el
+                    enlace ?taller=1.
+
+   Es UN campo, no dos ramas de código: la misma pantalla, el mismo iframe,
+   la misma página real. Lo único que cambia es el nombre del documento que
+   se lee y se escribe.
+
+   Y NO se mezclan nunca. Llevar el taller al sitio copia el documento
+   ENTERO, campo por campo. La mezcla entre dos estados fue exactamente lo
+   que hizo fracasar el borrador de agosto de 2026 —exportaciones que
+   perdían reemplazos de imagen, un borrador viejo que borraba claves
+   nuevas—: acá no hay mezcla que pueda salir mal, hay una copia.
+   ═══════════════════════════════════════════════════════════════ */
+let destino = "publicado";
+const enTaller = () => destino === "taller";
+// Espejo de las reglas: lo que de verdad impide escribir en sitio/publicado
+// es Firestore, no esta línea. Acá se esconde lo que no corresponde.
+const puedePublicar = () => CY.esAdmin() || CY.puede("contenido");
+
 let pag = "index";
 let idioma = FUENTE;
-let CONT = null;        // { <idioma>:{} … , imagenes:{}, orden:{} }
+let CONT = null;        // { <idioma>:{} … , imagenes:{}, orden:{}, secciones:"", ocultas:"" }
 let ORIG = null;
 let ORDEN = porIdioma(() => []);
 let BASE = null;        // el contenido.json del repositorio, tal cual
@@ -271,7 +335,14 @@ onAuthStateChanged(auth, async (u) => {
     CY.usuario = yo;
     $("sello").textContent = EDITOR;
     $("login").classList.add("hide"); $("app").classList.remove("hide");
+    // Una cuenta sin permiso de publicar entra directo al taller: es el único
+    // lugar donde las reglas la dejan escribir. Que el editor arranque en un
+    // destino que le va a dar permission-denied sería una trampa.
+    if (!puedePublicar()) destino = "taller";
+    pintarDestino();
     await cargarContenido();
+    if (enTaller() && !(await getDoc(doc(db, "sitio", "taller"))).exists())
+      await copiarDesdePublicado();
     abrirPagina();
   } catch (e) { aviso(e.message || CY.explicar(e), true); await signOut(auth); }
 });
@@ -282,7 +353,7 @@ async function cargarContenido() {
   BASE = await r.json();
   IDIOMAS().forEach(l => ORDEN[l] = Object.keys((BASE.textos || {})[l] || {}));
 
-  const d = await getDoc(doc(db, "sitio", "publicado"));
+  const d = await getDoc(doc(db, "sitio", destino));
   if (d.exists() && d.data().es) {
     const x = d.data();
     // MEZCLA, no reemplazo: lo publicado manda para lo que tiene y el archivo
@@ -292,11 +363,13 @@ async function cargarContenido() {
       ...porIdioma(l => ({ ...(BASE.textos[l] || {}), ...decodMapa(x[l]) })),
       imagenes: { ...(BASE.reemplazos || {}), ...(x.imagenes || {}) },
       orden: { ...(BASE.orden || {}), ...(x.orden || {}) },
+      secciones: x.secciones || "", ocultas: x.ocultas || "",
     };
   } else {
     CONT = { ...porIdioma(l => ({ ...(BASE.textos[l] || {}) })),
              imagenes: { ...(BASE.reemplazos || {}) },
-             orden: { ...(BASE.orden || {}) } };
+             orden: { ...(BASE.orden || {}) },
+             secciones: "", ocultas: "" };
   }
   ORIG = JSON.parse(JSON.stringify(CONT));
 }
@@ -343,6 +416,9 @@ function abrirPagina() {
   // la misma regla que usan los enlaces del sitio.
   const u = new URL(PAGS[pag].archivo, location.href);
   u.searchParams.set("edit", "1");
+  // La barra bordó de adentro dice en cuál de los dos se está trabajando.
+  // Sin eso es demasiado fácil creer que se toca el taller y tocar el sitio.
+  if (enTaller()) u.searchParams.set("taller", "1");
   u.searchParams.set("v", String(Date.now()));
   f.src = CY_IDIOMAS.urlCon(u, idioma).toString();
 }
@@ -355,6 +431,7 @@ $("paginas").addEventListener("click", (e) => {
   if (b.dataset.p === pag) return;
   pag = b.dataset.p;
   marcar("paginas", "p", pag);
+  pintarDestino();
   abrirPagina();
 });
 
@@ -536,6 +613,8 @@ function aplicarEstructura() {
   const c = contrato();
   if (!c) return;                    // album.html no tiene grupos: no hay nada que hacer
   c.aplicarOrden(CONT.orden || {});
+  // El contrato v1 —un index.html anterior a esta tanda— no sabe de secciones.
+  if (c.aplicarSecciones) c.aplicarSecciones(CONT.secciones, CONT.ocultas);
 }
 
 // Los bloques que estén en el HTML y no en la lista guardada se suman al
@@ -856,23 +935,195 @@ function elegir(f) {
   aviso("Imagen cambiada. Falta publicar.");
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   EL TALLER
+
+   Cambiar de destino es recargar: no se arrastra a un documento lo que se
+   escribió pensando en el otro. Si hay cambios sin guardar, se avisa.
+   ═══════════════════════════════════════════════════════════════ */
+function pintarDestino() {
+  marcar("destinos", "d", destino);
+  document.body.classList.toggle("taller", enTaller());
+  $("guardar").textContent = enTaller() ? "Guardar" : "Publicar";
+  $("secciones").hidden = !enTaller() || pag !== "index";
+  // Llevar el taller al sitio es publicar: lo pide el mismo permiso.
+  $("migrar").hidden = !enTaller() || !puedePublicar();
+  // Sin permiso de publicar no hay nada que elegir: el taller es el único
+  // lugar donde esa cuenta puede escribir, y la regla de Firestore lo dice.
+  $("destinos").classList.toggle("hide", !puedePublicar());
+}
+
+async function irA(d) {
+  if (d === destino) return;
+  if (sucio() && !confirm("Tenés cambios sin guardar en «"
+      + (enTaller() ? "Taller" : "En vivo") + "».\n\n¿Cambiar igual y perderlos?")) return;
+  destino = d;
+  pintarDestino();
+  try {
+    await cargarContenido();
+    // Taller vacío: arranca como una copia de lo que hay publicado. Es lo
+    // que espera cualquiera que abra un piloto —ver el sitio de hoy y
+    // empezar a moverlo—, y no escribe nada hasta que se toque Guardar.
+    if (enTaller() && !(await getDoc(doc(db, "sitio", "taller"))).exists()) {
+      await copiarDesdePublicado();
+      aviso("Taller vacío: arranca como una copia del sitio. Nada se guardó todavía.");
+    }
+    abrirPagina();
+  } catch (e) { aviso(CY.explicar(e), true); }
+}
+
+$("destinos").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  irA(b.dataset.d);
+});
+
+// Trae a la pantalla lo que hay en sitio/publicado, sin guardarlo. Lo que se
+// guarda es lo que el usuario decida, tocando Guardar.
+async function copiarDesdePublicado() {
+  const d = await getDoc(doc(db, "sitio", "publicado"));
+  if (!d.exists()) return;
+  const x = d.data();
+  CONT = {
+    ...porIdioma(l => ({ ...(BASE.textos[l] || {}), ...decodMapa(x[l]) })),
+    imagenes: { ...(BASE.reemplazos || {}), ...(x.imagenes || {}) },
+    orden: { ...(BASE.orden || {}), ...(x.orden || {}) },
+    secciones: x.secciones || "", ocultas: x.ocultas || "",
+  };
+  contar();
+}
+
+/* ---------- llevar el taller al sitio ----------
+   Copia ENTERA, no mezcla. Lo que está en el taller pasa a ser el sitio, tal
+   cual, con todos sus campos. No hay un tercer estado intermedio del que
+   después haya que acordarse. */
+$("migrar").addEventListener("click", async () => {
+  if (sucio()) { aviso("Guardá primero: hay cambios que todavía no están en el taller.", true); return; }
+  if (!confirm("Llevar el TALLER al SITIO.\n\nTodo lo que se ve acá pasa a "
+      + "casayourte.com en el acto, y reemplaza lo que hay publicado hoy.\n\n¿Seguro?")) return;
+  if (!confirm("Última: esto lo ve el público inmediatamente.\n\n¿Lo llevo?")) return;
+  const b = $("migrar"); b.disabled = true; b.textContent = "…";
+  try {
+    const t = await getDoc(doc(db, "sitio", "taller"));
+    if (!t.exists()) throw new Error("El taller todavía no tiene nada guardado.");
+    const x = t.data();
+    delete x.guardado; delete x.guardadoPor;
+    await setDoc(doc(db, "sitio", "publicado"), {
+      ...x, guardado: serverTimestamp(), guardadoPor: yo.email,
+      vinoDelTaller: true,
+    });
+    aviso("Listo. El taller es ahora el sitio.");
+  } catch (e) { aviso(CY.explicar(e), true); }
+  finally { b.disabled = false; b.textContent = "⇄ Al sitio"; }
+});
+
+/* ---------- las secciones ----------
+   Sólo en el taller. En vivo las secciones NO se tocan: mover una sección de
+   la página publicada sin poder mirarla antes es exactamente el accidente
+   que el taller viene a evitar. */
+const enLista = (v) => String(v || "").split(",").map(x => x.trim()).filter(Boolean);
+
+function unirSecciones() {
+  const c = contrato(); if (!c || !c.idsSecciones) return null;
+  const enHtml = c.idsSecciones();
+  let l = enLista(CONT.secciones).filter(id => enHtml.includes(id));
+  const primera = !l.length;
+  enHtml.forEach(id => { if (!l.includes(id)) l.push(id); });
+  CONT.secciones = l.join(",");
+  // La primera vez la lista sale del propio HTML: eso no es un cambio que
+  // haya hecho nadie, así que el contador no tiene que marcarlo.
+  if (primera && ORIG) ORIG.secciones = CONT.secciones;
+  return l;
+}
+
+function refrescarVista() {
+  aplicarEstructura(); pintarEnIframe(); cablear(); contar();
+}
+
+function pintarSecciones() {
+  const c = contrato(); const l = enLista(CONT.secciones);
+  const off = new Set(enLista(CONT.ocultas));
+  const cont = $("s-lista"); cont.innerHTML = "";
+  l.forEach((id, i) => {
+    const f = document.createElement("div");
+    f.className = "s-fila" + (off.has(id) ? " apagada" : "");
+    const nom = document.createElement("span");
+    nom.className = "nom";
+    nom.innerHTML = "<b>" + CY.esc(id) + "</b>" + CY.esc((c && c.tituloDe) ? c.tituloDe(id) : id);
+    const sube = document.createElement("button");
+    sube.type = "button"; sube.textContent = "▲"; sube.disabled = i === 0;
+    sube.setAttribute("aria-label", "Subir " + id);
+    sube.onclick = () => moverSeccion(i, -1);
+    const baja = document.createElement("button");
+    baja.type = "button"; baja.textContent = "▼"; baja.disabled = i === l.length - 1;
+    baja.setAttribute("aria-label", "Bajar " + id);
+    baja.onclick = () => moverSeccion(i, 1);
+    const ojo = document.createElement("button");
+    ojo.type = "button"; ojo.textContent = off.has(id) ? "🚫" : "👁";
+    ojo.setAttribute("aria-pressed", String(!off.has(id)));
+    ojo.setAttribute("aria-label", (off.has(id) ? "Encender " : "Apagar ") + id);
+    ojo.onclick = () => apagarSeccion(id);
+    f.append(nom, sube, baja, ojo);
+    cont.appendChild(f);
+  });
+}
+
+function moverSeccion(i, paso) {
+  const l = enLista(CONT.secciones);
+  const j = i + paso; if (j < 0 || j >= l.length) return;
+  const t = l[i]; l[i] = l[j]; l[j] = t;
+  CONT.secciones = l.join(",");
+  pintarSecciones(); refrescarVista();
+}
+
+function apagarSeccion(id) {
+  const off = new Set(enLista(CONT.ocultas));
+  off.has(id) ? off.delete(id) : off.add(id);
+  CONT.ocultas = [...off].join(",");
+  pintarSecciones(); refrescarVista();
+}
+
+$("secciones").addEventListener("click", () => {
+  const c = contrato();
+  if (!c || !c.idsSecciones) {
+    aviso("El index.html del sitio es de una versión anterior: subilo para poder "
+        + "mover o apagar secciones.", true);
+    return;
+  }
+  unirSecciones(); pintarSecciones();
+  $("hoja-sec").classList.remove("hide");
+});
+$("s-cerrar").addEventListener("click", () => $("hoja-sec").classList.add("hide"));
+$("s-reset").addEventListener("click", async () => {
+  if (!confirm("Volver a copiar el sitio publicado al taller.\n\nSe pierde todo lo "
+      + "que hayas movido acá. El sitio no se toca.\n\n¿Seguro?")) return;
+  try {
+    await copiarDesdePublicado();
+    $("hoja-sec").classList.add("hide");
+    abrirPagina();
+    aviso("El taller vuelve a ser una copia del sitio. Falta guardar.");
+  } catch (e) { aviso(CY.explicar(e), true); }
+});
+
 /* ---------- guardar ---------- */
 $("guardar").addEventListener("click", async () => {
   const b = $("guardar"); b.disabled = true; b.textContent = "…";
   try {
     // El mapa completo con setDoc: nunca updateDoc de una clave con punto.
-    // Esto ES el sitio: no hay borrador ni exportación. Lo que se guarda acá
-    // lo ve cualquiera que entre a casayourte.com en el acto.
-    await setDoc(doc(db, "sitio", "publicado"), {
+    // En vivo, esto ES el sitio: lo ve cualquiera que entre a casayourte.com
+    // en el acto. En el taller no lo ve nadie salvo quien tenga el enlace.
+    await setDoc(doc(db, "sitio", destino), {
       ...porIdioma(l => codifMapa(CONT[l])),
-      imagenes: CONT.imagenes, orden: CONT.orden, idiomas: IDIOMAS(),
+      imagenes: CONT.imagenes, orden: CONT.orden,
+      secciones: CONT.secciones || "", ocultas: CONT.ocultas || "",
+      idiomas: IDIOMAS(),
       guardado: serverTimestamp(), guardadoPor: yo.email,
     });
     ORIG = JSON.parse(JSON.stringify(CONT));
     contar();
-    aviso("Publicado. Ya se ve en el sitio.");
+    aviso(enTaller() ? "Guardado en el taller. El sitio publicado no cambió."
+                     : "Publicado. Ya se ve en el sitio.");
   } catch (e) { aviso(CY.explicar(e), true); }
-  finally { b.textContent = "Publicar"; contar(); }
+  finally { b.disabled = false; b.textContent = enTaller() ? "Guardar" : "Publicar"; contar(); }
 });
 
 </script>

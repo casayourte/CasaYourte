@@ -94,6 +94,40 @@ errores deja de existir.**
 **No hay paso de revisión.** Quien tenga el permiso de contenido publica directo. Es a
 propósito: dos estados fue lo que se acaba de retirar.
 
+### El taller · el sitio piloto
+
+Desde el 2026-09-14 hay un segundo documento, `sitio/taller`, y un modo en el editor para
+escribirlo. **No es la vuelta del borrador.** La diferencia es concreta y es la que importa:
+
+|  | El borrador de agosto | El taller |
+|---|---|---|
+| Quién manda | ambiguo: dos estados del mismo sitio | `sitio/publicado`, siempre |
+| Cómo se pasa uno al otro | exportar un JSON, subirlo a mano, **mezclar** | copia entera de un documento, un botón |
+| Cuándo se usa | todo el tiempo | mientras dure un rediseño, y después se apaga |
+| Qué pasa si nadie lo mira | el sitio publicado se queda viejo | nada: el sitio no depende de él |
+
+Lo que hacía fallar al borrador era la **mezcla** — exportaciones que perdían reemplazos de
+imagen, un borrador viejo que borraba claves nuevas. Llevar el taller al sitio no mezcla
+nada: copia el documento completo, campo por campo. Es la única operación entre los dos.
+
+```
+casayourte.com/?taller=1        el sitio piloto, para mirarlo · sin cuenta
+casayourte.com/editar.html      el editor · chip «Taller» arriba
+```
+
+**Y el taller deja mover y apagar secciones enteras**, cosa que en vivo no se puede: mover
+una sección de la página publicada sin poder mirarla antes es exactamente el accidente que
+el taller viene a evitar. Cada hijo de `<body>` que forma parte del relato lleva
+`data-seccion`; el orden y las apagadas viajan en dos campos del documento, `secciones` y
+`ocultas`. **Apagar no es borrar:** la sección sigue en el HTML con sus textos y se enciende
+con el mismo botón.
+
+**El permiso `taller`** existe para dar acceso a alguien de afuera —un diseñador— que pueda
+tocar el piloto y **no** lo publicado. Quien tiene `contenido` ya puede entrar al taller;
+`taller` es para quien sólo puede entrar ahí. La garantía está en `REGLAS.txt`, no en la
+pantalla: `sitio/taller` tiene su propio `match` que acepta los dos permisos, y
+`sitio/publicado` sólo matchea el bloque general, que pide `contenido`.
+
 ### Cambiar una imagen · dos caminos distintos
 
 - **Desde el editor:** elegís una foto de un álbum. Queda como *reemplazo* en
@@ -552,11 +586,11 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 
 | Archivo | Constante | Valor de esta versión |
 |---|---|---|
-| `nucleo.js` | `CY.VERSION` | `nucleo-17` |
+| `nucleo.js` | `CY.VERSION` | `nucleo-18` |
 | `firebase-init.js` | (en el comentario) | `init-2` |
-| `sw.js` | `VERSION` | `cy-shell-v38` |
+| `sw.js` | `VERSION` | `cy-shell-v39` |
 | `admin.html` | `PANEL` | `admin-18` |
-| `editar.html` | `EDITOR` | `editar-8` |
+| `editar.html` | `EDITOR` | `editar-9` |
 | `calculo.html` | `CY.PANEL` | `calculo-9` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-4` |
 | `diagnostico.html` | `CY.PANEL` | `diagnostico-8` |
@@ -564,7 +598,8 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 | `traducir.html` | `TRADUCTOR` | `traducir-15` |
 
 *Verificados uno por uno contra los archivos el 2026-09-14, en la tanda del SDK
-diferido, que tocó ocho de los diez.*
+diferido, que tocó ocho de los diez; `nucleo.js`, `sw.js` y `editar.html` subieron otra vez
+ese mismo día, con el taller.*
 
 ## El SDK no viene puesto
 
@@ -609,6 +644,22 @@ El panel de datos lo resolvió primero; esto es el mismo patrón traído acá.
 Si el panel muestra un número **más alto** que el de esta tabla, la que quedó vieja es la
 tabla. Si muestra uno **más bajo**, ese teléfono está sirviendo una copia cacheada: el
 botón ↻ del avatar borra las cachés.
+
+## El banco de pruebas
+
+```
+node pruebas-secciones.mjs
+```
+
+Sin npm, sin navegador, sin dependencias: `node` a secas. Son 16 casos sobre el orden y el
+apagado de secciones, y **no prueban una copia de la lógica** — extraen el `aplicarSecciones`
+real de `index.html` y lo corren contra un DOM de juguete. Cubren los bordes, no el camino
+feliz: lista vacía, lista parcial (lo que falta no puede desaparecer), un identificador
+guardado que ya no existe en el archivo, las bandas decorativas que viajan con su sección, el
+pie que nunca se mueve, y basura en los campos.
+
+Es el patrón que presta Harmonía (`PROTOCOLO-DESARROLLO.md`), y es el primero de CasaYourte.
+**Se corre antes de subir.**
 
 ## Al subir código
 

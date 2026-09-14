@@ -131,10 +131,27 @@ service cloud.firestore {
 
     // ---------- el sitio ----------
     // sitio/publicado ES el sitio: lo que se escribe acá lo ve el público en
-    // el acto. Ya no hay borrador ni exportación a un archivo del repositorio.
+    // el acto. No hay paso de revisión: quien tiene 'contenido', publica.
     //
-    // Por eso el permiso 'contenido' ahora significa «puede cambiar el sitio
-    // público». No hay paso de revisión: quien lo tiene, publica.
+    // sitio/taller es el SITIO PILOTO. Mismo archivo index.html, otro
+    // documento: con ?taller=1 la página se pinta con éste. Existe para que
+    // alguien de afuera —un diseñador— pueda mover, apagar y reescribir sin
+    // poder tocar lo publicado.
+    //
+    // OJO CON EL ORDEN: en Firestore los permisos se SUMAN y los dos bloques
+    // de abajo matchean sitio/taller. Por eso quien tiene 'contenido' puede
+    // escribir los dos, y quien tiene sólo 'taller' puede escribir el taller
+    // y NO publicado —que sólo matchea el bloque general—. Esa asimetría es
+    // toda la garantía del piloto, y vive acá, no en la interfaz.
+    //
+    // Lectura abierta en los dos: el taller no guarda nada sensible, son los
+    // mismos textos del catálogo ordenados de otra manera, y que se lea sin
+    // cuenta es justamente lo que permite pasarle el enlace a alguien.
+    match /sitio/taller {
+      allow read: if true;
+      allow write: if con('contenido') || con('taller');
+    }
+
     match /sitio/{doc} {
       allow read: if true;
       allow write: if con('contenido');

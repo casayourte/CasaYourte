@@ -12,7 +12,7 @@
 
 export const CY = {};
 
-CY.VERSION = 'nucleo-17';
+CY.VERSION = 'nucleo-18';
 
 // ═════════════════════════════════════════════════════════════
 //  BOTÓN ATRÁS DE ANDROID
@@ -532,6 +532,13 @@ CY.PERMISOS = [
     detalle:'Crear álbumes, subir fotos, ordenarlas y escribir sus textos.' },
   { id:'contenido', label:'Editar el sitio público', icono:'edit_note',
     detalle:'Cambiar los textos y las imágenes del catálogo. Lo que guarde se ve en el acto: no hay paso de revisión.' },
+  // El taller es el sitio piloto: sitio/taller, un documento aparte que no ve
+  // nadie salvo quien tenga el enlace ?taller=1. Se le da a un diseñador para
+  // que mueva, apague y reescriba sin poder tocar lo publicado. Quien tiene
+  // 'contenido' ya puede entrar al taller: este permiso es para quien SÓLO
+  // puede entrar ahí.
+  { id:'taller',    label:'Sitio piloto (taller)', icono:'science',
+    detalle:'Trabajar el sitio en un documento aparte. No toca lo publicado: llevarlo al sitio pide «Editar el sitio público».' },
   { id:'publicar',  label:'Publicar álbumes', icono:'publish',
     detalle:'Marcar un álbum de obra para que aparezca en el sitio.' },
   { id:'calculo',   label:'Cálculo de taller', icono:'straighten',
@@ -545,8 +552,12 @@ CY.NAV = [
   // La edición del sitio es UNA sola: viendo la página real. El editor por
   // formularios se retiró en la T27 para no tener dos caminos que escriben lo
   // mismo y se desincronizan.
+  // Acepta cualquiera de los dos: con 'contenido' se entra a publicar, con
+  // 'taller' sólo al sitio piloto. La pantalla se encarga de esconder el
+  // destino que esa cuenta no puede escribir; quien lo impide de verdad son
+  // las reglas de Firestore.
   { id:'editar',   label:'Editar el sitio', corto:'Editar', icono:'edit_note',
-    href:'./editar.html',      grupo:'directo', permiso:'contenido' },
+    href:'./editar.html',      grupo:'directo', permiso:['contenido','taller'] },
   { id:'calculo',  label:'Cálculo de taller', corto:'Cálculo', icono:'straighten',
     href:'./calculo.html',     grupo:'directo', permiso:'calculo' },
 
