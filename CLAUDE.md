@@ -68,12 +68,20 @@ confunda con secretos y los "proteja" rompiendo el sitio.
 | Invitaciones pendientes | **Firestore**, colección `invitaciones/{mail}`, protegida por `REGLAS.txt` |
 | Cálculos de taller (datos de clientes, medidas de obra) | **Firestore**, colección `calculos/{id}`. **No son públicos**: sólo con el permiso `calculo`. Costos, márgenes, tarifas y proveedores no van a este repositorio |
 | Contraseña del usuario del agente de Claude Code | **variables de entorno de Claude Code**, cargadas por Mauro en la web. El usuario vive en Firebase Authentication de `casayourte-mauro`, **sin ficha en `usuarios/`**: su acceso sale del bloque `esAgente()` de `REGLAS.txt`, que le da lectura de todo menos `calculos` e `invitaciones`. Lo usa `datos/herramientas/firestore.mjs` |
-| Login de las consolas: GitHub, Firebase, Cloudinary | **gestor de contraseñas personal de Mauro.** En ningún repositorio ni documento. *De quién es cada cuenta* se documenta en la **bóveda del panel** (`fichas/`), no acá |
+| Login de las consolas: GitHub, Firebase, Cloudinary | **gestor de contraseñas personal de Mauro.** En ningún repositorio ni documento. *De quién es cada cuenta* se documenta en las **fichas del panel** (`fichas/`), no acá |
 
 **De quién son las cuentas** (titular de la consola de Firebase, de Cloudinary,
-de Netlify): **no se documenta acá.** Vive en la **bóveda del panel**, en la
-ficha «Titularidad de las consolas · Casa Yourte» de `fichas/`. No es un secreto —la contraseña sí, y esa no está en ningún documento—
+de Netlify): **no se documenta acá.** Vive en las **fichas del panel**, en
+«Titularidad de las consolas · Casa Yourte» de `fichas/`. No es un secreto —la contraseña sí, y esa no está en ningún documento—
 pero es un dato de contacto, y este repositorio es público. Ver
+`PROTOCOLO-SECRETOS.md` § "Titularidad".
+
+**Ojo con la palabra, que hasta el 2026-09-14 nombraba dos cosas.** La
+**bóveda** es `claves/`, y ahí va sólo lo que **abre algo** —contraseñas,
+códigos de recuperación, segundos factores—, que no toca nadie más que Mauro.
+La titularidad **no abre nada**: es un dato de contacto, va en `fichas/`, y
+desde las reglas v4 la administra el equipo. Lo dijo él así: «a la bóveda sólo
+irían contenedores que tengan claves de acceso». Ver
 `PROTOCOLO-SECRETOS.md` § "Titularidad".
 
 ### Si algún día hace falta un secreto de verdad
