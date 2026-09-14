@@ -12,7 +12,7 @@
 
 export const CY = {};
 
-CY.VERSION = 'nucleo-16';
+CY.VERSION = 'nucleo-17';
 
 // ═════════════════════════════════════════════════════════════
 //  BOTÓN ATRÁS DE ANDROID
@@ -742,4 +742,59 @@ CY.arrancar = async function (fb, activo, permiso) {
   CY.registrarSW();
   CY.renderNav(activo);
   return CY.usuario;
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  CY.conFirebase — esperar el SDK, y DECIR si no bajó.
+//  Desde `nucleo-17` (2026-09-14). Hallazgo A2 de la primera auditoría.
+//
+//  Desde `firebase-init.js` sello `init-2` el SDK entra diferido, así que
+//  `db`, `auth` y todo lo demás valen `undefined` hasta que su promesa
+//  resuelve. Toda página que use Firebase empieza por acá:
+//
+//      import { cargarFirebase, db, auth, ... } from './firebase-init.js';
+//      if (!await CY.conFirebase(cargarFirebase)) throw new Error('sin SDK');
+//
+//  Lo que se gana no es velocidad: es que cuando gstatic.com no contesta la
+//  página ABRA y lo diga, en vez de quedar en blanco sin un solo mensaje.
+//  Eso pasaba y era indistinguible de «la app se rompió» — peor todavía en
+//  el panel instalado, donde el cascarón abre de la caché y lo único que
+//  falta es justo lo que nunca se cachea.
+//
+//  Vive en el núcleo y no en cada página a propósito (Libro 1 §3.2): son
+//  cinco pantallas y el cartel tiene que ser el mismo en las cinco.
+// ═══════════════════════════════════════════════════════════════
+CY.conFirebase = async function (cargar) {
+  try {
+    await cargar();
+    return true;
+  } catch (e) {
+    CY.sinFirebase(e, cargar);
+    return false;
+  }
+};
+
+// El cartel. Reemplaza el cuerpo entero: cualquier cosa que hubiera pintado
+// la página antes de este punto está a medio hacer, y media pantalla viva
+// confunde más que una pantalla que explica.
+CY.sinFirebase = function (e, cargar) {
+  const msg = (e && e.message) || 'No se pudo cargar Firebase.';
+  document.body.innerHTML = ''
+    + '<div id="cy-sin-sdk" style="max-width:34rem;margin:0 auto;padding:2rem 1.25rem;'
+    + 'font:inherit;line-height:1.5;">'
+    + '<h1 style="font-size:1.25rem;margin:0 0 .75rem;">No se pudo abrir el panel</h1>'
+    + '<p style="margin:0 0 .75rem;">' + CY.esc(msg) + '</p>'
+    + '<p style="margin:0 0 1.25rem;opacity:.75;font-size:.9rem;">'
+    + 'El panel en sí está bien: lo que falta es una pieza que se baja de '
+    + 'internet cada vez y no se puede guardar en el teléfono. Con señal, '
+    + 'volvé a intentar.</p>'
+    + '<button id="cy-reintentar" type="button" style="font:inherit;padding:.6rem 1.1rem;'
+    + 'border-radius:.5rem;border:1px solid currentColor;background:transparent;'
+    + 'color:inherit;cursor:pointer;">Reintentar</button>'
+    + '</div>';
+  const b = document.getElementById('cy-reintentar');
+  // Recargar y no reintentar en caliente: para cuando se toca el botón, la
+  // página ya se quedó sin la mitad de su arranque. Volver a empezar limpio
+  // es más corto de explicar y no deja estados a medias.
+  if (b) b.addEventListener('click', () => location.reload());
 };

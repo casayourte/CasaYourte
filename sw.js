@@ -109,7 +109,14 @@
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v37';
+const VERSION = 'cy-shell-v38';
+
+// v38 (14-sep-2026) — el SDK de Firebase pasa a bajarse DIFERIDO
+//   (`firebase-init.js` sello init-2, `nucleo.js` nucleo-17 con
+//   `CY.conFirebase`, y las cinco pantallas del panel esperándolo). Cambian
+//   siete archivos del SHELL de una vez, así que este número importa más que
+//   nunca: una mezcla de páginas nuevas con un `firebase-init.js` viejo
+//   llamaría a `cargarFirebase()`, que ahí no existe.
 
 const SHELL = [
   './admin.html',

@@ -270,7 +270,8 @@
 // persona crea su propia cuenta y sí corresponde la instancia principal.
 // El alta directa del admin usa crearCuentaAuth, que va por una app
 // secundaria para no expulsar al admin de su sesión.
-import { db, auth, firebaseConfig, crearCuentaAuth, createUserWithEmailAndPassword,
+import { cargarFirebase,
+         db, auth, firebaseConfig, crearCuentaAuth, createUserWithEmailAndPassword,
          collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc,
          deleteDoc, serverTimestamp, writeBatch,
          onAuthStateChanged, signInWithEmailAndPassword, signOut,
@@ -281,7 +282,7 @@ import { CY } from "./nucleo.js";
 // Sello de ESTE archivo. El de nucleo.js no sirve para saber si admin.html
 // quedó viejo en la caché: son dos archivos distintos. Al cambiar el panel,
 // se sube este número.
-const PANEL = "admin-17";
+const PANEL = "admin-18";
 
 const CLOUD = CY.CLOUDINARY.cloud;
 const PRESET = CY.CLOUDINARY.preset;
@@ -412,6 +413,13 @@ $("r-crear").addEventListener("click", async () => {
 // PWA: el service worker se registra sólo desde el panel. Un visitante del
 // sitio público que nunca abre esto no recibe ningún service worker.
 CY.registrarSW();
+
+// ── El SDK se baja acá, y recién después se mira la sesión ──────────────────
+// Desde `firebase-init.js` sello `init-2` el SDK entra diferido, así que
+// `auth` y `db` valen `undefined` hasta que esto resuelva. Si gstatic.com no
+// contesta, `CY.conFirebase` pinta el cartel y esta página no sigue — antes
+// quedaba en blanco, sin nada que explicara por qué.
+if (!await CY.conFirebase(cargarFirebase)) throw new Error("sin SDK");
 
 onAuthStateChanged(auth, async (u) => {
   if (!u) { yo = null; CY.usuario = null; ver("login"); return; }

@@ -38,7 +38,7 @@ menú ⋮ → *Agregar a la pantalla principal*.
 
 | Archivo | Qué es |
 |---|---|
-| `firebase-init.js` | único archivo que toca el SDK de Firebase. La versión vive acá |
+| `firebase-init.js` | único archivo que toca el SDK de Firebase. La versión vive acá, y **desde el sello `init-2` el SDK se baja diferido**: ver «El SDK no viene puesto» |
 | `estilos.css` | una sola hoja para todas las pantallas del panel |
 | `nucleo.js` | navegación, permisos, Atrás de Android, avisos, imágenes, Cloudinary |
 | `sw.js` | service worker: el panel abre sin señal |
@@ -552,17 +552,59 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 
 | Archivo | Constante | Valor de esta versión |
 |---|---|---|
-| `nucleo.js` | `CY.VERSION` | `nucleo-16` |
-| `sw.js` | `VERSION` | `cy-shell-v37` |
-| `admin.html` | `PANEL` | `admin-17` |
-| `editar.html` | `EDITOR` | `editar-7` |
-| `calculo.html` | `CY.PANEL` | `calculo-8` |
-| `usuarios.html` | `CY.PANEL` | `usuarios-3` |
-| `diagnostico.html` | `CY.PANEL` | `diagnostico-7` |
+| `nucleo.js` | `CY.VERSION` | `nucleo-17` |
+| `firebase-init.js` | (en el comentario) | `init-2` |
+| `sw.js` | `VERSION` | `cy-shell-v38` |
+| `admin.html` | `PANEL` | `admin-18` |
+| `editar.html` | `EDITOR` | `editar-8` |
+| `calculo.html` | `CY.PANEL` | `calculo-9` |
+| `usuarios.html` | `CY.PANEL` | `usuarios-4` |
+| `diagnostico.html` | `CY.PANEL` | `diagnostico-8` |
 | `idiomas.js` | `SELLO` | `idiomas-3` |
-| `traducir.html` | `TRADUCTOR` | `traducir-14` |
+| `traducir.html` | `TRADUCTOR` | `traducir-15` |
 
-*Verificados uno por uno contra los archivos el 2026-09-07; `sw.js` y `diagnostico.html` actualizados el 2026-09-08.*
+*Verificados uno por uno contra los archivos el 2026-09-14, en la tanda del SDK
+diferido, que tocó ocho de los diez.*
+
+## El SDK no viene puesto
+
+Desde el **2026-09-14**, sello `init-2`. Antes, `firebase-init.js` empezaba con
+tres `import` estáticos desde `gstatic.com`, y eso tenía una consecuencia que no
+se veía hasta que pasaba: **si el CDN no contestaba, la página quedaba en blanco.**
+No una parte rota, no un cartel: blanco, sin un solo mensaje. Un `import` estático
+es una dependencia dura — si no baja, el módulo no evalúa, y con él no evalúa
+nada de lo que lo importa.
+
+Acá pegaba peor que en un sitio común, porque el panel es una app instalable: el
+`sw.js` guarda el cascarón, así que sin señal el HTML, el CSS y el JS abren
+perfecto… y la pantalla quedaba igual en blanco, porque lo único que faltaba era
+justo lo que nunca se cachea. Parecía que la instalación estaba rota.
+
+Ahora el SDK entra por `import()` **dinámico**, adentro de un `try`, cuando la
+pantalla lo pide. Si no llega, el panel **abre y lo dice**, con un botón para
+reintentar cuando vuelva la señal.
+
+**Lo que hay que saber para no romperlo.** Lo que exporta `firebase-init.js` son
+`let`, no `const` — un `export let` es un *enlace vivo*, así que quien escribió
+`doc(db, …)` lo sigue escribiendo igual y ve el valor cuando ya llegó. Pero
+**antes de que `cargarFirebase()` resuelva, todos valen `undefined`**: nada que
+dependa de Firebase puede correr al nivel superior de un módulo. Por eso cada
+pantalla empieza con
+
+```js
+if (!await CY.conFirebase(cargarFirebase)) throw new Error("sin SDK");
+```
+
+y recién después toca `db` o `auth`. `CY.conFirebase` vive en `nucleo.js` y es
+quien pinta el cartel, una sola vez para las cinco pantallas.
+
+`diagnostico.html` lo carga él mismo y trae una prueba nueva —«El SDK de Firebase
+baja del CDN»— que es, además, la única forma de ver desde el teléfono si
+`gstatic.com` contesta hoy en esa red.
+
+Sale del hallazgo **A2** de la primera auditoría de protocolos: la regla
+`general:cdn-diferido` existía y no se cumplía en ninguno de los cuatro sitios.
+El panel de datos lo resolvió primero; esto es el mismo patrón traído acá.
 
 Si el panel muestra un número **más alto** que el de esta tabla, la que quedó vieja es la
 tabla. Si muestra uno **más bajo**, ese teléfono está sirviendo una copia cacheada: el

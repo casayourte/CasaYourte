@@ -168,14 +168,15 @@ button{cursor:pointer}
 <script src="idiomas.js?v=1"></script>
 
 <script type="module">
-import { db, auth, doc, getDoc, getDocs, setDoc, collection, serverTimestamp,
+import { cargarFirebase,
+         db, auth, doc, getDoc, getDocs, setDoc, collection, serverTimestamp,
          onAuthStateChanged, signInWithEmailAndPassword, signOut } from "./firebase-init.js";
 import { CY } from "./nucleo.js";
 
 const $ = (id) => document.getElementById(id);
 
 // Sello de este archivo, para saber si quedó viejo en la caché.
-const EDITOR = "editar-7";
+const EDITOR = "editar-8";
 CY.PANEL = EDITOR;
 
 /* ═══════════════════════════════════════════════════════════════
@@ -249,6 +250,14 @@ $("salir").addEventListener("click", () => {
   if (sucio() && !confirm("Tenés cambios sin publicar. ¿Salir igual?")) return;
   location.href = "admin.html";
 });
+
+
+// ── El SDK se baja acá, y recién después se mira la sesión ──────────────────
+// Desde `firebase-init.js` sello `init-2` el SDK entra diferido: `auth` y `db`
+// valen `undefined` hasta que esto resuelva. Si gstatic.com no contesta,
+// `CY.conFirebase` pinta el cartel y la página no sigue — antes quedaba en
+// blanco, sin nada que explicara por qué.
+if (!await CY.conFirebase(cargarFirebase)) throw new Error("sin SDK");
 
 onAuthStateChanged(auth, async (u) => {
   if (!u) { $("login").classList.remove("hide"); $("app").classList.add("hide"); return; }

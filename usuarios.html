@@ -88,13 +88,23 @@
 </div></dialog>
 
 <script type="module">
-import { db, auth, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc,
+import { cargarFirebase,
+         db, auth, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc,
          collection, serverTimestamp, onAuthStateChanged, signOut,
          crearCuentaAuth } from './firebase-init.js';
 import { CY } from './nucleo.js';
 
-CY.PANEL = 'usuarios-3';
+CY.PANEL = 'usuarios-4';
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace('./admin.html')); };
+
+
+// ── El SDK se baja acá, y recién después arranca la pantalla ────────────────
+// Desde `firebase-init.js` sello `init-2` el SDK entra diferido: `db`, `auth`
+// y `onAuthStateChanged` valen `undefined` hasta que esto resuelva, así que
+// tiene que ir ANTES de armar el objeto que recibe `CY.arrancar` — si no, le
+// llegarían los tres sin valor. Si gstatic.com no contesta, `CY.conFirebase`
+// pinta el cartel y la página no sigue; antes quedaba en blanco.
+if (!await CY.conFirebase(cargarFirebase)) throw new Error('sin SDK');
 
 const yo = await CY.arrancar({ db, auth, doc, getDoc, onAuthStateChanged }, 'usuarios');
 if (!CY.esAdmin()) { location.replace('./admin.html'); throw new Error('sólo admin'); }

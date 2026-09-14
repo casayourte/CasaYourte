@@ -242,14 +242,15 @@ textarea.json{font-family:var(--mono);font-size:.7rem;line-height:1.4;min-height
 
 <script src="idiomas.js?v=1"></script>
 <script type="module">
-import { db, auth, doc, getDoc, getDocs, setDoc, collection, serverTimestamp,
+import { cargarFirebase,
+         db, auth, doc, getDoc, getDocs, setDoc, collection, serverTimestamp,
          onAuthStateChanged, signOut } from "./firebase-init.js";
 import { CY } from "./nucleo.js";
 
 const $ = (id) => document.getElementById(id);
 
 // Sello de este archivo, para saber si quedó viejo en la caché (§3.34).
-const TRADUCTOR = "traducir-14";
+const TRADUCTOR = "traducir-15";
 CY.PANEL = TRADUCTOR;
 
 /* ═══════════════════════════════════════════════════════════════
@@ -426,6 +427,15 @@ CY.alSalir = async () => {
 
 // 'contenido' es el mismo permiso que pide el editor, y por la misma razón:
 // esto escribe en sitio/*, y lo que se escribe ahí se ve en el acto.
+
+// ── El SDK se baja acá, y recién después arranca la pantalla ────────────────
+// Desde `firebase-init.js` sello `init-2` el SDK entra diferido: `db`, `auth`
+// y `onAuthStateChanged` valen `undefined` hasta que esto resuelva, así que
+// tiene que ir ANTES de armar el objeto que recibe `CY.arrancar` — si no, le
+// llegarían los tres sin valor. Si gstatic.com no contesta, `CY.conFirebase`
+// pinta el cartel y la página no sigue; antes quedaba en blanco.
+if (!await CY.conFirebase(cargarFirebase)) throw new Error("sin SDK");
+
 CY.arrancar({ db, auth, doc, getDoc, onAuthStateChanged }, "traducir", "contenido")
   .then(async () => {
     $("app").classList.remove("hide");

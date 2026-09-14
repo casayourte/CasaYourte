@@ -98,7 +98,7 @@
 //  desde que la página existe. Se veía como una pantalla que se quedaba
 //  cargando, no como un error.
 // ═══════════════════════════════════════════════════════════
-const SELLO = "diagnostico-7";
+const SELLO = "diagnostico-8";
 const $ = (id) => document.getElementById(id);
 
 let FB = null, CY = null, quien = null, ficha = null;
@@ -197,6 +197,27 @@ async function bloqueModulos() {
   await probar("firebase-init.js", async (f) => {
     try { FB = await import("./firebase-init.js?d=" + Date.now()); f.ok("carga sin errores"); }
     catch (e) { f.mal("NO CARGA: " + e.message + " · Es lo primero a arreglar: un error de sintaxis en un módulo ES deja en blanco cualquier página que lo importe."); }
+  });
+  // Desde el sello `init-2` el SDK NO viene puesto: `firebase-init.js` carga
+  // solo, pero `db`, `auth` y todo lo demás valen `undefined` hasta que se
+  // llama a `cargarFirebase()`. Sin esto, cada prueba de abajo diría que
+  // Firebase está roto cuando lo único que pasa es que nadie lo pidió — y un
+  // diagnóstico que miente es peor que no tenerlo.
+  //
+  // Y de paso vale por sí misma: ES la prueba de si gstatic.com contesta hoy
+  // desde este teléfono y esta red, que es justo lo que no se podía ver antes.
+  await probar("El SDK de Firebase baja del CDN", async (f) => {
+    if (!FB) return f.ojo("hace falta firebase-init.js");
+    if (typeof FB.cargarFirebase !== "function")
+      return f.mal("firebase-init.js no exporta `cargarFirebase`: quedó en una versión anterior al sello init-2");
+    try {
+      await conPlazo(FB.cargarFirebase(), 15000);
+      f.ok("gstatic.com contestó · el SDK quedó cargado");
+    } catch (e) {
+      f.mal((e && e.message) || "no bajó"
+        + " · Con el SDK caído las pantallas del panel abren igual y lo dicen;"
+        + " no quedan en blanco. Reintentar con señal.");
+    }
   });
   await probar("nucleo.js", async (f) => {
     try {
