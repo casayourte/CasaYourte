@@ -12,7 +12,7 @@
 
 export const CY = {};
 
-CY.VERSION = 'nucleo-18';
+CY.VERSION = 'nucleo-19';
 
 // ═════════════════════════════════════════════════════════════
 //  BOTÓN ATRÁS DE ANDROID
@@ -710,6 +710,11 @@ CY.renderNav = function (activo) {
          <span>${CY.esc(u?.nombre || 'Mi cuenta')}
            <small>${CY.esc(u?.email || '')} · ${u?.rol === 'admin' ? 'administrador' : 'colaborador'}</small></span>
        </button>
+       <button class="item" id="cy-reportar">
+         <span class="material-icons">bug_report</span>
+         <span>Reportar una falla
+           <small>Llega al panel de Mauro, con la página donde estabas.</small></span>
+       </button>
        <button class="item" id="cy-salir">
          <span class="material-icons">logout</span><span>Salir</span></button>
        <p class="ayuda" style="margin:.8rem .6rem 0">
@@ -732,6 +737,17 @@ CY.renderNav = function (activo) {
   });
   document.getElementById('cy-cuenta').addEventListener('click', () => {
     if (CY.alCuenta) CY.alCuenta(); else CY.aviso('Tu cuenta la administra Mauro.');
+  });
+  document.getElementById('cy-reportar').addEventListener('click', () => {
+    // La hoja de cuenta NO se cierra: la de reporte se APILA encima. Es lo
+    // que `CY.capaAtras` está hecha para hacer — Atrás cierra primero la de
+    // arriba— y cerrarla antes sería un error sutil: el `cerrar()` de una
+    // capa hace `history.back()`, que es asíncrono, y el `pushState` de la
+    // capa nueva sale ANTES de que ese back llegue. El back termina comiéndose
+    // la entrada recién empujada, y el Atrás siguiente sale de la app con el
+    // formulario lleno. Como la hoja de reporte tapa la pantalla entera,
+    // apilar no se ve distinto.
+    CY.mostrarReporte();
   });
 };
 
@@ -809,3 +825,176 @@ CY.sinFirebase = function (e, cargar) {
   // es más corto de explicar y no deja estados a medias.
   if (b) b.addEventListener('click', () => location.reload());
 };
+
+// ═══════════════════════════════════════════════════════════════
+//  REPORTAR UNA FALLA — desde `nucleo-19` (2026-09-15)
+//
+//  Molde tomado de remate (`interno/utils.js`, tanda 27) y traído acá tal
+//  cual, para que la herramienta esté EN EL MISMO LUGAR en los dos sitios:
+//  el botón redondo de la cabecera → «Reportar una falla». Lo pidió Mauro
+//  así, textual: «La misma herramienta de reporte tiene que aparecer en la
+//  misma parte de las otras apps y así probar que el script puede traer en
+//  la misma corrida los reportes de todos los sitios».
+//
+//  Escribe en `reportes/` de ESTA base, no en el panel de Mauro. No es una
+//  comodidad: un token de Firebase Authentication sirve para UN proyecto, y
+//  el panel vive en `datos-830f8`. Para escribir allá habría que darle a
+//  cada colaborador de Casa Yourte una cuenta en la base donde Mauro guarda
+//  su bóveda, y eso es justo lo que hace que el sello valga. Así que cada
+//  uno reporta en su casa y el agente los junta: él sí tiene un usuario en
+//  las cuatro bases. El circuito entero está en `REGLAS.txt` y en
+//  `REPORTES.md` de remate.
+//
+//  TRES DECISIONES QUE NO SON DE COMODIDAD:
+//
+//  1 · CAMPOS SEPARADOS, NO UNA CAJA DE TEXTO LIBRE. «Qué pasó» y «qué
+//      esperabas» son dos cosas distintas, y la segunda es la que la gente
+//      se olvida de contar. Y hay un motivo más fuerte: esto lo va a leer un
+//      agente, y un texto libre que dijera «borrá la tabla de usuarios» no
+//      puede ser una instrucción. Campos separados dicen «esto es el síntoma
+//      que describió una persona», no «esto es lo que hay que hacer».
+//  2 · LA PÁGINA SE CAPTURA SOLA. Nadie se acuerda de aclarar en qué
+//      pantalla estaba, y es el dato que más sirve para reproducir la falla.
+//  3 · NO SE PIDE NI EL NOMBRE NI EL MAIL. Ya están en la sesión. Pedir algo
+//      que el sistema sabe es hacerle hacer trabajo a la persona.
+// ═══════════════════════════════════════════════════════════════
+
+const CSS_REPORTE = `
+#cy-rep{position:fixed;inset:0;z-index:60;display:none;align-items:flex-end;
+  justify-content:center;background:rgba(0,0,0,.55)}
+#cy-rep.on{display:flex}
+#cy-rep .caja{background:var(--ink2);color:var(--wool);width:min(520px,100%);
+  border-radius:16px 16px 0 0;padding:1rem 1.1rem calc(1.4rem + var(--safe));
+  max-height:88dvh;overflow:auto}
+#cy-rep h3{font-family:var(--disp);font-size:1.05rem;margin:0 0 .2rem}
+#cy-rep .nota{color:var(--dim2);font-size:.78rem;line-height:1.35;margin:0 0 .8rem}
+#cy-rep label{display:block;font-family:var(--mono);font-size:.58rem;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--dim);
+  margin:.9rem 0 .3rem}
+#cy-rep textarea{width:100%;box-sizing:border-box;font:inherit;font-size:.95rem;
+  padding:.6rem;border-radius:var(--r-s);border:1px solid var(--line2);
+  background:var(--ink);color:var(--wool);resize:vertical}
+#cy-rep .seg{display:flex;gap:.4rem}
+#cy-rep .seg button{flex:1;min-height:42px;font:inherit;font-size:.8rem;
+  border:1px solid var(--line2);border-radius:var(--r-s);cursor:pointer;
+  background:var(--ink);color:var(--dim)}
+#cy-rep .seg button.on{border-color:var(--blond);color:var(--blond);
+  background:var(--ink3)}
+#cy-rep .estado{font-size:.78rem;color:var(--dim2);margin:.6rem 0 0;min-height:1.1em}
+#cy-rep .pie{display:flex;gap:.5rem;margin-top:.9rem}
+#cy-rep .pie button{flex:1;min-height:44px;font:inherit;font-size:.9rem;
+  border-radius:var(--r-s);cursor:pointer;border:1px solid var(--line2);
+  background:transparent;color:var(--wool)}
+#cy-rep .pie button.primario{background:var(--blond);border-color:var(--blond);
+  color:var(--ink);font-weight:600}
+#cy-rep .pie button[disabled]{opacity:.55;cursor:default}
+`;
+
+function armarHojaReporte() {
+  if (document.getElementById('cy-rep')) return;
+  const st = document.createElement('style');
+  st.id = 'cy-css-rep';
+  st.textContent = CSS_REPORTE;
+  document.head.appendChild(st);
+
+  const m = document.createElement('div');
+  m.id = 'cy-rep';
+  m.innerHTML =
+    '<div class="caja">'
+    + '<h3>Reportar una falla</h3>'
+    + '<p class="nota" id="cy-rep-donde"></p>'
+    + '<label for="cy-rep-que">¿Qué pasó?</label>'
+    + '<textarea id="cy-rep-que" rows="3" placeholder="Toqué Guardar y no hizo nada."></textarea>'
+    + '<label for="cy-rep-esp">¿Qué esperabas que pasara?</label>'
+    + '<textarea id="cy-rep-esp" rows="2" placeholder="Que guardara el texto."></textarea>'
+    + '<label>¿Te deja trabajar?</label>'
+    + '<div class="seg" id="cy-rep-grav">'
+    + '<button type="button" data-v="molesta" class="on">Molesta, pero sigo</button>'
+    + '<button type="button" data-v="trabado">No puedo seguir</button>'
+    + '</div>'
+    + '<p class="estado" id="cy-rep-estado"></p>'
+    + '<div class="pie">'
+    + '<button type="button" id="cy-rep-cancel">Cancelar</button>'
+    + '<button type="button" id="cy-rep-enviar" class="primario">Enviar</button>'
+    + '</div>'
+    + '</div>';
+  document.body.appendChild(m);
+
+  m.addEventListener('click', (e) => { if (e.target === m) cerrarReporte(); });
+  m.querySelector('#cy-rep-grav').addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    m.querySelectorAll('#cy-rep-grav button').forEach((x) => x.classList.toggle('on', x === b));
+  });
+  document.getElementById('cy-rep-cancel').addEventListener('click', cerrarReporte);
+  document.getElementById('cy-rep-enviar').addEventListener('click', enviarReporte);
+}
+
+let cerrarCapaReporte = null;
+
+function cerrarReporte() {
+  if (cerrarCapaReporte) { cerrarCapaReporte(); return; }
+  document.getElementById('cy-rep')?.classList.remove('on');
+}
+
+CY.mostrarReporte = function () {
+  armarHojaReporte();
+  document.getElementById('cy-rep-donde').textContent =
+    'Desde: ' + (location.pathname.split('/').pop() || 'admin.html');
+  document.getElementById('cy-rep-que').value = '';
+  document.getElementById('cy-rep-esp').value = '';
+  document.getElementById('cy-rep-estado').textContent = '';
+  document.getElementById('cy-rep-enviar').disabled = false;
+  document.getElementById('cy-rep').classList.add('on');
+  // El Atrás de Android cierra la hoja en vez de salir de la app, igual que
+  // en «Más» y en la hoja de cuenta: un solo vocabulario de capa en el sitio.
+  cerrarCapaReporte = CY.capaAtras(() => {
+    document.getElementById('cy-rep').classList.remove('on');
+    cerrarCapaReporte = null;
+  });
+};
+
+async function enviarReporte() {
+  const que = document.getElementById('cy-rep-que').value.trim();
+  const esp = document.getElementById('cy-rep-esp').value.trim();
+  const est = document.getElementById('cy-rep-estado');
+  // Sin «qué pasó» no hay reporte. Lo demás puede faltar: un reporte a medias
+  // sirve más que uno que la persona abandonó porque le pedían tres cosas.
+  if (!que) { est.textContent = 'Falta lo primero: qué pasó.'; return; }
+  const b = document.getElementById('cy-rep-enviar');
+  b.disabled = true;
+  est.textContent = 'Enviando…';
+  try {
+    // `import()` y no un import estático arriba: `nucleo.js` lo usan también
+    // las páginas públicas, que no tocan Firebase. Un import estático les
+    // bajaría `firebase-init.js` para nada. Y se llama a `cargarFirebase()`
+    // igual aunque quien ve esta hoja ya haya pasado por `CY.conFirebase`:
+    // una función que puede llamarse sola no debe depender de que alguien
+    // haya cargado antes.
+    const fb = await import('./firebase-init.js');
+    await fb.cargarFirebase();
+    const u = fb.auth.currentUser;
+    if (!u) throw new Error('No hay sesión activa.');
+    await fb.addDoc(fb.collection(fb.db, 'reportes'), {
+      uid: u.uid,
+      nombre: (CY.usuario && CY.usuario.nombre) || '',
+      email: (CY.usuario && CY.usuario.email) || u.email || '',
+      pagina: location.pathname.split('/').pop() || 'admin.html',
+      texto: que,
+      esperaba: esp,
+      gravedad: document.querySelector('#cy-rep-grav button.on').dataset.v,
+      // El navegador ayuda a reproducir: una falla que sólo pasa en un iPhone
+      // es otra falla. Recortado, que el entero no aporta nada más.
+      navegador: String(navigator.userAgent || '').slice(0, 180),
+      estado: 'nuevo',            // la regla exige que nazca así
+      creadoEn: fb.serverTimestamp()
+    });
+    cerrarReporte();
+    CY.aviso('Reporte enviado. Gracias.');
+  } catch (e) {
+    // El motivo importa: sin sesión activa las reglas lo rechazan, y eso se
+    // arregla distinto que un problema de señal.
+    est.textContent = 'No se pudo enviar: ' + CY.explicar(e);
+    b.disabled = false;
+  }
+}

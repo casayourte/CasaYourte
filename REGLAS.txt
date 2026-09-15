@@ -157,6 +157,36 @@ service cloud.firestore {
       allow write: if con('contenido');
     }
 
+    // ---------- reportes de falla ----------
+    // Desde el 2026-09-15, y es el mismo bloque que ya tiene remate: quien ve
+    // una falla la reporta desde la pantalla donde la vio, y va a `reportes/`
+    // de ESTA base. No al panel de Mauro — un token de Firebase sirve para UN
+    // proyecto, y el panel vive en `datos-830f8`. Los junta el agente, que sí
+    // tiene un usuario en las cuatro bases. Lo lee por el bloque `esAgente()`
+    // de arriba: lectura sola, y `reportes` no está en su lista de excluidas
+    // porque acá no hay dinero ni datos de clientes, que viven en `calculos`.
+
+    match /reportes/{id} {
+      // El `uid` tiene que ser el de quien escribe. Un reporte que puede
+      // mentir de quién vino no sirve para volver a preguntarle qué vio, y
+      // eso es la mitad de para qué existe un reporte.
+      allow create: if activo()
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.estado == 'nuevo';
+
+      // Leerlos es de admin. Un reporte se escribe sin pensar en quién lo va
+      // a leer, así que se lo trata como lo más sensible que podría nombrar.
+      allow get, list: if admin();
+
+      // Se cierra o se marca tomado, nunca se reescribe: `texto` y `uid` no
+      // pueden cambiar. Pisar lo que dijo la persona es perder el reporte, y
+      // es justo lo que nadie nota hasta que hace falta.
+      allow update: if admin()
+                    && request.resource.data.texto == resource.data.texto
+                    && request.resource.data.uid == resource.data.uid;
+      allow delete: if admin();
+    }
+
     // ---------- todo lo demás, cerrado ----------
     // Ojo con leer esto como un candado: en Firestore los permisos se SUMAN y
     // un `if false` no le resta nada a lo de arriba. Lo que cierra de verdad

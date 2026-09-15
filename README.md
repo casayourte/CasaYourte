@@ -40,7 +40,7 @@ menú ⋮ → *Agregar a la pantalla principal*.
 |---|---|
 | `firebase-init.js` | único archivo que toca el SDK de Firebase. La versión vive acá, y **desde el sello `init-2` el SDK se baja diferido**: ver «El SDK no viene puesto» |
 | `estilos.css` | una sola hoja para todas las pantallas del panel |
-| `nucleo.js` | navegación, permisos, Atrás de Android, avisos, imágenes, Cloudinary |
+| `nucleo.js` | navegación, permisos, Atrás de Android, avisos, imágenes, Cloudinary, reportar una falla |
 | `sw.js` | service worker: el panel abre sin señal |
 | `manifest.json` | hace la app instalable |
 
@@ -572,6 +572,55 @@ elegido.
 mayúscula en español, una con la mayúscula en los dos idiomas, una sólo en español—, y
 **cero falsos positivos**: no se dispara en descripciones ni en textos del sitio.
 
+## Reportar una falla
+
+Desde el **15-sep-2026**. Quien ve una falla la reporta **desde la pantalla
+donde la vio**, sin salir del sitio: botón redondo de la cabecera → **Reportar
+una falla**. Está en las **cinco** páginas que dibujan la barra — `admin.html`,
+`usuarios.html`, `calculo.html`, `traducir.html` y `diagnostico.html`—, porque la
+hoja de cuenta está en esas cinco. `editar.html` no la dibuja: se abre sobre el
+sitio real y no tiene barra, así que desde ahí no hay botón.
+
+Tres campos y nada más:
+
+| Campo | Por qué está |
+|---|---|
+| **¿Qué pasó?** | lo único obligatorio |
+| **¿Qué esperabas que pasara?** | es lo que la gente se olvida de contar, y sin eso a veces no se entiende qué está mal |
+| **¿Te deja trabajar?** | *molesta pero sigo* / *no puedo seguir*. Decide el orden en que se atiende |
+
+La **página** se captura sola, y el nombre y el mail salen de la sesión. Pedir
+algo que el sistema ya sabe es hacerle hacer trabajo a la persona.
+
+**Por qué no escribe directo en el panel de Mauro.** Es la pregunta obvia y la
+respuesta es dura: no se puede. El panel vive en **otro proyecto de Firebase**
+(`datos-830f8`), y un token de Firebase Authentication sirve para **un**
+proyecto y nada más. Para que pudiera, habría que darle a cada colaborador de
+Casa Yourte una cuenta en la base donde Mauro guarda su bóveda — y eso es
+justo lo que hace que el sello valga. Así que **cada uno reporta en su casa** y
+el agente los junta: una sesión de Claude Code sí tiene un usuario en las
+cuatro bases.
+
+```
+casayourte-mauro  →  reportes/       (esta base, esta colección)
+                          ↓  los lee un agente, con `herramientas/firestore.mjs`
+datos-830f8       →  pendientes/     (el panel de Mauro)
+```
+
+El pendiente que se crea lleva un campo `origen` con de dónde salió
+(`casayourte:reportes/<id>`), así no se trae dos veces y se puede volver a la
+fuente.
+
+**Su bloque de `REGLAS.txt` entra en la misma tanda**, y no es un trámite: rige
+el deny por defecto, así que sin la regla publicada el formulario manda y la
+base contesta que no. El bloque exige que el `uid` sea el de quien escribe y que
+el reporte nazca con `estado: 'nuevo'`; leerlos es de administrador, y el texto
+no se puede reescribir después.
+
+Es el mismo molde de **remate** (`REPORTES.md` de ese repositorio), en el mismo
+lugar de la pantalla, a propósito: lo pidió Mauro así para que el script pueda
+traer en una sola corrida los reportes de todos los sitios.
+
 ## Los sellos de versión
 
 Cada archivo con lógica propia lleva su número, visible en el panel abajo del nombre. **Al
@@ -586,9 +635,9 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 
 | Archivo | Constante | Valor de esta versión |
 |---|---|---|
-| `nucleo.js` | `CY.VERSION` | `nucleo-18` |
+| `nucleo.js` | `CY.VERSION` | `nucleo-19` |
 | `firebase-init.js` | (en el comentario) | `init-2` |
-| `sw.js` | `VERSION` | `cy-shell-v39` |
+| `sw.js` | `VERSION` | `cy-shell-v40` |
 | `admin.html` | `PANEL` | `admin-18` |
 | `editar.html` | `EDITOR` | `editar-9` |
 | `calculo.html` | `CY.PANEL` | `calculo-9` |

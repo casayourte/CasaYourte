@@ -66,6 +66,7 @@ confunda con secretos y los "proteja" rompiendo el sitio.
 | Contraseña de cada persona del panel | **Firebase Authentication.** Es un dato de runtime del usuario final: nadie —ni el administrador— maneja contraseñas ajenas. El alta es por invitación y cada persona pone la suya; el reseteo es por mail (`sendPasswordResetEmail`) |
 | Rol y permisos de cada persona | **Firestore**, colección `usuarios/{uid}` (`rol`, `activo`, `permisos`), protegida por `REGLAS.txt`. Son datos, no reglas: se cambian desde `usuarios.html` sin republicar nada |
 | Invitaciones pendientes | **Firestore**, colección `invitaciones/{mail}`, protegida por `REGLAS.txt` |
+| Reportes de falla | **Firestore**, colección `reportes/{id}`, protegida por `REGLAS.txt`. Los escribe el equipo desde el botón de la cabecera y los lee el agente para pasarlos al panel de Mauro. **No son secretos, pero tampoco públicos**: leerlos es de administrador |
 | Cálculos de taller (datos de clientes, medidas de obra) | **Firestore**, colección `calculos/{id}`. **No son públicos**: sólo con el permiso `calculo`. Costos, márgenes, tarifas y proveedores no van a este repositorio |
 | Contraseña del usuario del agente de Claude Code | **variables de entorno de Claude Code**, cargadas por Mauro en la web. El usuario vive en Firebase Authentication de `casayourte-mauro`, **sin ficha en `usuarios/`**: su acceso sale del bloque `esAgente()` de `REGLAS.txt`, que le da lectura de todo menos `calculos` e `invitaciones`. Lo usa `datos/herramientas/firestore.mjs` |
 | Login de las consolas: GitHub, Firebase, Cloudinary | **gestor de contraseñas personal de Mauro.** En ningún repositorio ni documento. *De quién es cada cuenta* se documenta en las **fichas del panel** (`fichas/`), no acá |
@@ -233,6 +234,13 @@ verdad después del cambio.
   Hoy quedan afuera `calculos` e `invitaciones`. Si cambia una lista, cambia la
   otra en la misma tanda: el archivo da el mensaje claro, la regla da la
   garantía.
+- **Reportar una falla vive en el núcleo, desde `nucleo-19`** (15-sep-2026). Es
+  el molde de remate traído tal cual y **en el mismo lugar de la pantalla** — el
+  botón redondo de la cabecera—, que es lo que pidió Mauro para que una sola
+  corrida del script junte los reportes de todos los sitios. Escribe en
+  `reportes/` de ESTA base, nunca en el panel: un token de Firebase sirve para un
+  solo proyecto. Su bloque de `REGLAS.txt` entró en la misma tanda, porque rige
+  el deny por defecto. Ver `README.md` § «Reportar una falla».
 - **La autoridad del contenido es Firestore** (`sitio/publicado`). `contenido.json` en
   el repo es respaldo, y los textos de `index.html` el último respaldo.
 - **No subir acá:** cálculos, costos, márgenes, tarifas, proveedores, documentación

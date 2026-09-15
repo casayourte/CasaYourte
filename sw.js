@@ -109,7 +109,16 @@
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v39';
+const VERSION = 'cy-shell-v40';
+
+// v40 (15-sep-2026) — entra REPORTAR UNA FALLA: el botón redondo de la
+//   cabecera → «Reportar una falla» abre una hoja con tres campos y escribe
+//   en `reportes/` de esta base. Es el mismo molde que ya tenía remate, en el
+//   mismo lugar de la pantalla, que es lo que pidió Mauro. Sube la VERSION
+//   porque `nucleo.js` está en el SHELL: sin esto los teléfonos servirían el
+//   núcleo viejo y el botón no aparecería. Su bloque en `REGLAS.txt` entra en
+//   la misma tanda — rige el deny por defecto, y sin la regla el formulario
+//   manda y la base contesta que no.
 
 // v39 (14-sep-2026) — entra el TALLER: index.html lee sitio/taller con
 //   ?taller=1 y sabe mover y apagar secciones (contrato CY_SITIO v2);
