@@ -233,6 +233,14 @@ verdad después del cambio.
   Hoy quedan afuera `calculos` e `invitaciones`. Si cambia una lista, cambia la
   otra en la misma tanda: el archivo da el mensaje claro, la regla da la
   garantía.
+- **Una falla se reporta desde donde se vio** (desde `nucleo-19`, 15-sep-2026).
+  Va a `reportes/` de ESTA base, no al panel de Mauro: el panel vive en otro
+  proyecto de Firebase y un token sirve para uno solo. La entrada está en
+  `CY.renderNav()`, que es el único lugar que dibuja la navegación — no se
+  duplica en cada página. **El agente lee `reportes/` y no lo escribe**: para
+  saber qué ya trajo se mira el campo `origen` del pendiente que creó en el
+  panel. El molde, con el porqué de cada decisión, está en `REPORTES.md` de
+  remate; acá se copió la forma y no el texto.
 - **La autoridad del contenido es Firestore** (`sitio/publicado`). `contenido.json` en
   el repo es respaldo, y los textos de `index.html` el último respaldo.
 - **No subir acá:** cálculos, costos, márgenes, tarifas, proveedores, documentación

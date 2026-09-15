@@ -109,7 +109,7 @@
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v39';
+const VERSION = 'cy-shell-v40';
 
 // v39 (14-sep-2026) — entra el TALLER: index.html lee sitio/taller con
 //   ?taller=1 y sabe mover y apagar secciones (contrato CY_SITIO v2);

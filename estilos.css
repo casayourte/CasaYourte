@@ -286,3 +286,18 @@ label .k{display:block;font-size:.78rem;color:var(--dim);margin-bottom:.25rem}
   .barra{border-top:1px solid var(--line)}
   .contenedor{padding:1.4rem 1rem}
 }
+
+/* ── LA HOJA DE REPORTAR UNA FALLA (2026-09-15) ───────────────
+   Reusa `.tapa` y `.hoja` del menú, que ya son el idioma del panel: lo que
+   sube desde abajo se cierra con el Atrás y con un toque afuera. Lo único
+   propio es que ésta lleva un formulario adentro, así que puede pasarse de
+   alto en un teléfono chico y tiene que poder scrollear. */
+.hoja.rep{max-height:86vh;overflow-y:auto;padding-bottom:1rem}
+.hoja.rep textarea{min-height:3.4rem}
+.hoja.rep .etiq{margin-top:.7rem}
+/* Los dos botones de gravedad. Un segmentado y no un desplegable: son dos
+   opciones y la respuesta tiene que costar un toque, no tres. */
+.rep-seg{display:flex;gap:.4rem;margin:.3rem 0 .2rem}
+.rep-seg button{flex:1;min-height:42px;background:var(--ink3);color:var(--dim);
+  border:1px solid var(--line);border-radius:var(--r-s);font-size:.82rem;padding:.4rem}
+.rep-seg button.on{background:var(--blond);border-color:var(--blond);color:var(--ink);font-weight:600}

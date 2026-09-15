@@ -2,6 +2,14 @@
 // CasaYourte — Reglas de Firestore
 // Se pegan COMPLETAS en la consola. Nunca por fragmentos.
 //
+// 15-sep-2026 · Entra `reportes/`: reportar una falla desde donde se vio.
+//   Molde de remate (su `REPORTES.md`). Quien trabaja en el panel ve algo mal
+//   y lo reporta desde la pantalla donde lo vio; después un agente lo lee y lo
+//   convierte en un pendiente del panel de Mauro, que vive en OTRA base. Por
+//   eso cada sitio reporta en su casa: un token de Firebase sirve para un solo
+//   proyecto, y darle a cada colaborador una cuenta en la base de Mauro es
+//   exactamente lo que no se hace.
+//
 // 11-sep-2026 · Entra el AGENTE DE CLAUDE CODE, con lectura y una bóveda.
 //   Es un usuario común de Authentication —no una cuenta de servicio, que
 //   saltearía estas reglas enteras— y existe para que un chat pueda comparar
@@ -155,6 +163,38 @@ service cloud.firestore {
     match /sitio/{doc} {
       allow read: if true;
       allow write: if con('contenido');
+    }
+
+    // ---------- reportes ----------
+    // Una falla vista desde el panel, escrita desde la pantalla donde se vio.
+    // Tres decisiones que no son de trámite, y son las del molde de remate:
+    //
+    // 1 · EL `uid` TIENE QUE SER EL DE QUIEN ESCRIBE. Un reporte que puede
+    //     mentir de quién vino no sirve para volver a preguntarle qué vio, y
+    //     eso es la mitad de para qué existe un reporte.
+    // 2 · LEERLOS ES DE ADMIN. Un reporte se escribe sin pensar en quién lo va
+    //     a leer, así que puede nombrar a un cliente o un cálculo de taller.
+    //     Se lo trata como lo más sensible que podría llegar a contener. El
+    //     agente los lee por el comodín de `esAgente()` de arriba —lectura
+    //     sola—, que es justamente para lo que existe este circuito.
+    // 3 · `texto` Y `uid` NO SE PUEDEN CAMBIAR. Se cierra o se marca tomado;
+    //     no se reescribe. Pisar lo que dijo una persona es perder el reporte,
+    //     y es justo lo que nadie nota hasta que hace falta.
+    //
+    // Lo escribe cualquiera con sesión ACTIVA, no hace falta un permiso: si
+    // alguien entra al panel puede ver una falla, y pedirle un permiso para
+    // contarla es garantizar que no la cuente.
+    match /reportes/{id} {
+      allow create: if activo()
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.estado == 'nuevo';
+
+      allow get, list: if admin();
+
+      allow update: if admin()
+                    && request.resource.data.texto == resource.data.texto
+                    && request.resource.data.uid == resource.data.uid;
+      allow delete: if admin();
     }
 
     // ---------- todo lo demás, cerrado ----------

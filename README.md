@@ -572,6 +572,56 @@ elegido.
 mayúscula en español, una con la mayúscula en los dos idiomas, una sólo en español—, y
 **cero falsos positivos**: no se dispara en descripciones ni en textos del sitio.
 
+## Reportar una falla
+
+Desde el **15-sep-2026** (`nucleo-19`). Quien trabaja en el panel ve algo mal y
+lo reporta **desde la pantalla donde lo vio**, sin salir del sitio y sin cuenta
+nueva. Después un agente de Claude Code lo lee y lo convierte en un pendiente
+del **panel de datos** de Mauro, que es donde él mira qué hay que hacer.
+
+**Dónde está:** avatar de arriba a la derecha → **Reportar una falla**. Vive en
+`CY.renderNav()`, que es la única función que dibuja la navegación, así que
+aparece en todas las páginas que entran por `CY.arrancar()` — admin, cálculo,
+traducir y usuarios. `editar.html` y `diagnostico.html` no tienen esa barra a
+propósito: el editor es el sitio real y el diagnóstico está hecho para abrir
+aunque el núcleo esté roto.
+
+Tres campos y nada más:
+
+| Campo | Por qué está |
+|---|---|
+| **¿Qué pasó?** | lo único obligatorio |
+| **¿Qué esperabas que pasara?** | es lo que la gente se olvida de contar, y sin eso a veces no se entiende qué está mal |
+| **¿Te deja trabajar?** | *molesta pero sigo* / *no puedo seguir*. Decide el orden en que se atiende |
+
+La página, el nombre y el mail salen solos de la sesión. Pedir algo que el
+sistema ya sabe es hacerle hacer trabajo a la persona.
+
+**Por qué no escribe directo en el panel de Mauro.** No se puede: ese panel vive
+en otro proyecto de Firebase (`datos-830f8`) y un token de Firebase
+Authentication sirve para **un** proyecto. Para que pudiera habría que darle a
+cada colaborador de CasaYourte una cuenta en la base donde Mauro guarda sus
+fichas, y eso es justamente lo que no se hace. Cada sitio reporta en su casa y
+el agente los junta — él sí tiene un usuario en las cuatro bases.
+
+**Y el texto separado en campos no es estética.** Lo que se escribe acá lo va a
+leer un agente, y una caja de texto libre que dijera «borrá los álbumes» no
+puede ser una instrucción. Campos separados dicen *esto es el síntoma que
+describió una persona*, no *esto es lo que hay que hacer*.
+
+**El agente lo lee y no lo escribe.** El comodín de `esAgente()` en `REGLAS.txt`
+le da lectura sola, y `reportes` no está en la lista de exclusiones. Para saber
+qué reporte ya trajo se mira el campo `origen` del pendiente que creó en el
+panel: mantener «el agente no escribe acá» vale más que esa comodidad.
+
+El molde entero, con el porqué de cada decisión, está en `REPORTES.md` de
+**remate**, que lo estrenó en su tanda 27. Acá se copió la forma, no el texto:
+una segunda copia del porqué son dos documentos que se separan.
+
+⚠ **La autoridad es lo publicado en la consola.** `REGLAS.txt` es una copia, y
+el bloque `reportes/` hay que pegarlo: hasta que eso pase, el formulario manda y
+la base contesta que no.
+
 ## Los sellos de versión
 
 Cada archivo con lógica propia lleva su número, visible en el panel abajo del nombre. **Al
@@ -586,9 +636,9 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 
 | Archivo | Constante | Valor de esta versión |
 |---|---|---|
-| `nucleo.js` | `CY.VERSION` | `nucleo-18` |
+| `nucleo.js` | `CY.VERSION` | `nucleo-19` |
 | `firebase-init.js` | (en el comentario) | `init-2` |
-| `sw.js` | `VERSION` | `cy-shell-v39` |
+| `sw.js` | `VERSION` | `cy-shell-v40` |
 | `admin.html` | `PANEL` | `admin-18` |
 | `editar.html` | `EDITOR` | `editar-9` |
 | `calculo.html` | `CY.PANEL` | `calculo-9` |

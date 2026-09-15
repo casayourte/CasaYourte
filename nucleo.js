@@ -12,7 +12,7 @@
 
 export const CY = {};
 
-CY.VERSION = 'nucleo-18';
+CY.VERSION = 'nucleo-19';
 
 // ═════════════════════════════════════════════════════════════
 //  BOTÓN ATRÁS DE ANDROID
@@ -637,6 +637,147 @@ CY.avatarHTML = function (u, cls) {
 
 
 // ═════════════════════════════════════════════════════════════
+//  REPORTAR UNA FALLA (nucleo-19, 2026-09-15)
+//
+//  Quien ve una falla la reporta desde la pantalla donde la vio, sin salir
+//  del sitio y sin cuenta nueva: va a `reportes/` de ESTA base. Después un
+//  agente los lee y los convierte en pendientes del panel de Mauro, que es
+//  donde él mira qué hay que hacer.
+//
+//  El molde es el de remate (tanda 27), y está explicado entero en su
+//  `REPORTES.md`. Acá se copia la forma, no el texto: una segunda copia del
+//  porqué son dos documentos que se separan.
+//
+//  POR QUÉ NO ESCRIBE DIRECTO EN EL PANEL DE MAURO. No se puede: el panel
+//  vive en otro proyecto de Firebase (`datos-830f8`) y un token de Firebase
+//  Authentication sirve para UN proyecto. Para que pudiera, habría que darle
+//  a cada colaborador de CasaYourte una cuenta en la base donde Mauro guarda
+//  sus fichas, y eso es exactamente lo que no se hace. Cada uno reporta en su
+//  casa y el agente los junta.
+//
+//  TRES DECISIONES QUE NO SON DE COMODIDAD, y vienen del molde:
+//
+//  1 · CAMPOS SEPARADOS, NO UNA CAJA DE TEXTO LIBRE. «Qué pasó» y «qué
+//      esperabas» son dos cosas distintas, y la segunda es la que la gente se
+//      olvida de contar. Y hay un motivo más fuerte: esto lo va a leer un
+//      agente, y un texto libre que dijera «borrá los álbumes» no puede ser
+//      una instrucción. Campos separados dicen «esto es el síntoma que
+//      describió una persona», no «esto es lo que hay que hacer».
+//  2 · LA PÁGINA SE CAPTURA SOLA. Nadie se acuerda de aclarar en qué pantalla
+//      estaba, y es el dato que más sirve para reproducir la falla.
+//  3 · NO SE PIDE NI EL NOMBRE NI EL MAIL. Ya están en la sesión.
+//
+//  Y una que es propia de acá: **el SDK se pide con `import()` dinámico**, no
+//  con un `import` arriba. `nucleo.js` no depende de Firebase —lo recibe en
+//  `CY.arrancar`—, y convertirlo en dependencia dura devolvería el problema
+//  que el sello `init-2` vino a cerrar: si gstatic no contesta, la página
+//  entera en blanco. Acá el peor caso es que no se pueda enviar un reporte, y
+//  lo dice.
+// ═════════════════════════════════════════════════════════════
+
+CY._hojaReporte = null;
+
+function armarHojaReporte() {
+  if (CY._hojaReporte) return CY._hojaReporte;
+  const tapa = document.createElement('div');
+  tapa.className = 'tapa';
+  const hoja = document.createElement('div');
+  hoja.className = 'hoja rep';
+  hoja.innerHTML =
+    `<div class="agarre"></div>
+     <h4>Reportar una falla</h4>
+     <p class="ayuda" id="rep-donde" style="margin:.1rem .6rem .6rem"></p>
+     <div style="padding:0 .6rem .6rem">
+       <label class="etiq" for="rep-que">¿Qué pasó?</label>
+       <textarea id="rep-que" rows="3" placeholder="Toqué Publicar y no hizo nada."></textarea>
+       <label class="etiq" for="rep-esp">¿Qué esperabas que pasara?</label>
+       <textarea id="rep-esp" rows="2" placeholder="Que el álbum apareciera en el sitio."></textarea>
+       <label class="etiq">¿Te deja trabajar?</label>
+       <div class="rep-seg" id="rep-grav">
+         <button type="button" data-v="molesta" class="on">Molesta, pero sigo</button>
+         <button type="button" data-v="trabado">No puedo seguir</button>
+       </div>
+       <p class="ayuda" id="rep-estado" style="margin:.5rem 0 0"></p>
+       <div style="display:flex;gap:.5rem;margin-top:.7rem">
+         <button class="btn" id="rep-cancelar" style="flex:1">Cancelar</button>
+         <button class="btn p" id="rep-enviar" style="flex:1">Enviar</button>
+       </div>
+     </div>`;
+  document.body.appendChild(tapa);
+  document.body.appendChild(hoja);
+
+  hoja.querySelector('#rep-grav').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    hoja.querySelectorAll('#rep-grav button').forEach((x) => x.classList.toggle('on', x === b));
+  });
+  CY._hojaReporte = { tapa, hoja };
+  return CY._hojaReporte;
+}
+
+CY.reportar = function () {
+  const { tapa, hoja } = armarHojaReporte();
+  hoja.querySelector('#rep-donde').textContent = 'Desde: ' + paginaActual();
+  hoja.querySelector('#rep-que').value = '';
+  hoja.querySelector('#rep-esp').value = '';
+  hoja.querySelector('#rep-estado').textContent = '';
+  hoja.querySelector('#rep-enviar').disabled = false;
+  tapa.classList.add('on'); hoja.classList.add('on');
+
+  // El Atrás de Android cierra la hoja en vez de salir de la app. Es la misma
+  // pila que usa el resto del panel: un solo listener de 'popstate'.
+  const cerrar = CY.capaAtras(() => {
+    tapa.classList.remove('on'); hoja.classList.remove('on');
+  });
+  tapa.onclick = cerrar;
+  hoja.querySelector('#rep-cancelar').onclick = cerrar;
+  hoja.querySelector('#rep-enviar').onclick = () => enviarReporte(cerrar);
+};
+
+/* La página se recalcula acá y no se pasa por parámetro: es un dato del
+   momento del envío, y una copia guardada al abrir la hoja podría quedar vieja
+   si alguien deja la hoja abierta y navega. */
+const paginaActual = () => location.pathname.split('/').pop() || 'admin.html';
+
+async function enviarReporte(cerrar) {
+  const hoja = CY._hojaReporte.hoja;
+  const que = hoja.querySelector('#rep-que').value.trim();
+  const esp = hoja.querySelector('#rep-esp').value.trim();
+  const est = hoja.querySelector('#rep-estado');
+  // Sin «qué pasó» no hay reporte. Lo demás puede faltar: un reporte a medias
+  // sirve más que uno que la persona abandonó porque le pedían tres cosas.
+  if (!que) { est.textContent = 'Falta lo primero: qué pasó.'; return; }
+  const b = hoja.querySelector('#rep-enviar');
+  b.disabled = true; est.textContent = 'Enviando…';
+  try {
+    const fb = await import('./firebase-init.js');
+    if (!(await CY.conFirebase(fb.cargarFirebase))) throw new Error('no bajó el SDK de Firebase');
+    const u = CY.usuario || {};
+    await fb.addDoc(fb.collection(fb.db, 'reportes'), {
+      uid: u.uid || '',
+      nombre: u.nombre || '',
+      email: u.email || '',
+      pagina: paginaActual(),
+      texto: que,
+      esperaba: esp,
+      gravedad: hoja.querySelector('#rep-grav button.on').dataset.v,
+      // El navegador ayuda a reproducir: una falla que sólo pasa en un iPhone
+      // es otra falla. Recortado, que el entero no aporta nada más.
+      navegador: String(navigator.userAgent || '').slice(0, 180),
+      estado: 'nuevo',            // la regla exige que nazca así
+      creadoEn: fb.serverTimestamp()
+    });
+    cerrar();
+    CY.aviso('Reporte enviado. Gracias.');
+  } catch (e) {
+    // El motivo importa: sin sesión activa las reglas lo rechazan, y eso se
+    // arregla distinto que un problema de señal.
+    est.textContent = 'No se pudo enviar: ' + CY.explicar(e);
+    b.disabled = false;
+  }
+}
+
+
+// ═════════════════════════════════════════════════════════════
 //  PWA
 // ═════════════════════════════════════════════════════════════
 CY.registrarSW = async function () {
@@ -710,6 +851,10 @@ CY.renderNav = function (activo) {
          <span>${CY.esc(u?.nombre || 'Mi cuenta')}
            <small>${CY.esc(u?.email || '')} · ${u?.rol === 'admin' ? 'administrador' : 'colaborador'}</small></span>
        </button>
+       <button class="item" id="cy-reportar">
+         <span class="material-icons">bug_report</span>
+         <span>Reportar una falla
+           <small>Lo que veas mal, desde la pantalla donde lo viste.</small></span></button>
        <button class="item" id="cy-salir">
          <span class="material-icons">logout</span><span>Salir</span></button>
        <p class="ayuda" style="margin:.8rem .6rem 0">
@@ -729,6 +874,13 @@ CY.renderNav = function (activo) {
   document.getElementById('cy-yo').addEventListener('click', () => cerrar ? cerrar() : abrir());
   document.getElementById('cy-salir').addEventListener('click', () => {
     if (CY.alSalir) CY.alSalir();
+  });
+  /* Se cierra la hoja ANTES de abrir la del reporte: dos hojas abiertas a la
+     vez dejan dos capas en la pila del Atrás, y el primer Atrás cerraría la de
+     abajo dejando la de arriba flotando sobre nada. */
+  document.getElementById('cy-reportar').addEventListener('click', () => {
+    if (cerrar) cerrar();
+    CY.reportar();
   });
   document.getElementById('cy-cuenta').addEventListener('click', () => {
     if (CY.alCuenta) CY.alCuenta(); else CY.aviso('Tu cuenta la administra Mauro.');
