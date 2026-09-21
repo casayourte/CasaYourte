@@ -10,6 +10,20 @@
 //   proyecto, y darle a cada colaborador una cuenta en la base de Mauro es
 //   exactamente lo que no se hace.
 //
+// 21-sep-2026 · El AGENTE ESCRIBE UN SOLO DOCUMENTO: `sitio/taller`.
+//   Es la primera vez que escribe algo acá, y el alcance es deliberadamente
+//   uno: el sitio piloto. Existe para que los pedidos de diseño que la gente
+//   deja en `reportes/` se puedan ejecutar sin que Mauro tenga que copiar y
+//   pegar cada cambio.
+//
+//   POR QUÉ SE PUDO ACEPTAR, que es lo que no hay que deshacer de buena fe:
+//   el peor caso de que un chat interprete mal un pedido es que quede mal un
+//   documento que no ve nadie salvo quien tenga el enlace `?taller=1`.
+//   `sitio/publicado` NO lo toca —no matchea este bloque— y llevar el taller
+//   al sitio sigue pidiendo el permiso `contenido`, que es un acto de una
+//   persona. Si algún día el agente escribiera `sitio/publicado`, un pedido
+//   mal leído saldría al aire sin que nadie lo mire: esa línea no se cruza.
+//
 // 11-sep-2026 · Entra el AGENTE DE CLAUDE CODE, con lectura y una bóveda.
 //   Es un usuario común de Authentication —no una cuenta de servicio, que
 //   saltearía estas reglas enteras— y existe para que un chat pueda comparar
@@ -18,7 +32,9 @@
 //
 //   Lee todo MENOS `calculos` e `invitaciones`. Los cálculos llevan datos de
 //   clientes y medidas de obra, y detrás costos, márgenes y tarifas; las
-//   invitaciones son mails de gente que todavía no entró. Y no escribe nada.
+//   invitaciones son mails de gente que todavía no entró. De escritura tiene
+//   exactamente un documento, `sitio/taller`, desde el 21-sep-2026 — ver la
+//   nota de arriba.
 //
 //   NO tiene ficha en `usuarios/`, a propósito: no es del equipo, no tiene rol
 //   ni permisos, y no aparece en la pantalla de usuarios. Su acceso sale de
@@ -155,9 +171,13 @@ service cloud.firestore {
     // Lectura abierta en los dos: el taller no guarda nada sensible, son los
     // mismos textos del catálogo ordenados de otra manera, y que se lea sin
     // cuenta es justamente lo que permite pasarle el enlace a alguien.
+    // `esAgente()` entra SÓLO acá. Es todo el alcance de escritura que tiene
+    // el agente en esta base, y la razón está en la cabecera: un pedido mal
+    // leído se arregla volviendo a guardar el taller, no despublicando el
+    // sitio. Que esta línea NO esté en el bloque de abajo es el punto entero.
     match /sitio/taller {
       allow read: if true;
-      allow write: if con('contenido') || con('taller');
+      allow write: if con('contenido') || con('taller') || esAgente();
     }
 
     match /sitio/{doc} {
@@ -175,8 +195,10 @@ service cloud.firestore {
     // 2 · LEERLOS ES DE ADMIN. Un reporte se escribe sin pensar en quién lo va
     //     a leer, así que puede nombrar a un cliente o un cálculo de taller.
     //     Se lo trata como lo más sensible que podría llegar a contener. El
-    //     agente los lee por el comodín de `esAgente()` de arriba —lectura
-    //     sola—, que es justamente para lo que existe este circuito.
+    //     agente los LEE por el comodín de `esAgente()` de arriba y no los
+    //     escribe —su única escritura en esta base es `sitio/taller`—, que es
+    //     justamente para lo que existe este circuito: lee el pedido acá y lo
+    //     ejecuta allá.
     // 3 · `texto` Y `uid` NO SE PUEDEN CAMBIAR. Se cierra o se marca tomado;
     //     no se reescribe. Pisar lo que dijo una persona es perder el reporte,
     //     y es justo lo que nadie nota hasta que hace falta.

@@ -196,8 +196,10 @@ previene nada y sí pierde trabajo: ya pasó cuatro veces en dos días.
 
 Lo que reemplaza a ese momento de revisión es la verificación previa, que corre
 el agente y **no es opcional**: que el JavaScript parsee (`node --check`),
-incluidos los módulos que viven adentro de un `.html`; que lo que se pueda
-correr se corra, contra sus casos límite y no sólo el camino feliz; que los
+incluidos los módulos que viven adentro de un `.html`; que **los dos bancos
+corran** —`node pruebas-secciones.mjs` (16 casos) y `node pruebas-reportes.mjs`
+(28 casos), los dos sin npm y sin navegador—, contra sus casos límite y no sólo
+el camino feliz; que los
 sellos hayan subido, con la `VERSION` del `sw.js` si el archivo está en `SHELL`
 y los `?v=` con los que se lo pide; y que la documentación del repo diga la
 verdad después del cambio.
@@ -241,6 +243,28 @@ verdad después del cambio.
   saber qué ya trajo se mira el campo `origen` del pendiente que creó en el
   panel. El molde, con el porqué de cada decisión, está en `REPORTES.md` de
   remate; acá se copió la forma y no el texto.
+- **Y desde `nucleo-20` (21-sep-2026) esa misma hoja tiene dos modos: falla y
+  pedido.** Los dos van a `reportes/` con un campo `tipo`, y **no a una
+  colección nueva** — una colección nueva es una regla nueva, un bloque nuevo en
+  `ronda.mjs` y un segundo lugar donde mirar. Lo escribe cualquiera con sesión
+  activa, igual que una falla. **Lo que no comparten es el campo de la tira de
+  botones:** una falla tiene `gravedad`, un pedido tiene `urgencia`. Un pedido
+  no tiene gravedad, y acá una palabra no nombra dos cosas. **Un reporte sin
+  `tipo` se lee como falla**, que es lo único que existía antes.
+- **El agente ESCRIBE `sitio/taller`, y ése es todo su alcance de escritura acá**
+  (21-sep-2026). Existe para ejecutar los pedidos de diseño sin que Mauro copie
+  y pegue cada cambio. **Lo que lo hace aceptable es el alcance:** si un chat
+  interpreta mal un pedido, queda mal un documento que no ve nadie salvo quien
+  tenga el enlace `?taller=1`; `sitio/publicado` no lo toca, y llevar el taller
+  al sitio sigue pidiendo el permiso `contenido`, que es un acto de una persona.
+  **Esa línea no se cruza**: el día que el agente escribiera `sitio/publicado`,
+  un pedido mal leído saldría al aire sin que nadie lo mire.
+- **El taller es el sitio piloto, y la garantía está en las reglas y no en la
+  pantalla.** `sitio/taller` acepta `contenido` **o** `taller`; `sitio/{doc}`
+  acepta sólo `contenido`. Quien tiene sólo `taller` mueve, apaga y reescribe el
+  piloto y no puede tocar lo publicado. **Y un diseñador entra con `taller` y
+  NADA más**: si entra como `admin`, `con('contenido')` le da `true` por
+  definición y el piloto deja de ser un piloto.
 - **La autoridad del contenido es Firestore** (`sitio/publicado`). `contenido.json` en
   el repo es respaldo, y los textos de `index.html` el último respaldo.
 - **No subir acá:** cálculos, costos, márgenes, tarifas, proveedores, documentación

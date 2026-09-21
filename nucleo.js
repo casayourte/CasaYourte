@@ -12,7 +12,7 @@
 
 export const CY = {};
 
-CY.VERSION = 'nucleo-19';
+CY.VERSION = 'nucleo-20';
 
 // ═════════════════════════════════════════════════════════════
 //  BOTÓN ATRÁS DE ANDROID
@@ -675,7 +675,62 @@ CY.avatarHTML = function (u, cls) {
 //  lo dice.
 // ═════════════════════════════════════════════════════════════
 
+/*  DOS MODOS, UNA SOLA HOJA — 21-sep-2026
+ *
+ *  Una FALLA es «esto está roto». Un PEDIDO es «quiero que esto cambie». Son
+ *  dos cosas distintas y por eso preguntan distinto, pero van a la MISMA
+ *  colección `reportes/` con un campo `tipo`, y no a una colección nueva.
+ *
+ *  Por qué a la misma: una colección nueva es una regla nueva, un bloque nuevo
+ *  en `ronda.mjs` y un segundo lugar donde mirar. Con un campo, la ronda que
+ *  ya cruza los reportes contra el panel los trae en la MISMA corrida — que es
+ *  exactamente lo que se pidió.
+ *
+ *  Y NO comparten el campo de la tira de botones: una falla tiene `gravedad`
+ *  («¿te deja trabajar?») y un pedido tiene `urgencia` («¿es para ya?»). Es el
+ *  mismo control en pantalla y dos campos en la base, a propósito: este
+ *  ecosistema ya pagó caro que una palabra nombrara dos cosas —`perm` contra
+ *  `permiso`, y «la bóveda»—. Un pedido no tiene gravedad.
+ *
+ *  Lo escribe cualquiera con sesión activa, igual que una falla y por el mismo
+ *  motivo: pedirle un permiso a alguien para que cuente lo que necesita es
+ *  garantizar que no lo cuente. La regla de `reportes/` ya dice `activo()`, así
+ *  que esto no toca `REGLAS.txt`.
+ */
 CY._hojaReporte = null;
+
+/* Lo único que cambia entre los dos modos. Está acá y no repartido en ifs para
+   que agregar un tercer modo sea agregar una entrada, no buscar seis lugares. */
+const MODOS_REPORTE = {
+  falla: {
+    titulo:  'Reportar una falla',
+    que:     '¿Qué pasó?',
+    quePh:   'Toqué Publicar y no hizo nada.',
+    esp:     '¿Qué esperabas que pasara?',
+    espPh:   'Que el álbum apareciera en el sitio.',
+    seg:     '¿Te deja trabajar?',
+    campo:   'gravedad',
+    ops:     [['molesta', 'Molesta, pero sigo'], ['trabado', 'No puedo seguir']],
+    falta:   'Falta lo primero: qué pasó.',
+    gracias: 'Reporte enviado. Gracias.'
+  },
+  pedido: {
+    titulo:  'Pedir un cambio',
+    que:     '¿Qué querés que cambie?',
+    quePh:   'Las ofertas tendrían que ir antes que los diferenciales.',
+    esp:     '¿Para qué? ¿Qué querrías lograr?',
+    espPh:   'Que lo primero que se vea sea lo que vendemos.',
+    seg:     '¿Corre prisa?',
+    campo:   'urgencia',
+    ops:     [['cuando-se-pueda', 'Cuando se pueda'], ['ya', 'Lo necesito ya']],
+    falta:   'Falta lo primero: qué querés que cambie.',
+    gracias: 'Pedido enviado. Gracias.'
+  }
+};
+
+/* El modo de la hoja que está abierta. Se lee al enviar, no se pasa por
+   parámetro: la hoja es una sola y se reusa entre aperturas. */
+CY._modoReporte = 'falla';
 
 function armarHojaReporte() {
   if (CY._hojaReporte) return CY._hojaReporte;
@@ -685,18 +740,15 @@ function armarHojaReporte() {
   hoja.className = 'hoja rep';
   hoja.innerHTML =
     `<div class="agarre"></div>
-     <h4>Reportar una falla</h4>
+     <h4 id="rep-titulo">Reportar una falla</h4>
      <p class="ayuda" id="rep-donde" style="margin:.1rem .6rem .6rem"></p>
      <div style="padding:0 .6rem .6rem">
-       <label class="etiq" for="rep-que">¿Qué pasó?</label>
-       <textarea id="rep-que" rows="3" placeholder="Toqué Publicar y no hizo nada."></textarea>
-       <label class="etiq" for="rep-esp">¿Qué esperabas que pasara?</label>
-       <textarea id="rep-esp" rows="2" placeholder="Que el álbum apareciera en el sitio."></textarea>
-       <label class="etiq">¿Te deja trabajar?</label>
-       <div class="rep-seg" id="rep-grav">
-         <button type="button" data-v="molesta" class="on">Molesta, pero sigo</button>
-         <button type="button" data-v="trabado">No puedo seguir</button>
-       </div>
+       <label class="etiq" for="rep-que" id="rep-que-lab">¿Qué pasó?</label>
+       <textarea id="rep-que" rows="3"></textarea>
+       <label class="etiq" for="rep-esp" id="rep-esp-lab">¿Qué esperabas que pasara?</label>
+       <textarea id="rep-esp" rows="2"></textarea>
+       <label class="etiq" id="rep-seg-lab">¿Te deja trabajar?</label>
+       <div class="rep-seg" id="rep-grav"></div>
        <p class="ayuda" id="rep-estado" style="margin:.5rem 0 0"></p>
        <div style="display:flex;gap:.5rem;margin-top:.7rem">
          <button class="btn" id="rep-cancelar" style="flex:1">Cancelar</button>
@@ -714,8 +766,24 @@ function armarHojaReporte() {
   return CY._hojaReporte;
 }
 
-CY.reportar = function () {
+/** Abre la hoja. `modo` es 'falla' (por defecto) o 'pedido'. */
+CY.reportar = function (modo) {
+  // Un modo desconocido cae en 'falla' en vez de romper: una hoja en blanco
+  // por un nombre mal escrito sería peor que preguntar de más.
+  CY._modoReporte = MODOS_REPORTE[modo] ? modo : 'falla';
+  const m = MODOS_REPORTE[CY._modoReporte];
   const { tapa, hoja } = armarHojaReporte();
+  hoja.querySelector('#rep-titulo').textContent = m.titulo;
+  hoja.querySelector('#rep-que-lab').textContent = m.que;
+  hoja.querySelector('#rep-esp-lab').textContent = m.esp;
+  hoja.querySelector('#rep-seg-lab').textContent = m.seg;
+  hoja.querySelector('#rep-que').placeholder = m.quePh;
+  hoja.querySelector('#rep-esp').placeholder = m.espPh;
+  // La tira se redibuja entera: así el primero queda elegido sin arrastrar la
+  // elección que se hizo la vez anterior, en el otro modo.
+  hoja.querySelector('#rep-grav').innerHTML = m.ops.map(([v, t], i) =>
+    `<button type="button" data-v="${CY.esc(v)}"${i === 0 ? ' class="on"' : ''}>${CY.esc(t)}</button>`
+  ).join('');
   hoja.querySelector('#rep-donde').textContent = 'Desde: ' + paginaActual();
   hoja.querySelector('#rep-que').value = '';
   hoja.querySelector('#rep-esp').value = '';
@@ -743,9 +811,10 @@ async function enviarReporte(cerrar) {
   const que = hoja.querySelector('#rep-que').value.trim();
   const esp = hoja.querySelector('#rep-esp').value.trim();
   const est = hoja.querySelector('#rep-estado');
+  const m = MODOS_REPORTE[CY._modoReporte] || MODOS_REPORTE.falla;
   // Sin «qué pasó» no hay reporte. Lo demás puede faltar: un reporte a medias
   // sirve más que uno que la persona abandonó porque le pedían tres cosas.
-  if (!que) { est.textContent = 'Falta lo primero: qué pasó.'; return; }
+  if (!que) { est.textContent = m.falta; return; }
   const b = hoja.querySelector('#rep-enviar');
   b.disabled = true; est.textContent = 'Enviando…';
   try {
@@ -759,7 +828,14 @@ async function enviarReporte(cerrar) {
       pagina: paginaActual(),
       texto: que,
       esperaba: esp,
-      gravedad: hoja.querySelector('#rep-grav button.on').dataset.v,
+      // `tipo` es lo único que separa un pedido de una falla en la base. Los
+      // reportes anteriores al 21-sep-2026 no lo tienen: quien los lea trata
+      // la ausencia como 'falla', que es lo único que existía entonces.
+      tipo: CY._modoReporte,
+      // Una falla tiene `gravedad`; un pedido, `urgencia`. Nunca las dos: un
+      // campo con el nombre del otro concepto es la clase de mentira que
+      // sobrevive años porque nadie la mira de frente.
+      [m.campo]: hoja.querySelector('#rep-grav button.on').dataset.v,
       // El navegador ayuda a reproducir: una falla que sólo pasa en un iPhone
       // es otra falla. Recortado, que el entero no aporta nada más.
       navegador: String(navigator.userAgent || '').slice(0, 180),
@@ -767,7 +843,7 @@ async function enviarReporte(cerrar) {
       creadoEn: fb.serverTimestamp()
     });
     cerrar();
-    CY.aviso('Reporte enviado. Gracias.');
+    CY.aviso(m.gracias);
   } catch (e) {
     // El motivo importa: sin sesión activa las reglas lo rechazan, y eso se
     // arregla distinto que un problema de señal.
@@ -855,6 +931,10 @@ CY.renderNav = function (activo) {
          <span class="material-icons">bug_report</span>
          <span>Reportar una falla
            <small>Lo que veas mal, desde la pantalla donde lo viste.</small></span></button>
+       <button class="item" id="cy-pedir">
+         <span class="material-icons">lightbulb</span>
+         <span>Pedir un cambio
+           <small>Lo que te gustaría que fuera distinto en el sitio.</small></span></button>
        <button class="item" id="cy-salir">
          <span class="material-icons">logout</span><span>Salir</span></button>
        <p class="ayuda" style="margin:.8rem .6rem 0">
@@ -880,7 +960,11 @@ CY.renderNav = function (activo) {
      abajo dejando la de arriba flotando sobre nada. */
   document.getElementById('cy-reportar').addEventListener('click', () => {
     if (cerrar) cerrar();
-    CY.reportar();
+    CY.reportar('falla');
+  });
+  document.getElementById('cy-pedir').addEventListener('click', () => {
+    if (cerrar) cerrar();
+    CY.reportar('pedido');
   });
   document.getElementById('cy-cuenta').addEventListener('click', () => {
     if (CY.alCuenta) CY.alCuenta(); else CY.aviso('Tu cuenta la administra Mauro.');

@@ -572,12 +572,37 @@ elegido.
 mayúscula en español, una con la mayúscula en los dos idiomas, una sólo en español—, y
 **cero falsos positivos**: no se dispara en descripciones ni en textos del sitio.
 
-## Reportar una falla
+## Reportar una falla · pedir un cambio
 
 Desde el **15-sep-2026** (`nucleo-19`). Quien trabaja en el panel ve algo mal y
 lo reporta **desde la pantalla donde lo vio**, sin salir del sitio y sin cuenta
 nueva. Después un agente de Claude Code lo lee y lo convierte en un pendiente
 del **panel de datos** de Mauro, que es donde él mira qué hay que hacer.
+
+**Y desde el 21-sep-2026 (`nucleo-20`) la misma hoja tiene dos modos.** Una
+**falla** es «esto está roto»; un **pedido** es «quiero que esto cambie». Lo
+escribe cualquiera con sesión activa —no hace falta un permiso, por el mismo
+motivo que la falla: pedirle un permiso a alguien para que cuente lo que
+necesita es garantizar que no lo cuente—.
+
+Los dos van a la **misma colección** `reportes/`, separados por un campo
+`tipo`, y no a una colección nueva. Una colección nueva sería una regla nueva,
+un bloque nuevo en `ronda.mjs` y un segundo lugar donde mirar; con un campo, la
+ronda diaria que ya cruza los reportes contra el panel los trae en la misma
+corrida y los lista aparte.
+
+**Lo que NO comparten es el campo de la tira de botones.** Una falla tiene
+`gravedad` («¿te deja trabajar?») y un pedido tiene `urgencia` («¿corre
+prisa?»): mismo control en pantalla, dos campos en la base. Un pedido no tiene
+gravedad, y este ecosistema ya pagó dos veces que una palabra nombrara dos
+cosas —`perm` contra `permiso` en el menú, y «la bóveda»—.
+
+**Un reporte sin `tipo` es de antes de ese cambio y se lee como falla**, que es
+lo único que existía entonces. Tiene su prueba en los dos bancos.
+
+**A dónde va un pedido:** el agente lo ejecuta en el **taller** (`?taller=1`),
+nunca en `sitio/publicado`. Desde el 21-sep-2026 las reglas le dan escritura
+sobre `sitio/taller` y sobre nada más. Ver «El taller» y `REGLAS.txt`.
 
 **Dónde está:** avatar de arriba a la derecha → **Reportar una falla**. Vive en
 `CY.renderNav()`, que es la única función que dibuja la navegación, así que
@@ -636,9 +661,9 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 
 | Archivo | Constante | Valor de esta versión |
 |---|---|---|
-| `nucleo.js` | `CY.VERSION` | `nucleo-19` |
+| `nucleo.js` | `CY.VERSION` | `nucleo-20` |
 | `firebase-init.js` | (en el comentario) | `init-2` |
-| `sw.js` | `VERSION` | `cy-shell-v40` |
+| `sw.js` | `VERSION` | `cy-shell-v41` |
 | `admin.html` | `PANEL` | `admin-18` |
 | `editar.html` | `EDITOR` | `editar-9` |
 | `calculo.html` | `CY.PANEL` | `calculo-9` |
@@ -649,7 +674,8 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 
 *Verificados uno por uno contra los archivos el 2026-09-14, en la tanda del SDK
 diferido, que tocó ocho de los diez; `nucleo.js`, `sw.js` y `editar.html` subieron otra vez
-ese mismo día, con el taller.*
+ese mismo día, con el taller. El 2026-09-21 subieron `nucleo.js` y `sw.js` con el cuadro de
+pedidos — y esta tabla se verificó de nuevo contra los archivos ese día.*
 
 ## El SDK no viene puesto
 
@@ -695,10 +721,11 @@ Si el panel muestra un número **más alto** que el de esta tabla, la que quedó
 tabla. Si muestra uno **más bajo**, ese teléfono está sirviendo una copia cacheada: el
 botón ↻ del avatar borra las cachés.
 
-## El banco de pruebas
+## Los bancos de pruebas
 
 ```
 node pruebas-secciones.mjs
+node pruebas-reportes.mjs
 ```
 
 Sin npm, sin navegador, sin dependencias: `node` a secas. Son 16 casos sobre el orden y el
@@ -709,7 +736,15 @@ guardado que ya no existe en el archivo, las bandas decorativas que viajan con s
 pie que nunca se mueve, y basura en los campos.
 
 Es el patrón que presta Harmonía (`PROTOCOLO-DESARROLLO.md`), y es el primero de CasaYourte.
-**Se corre antes de subir.**
+
+`pruebas-reportes.mjs` son 28 casos sobre los dos modos de la hoja de reportes, con el mismo
+criterio: extrae el `MODOS_REPORTE` real de `nucleo.js` y lo corre. Lo que de verdad cuida es
+que **una falla y un pedido no terminen escribiendo el mismo campo** — un error que no rompe
+nada visible y que sólo se descubre meses después, leyendo un pedido que dice tener
+«gravedad: molesta». También comprueba que el sello de `nucleo.js` subió y que la `VERSION`
+del `sw.js` lo acompañó, que es lo único que hace que un cambio llegue a un teléfono.
+
+**Los dos se corren antes de subir.**
 
 ## Al subir código
 
