@@ -109,12 +109,17 @@
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v43';
+const VERSION = 'cy-shell-v44';
 
 // v39 (14-sep-2026) — entra el TALLER: index.html lee sitio/taller con
 //   ?taller=1 y sabe mover y apagar secciones (contrato CY_SITIO v2);
 //   editar.html (editar-9) suma el chip «En vivo | Taller». Va encima de la
 //   v38, de la misma fecha: dos tandas seguidas tocando el SHELL.
+//
+//   v44 · 22-sep-2026 · el andamio del taller. `index.html` suma el enlace en su
+//   barra bordó y `editar.html` (editar-11) suma la página al mapa PAGS — los
+//   dos están en el SHELL. `taller.html` NO entra al SHELL a propósito: es del
+//   taller y no del panel, el panel tiene que abrir sin señal y el andamio no.
 //
 //   v43 · 22-sep-2026 · `nucleo.js` (nucleo-22) parte el elegir imagen en DOS
 //   inputs, cámara y archivos. Ningún input solo ofrece las dos cosas de forma

@@ -1865,7 +1865,13 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
       document.body.classList.add("cy-en-taller");
       var c = document.createElement("div");
       c.id = "cy-taller";
-      c.textContent = "Taller · sitio piloto — esto NO es casayourte.com";
+      // La barra dice qué es ESTO y además lleva al andamio: las cuatro
+      // páginas hijas viven en `taller.html` y sin una puerta desde acá no
+      // se llega salvo escribiendo la dirección a mano. Es un enlace de
+      // verdad —no un botón con JavaScript— para que ande igual si algo del
+      // script de esta página falla.
+      c.innerHTML = 'Taller · sitio piloto — esto NO es casayourte.com'
+        + ' · <a href="./taller.html" style="color:#fff">ver el andamio</a>';
       document.body.insertBefore(c, document.body.firstChild);
     });
   }

@@ -196,10 +196,10 @@ previene nada y sí pierde trabajo: ya pasó cuatro veces en dos días.
 
 Lo que reemplaza a ese momento de revisión es la verificación previa, que corre
 el agente y **no es opcional**: que el JavaScript parsee (`node --check`),
-incluidos los módulos que viven adentro de un `.html`; que **los dos bancos
-corran** —`node pruebas-secciones.mjs` (16 casos) y `node pruebas-reportes.mjs`
-(59 casos), los dos sin npm y sin navegador—, contra sus casos límite y no sólo
-el camino feliz; que los
+incluidos los módulos que viven adentro de un `.html`; que **los tres bancos
+corran** —`node pruebas-secciones.mjs` (16 casos), `node pruebas-reportes.mjs`
+(59 casos) y `node pruebas-andamio.mjs` (34 casos), los tres sin npm y sin
+navegador—, contra sus casos límite y no sólo el camino feliz; que los
 sellos hayan subido, con la `VERSION` del `sw.js` si el archivo está en `SHELL`
 y los `?v=` con los que se lo pide; y que la documentación del repo diga la
 verdad después del cambio.
@@ -284,6 +284,18 @@ verdad después del cambio.
   piloto y no puede tocar lo publicado. **Y un diseñador entra con `taller` y
   NADA más**: si entra como `admin`, `con('contenido')` le da `true` por
   definición y el piloto deja de ser un piloto.
+- **`taller.html` es el andamio del taller: UN archivo, doce páginas.** Cuatro
+  hijas y dos nietas cada una, pintadas según `?p=`. Doce `.html` serían doce
+  archivos públicos que sincronizar — el mismo error que el taller evita siendo
+  «el mismo index.html leyendo otro documento». **Sus textos van a los MISMOS
+  mapas `es`/`fr` de `sitio/taller`**, con claves `pg.*`: sin forma de dato
+  nueva, sin regla nueva, y editables con el editor de siempre. **Y no hay
+  camino de acá al sitio publicado**: el enlace vive dentro del `if (TALLER)` de
+  `index.html` y hay una prueba que falla si se escapa de ahí.
+- **La transición del andamio nunca es una dependencia para navegar.** Los
+  enlaces son `href` de verdad; la View Transitions API es un adorno encima. Y
+  respeta `prefers-reduced-motion` — a algunas personas una transición que se
+  nota les produce mareo.
 - **La autoridad del contenido es Firestore** (`sitio/publicado`). `contenido.json` en
   el repo es respaldo, y los textos de `index.html` el último respaldo.
 - **No subir acá:** cálculos, costos, márgenes, tarifas, proveedores, documentación

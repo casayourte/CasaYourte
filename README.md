@@ -604,6 +604,38 @@ lo único que existía entonces. Tiene su prueba en los dos bancos.
 nunca en `sitio/publicado`. Desde el 21-sep-2026 las reglas le dan escritura
 sobre `sitio/taller` y sobre nada más. Ver «El taller» y `REGLAS.txt`.
 
+### El andamio del taller (22-sep-2026, `andamio-1`)
+
+`taller.html` son **cuatro páginas hijas del taller y dos nietas en cada una** —doce
+lugares con navegación puesta, para repartir información sobre una estructura en vez
+de empezar en una hoja en blanco. Se llega desde la barra bordó del taller.
+
+**Un archivo y no doce.** Doce `.html` serían doce archivos públicos que mantener
+sincronizados, y este proyecto ya sabe cómo termina eso: es el mismo motivo por el
+que el taller es «el mismo `index.html` leyendo otro documento» y no una copia. Acá
+igual — un archivo que se pinta distinto según `?p=`.
+
+**Los textos van al MISMO diccionario.** Las claves `pg.*` entran en los mapas
+`es`/`fr` de `sitio/taller`, los mismos que usa el sitio. No hay forma de dato nueva,
+ni colección nueva, ni regla nueva, y Romina las edita con el mismo editor y el mismo
+gesto de tocar un texto. Sumarlo a `editar.html` fue **un renglón** en el mapa `PAGS`.
+
+**Esto no se publica.** No hay camino de acá al sitio: llevar el taller al sitio copia
+`sitio/taller` sobre `sitio/publicado`, y `index.html` no sabe nada de estas páginas.
+Si alguna vez una tiene que salir al aire, se convierte en una sección de `index.html`
+con su `data-seccion`, que es el mecanismo que ya existe. Hay una prueba que falla si
+un enlace al andamio se escapa fuera del bloque `if (TALLER)`.
+
+**La transición** usa la View Transitions API donde existe y una animación CSS donde
+no, y **nunca** es una dependencia para poder moverse: los enlaces son `href` de
+verdad, así que si `pushState` o la API faltan, el navegador sigue el enlace y la
+página carga igual. Respeta `prefers-reduced-motion`, que no es cortesía: a algunas
+personas una transición que se nota les produce mareo.
+
+**Y el vacío se dice.** Un bloque sin texto se muestra en gris y en itálica diciendo
+que está vacío. Una página en blanco no se distingue de una rota, y la gracia del
+andamio es que se vea dónde falta escribir.
+
 ### El globo, la imagen y quién contesta (22-sep-2026, `nucleo-21` · `editar-10`)
 
 **El globo** es un botón redondo que flota sobre la vista del sitio en
@@ -699,9 +731,10 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-22` |
 | `firebase-init.js` | (en el comentario) | `init-2` |
-| `sw.js` | `VERSION` | `cy-shell-v43` |
+| `sw.js` | `VERSION` | `cy-shell-v44` |
 | `admin.html` | `PANEL` | `admin-18` |
-| `editar.html` | `EDITOR` | `editar-10` |
+| `editar.html` | `EDITOR` | `editar-11` |
+| `taller.html` | `SELLO` | `andamio-1` |
 | `calculo.html` | `CY.PANEL` | `calculo-9` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-4` |
 | `diagnostico.html` | `CY.PANEL` | `diagnostico-8` |
@@ -762,6 +795,7 @@ botón ↻ del avatar borra las cachés.
 ```
 node pruebas-secciones.mjs
 node pruebas-reportes.mjs
+node pruebas-andamio.mjs
 ```
 
 Sin npm, sin navegador, sin dependencias: `node` a secas. Son 16 casos sobre el orden y el

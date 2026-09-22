@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Estas páginas NO son el sitio: son el andamio del taller. Nunca a Google. -->
+<meta name="robots" content="noindex, nofollow">
+<title>CasaYourte · Taller</title>
+<link rel="icon" href="./icono-192.png">
+<link rel="stylesheet" href="./estilos.css">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..700,0..100,0..1&family=Instrument+Sans:wght@400..700&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════════════
+   EL ANDAMIO DEL TALLER — 22-sep-2026
+
+   QUÉ ES. Cuatro páginas hijas del index del taller, y dos nietas por
+   cada una: doce lugares vacíos con navegación puesta, para que Romina
+   tenga una estructura sobre la que repartir la información en vez de
+   una hoja en blanco.
+
+   POR QUÉ UN SOLO ARCHIVO Y NO DOCE. Doce .html serían doce archivos
+   públicos que mantener sincronizados, y este proyecto ya sabe cómo
+   termina eso — es el motivo por el que el taller es «el mismo
+   index.html leyendo otro documento» y no una copia. Acá igual: UN
+   archivo que se pinta distinto según `?p=`.
+
+   POR QUÉ LOS TEXTOS VAN AL MISMO DICCIONARIO. Las claves `pg.*` entran
+   en los mismos mapas `es`/`fr` de `sitio/taller` que usa el sitio. No
+   hay forma de dato nueva, no hay colección nueva, no hay regla nueva, y
+   —lo que importa— Romina las edita con el MISMO editor y el mismo gesto
+   de tocar un texto. Un segundo mecanismo de edición sería un segundo
+   lugar donde las cosas se desincronizan.
+
+   ESTO NO SE PUBLICA. No hay camino de acá al sitio: `editar.html` lleva
+   el taller al sitio copiando `sitio/taller` sobre `sitio/publicado`, y
+   `index.html` no sabe nada de estas páginas. Si algún día una de éstas
+   tiene que salir al aire, se convierte en una sección de `index.html`
+   con su `data-seccion`, que es el mecanismo que ya existe.
+   ══════════════════════════════════════════════════════════════ */
+body{background:var(--ink);color:var(--wool);font-family:var(--body);margin:0;
+  min-height:100vh;display:flex;flex-direction:column}
+.cy-en-taller{padding-top:1.9rem}
+#cy-taller{position:fixed;top:0;left:0;right:0;z-index:9999;background:#7A2C3C;
+  color:#fff;font:600 .72rem/1.9rem var(--body);text-align:center;letter-spacing:.02em}
+
+.env{max-width:46rem;margin:0 auto;padding:1.4rem 1.1rem 4rem;width:100%;flex:1}
+.miga{font-size:.74rem;color:var(--dim);margin:0 0 .9rem}
+.miga a{color:var(--dim)}
+h1{font-family:var(--disp);font-weight:400;font-size:clamp(1.7rem,6vw,2.6rem);
+  line-height:1.12;margin:.2rem 0 .5rem}
+.baja{color:var(--dim);font-size:1rem;line-height:1.5;margin:0 0 1.6rem;max-width:34rem}
+.bloque{margin:0 0 1.15rem;line-height:1.65;max-width:38rem}
+/* El vacío se DICE. Una página en blanco no se distingue de una rota, y la
+   gracia de este andamio es que se vea dónde falta escribir. */
+.vacio{color:var(--dim);font-style:italic;border-left:2px solid var(--line);
+  padding-left:.8rem}
+
+.hijas{display:grid;gap:.6rem;grid-template-columns:repeat(auto-fit,minmax(13rem,1fr));
+  margin:1.8rem 0 0;padding:0;list-style:none}
+.hijas a{display:block;background:var(--ink2);border:1px solid var(--line);
+  border-radius:var(--r-s,10px);padding:.85rem .9rem;text-decoration:none;color:var(--wool);
+  transition:background .18s ease,border-color .18s ease,transform .18s ease}
+.hijas a:hover,.hijas a:focus-visible{background:var(--ink3);border-color:var(--blond);
+  transform:translateY(-2px)}
+.hijas .n{display:block;font-size:.68rem;color:var(--blond);letter-spacing:.08em;
+  text-transform:uppercase;margin-bottom:.2rem}
+.hijas .t{font-family:var(--disp);font-size:1.05rem}
+
+.pie{border-top:1px solid var(--line);margin-top:2.4rem;padding-top:1rem;
+  display:flex;gap:.7rem;flex-wrap:wrap;font-size:.84rem}
+.pie a{color:var(--blond)}
+
+/* ── LA TRANSICIÓN ──────────────────────────────────────────────
+   Pedida para «romper lo estático». Se hace con la View Transitions API
+   cuando el navegador la tiene, y con una animación CSS cuando no: NUNCA
+   se queda sin mostrar la página por no poder animarla.
+
+   Y respeta `prefers-reduced-motion`. No es un detalle de cortesía: para
+   algunas personas una transición de las que se notan produce mareo, y
+   el sistema operativo ya tiene esa preferencia puesta. */
+@keyframes cy-entra{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.env{animation:cy-entra .32s cubic-bezier(.2,.7,.3,1) both}
+::view-transition-old(root){animation:cy-sale .18s ease both}
+::view-transition-new(root){animation:cy-entra .32s cubic-bezier(.2,.7,.3,1) both}
+@keyframes cy-sale{to{opacity:0;transform:translateY(-6px)}}
+@media (prefers-reduced-motion:reduce){
+  .env{animation:none}
+  .hijas a{transition:none}
+  ::view-transition-old(root),::view-transition-new(root){animation:none}
+}
+</style>
+</head>
+<body>
+<div class="env" id="env"><p class="baja">Cargando…</p></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ── EL ÁRBOL ────────────────────────────────────────────────
+     Cuatro hijas del index, dos nietas cada una. Los identificadores son
+     cortos y estables porque son parte de la clave del texto: renombrar
+     uno tiraría lo que Romina ya haya escrito ahí. Los NOMBRES, en cambio,
+     son textos editables como cualquier otro (`pg.<id>.t`). */
+  var SELLO = "andamio-1";
+
+  var ARBOL = [
+    { id: "a", hijas: ["a1", "a2"] },
+    { id: "b", hijas: ["b1", "b2"] },
+    { id: "c", hijas: ["c1", "c2"] },
+    { id: "d", hijas: ["d1", "d2"] }
+  ];
+
+  /* Nombres de arranque. NO son el contenido: son lo que se ve hasta que
+     alguien escriba el de verdad, para que el andamio no arranque mudo. */
+  var SEMILLA = {
+    a: "Primera sección", a1: "Primera · uno", a2: "Primera · dos",
+    b: "Segunda sección", b1: "Segunda · uno", b2: "Segunda · dos",
+    c: "Tercera sección", c1: "Tercera · uno", c2: "Tercera · dos",
+    d: "Cuarta sección",  d1: "Cuarta · uno",  d2: "Cuarta · dos"
+  };
+
+  var PADRE = {};
+  ARBOL.forEach(function (n) { n.hijas.forEach(function (h) { PADRE[h] = n.id; }); });
+  var ES_PAGINA = function (id) { return !!SEMILLA[id]; };
+
+  var REST = "https://firestore.googleapis.com/v1/projects/casayourte-mauro"
+    + "/databases/(default)/documents/sitio/taller"
+    + "?key=AIzaSyDDD_xvpC4I_ec2OZymyDqVsm1K0ISTr4Q";
+
+  var T = { es: {}, fr: {} };
+  var LANG = "es";
+
+  function valor(v) {
+    if (!v || typeof v !== "object") return undefined;
+    if ("stringValue" in v) return v.stringValue;
+    if ("booleanValue" in v) return v.booleanValue;
+    if ("integerValue" in v) return Number(v.integerValue);
+    if ("doubleValue" in v) return v.doubleValue;
+    if ("nullValue" in v) return null;
+    if ("arrayValue" in v) return (v.arrayValue.values || []).map(valor);
+    if ("mapValue" in v) return mapa(v.mapValue.fields || {});
+    return undefined;
+  }
+  function mapa(f) { var o = {}; for (var k in f) { var x = valor(f[k]); if (x !== undefined) o[k] = x; } return o; }
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  /* Qué página se está mirando. Un `?p=` que no existe cae en el índice y no
+     en una pantalla de error: quien llega acá con un enlace viejo tiene que
+     poder seguir navegando, no quedarse trabado. */
+  function actual() {
+    var m = /[?&]p=([a-z0-9]+)/.exec(location.search);
+    return (m && ES_PAGINA(m[1])) ? m[1] : "";
+  }
+
+  var texto = function (k) { return (T[LANG] && T[LANG][k]) || ""; };
+  var nombre = function (id) { return texto("pg." + id + ".t") || SEMILLA[id] || id; };
+
+  function tarjeta(id, i) {
+    return '<li><a href="?p=' + esc(id) + '" data-ir="' + esc(id) + '">'
+      + '<span class="n">' + esc(String(i + 1).padStart(2, "0")) + '</span>'
+      + '<span class="t" data-i="pg.' + esc(id) + '.t">' + esc(nombre(id)) + '</span></a></li>';
+  }
+
+  function bloque(id, n) {
+    var k = "pg." + id + ".b" + n;
+    var v = texto(k);
+    return '<p class="bloque' + (v ? '' : ' vacio') + '" data-i="' + esc(k) + '">'
+      + esc(v || "Bloque " + n + " · vacío. Tocalo desde el editor para escribirlo.")
+      + '</p>';
+  }
+
+  function pintar() {
+    var id = actual();
+    var env = document.getElementById("env");
+    var h = "";
+
+    if (!id) {
+      h += '<p class="miga">Taller · andamio</p>'
+        + '<h1 data-i="pg.raiz.t">' + esc(texto("pg.raiz.t") || "Las páginas del taller") + '</h1>'
+        + '<p class="baja' + (texto("pg.raiz.d") ? '' : ' vacio') + '" data-i="pg.raiz.d">'
+        + esc(texto("pg.raiz.d")
+          || "Cuatro secciones para repartir la información. Cada una tiene dos páginas adentro.")
+        + '</p>'
+        + '<ul class="hijas">' + ARBOL.map(function (n, i) { return tarjeta(n.id, i); }).join("") + '</ul>'
+        + '<div class="pie"><a href="./index.html?taller=1">← Volver a la portada del taller</a>'
+        + '<span style="color:var(--dim);font-size:.72rem">' + esc(SELLO) + '</span></div>';
+    } else {
+      var padre = PADRE[id];
+      var nodo = ARBOL.filter(function (n) { return n.id === id; })[0];
+      h += '<p class="miga"><a href="./taller.html">Taller</a>'
+        + (padre ? ' · <a href="?p=' + esc(padre) + '">' + esc(nombre(padre)) + '</a>' : '')
+        + ' · ' + esc(nombre(id)) + '</p>'
+        + '<h1 data-i="pg.' + esc(id) + '.t">' + esc(nombre(id)) + '</h1>'
+        + '<p class="baja' + (texto("pg." + id + ".d") ? '' : ' vacio') + '" data-i="pg.' + esc(id) + '.d">'
+        + esc(texto("pg." + id + ".d") || "Bajada · vacía.") + '</p>'
+        + bloque(id, 1) + bloque(id, 2) + bloque(id, 3);
+      if (nodo) h += '<ul class="hijas">' + nodo.hijas.map(function (x, i) { return tarjeta(x, i); }).join("") + '</ul>';
+      h += '<div class="pie">'
+        + (padre ? '<a href="?p=' + esc(padre) + '">← ' + esc(nombre(padre)) + '</a>' : '')
+        + '<a href="./taller.html">Índice del andamio</a>'
+        + '<a href="./index.html?taller=1">Portada del taller</a>'
+        + '<span style="color:var(--dim);font-size:.72rem">' + esc(SELLO) + '</span></div>';
+    }
+    env.innerHTML = h;
+    // Se reinicia la animación de entrada: `innerHTML` no la vuelve a disparar
+    // sola porque el elemento es el mismo.
+    env.style.animation = "none"; void env.offsetWidth; env.style.animation = "";
+  }
+
+  /* Navegación sin recargar, para que la transición se vea. Si algo de esto
+     falla, los enlaces son enlaces de verdad (`href="?p=..."`) y la página
+     navega igual, recargando. Es a propósito: la animación no puede ser una
+     dependencia para poder moverse. */
+  function irA(url, ev) {
+    if (!window.history || !window.history.pushState) return;   // navega el enlace
+    ev.preventDefault();
+    history.pushState({}, "", url);
+    if (document.startViewTransition) document.startViewTransition(pintar);
+    else pintar();
+    window.scrollTo(0, 0);
+  }
+
+  document.addEventListener("click", function (ev) {
+    var a = ev.target.closest && ev.target.closest('a[href^="?p="], a[href="./taller.html"]');
+    if (!a || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.button !== 0) return;
+    irA(a.getAttribute("href"), ev);
+  });
+  window.addEventListener("popstate", pintar);
+
+  // La barra del taller, igual que la de index.html y por el mismo motivo:
+  // esto tiene que ser imposible de confundir con casayourte.com.
+  document.body.classList.add("cy-en-taller");
+  var c = document.createElement("div");
+  c.id = "cy-taller";
+  c.textContent = "Taller · andamio — esto NO es casayourte.com";
+  document.body.insertBefore(c, document.body.firstChild);
+
+  /* El contrato con el editor. Mismo nombre y misma forma que el de
+     `index.html`, para que `editar.html` no tenga que saber en cuál de las
+     dos está parado. Lo que no aplica acá —grupos de bloques, secciones—
+     devuelve vacío en vez de faltar: un contrato con agujeros obliga a quien
+     lo usa a preguntar dónde está, que es justo lo que un contrato evita. */
+  window.CY_SITIO = {
+    version: 2,
+    GRUPOS: {},
+    aplicarOrden: function () {},
+    aplicarSecciones: function () {},
+    ids: function () { return []; },
+    idsSecciones: function () { return []; },
+    ocultasAhora: function () { return []; },
+    tituloDe: function (id) { return nombre(id); },
+    // Propio del andamio: el editor lo usa para ofrecer a qué página ir.
+    paginasTaller: function () {
+      var l = [{ id: "", nombre: "Índice del andamio" }];
+      ARBOL.forEach(function (n) {
+        l.push({ id: n.id, nombre: nombre(n.id) });
+        n.hijas.forEach(function (h) { l.push({ id: h, nombre: "   " + nombre(h) }); });
+      });
+      return l;
+    },
+    // Repinta con textos nuevos sin recargar: es lo que deja que el editor
+    // muestre el cambio mientras se escribe.
+    aplicarTextos: function (d) {
+      if (!d) return false;
+      ["es", "fr"].forEach(function (l) {
+        if (!d[l] || typeof d[l] !== "object") return;
+        T[l] = T[l] || {};
+        Object.keys(d[l]).forEach(function (k) { T[l][k] = d[l][k]; });
+      });
+      pintar();
+      return true;
+    },
+    idioma: function (l) { if (T[l]) { LANG = l; pintar(); } }
+  };
+
+  var m = /[?&]lang=(es|fr)/.exec(location.search);
+  if (m) LANG = m[1];
+
+  /* Se pinta ANTES de que conteste la red, con la semilla, y se repinta al
+     llegar los textos. Sin esto el andamio arranca en blanco y parece roto
+     justo cuando la señal está mal — que es cuando más se mira si funciona. */
+  pintar();
+
+  fetch(REST, { cache: "no-store" })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (j) {
+      if (!j || !j.fields) return;
+      var d = mapa(j.fields);
+      ["es", "fr"].forEach(function (l) { if (d[l]) T[l] = d[l]; });
+      pintar();
+    })
+    .catch(function () { /* con la semilla ya se puede navegar */ });
+})();
+</script>
+</body>
+</html>

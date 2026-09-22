@@ -149,6 +149,7 @@ body.taller #top{box-shadow:inset 0 -2px 0 var(--bad)}
     <div class="grupo-chips" id="paginas" role="group" aria-label="Qué página se edita">
       <button type="button" data-p="index" aria-pressed="true">Sitio</button>
       <button type="button" data-p="album" aria-pressed="false">Álbumes</button>
+      <button type="button" data-p="andamio" aria-pressed="false" hidden>Andamio</button>
     </div>
     <!-- Estos botones los vuelve a dibujar idiomas.js desde el catálogo, antes
          de enganchar nada. Los de acá son el respaldo si el archivo no cargó. -->
@@ -231,7 +232,7 @@ import { CY } from "./nucleo.js";
 const $ = (id) => document.getElementById(id);
 
 // Sello de este archivo, para saber si quedó viejo en la caché.
-const EDITOR = "editar-10";
+const EDITOR = "editar-11";
 CY.PANEL = EDITOR;
 
 /* ═══════════════════════════════════════════════════════════════
@@ -249,6 +250,12 @@ CY.PANEL = EDITOR;
 const PAGS = {
   index: { archivo: "index.html", attr: "data-i", prefijo: "" },
   album: { archivo: "album.html", attr: "data-t", prefijo: "alb." },
+  // El andamio del taller: cuatro páginas hijas y ocho nietas, para repartir
+  // información sobre una estructura en vez de una hoja en blanco. Usa
+  // `data-i` sin prefijo, igual que el sitio, porque sus textos viven en los
+  // MISMOS mapas `es`/`fr` de `sitio/taller` — con claves `pg.*`. Por eso
+  // sumarlo es este renglón y nada más.
+  andamio: { archivo: "taller.html", attr: "data-i", prefijo: "", soloTaller: true },
 };
 
 /* Los idiomas salen del catálogo (idiomas.js) y de ningún otro lado. Sumar
@@ -960,6 +967,18 @@ function pintarDestino() {
   document.body.classList.toggle("taller", enTaller());
   $("guardar").textContent = enTaller() ? "Guardar" : "Publicar";
   $("secciones").hidden = !enTaller() || pag !== "index";
+  /* El andamio SÓLO existe en el taller. Ofrecerlo «En vivo» sería ofrecer
+     editar páginas que el sitio no sirve — y si alguien está parado ahí
+     cuando cambia de destino, se lo devuelve al sitio en vez de dejarlo en
+     una pantalla que ya no corresponde. */
+  Object.keys(PAGS).forEach((k) => {
+    const b = $("paginas").querySelector(`[data-p="${k}"]`);
+    if (b && PAGS[k].soloTaller) b.hidden = !enTaller();
+  });
+  // Sólo se corrige la página elegida. NO se recarga desde acá: quien llama a
+  // `pintarDestino()` sigue con `abrirPagina()`, y disparar una segunda carga
+  // en el medio dejaría dos vistas compitiendo por el mismo iframe.
+  if (PAGS[pag] && PAGS[pag].soloTaller && !enTaller()) { pag = "index"; marcar("paginas", "p", pag); }
   // Llevar el taller al sitio es publicar: lo pide el mismo permiso.
   $("migrar").hidden = !enTaller() || !puedePublicar();
   // Sin permiso de publicar no hay nada que elegir: el taller es el único
