@@ -282,7 +282,7 @@ import { CY } from "./nucleo.js";
 // Sello de ESTE archivo. El de nucleo.js no sirve para saber si admin.html
 // quedó viejo en la caché: son dos archivos distintos. Al cambiar el panel,
 // se sube este número.
-const PANEL = "admin-18";
+const PANEL = "admin-19";
 
 const CLOUD = CY.CLOUDINARY.cloud;
 const PRESET = CY.CLOUDINARY.preset;
@@ -355,14 +355,22 @@ function ver(v) {
 // Espejo de las Security Rules. Acá sólo se oculta lo que no corresponde;
 // lo que de verdad impide escribir son las reglas del servidor.
 let yo = null;
-const puede = (q) => {
-  if (!yo || !yo.activo) return false;
-  if (yo.rol === "admin") return true;
-  if (yo.rol === "editor") return q !== "usuarios" && q !== "publicar";
-  if (yo.rol === "fotografo") return q === "fotos" || q === "albumes";
-  // "contenido" queda para admin y editor; el fotógrafo no lo ve.
-  return false;
-};
+
+/* NO HAY UNA SEGUNDA COPIA DE ESTO. Se delega en `CY.puede` de `nucleo.js`,
+   que es el único que decide, y acá sólo queda el nombre corto.
+
+   Hasta el 22-sep-2026 vivía acá una copia propia que decidía por ROL —admin,
+   editor, fotografo— y NO miraba `permisos`. Era del modelo viejo, y cuando el
+   sistema pasó a permisos explícitos nadie la tocó: quedaron dos verdades
+   sobre lo mismo y la de acá devolvía `false` para cualquier `colaborador`.
+   El síntoma fue el peor posible: a Romina, con `albumes: true` en su ficha,
+   esta pantalla le decía «Tu cuenta no tiene el permiso de álbumes». El dato
+   estaba bien y la pantalla mentía.
+
+   Es exactamente el error que el CLAUDE.md describe con `perm` contra
+   `permiso`, y la razón por la que «el núcleo no se duplica» no es una
+   preferencia de estilo. */
+const puede = (q) => CY.puede(q);
 
 /* ===================== AUTENTICACIÓN ===================== */
 $("in").addEventListener("click", async () => {

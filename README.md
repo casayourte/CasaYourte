@@ -604,6 +604,37 @@ lo único que existía entonces. Tiene su prueba en los dos bancos.
 nunca en `sitio/publicado`. Desde el 21-sep-2026 las reglas le dan escritura
 sobre `sitio/taller` y sobre nada más. Ver «El taller» y `REGLAS.txt`.
 
+### Las puertas del panel: por permiso, nunca por rol (22-sep-2026)
+
+`admin.html` y `editar.html` son las **dos únicas pantallas que no pasan por
+`CY.arrancar`** —son las que tienen el login—, y por eso fueron las dos que se
+quedaron con la lógica vieja cuando el sistema pasó a permisos explícitos:
+
+- `admin.html` tenía **su propia copia de `puede()`** que decidía por rol
+  (`admin`/`editor`/`fotografo`) y nunca miraba `permisos`. A un `colaborador`
+  con `albumes: true` le decía «Tu cuenta no tiene el permiso de álbumes».
+- `editar.html` cortaba con `rol !== "admin" && rol !== "editor"` **tres líneas
+  antes** de su propio código que manda a un no-publicador directo al taller.
+  Es decir: el sitio piloto existía, con sus reglas publicadas y su chip en la
+  barra, y **ningún diseñador podía alcanzarlo.**
+
+Ninguno de los dos rompía nada visible: la pantalla cargaba, no había un
+mensaje en la consola, y simplemente le negaba a alguien lo que su ficha decía
+que podía. Ahora `admin.html` delega en `CY.puede` y `editar.html` deja pasar a
+quien puede escribir algo —`contenido` **o** `taller`—. `pruebas-puertas.mjs`
+lo comprueba, y además recorre **todos** los `.html` buscando que nadie vuelva
+a decidir un permiso por `editor` o `fotografo`.
+
+### La orientación del taller
+
+Quien no puede publicar ve, **una sola vez**, un panel que dice las cuatro
+cosas que no se deducen mirando la pantalla: que esto es el piloto y no el
+sitio, cómo se toca un texto, qué son Secciones y Andamio, y que el globo sirve
+para pedir lo que ella no puede hacer —colores, tipografía, una sección
+nueva—. A quien puede publicar no se le muestra: un cartel que aparece siempre
+enseña a cerrarlo sin leerlo. La marca de «ya la vi» va en `localStorage` y no
+en su ficha, porque un colaborador no puede escribir su propia ficha.
+
 ### El andamio del taller (22-sep-2026, `andamio-1`)
 
 `taller.html` son **cuatro páginas hijas del taller y dos nietas en cada una** —doce
@@ -731,9 +762,9 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-23` |
 | `firebase-init.js` | (en el comentario) | `init-2` |
-| `sw.js` | `VERSION` | `cy-shell-v45` |
-| `admin.html` | `PANEL` | `admin-18` |
-| `editar.html` | `EDITOR` | `editar-11` |
+| `sw.js` | `VERSION` | `cy-shell-v46` |
+| `admin.html` | `PANEL` | `admin-19` |
+| `editar.html` | `EDITOR` | `editar-12` |
 | `taller.html` | `SELLO` | `andamio-1` |
 | `calculo.html` | `CY.PANEL` | `calculo-9` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-4` |
@@ -796,6 +827,7 @@ botón ↻ del avatar borra las cachés.
 node pruebas-secciones.mjs
 node pruebas-reportes.mjs
 node pruebas-andamio.mjs
+node pruebas-puertas.mjs
 ```
 
 Sin npm, sin navegador, sin dependencias: `node` a secas. Son 16 casos sobre el orden y el

@@ -109,12 +109,18 @@
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v45';
+const VERSION = 'cy-shell-v46';
 
 // v39 (14-sep-2026) — entra el TALLER: index.html lee sitio/taller con
 //   ?taller=1 y sabe mover y apagar secciones (contrato CY_SITIO v2);
 //   editar.html (editar-9) suma el chip «En vivo | Taller». Va encima de la
 //   v38, de la misma fecha: dos tandas seguidas tocando el SHELL.
+//
+//   v46 · 22-sep-2026 · las puertas del panel pasan de ROL a PERMISO.
+//   `admin.html` tenía su propia copia de `puede()` que decidía por rol y no
+//   miraba `permisos`, y `editar.html` echaba a todo el que no fuera admin o
+//   editor. Con las dos, un colaborador con `albumes` y `taller` en su ficha no
+//   podía ni ver los álbumes ni entrar al taller. Los dos están en el SHELL.
 //
 //   v45 · 22-sep-2026 · ARREGLO URGENTE. La v43 salió con un acento grave
 //   adentro de un template literal de `nucleo.js`: cerraba la cadena antes de

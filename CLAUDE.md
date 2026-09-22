@@ -197,10 +197,10 @@ previene nada y sí pierde trabajo: ya pasó cuatro veces en dos días.
 Lo que reemplaza a ese momento de revisión es la verificación previa, que corre
 el agente y **no es opcional**: que el JavaScript parsee **como MÓDULO**
 —`node --input-type=module --check < archivo.js`, y no `node --check`—,
-incluidos los módulos que viven adentro de un `.html`; que **los tres bancos
+incluidos los módulos que viven adentro de un `.html`; que **los cuatro bancos
 corran** —`node pruebas-secciones.mjs` (16 casos), `node pruebas-reportes.mjs`
-(59 casos) y `node pruebas-andamio.mjs` (34 casos), los tres sin npm y sin
-navegador—, contra sus casos límite y no sólo el camino feliz; que los
+(59 casos) y `node pruebas-andamio.mjs` (34 casos) y `node
+pruebas-puertas.mjs` (26 casos), los cuatro sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
 sellos hayan subido, con la `VERSION` del `sw.js` si el archivo está en `SHELL`
 y los `?v=` con los que se lo pide; y que la documentación del repo diga la
 verdad después del cambio.
@@ -223,6 +223,15 @@ verdad después del cambio.
 > qué ramas quedan sin mergear, con el nombre exacto.** Contestada una vez, no
 > se vuelve a preguntar en esa sesión. Está en `PROTOCOLO-GENERAL.md` § 6.0.
 
+- **Una puerta se decide por PERMISO, nunca por rol.** `admin.html` y
+  `editar.html` son las dos únicas pantallas que no pasan por `CY.arrancar`
+  —son las que tienen el login— y fueron las dos que quedaron con la lógica
+  vieja: una tenía su propia copia de `puede()` por rol, la otra cortaba con
+  `rol !== "admin" && rol !== "editor"`. Resultado: el taller piloto existía,
+  con reglas publicadas, y **ningún diseñador podía entrar**. No rompía nada
+  visible — simplemente le negaba a alguien lo que su ficha decía que podía.
+  `pruebas-puertas.mjs` recorre todos los `.html` y falla si vuelve a aparecer
+  una decisión por `editor` o `fotografo`.
 - **`node --check` NO alcanza, y creerlo costó el panel entero el
   22-sep-2026.** `node --check archivo.js` parsea como **script**; el navegador
   carga `nucleo.js` con `type="module"`, o sea como **módulo**, y las dos

@@ -116,6 +116,19 @@ button{cursor:pointer}
 #top .modo{font-family:var(--mono);font-size:.5rem;letter-spacing:.1em;color:var(--blond)}
 body.taller #top{box-shadow:inset 0 -2px 0 var(--bad)}
 
+/* LA ORIENTACIÓN. Se le muestra UNA vez a quien sólo puede tocar el taller.
+   No es un tutorial: son las cuatro cosas que no se deducen mirando la
+   pantalla, y sobre todo la primera — que esto NO es el sitio en vivo. */
+#guia{position:fixed;inset:0;z-index:50;background:rgba(24,22,20,.94);
+  display:flex;align-items:center;justify-content:center;padding:1.1rem;overflow:auto}
+#guia .caja{max-width:30rem;width:100%}
+#guia h2{font-family:var(--disp);font-weight:400;font-size:1.5rem;margin:0 0 .2rem}
+#guia p.sub{color:var(--dim);margin:0 0 1rem;font-size:.9rem;line-height:1.5}
+#guia ol{margin:0 0 1.2rem;padding-left:1.1rem}
+#guia li{margin:0 0 .7rem;line-height:1.5;font-size:.92rem}
+#guia li b{color:var(--blond);font-weight:600}
+#guia .btn{width:100%}
+
 #aviso{position:fixed;left:.8rem;right:.8rem;bottom:calc(4.5rem + var(--safe));z-index:120;
   background:var(--blond);color:var(--ink);border-radius:6px;padding:.7rem .9rem;
   font-size:.85rem;line-height:1.4;text-align:center;opacity:0;transition:opacity .25s;
@@ -177,6 +190,27 @@ body.taller #top{box-shadow:inset 0 -2px 0 var(--bad)}
        Vive en el editor y no en `index.html` a propósito — escribir un pedido
        pide sesión activa, y la página pública no tiene sesión ni SDK, que es
        justo lo que el sello `init-2` vino a asegurar. -->
+  <div id="guia" class="hide">
+    <div class="caja">
+      <h2>Tu lugar es el taller</h2>
+      <p class="sub">Todo lo que toques acá va al <b>sitio piloto</b>. No es
+        casayourte.com y nadie lo ve salvo quien tenga el enlace. Podés probar
+        con total libertad: no hay forma de que rompas el sitio en vivo.</p>
+      <ol>
+        <li><b>Tocá un texto o una foto</b> para cambiarla. Los
+          <b>▲▼</b> mueven bloques, <b>＋</b> agrega y <b>✕</b> quita.</li>
+        <li><b>Secciones</b> mueve y apaga secciones enteras de la página.
+          Eso acá se puede; en el sitio en vivo, no.</li>
+        <li><b>Andamio</b> son doce páginas vacías —cuatro, y dos adentro de
+          cada una— para repartir la información como te parezca.</li>
+        <li><b>El globo de abajo pide cambios</b> a los que no llegás vos:
+          colores, tipografía, una sección nueva. Se puede mandar una foto.
+          Lo lee una IA una vez por día y lo hace acá, en el taller.</li>
+      </ol>
+      <button class="btn p" id="guia-ok" type="button">Entendido, empezar</button>
+    </div>
+  </div>
+
   <button class="cy-globo" id="globo" type="button"
           title="Pedir un cambio" aria-label="Pedir un cambio">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -232,7 +266,7 @@ import { CY } from "./nucleo.js";
 const $ = (id) => document.getElementById(id);
 
 // Sello de este archivo, para saber si quedó viejo en la caché.
-const EDITOR = "editar-11";
+const EDITOR = "editar-12";
 CY.PANEL = EDITOR;
 
 /* ═══════════════════════════════════════════════════════════════
@@ -351,11 +385,24 @@ onAuthStateChanged(auth, async (u) => {
     if (!d.exists()) throw new Error("Tu cuenta no tiene permisos asignados.");
     yo = d.data();
     if (yo.activo !== true) throw new Error("Tu acceso está suspendido.");
-    if (yo.rol !== "admin" && yo.rol !== "editor")
-      throw new Error("Hace falta rol de administrador o editor para editar el sitio.");
     CY.usuario = yo;
+
+    /* LA PUERTA ES EL PERMISO, NO EL ROL — 22-sep-2026.
+       Hasta hoy acá decía `yo.rol !== "admin" && yo.rol !== "editor"`, del
+       modelo viejo. Eso echaba a cualquier `colaborador`, y contradecía en su
+       propia cara al código de tres líneas más abajo: «Una cuenta sin permiso
+       de publicar entra directo al taller» no podía correr nunca, porque una
+       cuenta así no llegaba hasta ahí.
+       O sea: el sitio piloto existía, tenía sus reglas publicadas y su chip en
+       la barra, y NINGÚN diseñador podía alcanzarlo. La línea `L-taller` estuvo
+       bloqueada una semana por este renglón.
+       Entra quien puede escribir ALGO: lo publicado o el taller. Y lo que de
+       verdad impide escribir siguen siendo las reglas del servidor, no esto. */
+    if (!CY.puede("contenido") && !CY.puede("taller"))
+      throw new Error("Tu cuenta no tiene permiso para editar el sitio ni el taller.");
     $("sello").textContent = EDITOR;
     $("login").classList.add("hide"); $("app").classList.remove("hide");
+    quizasGuia();
     // Una cuenta sin permiso de publicar entra directo al taller: es el único
     // lugar donde las reglas la dejan escribir. Que el editor arranque en un
     // destino que le va a dar permission-denied sería una trampa.
@@ -1009,6 +1056,28 @@ async function irA(d) {
    una segunda pantalla de pedidos: es otra puerta a la de siempre. Dos hojas
    que piden lo mismo se separan sin avisar, y ésa es la clase de error que este
    proyecto ya pagó con `perm` contra `permiso`. */
+/* LA ORIENTACIÓN, una sola vez y sólo para quien vive en el taller.
+   A quien puede publicar no se le muestra: ya sabe dónde está parado, y un
+   cartel que aparece siempre enseña a cerrarlo sin leerlo.
+
+   La marca de «ya la vi» va en localStorage y NO en su ficha de `usuarios/`:
+   es una comodidad de este teléfono, no un dato del equipo, y un colaborador
+   no puede escribir su propia ficha —lo impiden las reglas—. Envuelto en
+   try/catch porque en una ventana privada tirar acá dejaría el editor sin
+   arrancar, y eso sería cambiar una ayuda por una falla. */
+const VISTA_GUIA = "cy-guia-taller";
+function quizasGuia() {
+  if (puedePublicar()) return;
+  let vista = false;
+  try { vista = localStorage.getItem(VISTA_GUIA) === "1"; } catch (e) {}
+  if (vista) return;
+  $("guia").classList.remove("hide");
+}
+$("guia-ok").addEventListener("click", () => {
+  $("guia").classList.add("hide");
+  try { localStorage.setItem(VISTA_GUIA, "1"); } catch (e) {}
+});
+
 CY.contextoReporte = () => (enTaller() ? "taller" : "en vivo") + " · " + pag;
 $("globo").addEventListener("click", () => CY.reportar("pedido"));
 
