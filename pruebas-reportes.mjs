@@ -23,6 +23,9 @@ import { dirname, join } from "node:path";
 const aca = dirname(fileURLToPath(import.meta.url));
 const nucleo = readFileSync(join(aca, "nucleo.js"), "utf8");
 const sw = readFileSync(join(aca, "sw.js"), "utf8");
+const editor = readFileSync(join(aca, "editar.html"), "utf8");
+const estilos = readFileSync(join(aca, "estilos.css"), "utf8");
+const portada = readFileSync(join(aca, "index.html"), "utf8");
 
 // ── Se extrae el objeto real, no una copia ────────────────
 const desde = nucleo.indexOf("const MODOS_REPORTE = {");
@@ -46,7 +49,7 @@ ok("un pedido escribe 'urgencia'", MODOS.pedido.campo === "urgencia");
 ok("y no son el mismo campo", MODOS.falla.campo !== MODOS.pedido.campo);
 
 titulo("3 · cada modo trae todo lo que la hoja le va a pedir");
-const CLAVES = ["titulo","que","quePh","esp","espPh","seg","campo","ops","falta","gracias"];
+const CLAVES = ["titulo","que","quePh","esp","espPh","seg","campo","ops","falta","gracias","img","nota"];
 for (const [nombre, m] of Object.entries(MODOS)) {
   const faltan = CLAVES.filter((k) => m[k] === undefined || m[k] === "");
   ok(`${nombre}: no le falta ninguna clave${faltan.length ? " (faltan: " + faltan + ")" : ""}`,
@@ -85,10 +88,61 @@ ok("el de la falla quedó explícito", /CY\.reportar\('falla'\)/.test(nucleo));
 
 titulo("8 · los sellos, que es lo que hace que esto llegue a un teléfono");
 const sello = (nucleo.match(/CY\.VERSION = 'nucleo-(\d+)'/) || [])[1];
-ok("nucleo.js tiene sello y es nucleo-20 o más nuevo", Number(sello) >= 20);
+ok("nucleo.js tiene sello y es nucleo-21 o más nuevo", Number(sello) >= 21);
 ok("nucleo.js está en el SHELL del service worker", /'\.\/nucleo\.js'/.test(sw));
 const v = (sw.match(/const VERSION = 'cy-shell-v(\d+)'/) || [])[1];
-ok("y la VERSION del sw subió a v41 o más", Number(v) >= 41);
+ok("y la VERSION del sw subió a v42 o más", Number(v) >= 42);
+const se = (editor.match(/EDITOR = "editar-(\d+)"/) || [])[1];
+ok("editar.html subió a editar-10 o más", Number(se) >= 10);
+ok("editar.html y estilos.css también están en el SHELL",
+   /'\.\/editar\.html'/.test(sw) && /'\.\/estilos\.css'/.test(sw));
+
+titulo("9 · la nota dice quién contesta — es un requisito, no un detalle");
+/* Se pidió explícitamente que quien manda un pedido sepa ANTES de mandarlo
+   que lo que vuelve lo escribe una IA, y por dónde seguir cuando el ida y
+   vuelta no alcanza. Eso no es una cadena decorativa: si alguien la acorta
+   «para que entre mejor», la persona se entera después. */
+const np = MODOS.pedido.nota.toLowerCase();
+ok("avisa que el cambio lo hace una IA", /\bia\b|inteligencia artificial/.test(np));
+ok("nombra a Claude Code, que es quién lo recoge", /claude/.test(np));
+ok("dice que se ejecuta en el TALLER y no en el sitio", /taller/.test(np));
+ok("avisa que NO es un chat en vivo", /no es un chat en vivo/.test(np));
+ok("manda a coordinar con Mauro", /mauro/.test(np));
+ok("la de una falla es distinta", MODOS.falla.nota !== MODOS.pedido.nota);
+
+titulo("10 · la imagen");
+ok("se sube ANTES de escribir el documento",
+   nucleo.indexOf("CY.subirImagen") < nucleo.indexOf("fb.addDoc"));
+ok("el identificador va al documento", /^\s*imagen,$/m.test(nucleo));
+ok("se guarda vacío y no ausente cuando no hay",
+   /let imagen = '';/.test(nucleo));
+ok("se limpia al abrir, al quitar y al enviar (la hoja se reusa)",
+   (nucleo.match(/quitarImagen\(hoja\)/g) || []).length >= 3);
+ok("el blob se revoca, si no es memoria que no vuelve",
+   /revokeObjectURL/.test(nucleo));
+
+titulo("11 · el globo del editor");
+ok("existe en editar.html", /id="globo"/.test(editor));
+ok("abre la hoja en modo pedido", /CY\.reportar\("pedido"\)/.test(editor));
+ok("tiene su clase en estilos.css", /\.cy-globo\{/.test(estilos));
+ok("dibuja un SVG y no depende de Material Icons",
+   /cy-globo[\s\S]{0,400}<svg/.test(editor) && !/cy-globo[\s\S]{0,400}material-icons/.test(editor));
+ok("dice para qué es, también a un lector de pantalla",
+   /id="globo"[\s\S]{0,200}aria-label="Pedir un cambio"/.test(editor));
+
+titulo("12 · LO QUE NO TIENE QUE PASAR: el globo en el sitio público");
+/* `index.html` es la página que ve cualquiera, sin sesión y sin SDK. Escribir
+   un pedido pide sesión activa, así que un globo ahí sería un botón que falla
+   siempre — y meterle sesión a la portada desharía lo que aseguró `init-2`. */
+ok("no hay globo en index.html", !/cy-globo|id="globo"/.test(portada));
+ok("index.html sigue sin importar el SDK de Firebase al nivel superior",
+   !/^import .*gstatic/m.test(portada));
+
+titulo("13 · el contexto del reporte");
+ok("nucleo lo pide de forma opcional", /CY\.contextoReporte/.test(nucleo));
+ok("y un contexto roto no impide mandar", /catch \(e\) \{ \/\* un contexto roto/.test(nucleo));
+ok("el editor dice si mira el taller o el sitio en vivo",
+   /contextoReporte = \(\) => \(enTaller\(\) \? "taller" : "en vivo"\)/.test(editor));
 
 console.log(`\n${bien} bien · ${mal} mal`);
 process.exit(mal ? 1 : 0);

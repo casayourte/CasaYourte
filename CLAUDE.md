@@ -198,7 +198,7 @@ Lo que reemplaza a ese momento de revisión es la verificación previa, que corr
 el agente y **no es opcional**: que el JavaScript parsee (`node --check`),
 incluidos los módulos que viven adentro de un `.html`; que **los dos bancos
 corran** —`node pruebas-secciones.mjs` (16 casos) y `node pruebas-reportes.mjs`
-(28 casos), los dos sin npm y sin navegador—, contra sus casos límite y no sólo
+(51 casos), los dos sin npm y sin navegador—, contra sus casos límite y no sólo
 el camino feliz; que los
 sellos hayan subido, con la `VERSION` del `sw.js` si el archivo está en `SHELL`
 y los `?v=` con los que se lo pide; y que la documentación del repo diga la
@@ -251,6 +251,18 @@ verdad después del cambio.
   botones:** una falla tiene `gravedad`, un pedido tiene `urgencia`. Un pedido
   no tiene gravedad, y acá una palabra no nombra dos cosas. **Un reporte sin
   `tipo` se lee como falla**, que es lo único que existía antes.
+- **El globo de pedidos vive en `editar.html`, NUNCA en `index.html`**
+  (22-sep-2026). Escribir un pedido exige sesión activa y la portada no tiene
+  sesión ni SDK — ponérselos desharía lo que aseguró `init-2`. Abre la misma
+  hoja que el menú de la cuenta, en modo pedido: no es una segunda pantalla.
+  Y la **imagen se sube al enviar, no al elegirla** —si no, cada vez que alguien
+  mira una foto y cambia de idea queda un huérfano en Cloudinary que nadie puede
+  borrar, porque acá no hay `api_secret`— y **antes** de escribir el documento,
+  para que un corte de red no deje un reporte apuntando a una imagen inexistente.
+- **La nota del pedido dice que contesta una IA, y eso no se acorta.** Va antes
+  del botón de enviar: quien pide tiene derecho a saber quién le va a contestar
+  y cuánto puede tardar ANTES de mandar. El banco comprueba las cinco cosas que
+  tiene que decir.
 - **El agente ESCRIBE `sitio/taller`, y ése es todo su alcance de escritura acá**
   (21-sep-2026). Existe para ejecutar los pedidos de diseño sin que Mauro copie
   y pegue cada cambio. **Lo que lo hace aceptable es el alcance:** si un chat

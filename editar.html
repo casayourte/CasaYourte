@@ -170,6 +170,20 @@ body.taller #top{box-shadow:inset 0 -2px 0 var(--bad)}
     <button class="btn p" id="guardar">Publicar</button>
     <button class="btn" id="salir">✕</button>
   </div>
+
+  <!-- EL GLOBO. Flota sobre la vista del sitio porque lo que se pide se está
+       mirando: mandar a alguien al menú a contarlo es perder el «esto de acá».
+       Vive en el editor y no en `index.html` a propósito — escribir un pedido
+       pide sesión activa, y la página pública no tiene sesión ni SDK, que es
+       justo lo que el sello `init-2` vino a asegurar. -->
+  <button class="cy-globo" id="globo" type="button"
+          title="Pedir un cambio" aria-label="Pedir un cambio">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.9 9.9 0 0 1-3.6-.7L3 21l1.9-4.9A8.2 8.2 0 0 1 4 11.5a8.4 8.4 0 0 1 8.5-8.4A8.4 8.4 0 0 1 21 11.5z"/>
+      <path d="M12 8.6v3.2M12 15h.01"/>
+    </svg>
+  </button>
 </div>
 
 <div id="hoja" class="hide">
@@ -217,7 +231,7 @@ import { CY } from "./nucleo.js";
 const $ = (id) => document.getElementById(id);
 
 // Sello de este archivo, para saber si quedó viejo en la caché.
-const EDITOR = "editar-9";
+const EDITOR = "editar-10";
 CY.PANEL = EDITOR;
 
 /* ═══════════════════════════════════════════════════════════════
@@ -971,6 +985,13 @@ async function irA(d) {
     abrirPagina();
   } catch (e) { aviso(CY.explicar(e), true); }
 }
+
+/* El globo abre la MISMA hoja que el menú de la cuenta, en modo pedido. No es
+   una segunda pantalla de pedidos: es otra puerta a la de siempre. Dos hojas
+   que piden lo mismo se separan sin avisar, y ésa es la clase de error que este
+   proyecto ya pagó con `perm` contra `permiso`. */
+CY.contextoReporte = () => (enTaller() ? "taller" : "en vivo") + " · " + pag;
+$("globo").addEventListener("click", () => CY.reportar("pedido"));
 
 $("destinos").addEventListener("click", (e) => {
   const b = e.target.closest("button"); if (!b) return;

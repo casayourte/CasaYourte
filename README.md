@@ -604,6 +604,34 @@ lo único que existía entonces. Tiene su prueba en los dos bancos.
 nunca en `sitio/publicado`. Desde el 21-sep-2026 las reglas le dan escritura
 sobre `sitio/taller` y sobre nada más. Ver «El taller» y `REGLAS.txt`.
 
+### El globo, la imagen y quién contesta (22-sep-2026, `nucleo-21` · `editar-10`)
+
+**El globo** es un botón redondo que flota sobre la vista del sitio en
+`editar.html` y abre la misma hoja en modo pedido. Flota ahí porque lo que se
+pide se está mirando: mandar a alguien al menú a contarlo es perder el «esto de
+acá». Abre **la hoja de siempre**, no una segunda pantalla de pedidos — dos
+pantallas que piden lo mismo se separan sin avisar.
+
+**Vive en el editor y no en `index.html`**, y no es una preferencia: escribir un
+pedido exige sesión activa, y la portada no tiene sesión ni SDK. Ponérselos
+desharía lo que aseguró el sello `init-2`. Hay una prueba que falla si aparece
+un globo en la portada.
+
+**La imagen** se puede sumar a una falla o a un pedido: una captura, una
+referencia, un boceto. Se **elige** al tocar el botón y se **sube al enviar**,
+no antes: subirla al elegirla dejaría un archivo huérfano en Cloudinary cada vez
+que alguien mira una foto y cambia de idea, y este proyecto no tiene
+`api_secret` para borrarlo. Y se sube **antes** de escribir el documento — al
+revés, un corte de red dejaría un reporte que dice tener una imagen que no
+existe, indistinguible de una que se perdió.
+
+**La nota dice quién contesta, y está antes del botón de enviar a propósito.**
+Un pedido lo recoge una corrida de Claude Code y el cambio lo hace una IA, en el
+sitio taller; no es un chat en vivo y puede tardar hasta un día; si hay que ir y
+venir, se coordina con Mauro por chat. Quien pide tiene derecho a saber eso
+**antes** de mandar, no cuando le vuelve algo raro. El banco comprueba cada una
+de esas cinco cosas: si alguien acorta la frase «para que entre mejor», falla.
+
 **Dónde está:** avatar de arriba a la derecha → **Reportar una falla**. Vive en
 `CY.renderNav()`, que es la única función que dibuja la navegación, así que
 aparece en todas las páginas que entran por `CY.arrancar()` — admin, cálculo,
@@ -661,11 +689,11 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 
 | Archivo | Constante | Valor de esta versión |
 |---|---|---|
-| `nucleo.js` | `CY.VERSION` | `nucleo-20` |
+| `nucleo.js` | `CY.VERSION` | `nucleo-21` |
 | `firebase-init.js` | (en el comentario) | `init-2` |
-| `sw.js` | `VERSION` | `cy-shell-v41` |
+| `sw.js` | `VERSION` | `cy-shell-v42` |
 | `admin.html` | `PANEL` | `admin-18` |
-| `editar.html` | `EDITOR` | `editar-9` |
+| `editar.html` | `EDITOR` | `editar-10` |
 | `calculo.html` | `CY.PANEL` | `calculo-9` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-4` |
 | `diagnostico.html` | `CY.PANEL` | `diagnostico-8` |
@@ -737,7 +765,7 @@ pie que nunca se mueve, y basura en los campos.
 
 Es el patrón que presta Harmonía (`PROTOCOLO-DESARROLLO.md`), y es el primero de CasaYourte.
 
-`pruebas-reportes.mjs` son 28 casos sobre los dos modos de la hoja de reportes, con el mismo
+`pruebas-reportes.mjs` son 51 casos sobre los dos modos de la hoja de reportes, con el mismo
 criterio: extrae el `MODOS_REPORTE` real de `nucleo.js` y lo corre. Lo que de verdad cuida es
 que **una falla y un pedido no terminen escribiendo el mismo campo** — un error que no rompe
 nada visible y que sólo se descubre meses después, leyendo un pedido que dice tener

@@ -12,7 +12,7 @@
 
 export const CY = {};
 
-CY.VERSION = 'nucleo-20';
+CY.VERSION = 'nucleo-21';
 
 // ═════════════════════════════════════════════════════════════
 //  BOTÓN ATRÁS DE ANDROID
@@ -712,7 +712,9 @@ const MODOS_REPORTE = {
     campo:   'gravedad',
     ops:     [['molesta', 'Molesta, pero sigo'], ['trabado', 'No puedo seguir']],
     falta:   'Falta lo primero: qué pasó.',
-    gracias: 'Reporte enviado. Gracias.'
+    gracias: 'Reporte enviado. Gracias.',
+    img:     'Una captura, si ayuda',
+    nota:    'Lo lee Mauro. Si hace falta, te vuelve a preguntar.'
   },
   pedido: {
     titulo:  'Pedir un cambio',
@@ -724,13 +726,38 @@ const MODOS_REPORTE = {
     campo:   'urgencia',
     ops:     [['cuando-se-pueda', 'Cuando se pueda'], ['ya', 'Lo necesito ya']],
     falta:   'Falta lo primero: qué querés que cambie.',
-    gracias: 'Pedido enviado. Gracias.'
+    gracias: 'Pedido enviado. Gracias.',
+    img:     'Una imagen, si ayuda: una captura, una referencia, un boceto',
+    /* QUE DIGA QUIÉN CONTESTA, y no por trámite. Lo que vuelve de acá lo
+       escribe una IA, y quien pide tiene derecho a saberlo antes de mandar,
+       no después de recibir algo raro. También dice CUÁNDO, porque la
+       expectativa es la mitad del problema: esto no es un chat en vivo, lo
+       recoge una corrida y puede tardar. Y dice dónde seguir cuando el ida y
+       vuelta no alcanza — que es con Mauro, no insistiendo acá. */
+    nota:    'Lo recoge una corrida de Claude Code y el cambio lo hace una IA, '
+           + 'en el sitio taller. No es un chat en vivo: puede tardar hasta un día. '
+           + 'Si hay que ir y venir, coordinalo con Mauro por chat.'
   }
 };
 
 /* El modo de la hoja que está abierta. Se lee al enviar, no se pasa por
    parámetro: la hoja es una sola y se reusa entre aperturas. */
 CY._modoReporte = 'falla';
+/* El archivo elegido, todavía sin subir. Ver el comentario del `change`. */
+CY._imgReporte = null;
+
+/* Saca la imagen elegida y suelta el blob. Se llama al quitarla a mano, al
+   abrir la hoja y después de enviar: las tres veces por el mismo motivo, que
+   una hoja que se reusa no puede arrastrar la foto de la vez anterior. */
+function quitarImagen(hoja) {
+  CY._imgReporte = null;
+  const ver = hoja.querySelector('#rep-img-ver');
+  if (ver.src.startsWith('blob:')) URL.revokeObjectURL(ver.src);
+  ver.removeAttribute('src');
+  ver.classList.add('hide');
+  hoja.querySelector('#rep-img-quitar').classList.add('hide');
+  hoja.querySelector('#rep-img-arch').value = '';
+}
 
 function armarHojaReporte() {
   if (CY._hojaReporte) return CY._hojaReporte;
@@ -749,6 +776,20 @@ function armarHojaReporte() {
        <textarea id="rep-esp" rows="2"></textarea>
        <label class="etiq" id="rep-seg-lab">¿Te deja trabajar?</label>
        <div class="rep-seg" id="rep-grav"></div>
+
+       <label class="etiq" id="rep-img-lab">Una imagen, si ayuda</label>
+       <div class="rep-img">
+         <button type="button" class="btn" id="rep-img-btn">Elegir o sacar una foto</button>
+         <button type="button" class="btn hide" id="rep-img-quitar">Quitar</button>
+       </div>
+       <!-- Dos inputs y no uno: el patrón viene de Casa Verde. `capture` abre la
+            cámara directo, que es lo que uno quiere para una captura de algo que
+            está pasando; sin él, Android ofrece la galería. Tener los dos deja
+            elegir, y en un escritorio el de cámara simplemente no aparece. -->
+       <input type="file" id="rep-img-arch" accept="image/*" hidden>
+       <img id="rep-img-ver" class="rep-img-ver hide" alt="">
+
+       <p class="ayuda" id="rep-nota" style="margin:.6rem 0 0"></p>
        <p class="ayuda" id="rep-estado" style="margin:.5rem 0 0"></p>
        <div style="display:flex;gap:.5rem;margin-top:.7rem">
          <button class="btn" id="rep-cancelar" style="flex:1">Cancelar</button>
@@ -762,6 +803,29 @@ function armarHojaReporte() {
     const b = e.target.closest('button'); if (!b) return;
     hoja.querySelectorAll('#rep-grav button').forEach((x) => x.classList.toggle('on', x === b));
   });
+
+  /* La imagen se elige acá y se SUBE al enviar, no ahora. Si se subiera al
+     elegirla, cada vez que alguien abre el selector, mira la foto y cambia de
+     idea quedaría un archivo huérfano en Cloudinary que nadie va a borrar —
+     este proyecto no tiene `api_secret`, así que un huérfano se queda para
+     siempre. Se guarda el File y se sube una sola vez, cuando ya se sabe que
+     el reporte se manda de verdad. */
+  const arch = hoja.querySelector('#rep-img-arch');
+  hoja.querySelector('#rep-img-btn').addEventListener('click', () => arch.click());
+  arch.addEventListener('change', () => {
+    const f = arch.files && arch.files[0];
+    if (!f) return;
+    CY._imgReporte = f;
+    const ver = hoja.querySelector('#rep-img-ver');
+    // `createObjectURL` y no un FileReader: no copia el archivo a memoria. Se
+    // revoca al quitar y al cerrar, que si no es memoria que no vuelve.
+    if (ver.src.startsWith('blob:')) URL.revokeObjectURL(ver.src);
+    ver.src = URL.createObjectURL(f);
+    ver.classList.remove('hide');
+    hoja.querySelector('#rep-img-quitar').classList.remove('hide');
+  });
+  hoja.querySelector('#rep-img-quitar').addEventListener('click', () => quitarImagen(hoja));
+
   CY._hojaReporte = { tapa, hoja };
   return CY._hojaReporte;
 }
@@ -784,11 +848,14 @@ CY.reportar = function (modo) {
   hoja.querySelector('#rep-grav').innerHTML = m.ops.map(([v, t], i) =>
     `<button type="button" data-v="${CY.esc(v)}"${i === 0 ? ' class="on"' : ''}>${CY.esc(t)}</button>`
   ).join('');
+  hoja.querySelector('#rep-img-lab').textContent = m.img;
+  hoja.querySelector('#rep-nota').textContent = m.nota;
   hoja.querySelector('#rep-donde').textContent = 'Desde: ' + paginaActual();
   hoja.querySelector('#rep-que').value = '';
   hoja.querySelector('#rep-esp').value = '';
   hoja.querySelector('#rep-estado').textContent = '';
   hoja.querySelector('#rep-enviar').disabled = false;
+  quitarImagen(hoja);
   tapa.classList.add('on'); hoja.classList.add('on');
 
   // El Atrás de Android cierra la hoja en vez de salir de la app. Es la misma
@@ -804,7 +871,16 @@ CY.reportar = function (modo) {
 /* La página se recalcula acá y no se pasa por parámetro: es un dato del
    momento del envío, y una copia guardada al abrir la hoja podría quedar vieja
    si alguien deja la hoja abierta y navega. */
-const paginaActual = () => location.pathname.split('/').pop() || 'admin.html';
+const paginaActual = () => {
+  const base = location.pathname.split('/').pop() || 'admin.html';
+  /* Una pantalla puede agregar en qué estaba. El editor lo usa para decir si
+     el pedido salió mirando el taller o el sitio en vivo, que es el dato que
+     decide dónde se ejecuta y no se puede deducir del nombre del archivo.
+     Es opcional a propósito: una pantalla que no lo pone sigue andando. */
+  try { const x = CY.contextoReporte && CY.contextoReporte(); if (x) return base + ' · ' + x; }
+  catch (e) { /* un contexto roto no puede impedir mandar un reporte */ }
+  return base;
+};
 
 async function enviarReporte(cerrar) {
   const hoja = CY._hojaReporte.hoja;
@@ -820,6 +896,22 @@ async function enviarReporte(cerrar) {
   try {
     const fb = await import('./firebase-init.js');
     if (!(await CY.conFirebase(fb.cargarFirebase))) throw new Error('no bajó el SDK de Firebase');
+
+    /* La imagen se sube PRIMERO y el documento se escribe después, con el
+       identificador ya adentro. Al revés —documento y después imagen— un fallo
+       de red en el medio dejaría un reporte que dice tener una imagen que no
+       existe, y eso no se puede distinguir de una imagen que se perdió. Si la
+       subida falla, no se escribe nada y la persona vuelve a intentar con su
+       texto intacto. */
+    let imagen = '';
+    if (CY._imgReporte) {
+      est.textContent = 'Subiendo la imagen…';
+      const r = await CY.subirImagen(CY._imgReporte, 'casayourte/reportes',
+                                     ['reporte', CY._modoReporte]);
+      imagen = (r && (r.public_id || r.publicId)) || '';
+      est.textContent = 'Enviando…';
+    }
+
     const u = CY.usuario || {};
     await fb.addDoc(fb.collection(fb.db, 'reportes'), {
       uid: u.uid || '',
@@ -832,6 +924,9 @@ async function enviarReporte(cerrar) {
       // reportes anteriores al 21-sep-2026 no lo tienen: quien los lea trata
       // la ausencia como 'falla', que es lo único que existía entonces.
       tipo: CY._modoReporte,
+      // Vacío y no ausente: así «no mandó imagen» y «el campo todavía no
+      // existía» se distinguen en un reporte viejo.
+      imagen,
       // Una falla tiene `gravedad`; un pedido, `urgencia`. Nunca las dos: un
       // campo con el nombre del otro concepto es la clase de mentira que
       // sobrevive años porque nadie la mira de frente.
@@ -842,6 +937,7 @@ async function enviarReporte(cerrar) {
       estado: 'nuevo',            // la regla exige que nazca así
       creadoEn: fb.serverTimestamp()
     });
+    quitarImagen(hoja);
     cerrar();
     CY.aviso(m.gracias);
   } catch (e) {
