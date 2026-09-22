@@ -109,12 +109,18 @@
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v44';
+const VERSION = 'cy-shell-v45';
 
 // v39 (14-sep-2026) — entra el TALLER: index.html lee sitio/taller con
 //   ?taller=1 y sabe mover y apagar secciones (contrato CY_SITIO v2);
 //   editar.html (editar-9) suma el chip «En vivo | Taller». Va encima de la
 //   v38, de la misma fecha: dos tandas seguidas tocando el SHELL.
+//
+//   v45 · 22-sep-2026 · ARREGLO URGENTE. La v43 salió con un acento grave
+//   adentro de un template literal de `nucleo.js`: cerraba la cadena antes de
+//   tiempo, el módulo no parseaba, y `CY` quedaba sin definir. Con eso el panel
+//   ENTERO —admin, editar, usuarios, cálculo, traducir— no enganchaba un solo
+//   botón. Se veía la pantalla de login y Entrar no hacía nada.
 //
 //   v44 · 22-sep-2026 · el andamio del taller. `index.html` suma el enlace en su
 //   barra bordó y `editar.html` (editar-11) suma la página al mapa PAGS — los

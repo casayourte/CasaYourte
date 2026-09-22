@@ -12,7 +12,7 @@
 
 export const CY = {};
 
-CY.VERSION = 'nucleo-22';
+CY.VERSION = 'nucleo-23';
 
 // ═════════════════════════════════════════════════════════════
 //  BOTÓN ATRÁS DE ANDROID
@@ -786,17 +786,18 @@ function armarHojaReporte() {
          <button type="button" class="btn" id="rep-img-gal">Elegir archivo</button>
          <button type="button" class="btn hide" id="rep-img-quitar">Quitar</button>
        </div>
-       <!-- DOS INPUTS Y NO UNO, y la razón es de sistema operativo, no de gusto.
-            Con `accept="image/*"` a secas el sistema decide qué ofrecer, y en
-            iPad —sobre todo dentro de la PWA— abre el explorador de archivos SIN
-            ofrecer la cámara. El atributo `capture` hace lo contrario: fuerza
-            cámara y esconde los archivos. NINGÚN input solo da las dos opciones
-            de forma confiable en iOS + Android.
-            Es el mismo hallazgo que Casa Verde pagó en julio de 2026 y dejó
-            escrito en su `interno/nucleo.js`; acá se copia la conclusión, no el
-            texto. Dos botones a la vista y no una segunda hoja para elegir:
-            una hoja arriba de otra deja dos capas en la pila del Atrás, que es
-            un problema que este núcleo ya resolvió una vez. -->
+       <!-- DOS INPUTS Y NO UNO, y la razón es de sistema operativo, no de
+            gusto. Con accept="image/*" a secas el sistema decide qué ofrecer,
+            y en iPad —sobre todo dentro de la PWA— abre el explorador de
+            archivos SIN ofrecer la cámara. El atributo capture hace lo
+            contrario: fuerza cámara y esconde los archivos. NINGÚN input solo
+            da las dos opciones de forma confiable en iOS + Android.
+            Es el mismo hallazgo que Casa Verde pagó en julio de 2026, y que
+            este núcleo ya aplica más arriba en CY.elegirImagen.
+            OJO: este comentario vive DENTRO de un template literal, así que
+            no puede llevar acentos graves. Uno solo cierra la cadena y tira
+            todo el módulo — pasó el 22-sep-2026 y dejó el panel entero sin
+            CY. -->
        <input type="file" id="rep-img-cam-in" accept="image/*" capture="environment" hidden>
        <input type="file" id="rep-img-gal-in" accept="image/*" hidden>
        <img id="rep-img-ver" class="rep-img-ver hide" alt="">

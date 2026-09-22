@@ -729,9 +729,9 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 
 | Archivo | Constante | Valor de esta versión |
 |---|---|---|
-| `nucleo.js` | `CY.VERSION` | `nucleo-22` |
+| `nucleo.js` | `CY.VERSION` | `nucleo-23` |
 | `firebase-init.js` | (en el comentario) | `init-2` |
-| `sw.js` | `VERSION` | `cy-shell-v44` |
+| `sw.js` | `VERSION` | `cy-shell-v45` |
 | `admin.html` | `PANEL` | `admin-18` |
 | `editar.html` | `EDITOR` | `editar-11` |
 | `taller.html` | `SELLO` | `andamio-1` |
@@ -807,7 +807,7 @@ pie que nunca se mueve, y basura en los campos.
 
 Es el patrón que presta Harmonía (`PROTOCOLO-DESARROLLO.md`), y es el primero de CasaYourte.
 
-`pruebas-reportes.mjs` son 59 casos sobre los dos modos de la hoja de reportes, con el mismo
+`pruebas-reportes.mjs` son 62 casos sobre los dos modos de la hoja de reportes, con el mismo
 criterio: extrae el `MODOS_REPORTE` real de `nucleo.js` y lo corre. Lo que de verdad cuida es
 que **una falla y un pedido no terminen escribiendo el mismo campo** — un error que no rompe
 nada visible y que sólo se descubre meses después, leyendo un pedido que dice tener

@@ -195,7 +195,8 @@ el 2026-09-10. **Sin rama y sin merge**, porque una rama que nadie mira no
 previene nada y sí pierde trabajo: ya pasó cuatro veces en dos días.
 
 Lo que reemplaza a ese momento de revisión es la verificación previa, que corre
-el agente y **no es opcional**: que el JavaScript parsee (`node --check`),
+el agente y **no es opcional**: que el JavaScript parsee **como MÓDULO**
+—`node --input-type=module --check < archivo.js`, y no `node --check`—,
 incluidos los módulos que viven adentro de un `.html`; que **los tres bancos
 corran** —`node pruebas-secciones.mjs` (16 casos), `node pruebas-reportes.mjs`
 (59 casos) y `node pruebas-andamio.mjs` (34 casos), los tres sin npm y sin
@@ -222,6 +223,20 @@ verdad después del cambio.
 > qué ramas quedan sin mergear, con el nombre exacto.** Contestada una vez, no
 > se vuelve a preguntar en esa sesión. Está en `PROTOCOLO-GENERAL.md` § 6.0.
 
+- **`node --check` NO alcanza, y creerlo costó el panel entero el
+  22-sep-2026.** `node --check archivo.js` parsea como **script**; el navegador
+  carga `nucleo.js` con `type="module"`, o sea como **módulo**, y las dos
+  gramáticas no son la misma. Un acento grave suelto adentro de un template
+  literal cerraba la cadena: `node --check` daba verde, el navegador tiraba
+  `SyntaxError`, `CY` quedaba sin definir y **ningún botón del panel
+  enganchaba** — la pantalla de login se veía perfecta y Entrar no hacía nada.
+  Se verifica con `node --input-type=module --check < archivo.js`, y
+  `pruebas-reportes.mjs` lo comprueba solo.
+- **Y de ahí la regla concreta: un comentario adentro de un template literal no
+  puede llevar acentos graves.** En este repositorio los comentarios citan
+  nombres de campo con acentos graves todo el tiempo; adentro de una plantilla
+  eso la parte. El banco cuenta los acentos graves de la plantilla de la hoja de
+  reportes y falla si son más de dos.
 - **No hay build ni terminal.** Es HTML/CSS/JS servido tal cual. No agregar `npm`,
   bundlers ni carpetas anidadas sin una razón fuerte: se edita desde el celular.
 - **Sellos de versión.** Cada archivo con lógica lleva su número (`CY.VERSION` en

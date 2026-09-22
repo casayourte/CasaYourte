@@ -16,6 +16,7 @@
    lo pagó dos veces: `perm` contra `permiso` en el menú, y la palabra
    «bóveda» nombrando dos cosas.
    ═══════════════════════════════════════════════════════════════ */
+import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -88,10 +89,10 @@ ok("el de la falla quedó explícito", /CY\.reportar\('falla'\)/.test(nucleo));
 
 titulo("8 · los sellos, que es lo que hace que esto llegue a un teléfono");
 const sello = (nucleo.match(/CY\.VERSION = 'nucleo-(\d+)'/) || [])[1];
-ok("nucleo.js tiene sello y es nucleo-22 o más nuevo", Number(sello) >= 22);
+ok("nucleo.js tiene sello y es nucleo-23 o más nuevo", Number(sello) >= 23);
 ok("nucleo.js está en el SHELL del service worker", /'\.\/nucleo\.js'/.test(sw));
 const v = (sw.match(/const VERSION = 'cy-shell-v(\d+)'/) || [])[1];
-ok("y la VERSION del sw subió a v43 o más", Number(v) >= 43);
+ok("y la VERSION del sw subió a v45 o más", Number(v) >= 45);
 const se = (editor.match(/EDITOR = "editar-(\d+)"/) || [])[1];
 ok("editar.html subió a editar-10 o más", Number(se) >= 10);
 ok("editar.html y estilos.css también están en el SHELL",
@@ -173,6 +174,41 @@ ok("nucleo lo pide de forma opcional", /CY\.contextoReporte/.test(nucleo));
 ok("y un contexto roto no impide mandar", /catch \(e\) \{ \/\* un contexto roto/.test(nucleo));
 ok("el editor dice si mira el taller o el sitio en vivo",
    /contextoReporte = \(\) => \(enTaller\(\) \? "taller" : "en vivo"\)/.test(editor));
+
+titulo("14 · QUE PARSEE COMO MÓDULO, que es como lo carga el navegador");
+/* LA PRUEBA QUE FALTABA, y su ausencia costó el panel entero el 22-sep-2026.
+   `node --check archivo.js` parsea como SCRIPT. El navegador carga `nucleo.js`
+   con `<script type="module">`, o sea como MÓDULO, y las dos gramáticas no son
+   la misma: un acento grave suelto adentro de un template literal cerraba la
+   cadena, el módulo no parseaba, `CY` quedaba sin definir y NINGÚN botón del
+   panel enganchaba. La pantalla de login se veía perfecta y Entrar no hacía
+   nada — que es el peor de los síntomas, porque no parece un error de sintaxis.
+
+   `node --check` daba verde. Por eso esta prueba no mira el texto: le pide a
+   node que lo parse de verdad, con la gramática correcta. */
+const comoModulo = (nombre, src) => {
+  try {
+    execFileSync(process.execPath, ["--input-type=module", "--check"],
+                 { input: src, stdio: ["pipe", "ignore", "pipe"] });
+    return "";
+  } catch (e) { return String(e.stderr || e).split("\n").find((l) => /Error/.test(l)) || "no parsea"; }
+};
+for (const [nombre, src] of [["nucleo.js", nucleo], ["editar.html (su módulo)",
+      (editor.match(/<script[^>]*type="module"[^>]*>([\s\S]*?)<\/script>/) || [])[1] || ""]]) {
+  const err = comoModulo(nombre, src);
+  ok(`${nombre} parsea como módulo${err ? " — " + err : ""}`, !err);
+}
+
+titulo("15 · y el acento grave que lo causó, donde no puede estar");
+/* El comentario que rompió todo vive DENTRO del template literal de la hoja.
+   La prueba de arriba ya lo atraparía, pero ésta dice POR QUÉ falla, que es la
+   diferencia entre arreglarlo en un minuto y buscarlo media hora. */
+/* Se ancla en `hoja rep` y no en `hoja.innerHTML`: eso último aparece antes,
+   en `CY.elegirImagen`, y el trozo se comía medio archivo. */
+const plantillaHoja = nucleo.slice(nucleo.indexOf("hoja.className = 'hoja rep'"),
+                                   nucleo.indexOf("document.body.appendChild(tapa)"));
+ok("el template de la hoja no lleva acentos graves adentro",
+   (plantillaHoja.match(/`/g) || []).length === 2);
 
 console.log(`\n${bien} bien · ${mal} mal`);
 process.exit(mal ? 1 : 0);
