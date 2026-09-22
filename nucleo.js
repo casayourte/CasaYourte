@@ -12,7 +12,7 @@
 
 export const CY = {};
 
-CY.VERSION = 'nucleo-21';
+CY.VERSION = 'nucleo-22';
 
 // ═════════════════════════════════════════════════════════════
 //  BOTÓN ATRÁS DE ANDROID
@@ -756,7 +756,10 @@ function quitarImagen(hoja) {
   ver.removeAttribute('src');
   ver.classList.add('hide');
   hoja.querySelector('#rep-img-quitar').classList.add('hide');
-  hoja.querySelector('#rep-img-arch').value = '';
+  // Los dos, y no sólo el que se usó: un input que conserva su `files` vuelve a
+  // mostrar la foto vieja si alguien lo abre y cancela.
+  hoja.querySelector('#rep-img-cam-in').value = '';
+  hoja.querySelector('#rep-img-gal-in').value = '';
 }
 
 function armarHojaReporte() {
@@ -779,14 +782,23 @@ function armarHojaReporte() {
 
        <label class="etiq" id="rep-img-lab">Una imagen, si ayuda</label>
        <div class="rep-img">
-         <button type="button" class="btn" id="rep-img-btn">Elegir o sacar una foto</button>
+         <button type="button" class="btn" id="rep-img-cam">Sacar foto</button>
+         <button type="button" class="btn" id="rep-img-gal">Elegir archivo</button>
          <button type="button" class="btn hide" id="rep-img-quitar">Quitar</button>
        </div>
-       <!-- Dos inputs y no uno: el patrón viene de Casa Verde. `capture` abre la
-            cámara directo, que es lo que uno quiere para una captura de algo que
-            está pasando; sin él, Android ofrece la galería. Tener los dos deja
-            elegir, y en un escritorio el de cámara simplemente no aparece. -->
-       <input type="file" id="rep-img-arch" accept="image/*" hidden>
+       <!-- DOS INPUTS Y NO UNO, y la razón es de sistema operativo, no de gusto.
+            Con `accept="image/*"` a secas el sistema decide qué ofrecer, y en
+            iPad —sobre todo dentro de la PWA— abre el explorador de archivos SIN
+            ofrecer la cámara. El atributo `capture` hace lo contrario: fuerza
+            cámara y esconde los archivos. NINGÚN input solo da las dos opciones
+            de forma confiable en iOS + Android.
+            Es el mismo hallazgo que Casa Verde pagó en julio de 2026 y dejó
+            escrito en su `interno/nucleo.js`; acá se copia la conclusión, no el
+            texto. Dos botones a la vista y no una segunda hoja para elegir:
+            una hoja arriba de otra deja dos capas en la pila del Atrás, que es
+            un problema que este núcleo ya resolvió una vez. -->
+       <input type="file" id="rep-img-cam-in" accept="image/*" capture="environment" hidden>
+       <input type="file" id="rep-img-gal-in" accept="image/*" hidden>
        <img id="rep-img-ver" class="rep-img-ver hide" alt="">
 
        <p class="ayuda" id="rep-nota" style="margin:.6rem 0 0"></p>
@@ -810,10 +822,10 @@ function armarHojaReporte() {
      este proyecto no tiene `api_secret`, así que un huérfano se queda para
      siempre. Se guarda el File y se sube una sola vez, cuando ya se sabe que
      el reporte se manda de verdad. */
-  const arch = hoja.querySelector('#rep-img-arch');
-  hoja.querySelector('#rep-img-btn').addEventListener('click', () => arch.click());
-  arch.addEventListener('change', () => {
-    const f = arch.files && arch.files[0];
+  // Un solo manejador para los dos inputs: lo que cambia es qué ofrece el
+  // sistema al abrirlos, no qué se hace con lo que vuelve.
+  const alElegir = (ev) => {
+    const f = ev.target.files && ev.target.files[0];
     if (!f) return;
     CY._imgReporte = f;
     const ver = hoja.querySelector('#rep-img-ver');
@@ -823,7 +835,13 @@ function armarHojaReporte() {
     ver.src = URL.createObjectURL(f);
     ver.classList.remove('hide');
     hoja.querySelector('#rep-img-quitar').classList.remove('hide');
-  });
+  };
+  const inCam = hoja.querySelector('#rep-img-cam-in');
+  const inGal = hoja.querySelector('#rep-img-gal-in');
+  inCam.addEventListener('change', alElegir);
+  inGal.addEventListener('change', alElegir);
+  hoja.querySelector('#rep-img-cam').addEventListener('click', () => inCam.click());
+  hoja.querySelector('#rep-img-gal').addEventListener('click', () => inGal.click());
   hoja.querySelector('#rep-img-quitar').addEventListener('click', () => quitarImagen(hoja));
 
   CY._hojaReporte = { tapa, hoja };

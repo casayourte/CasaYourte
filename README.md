@@ -618,7 +618,15 @@ desharía lo que aseguró el sello `init-2`. Hay una prueba que falla si aparece
 un globo en la portada.
 
 **La imagen** se puede sumar a una falla o a un pedido: una captura, una
-referencia, un boceto. Se **elige** al tocar el botón y se **sube al enviar**,
+referencia, un boceto. Se elige con **dos botones, «Sacar foto» y «Elegir
+archivo», y detrás hay dos `<input type="file">`**. No es redundancia: con
+`accept="image/*"` a secas el sistema decide qué ofrecer, y en iPad —sobre todo
+dentro de la PWA— abre el explorador **sin ofrecer la cámara**; el atributo
+`capture` hace lo contrario, fuerza cámara y esconde los archivos. Ningún input
+solo da las dos opciones de forma confiable en iOS + Android. Es el hallazgo que
+Casa Verde pagó en julio de 2026, y acá tiene prueba: si alguien «simplifica» a
+un input, la mitad de los teléfonos se queda sin poder sacar una foto — y no
+falla nada, simplemente no aparece la opción. Se **elige** al tocar el botón y se **sube al enviar**,
 no antes: subirla al elegirla dejaría un archivo huérfano en Cloudinary cada vez
 que alguien mira una foto y cambia de idea, y este proyecto no tiene
 `api_secret` para borrarlo. Y se sube **antes** de escribir el documento — al
@@ -689,9 +697,9 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 
 | Archivo | Constante | Valor de esta versión |
 |---|---|---|
-| `nucleo.js` | `CY.VERSION` | `nucleo-21` |
+| `nucleo.js` | `CY.VERSION` | `nucleo-22` |
 | `firebase-init.js` | (en el comentario) | `init-2` |
-| `sw.js` | `VERSION` | `cy-shell-v42` |
+| `sw.js` | `VERSION` | `cy-shell-v43` |
 | `admin.html` | `PANEL` | `admin-18` |
 | `editar.html` | `EDITOR` | `editar-10` |
 | `calculo.html` | `CY.PANEL` | `calculo-9` |
@@ -765,7 +773,7 @@ pie que nunca se mueve, y basura en los campos.
 
 Es el patrón que presta Harmonía (`PROTOCOLO-DESARROLLO.md`), y es el primero de CasaYourte.
 
-`pruebas-reportes.mjs` son 51 casos sobre los dos modos de la hoja de reportes, con el mismo
+`pruebas-reportes.mjs` son 59 casos sobre los dos modos de la hoja de reportes, con el mismo
 criterio: extrae el `MODOS_REPORTE` real de `nucleo.js` y lo corre. Lo que de verdad cuida es
 que **una falla y un pedido no terminen escribiendo el mismo campo** — un error que no rompe
 nada visible y que sólo se descubre meses después, leyendo un pedido que dice tener

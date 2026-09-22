@@ -305,8 +305,10 @@ label .k{display:block;font-size:.78rem;color:var(--dim);margin-bottom:.25rem}
 /* La imagen de un reporte. Los dos botones van en fila y el de quitar aparece
    recién cuando hay algo que quitar: un botón que no hace nada enseña a no
    mirar los botones. */
-.rep-img{display:flex;gap:.4rem;margin:.3rem 0 .2rem}
-.rep-img button{flex:1;min-height:42px;background:var(--ink3);color:var(--dim);
+/* Envuelve: son tres botones y en un teléfono angosto no entran en una fila
+   sin apretarse tanto que se toca el equivocado. */
+.rep-img{display:flex;flex-wrap:wrap;gap:.4rem;margin:.3rem 0 .2rem}
+.rep-img button{flex:1 1 40%;min-width:8rem;min-height:42px;background:var(--ink3);color:var(--dim);
   border:1px solid var(--line);border-radius:var(--r-s);font-size:.82rem;padding:.4rem}
 .rep-img button#rep-img-quitar{flex:0 0 auto;padding:.4rem .8rem}
 /* Alto acotado: una captura de un teléfono es más alta que ancha y sin techo

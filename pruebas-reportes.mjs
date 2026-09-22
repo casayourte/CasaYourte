@@ -88,10 +88,10 @@ ok("el de la falla quedó explícito", /CY\.reportar\('falla'\)/.test(nucleo));
 
 titulo("8 · los sellos, que es lo que hace que esto llegue a un teléfono");
 const sello = (nucleo.match(/CY\.VERSION = 'nucleo-(\d+)'/) || [])[1];
-ok("nucleo.js tiene sello y es nucleo-21 o más nuevo", Number(sello) >= 21);
+ok("nucleo.js tiene sello y es nucleo-22 o más nuevo", Number(sello) >= 22);
 ok("nucleo.js está en el SHELL del service worker", /'\.\/nucleo\.js'/.test(sw));
 const v = (sw.match(/const VERSION = 'cy-shell-v(\d+)'/) || [])[1];
-ok("y la VERSION del sw subió a v42 o más", Number(v) >= 42);
+ok("y la VERSION del sw subió a v43 o más", Number(v) >= 43);
 const se = (editor.match(/EDITOR = "editar-(\d+)"/) || [])[1];
 ok("editar.html subió a editar-10 o más", Number(se) >= 10);
 ok("editar.html y estilos.css también están en el SHELL",
@@ -120,6 +120,36 @@ ok("se limpia al abrir, al quitar y al enviar (la hoja se reusa)",
    (nucleo.match(/quitarImagen\(hoja\)/g) || []).length >= 3);
 ok("el blob se revoca, si no es memoria que no vuelve",
    /revokeObjectURL/.test(nucleo));
+
+titulo("10 bis · DOS inputs, que es lo que ningún input solo resuelve");
+/* Con `accept="image/*"` a secas el sistema decide qué ofrecer, y en iPad
+   —sobre todo dentro de la PWA— abre el explorador SIN ofrecer la cámara.
+   `capture` hace lo contrario: fuerza cámara y esconde los archivos. Casa
+   Verde pagó esto en julio de 2026. Si alguien «simplifica» a un input solo,
+   en la mitad de los teléfonos deja de poder sacar una foto — y no falla
+   nada, simplemente no aparece la opción. Por eso tiene prueba. */
+ok("hay un input de CÁMARA, con capture",
+   /id="rep-img-cam-in"[^>]*capture="environment"/.test(nucleo));
+ok("y uno de ARCHIVOS, sin capture",
+   /id="rep-img-gal-in"(?![^>]*capture)[^>]*accept="image\/\*"/.test(nucleo));
+ok("los dos aceptan sólo imágenes",
+   (nucleo.match(/id="rep-img-(cam|gal)-in"[^>]*accept="image\/\*"/g) || []).length === 2);
+ok("hay un botón para cada uno",
+   /id="rep-img-cam"/.test(nucleo) && /id="rep-img-gal"/.test(nucleo));
+ok("un solo manejador para los dos: lo que cambia es qué ofrece el sistema",
+   (nucleo.match(/addEventListener\('change', alElegir\)/g) || []).length === 2);
+ok("al limpiar se vacían LOS DOS, o uno vuelve a mostrar la foto vieja",
+   /#rep-img-cam-in'\)\.value = ''/.test(nucleo) && /#rep-img-gal-in'\)\.value = ''/.test(nucleo));
+ok("no quedó el input viejo de una sola vía", !/rep-img-arch/.test(nucleo));
+/* Acotado a la hoja de reportes: `showModal` existe en otra parte del núcleo,
+   legítimamente. Lo que no puede pasar es que ELEGIR una imagen abra una
+   segunda hoja encima de ésta — dos hojas abiertas dejan dos capas en la pila
+   del Atrás, y el primer Atrás cerraría la de abajo dejando la de arriba
+   flotando sobre nada. Ese error ya está descrito en `CY.renderNav`. */
+const bloqueImagen = nucleo.slice(nucleo.indexOf("const alElegir"),
+                                  nucleo.indexOf("CY._hojaReporte = { tapa, hoja }"));
+ok("elegir una imagen no abre una segunda hoja",
+   bloqueImagen.length > 0 && !/showModal|\.click\(\)[\s\S]*showModal/.test(bloqueImagen));
 
 titulo("11 · el globo del editor");
 ok("existe en editar.html", /id="globo"/.test(editor));

@@ -198,7 +198,7 @@ Lo que reemplaza a ese momento de revisión es la verificación previa, que corr
 el agente y **no es opcional**: que el JavaScript parsee (`node --check`),
 incluidos los módulos que viven adentro de un `.html`; que **los dos bancos
 corran** —`node pruebas-secciones.mjs` (16 casos) y `node pruebas-reportes.mjs`
-(51 casos), los dos sin npm y sin navegador—, contra sus casos límite y no sólo
+(59 casos), los dos sin npm y sin navegador—, contra sus casos límite y no sólo
 el camino feliz; que los
 sellos hayan subido, con la `VERSION` del `sw.js` si el archivo está en `SHELL`
 y los `?v=` con los que se lo pide; y que la documentación del repo diga la
@@ -259,6 +259,13 @@ verdad después del cambio.
   mira una foto y cambia de idea queda un huérfano en Cloudinary que nadie puede
   borrar, porque acá no hay `api_secret`— y **antes** de escribir el documento,
   para que un corte de red no deje un reporte apuntando a una imagen inexistente.
+- **Elegir una imagen son DOS inputs, cámara y archivos, y no se simplifica a
+  uno.** Con `accept="image/*"` a secas el sistema decide qué ofrecer y en iPad
+  —sobre todo en la PWA— abre el explorador sin ofrecer la cámara; `capture`
+  fuerza cámara y esconde los archivos. Ninguno solo da las dos de forma
+  confiable en iOS + Android. Es el hallazgo de Casa Verde de julio de 2026, y
+  acá tiene prueba porque al fallar **no falla nada**: simplemente deja de
+  aparecer la opción, en la mitad de los teléfonos.
 - **La nota del pedido dice que contesta una IA, y eso no se acorta.** Va antes
   del botón de enviar: quien pide tiene derecho a saber quién le va a contestar
   y cuánto puede tardar ANTES de mandar. El banco comprueba las cinco cosas que
