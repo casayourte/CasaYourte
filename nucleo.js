@@ -12,7 +12,7 @@
 
 export const CY = {};
 
-CY.VERSION = 'nucleo-23';
+CY.VERSION = 'nucleo-24';
 
 // ═════════════════════════════════════════════════════════════
 //  BOTÓN ATRÁS DE ANDROID
@@ -932,8 +932,16 @@ async function enviarReporte(cerrar) {
     }
 
     const u = CY.usuario || {};
+    /* SIN `uid` NO SE MANDA, y se dice por qué acá. La regla de `reportes/`
+       exige `request.resource.data.uid == request.auth.uid`, así que mandar
+       vacío vuelve como «permiso denegado» — un mensaje que manda a revisar la
+       ficha de `usuarios/`, que en ese caso está perfecta. Pasó el 24-sep-2026
+       y costó buscar en el lugar equivocado. Mejor frenar acá y nombrar la
+       causa real que dejar que el servidor conteste algo cierto y engañoso. */
+    if (!u.uid) throw new Error('la sesión no trae el identificador de tu cuenta. '
+      + 'Cerrá sesión y volvé a entrar; si sigue, es un error de esta pantalla, no de tu ficha.');
     await fb.addDoc(fb.collection(fb.db, 'reportes'), {
-      uid: u.uid || '',
+      uid: u.uid,
       nombre: u.nombre || '',
       email: u.email || '',
       pagina: paginaActual(),

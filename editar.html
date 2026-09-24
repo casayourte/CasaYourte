@@ -266,7 +266,7 @@ import { CY } from "./nucleo.js";
 const $ = (id) => document.getElementById(id);
 
 // Sello de este archivo, para saber si quedó viejo en la caché.
-const EDITOR = "editar-12";
+const EDITOR = "editar-13";
 CY.PANEL = EDITOR;
 
 /* ═══════════════════════════════════════════════════════════════
@@ -383,7 +383,20 @@ onAuthStateChanged(auth, async (u) => {
   try {
     const d = await getDoc(doc(db, "usuarios", u.uid));
     if (!d.exists()) throw new Error("Tu cuenta no tiene permisos asignados.");
-    yo = d.data();
+    /* CON EL `uid` ADENTRO, y no es un detalle de estilo. El documento
+       `usuarios/{uid}` NO tiene un campo `uid`: el identificador es el nombre
+       del documento. Si acá se guarda `d.data()` a secas, `CY.usuario.uid`
+       queda `undefined` — y todo lo que lo necesite se rompe del lado del
+       servidor, no del cliente.
+
+       Pasó el 24-sep-2026: Romina no podía mandar un pedido desde el globo.
+       La regla de `reportes/` exige `request.resource.data.uid ==
+       request.auth.uid`, el reporte mandaba `uid: ''`, y Firestore contestaba
+       «permiso denegado» — un mensaje que manda a mirar la ficha de usuarios,
+       que estaba perfecta. Desde el panel andaba, porque `admin.html` y
+       `CY.arrancar` sí lo agregan: era la única pantalla de las tres que no.
+       El banco comprueba ahora que las tres lo pongan. */
+    yo = { uid: u.uid, ...d.data() };
     if (yo.activo !== true) throw new Error("Tu acceso está suspendido.");
     CY.usuario = yo;
 

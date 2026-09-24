@@ -200,7 +200,7 @@ el agente y **no es opcional**: que el JavaScript parsee **como MÓDULO**
 incluidos los módulos que viven adentro de un `.html`; que **los cuatro bancos
 corran** —`node pruebas-secciones.mjs` (16 casos), `node pruebas-reportes.mjs`
 (59 casos) y `node pruebas-andamio.mjs` (34 casos) y `node
-pruebas-puertas.mjs` (26 casos), los cuatro sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
+pruebas-puertas.mjs` (30 casos), los cuatro sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
 sellos hayan subido, con la `VERSION` del `sw.js` si el archivo está en `SHELL`
 y los `?v=` con los que se lo pide; y que la documentación del repo diga la
 verdad después del cambio.
@@ -290,6 +290,15 @@ verdad después del cambio.
   confiable en iOS + Android. Es el hallazgo de Casa Verde de julio de 2026, y
   acá tiene prueba porque al fallar **no falla nada**: simplemente deja de
   aparecer la opción, en la mitad de los teléfonos.
+- **`CY.usuario` SIEMPRE lleva el `uid` adentro, en las tres puertas.** El
+  documento `usuarios/{uid}` no tiene un campo `uid`: el identificador es el
+  nombre del documento. Una pantalla que guarde `d.data()` a secas deja
+  `CY.usuario.uid` en `undefined`, y eso **no falla del lado del cliente**:
+  falla en el servidor, donde la regla de `reportes/` exige que el `uid` del
+  documento sea el de quien escribe. El 24-sep-2026 Romina no podía mandar un
+  pedido y el mensaje la mandaba a revisar su ficha, que estaba perfecta —
+  `editar.html` era la única de las tres que no lo agregaba. `pruebas-puertas`
+  comprueba las tres.
 - **La nota del pedido dice que contesta una IA, y eso no se acorta.** Va antes
   del botón de enviar: quien pide tiene derecho a saber quién le va a contestar
   y cuánto puede tardar ANTES de mandar. El banco comprueba las cinco cosas que

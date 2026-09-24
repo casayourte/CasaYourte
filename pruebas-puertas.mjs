@@ -94,5 +94,23 @@ ok("la marca de «ya la vi» va en localStorage y no en la ficha",
 ok("y si localStorage tira, el editor arranca igual",
    (editor.match(/try \{[^}]*localStorage[^}]*\} catch/g) || []).length >= 2);
 
+titulo("6 · LAS TRES PUERTAS PONEN EL `uid`, o el servidor rechaza en silencio");
+/* El documento `usuarios/{uid}` NO tiene un campo `uid`: el identificador es el
+   nombre del documento. Una pantalla que guarde `d.data()` a secas deja
+   `CY.usuario.uid` en `undefined`, y eso NO falla acá: falla del lado del
+   servidor, donde la regla de `reportes/` exige que el `uid` del documento sea
+   el de quien escribe.
+
+   El 24-sep-2026 Romina no podía mandar un pedido desde el globo y el mensaje
+   la mandaba a revisar su ficha de usuarios, que estaba perfecta. `editar.html`
+   era la única de las tres que no lo agregaba. */
+for (const [f, pista] of [["admin.html", /yo = \{ uid: u\.uid, \.\.\.d\.data\(\) \}/],
+                          ["editar.html", /yo = \{ uid: u\.uid, \.\.\.d\.data\(\) \}/]]) {
+  ok(`${f} arma el usuario CON el uid`, pista.test(leer(f)));
+}
+ok("CY.arrancar también", /CY\.usuario = \{ uid: u\.uid, \.\.\.d\.data\(\) \}/.test(nucleo));
+ok("y ninguna guarda `d.data()` pelado",
+   !/(yo|CY\.usuario) = d\.data\(\);/.test(leer("admin.html") + leer("editar.html") + nucleo));
+
 console.log(`\n${bien} bien · ${mal} mal`);
 process.exit(mal ? 1 : 0);

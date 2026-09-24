@@ -80,7 +80,14 @@ ok("ya no escribe `gravedad:` fijo",
 ok("el estado nace en 'nuevo', que es lo que exige la regla",
    /estado:\s*'nuevo'/.test(nucleo));
 ok("el uid sale de la sesión y no de un campo del formulario",
-   /uid:\s*u\.uid\s*\|\|\s*''/.test(nucleo));
+   /^\s*uid: u\.uid,$/m.test(nucleo));
+/* Y NO con un `|| ''` detrás, que es lo que había hasta el 24-sep-2026: un uid
+   vacío no lo rechaza esta pantalla, lo rechaza la REGLA, con un «permiso
+   denegado» que manda a revisar la ficha de `usuarios/` — que está perfecta.
+   Romina perdió un rato ahí. Mejor frenar acá y nombrar la causa real. */
+ok("y si la sesión no lo trae, NO se manda", /if \(!u\.uid\) throw new Error/.test(nucleo));
+ok("con un mensaje que no mande a mirar la ficha de usuarios",
+   /la sesión no trae el identificador de tu cuenta/.test(nucleo));
 
 titulo("7 · la entrada existe en el ÚNICO lugar que dibuja la navegación");
 ok("hay un botón 'cy-pedir'", /id="cy-pedir"/.test(nucleo));
@@ -89,10 +96,10 @@ ok("el de la falla quedó explícito", /CY\.reportar\('falla'\)/.test(nucleo));
 
 titulo("8 · los sellos, que es lo que hace que esto llegue a un teléfono");
 const sello = (nucleo.match(/CY\.VERSION = 'nucleo-(\d+)'/) || [])[1];
-ok("nucleo.js tiene sello y es nucleo-23 o más nuevo", Number(sello) >= 23);
+ok("nucleo.js tiene sello y es nucleo-24 o más nuevo", Number(sello) >= 24);
 ok("nucleo.js está en el SHELL del service worker", /'\.\/nucleo\.js'/.test(sw));
 const v = (sw.match(/const VERSION = 'cy-shell-v(\d+)'/) || [])[1];
-ok("y la VERSION del sw subió a v45 o más", Number(v) >= 45);
+ok("y la VERSION del sw subió a v47 o más", Number(v) >= 47);
 const se = (editor.match(/EDITOR = "editar-(\d+)"/) || [])[1];
 ok("editar.html subió a editar-10 o más", Number(se) >= 10);
 ok("editar.html y estilos.css también están en el SHELL",
