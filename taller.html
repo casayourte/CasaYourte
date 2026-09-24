@@ -66,6 +66,17 @@ h1{font-family:var(--disp);font-weight:400;font-size:clamp(1.7rem,6vw,2.6rem);
   text-transform:uppercase;margin-bottom:.2rem}
 .hijas .t{font-family:var(--disp);font-size:1.05rem}
 
+/* Los botones de salto a otra página. Es lo que pidió Mauro para poder
+   referenciar una página desde otra; la VUELTA no se dibuja acá porque no se
+   guarda: se deduce recorriendo los enlaces, y aparece en el pie. */
+.saltos{display:flex;flex-wrap:wrap;gap:.6rem;margin:1.6rem 0 0}
+.saltos .salto{display:inline-flex;align-items:center;gap:.5rem;text-decoration:none;
+  background:var(--ink2);border:1px solid var(--blond);color:var(--blond);
+  border-radius:999px;padding:.6rem 1rem;font-size:.9rem;
+  transition:background .18s ease,color .18s ease}
+.saltos .salto:hover,.saltos .salto:focus-visible{background:var(--blond);color:var(--ink)}
+.saltos .flecha{font-size:.8em}
+
 .pie{border-top:1px solid var(--line);margin-top:2.4rem;padding-top:1rem;
   display:flex;gap:.7rem;flex-wrap:wrap;font-size:.84rem}
 .pie a{color:var(--blond)}
@@ -101,10 +112,22 @@ h1{font-family:var(--disp);font-weight:400;font-size:clamp(1.7rem,6vw,2.6rem);
      Cuatro hijas del index, dos nietas cada una. Los identificadores son
      cortos y estables porque son parte de la clave del texto: renombrar
      uno tiraría lo que Romina ya haya escrito ahí. Los NOMBRES, en cambio,
-     son textos editables como cualquier otro (`pg.<id>.t`). */
-  var SELLO = "andamio-1";
+     son textos editables como cualquier otro (`pg.<id>.t`).
 
-  var ARBOL = [
+     Y DESDE `andamio-2` EL ORDEN NO ESTÁ ACÁ. Lo de abajo es el árbol por
+     defecto: el que manda es el que viene guardado en `orden`, el MISMO
+     mapa donde ya viven `traj`, `dif`, `of` y `mod`. No hay campo nuevo,
+     no hay forma de dato nueva y no hay regla nueva.
+
+         orden.pgs    = "b,a,c,d"    las secciones, en el orden que ella quiso
+         orden.pg_a   = "a2,a1"      las nietas de `a`
+
+     Rige la misma regla que las secciones del sitio (§3.35): la lista MANDA
+     para el orden pero NUNCA puede hacer desaparecer una página que este
+     archivo trae. Una lista vieja no borra nada. */
+  var SELLO = "andamio-2";
+
+  var ARBOL_BASE = [
     { id: "a", hijas: ["a1", "a2"] },
     { id: "b", hijas: ["b1", "b2"] },
     { id: "c", hijas: ["c1", "c2"] },
@@ -120,15 +143,44 @@ h1{font-family:var(--disp);font-weight:400;font-size:clamp(1.7rem,6vw,2.6rem);
     d: "Cuarta sección",  d1: "Cuarta · uno",  d2: "Cuarta · dos"
   };
 
-  var PADRE = {};
-  ARBOL.forEach(function (n) { n.hijas.forEach(function (h) { PADRE[h] = n.id; }); });
-  var ES_PAGINA = function (id) { return !!SEMILLA[id]; };
+  /* Cuántos bloques dibuja una página: los tres de siempre, o más si alguien
+     los agregó. Se cuentan mirando QUÉ CLAVES EXISTEN y no un número
+     guardado aparte — un contador y unas claves son dos verdades que se
+     separan, y la que miente no avisa. */
+  var MINIMO_BLOQUES = 3;
+
+  var ARBOL = ARBOL_BASE, PADRE = {}, ORDEN = {}, ENLACES = {};
+  var ES_PAGINA = function (id) { return !!SEMILLA[id] || PADRE[id] !== undefined
+      || ARBOL.some(function (n) { return n.id === id; }); };
+
+  /* El árbol se ARMA en cada pintado: el orden puede haber cambiado hace un
+     segundo, desde el editor, sin recargar nada. */
+  function armarArbol() {
+    var lista = String(ORDEN.pgs || "").split(",").map(function (x) { return x.trim(); })
+      .filter(function (x) { return x; });
+    var base = ARBOL_BASE.map(function (n) { return n.id; });
+    // Lo que está en el archivo y no en la lista se suma al final: una lista
+    // guardada no puede hacer desaparecer una página.
+    base.forEach(function (id) { if (lista.indexOf(id) < 0) lista.push(id); });
+    ARBOL = lista.map(function (id) {
+      var porDefecto = ARBOL_BASE.filter(function (n) { return n.id === id; })[0];
+      var hijas = String(ORDEN["pg_" + id] || "").split(",").map(function (x) { return x.trim(); })
+        .filter(function (x) { return x; });
+      (porDefecto ? porDefecto.hijas : []).forEach(function (h) {
+        if (hijas.indexOf(h) < 0) hijas.push(h);
+      });
+      return { id: id, hijas: hijas };
+    });
+    PADRE = {};
+    ARBOL.forEach(function (n) { n.hijas.forEach(function (h) { PADRE[h] = n.id; }); });
+  }
+  armarArbol();
 
   var REST = "https://firestore.googleapis.com/v1/projects/casayourte-mauro"
     + "/databases/(default)/documents/sitio/taller"
     + "?key=AIzaSyDDD_xvpC4I_ec2OZymyDqVsm1K0ISTr4Q";
 
-  var T = { es: {}, fr: {} };
+  var T = { es: {}, fr: {}, en: {} };
   var LANG = "es";
 
   function valor(v) {
@@ -159,6 +211,63 @@ h1{font-family:var(--disp);font-weight:400;font-size:clamp(1.7rem,6vw,2.6rem);
 
   var texto = function (k) { return (T[LANG] && T[LANG][k]) || ""; };
   var nombre = function (id) { return texto("pg." + id + ".t") || SEMILLA[id] || id; };
+  var todas = function () {
+    var l = [];
+    ARBOL.forEach(function (n) { l.push(n.id); n.hijas.forEach(function (h) { l.push(h); }); });
+    return l;
+  };
+
+  /* Cuántos bloques tiene una página: los que existan, con un piso de tres
+     para que el andamio nunca se vea vacío del todo. */
+  function cuantosBloques(id) {
+    var max = MINIMO_BLOQUES, re = new RegExp("^pg\\." + id + "\\.b(\\d+)$");
+    // TODOS los idiomas, no el que se está mirando: un bloque escrito sólo en
+    // francés existe igual, y contarlo de menos lo haría desaparecer de la
+    // página en español — con su texto adentro, sin que nada avise.
+    Object.keys(T).forEach(function (l) {
+      Object.keys(T[l] || {}).forEach(function (k) {
+        var m = re.exec(k); if (m) max = Math.max(max, Number(m[1]));
+      });
+    });
+    return max;
+  }
+
+  /* ── LOS ENLACES, Y POR QUÉ LA VUELTA NO SE ESCRIBE ──────────
+     Un botón de enlace son DOS cosas de naturaleza distinta y por eso viven
+     en dos lugares: el RÓTULO es un texto y va al diccionario —se traduce
+     como cualquier otro—, y el DESTINO no es un texto y va al mapa
+     `enlaces` del documento. Si el destino viajara adentro del rótulo,
+     traducir el botón al francés podría romper adónde lleva.
+
+         pg.a.l1          = "Ver cómo se monta"      (texto, traducible)
+         enlaces["a.1"]   = "c2"                     (estructura)
+
+     Y LA VUELTA NO SE GUARDA: se DEDUCE. La página `c2` muestra sola un
+     «volver a» por cada página que la enlaza, porque se recorren todos los
+     enlaces buscando los que apuntan acá. Guardar la vuelta sería guardar
+     el mismo hecho dos veces, y el día que alguien cambiara la ida quedaría
+     una vuelta apuntando a ninguna parte — sin que nada avise. */
+  function enlacesDe(id) {
+    var l = [];
+    Object.keys(ENLACES).forEach(function (k) {
+      var p = k.split(".");
+      if (p[0] !== id) return;
+      var destino = ENLACES[k];
+      if (!ES_PAGINA(destino)) return;      // destino borrado: el botón no se dibuja
+      l.push({ n: Number(p[1]), destino: destino, clave: "pg." + id + ".l" + p[1] });
+    });
+    return l.sort(function (x, y) { return x.n - y.n; });
+  }
+  function vueltasA(id) {
+    var vistos = {}, l = [];
+    Object.keys(ENLACES).forEach(function (k) {
+      if (ENLACES[k] !== id) return;
+      var origen = k.split(".")[0];
+      if (origen === id || vistos[origen] || !ES_PAGINA(origen)) return;
+      vistos[origen] = 1; l.push(origen);
+    });
+    return l;
+  }
 
   function tarjeta(id, i) {
     return '<li><a href="?p=' + esc(id) + '" data-ir="' + esc(id) + '">'
@@ -174,10 +283,23 @@ h1{font-family:var(--disp);font-weight:400;font-size:clamp(1.7rem,6vw,2.6rem);
       + '</p>';
   }
 
+  /* El botón de enlace. Lleva `data-i` en el RÓTULO y no en el <a>, por lo
+     mismo que las pestañas de los modelos: el editor escribe el textContent
+     de lo que toca, y si eso fuera el <a> se llevaría puesta la flecha. */
+  function enlace(e) {
+    return '<a class="salto" href="?p=' + esc(e.destino) + '" data-ir="' + esc(e.destino) + '">'
+      + '<span data-i="' + esc(e.clave) + '">'
+      + esc(texto(e.clave) || ("Ir a " + nombre(e.destino))) + '</span>'
+      + '<span class="flecha" aria-hidden="true">→</span></a>';
+  }
+
   function pintar() {
+    armarArbol();
     var id = actual();
     var env = document.getElementById("env");
     var h = "";
+    var saltos = enlacesDe(id);
+    var vueltas = vueltasA(id);
 
     if (!id) {
       h += '<p class="miga">Taller · andamio</p>'
@@ -192,16 +314,25 @@ h1{font-family:var(--disp);font-weight:400;font-size:clamp(1.7rem,6vw,2.6rem);
     } else {
       var padre = PADRE[id];
       var nodo = ARBOL.filter(function (n) { return n.id === id; })[0];
+      var cuantos = cuantosBloques(id), bloques = "";
+      for (var n = 1; n <= cuantos; n++) bloques += bloque(id, n);
       h += '<p class="miga"><a href="./taller.html">Taller</a>'
         + (padre ? ' · <a href="?p=' + esc(padre) + '">' + esc(nombre(padre)) + '</a>' : '')
         + ' · ' + esc(nombre(id)) + '</p>'
         + '<h1 data-i="pg.' + esc(id) + '.t">' + esc(nombre(id)) + '</h1>'
         + '<p class="baja' + (texto("pg." + id + ".d") ? '' : ' vacio') + '" data-i="pg.' + esc(id) + '.d">'
         + esc(texto("pg." + id + ".d") || "Bajada · vacía.") + '</p>'
-        + bloque(id, 1) + bloque(id, 2) + bloque(id, 3);
+        + bloques;
+      if (saltos.length) h += '<div class="saltos">' + saltos.map(enlace).join("") + '</div>';
       if (nodo) h += '<ul class="hijas">' + nodo.hijas.map(function (x, i) { return tarjeta(x, i); }).join("") + '</ul>';
       h += '<div class="pie">'
         + (padre ? '<a href="?p=' + esc(padre) + '">← ' + esc(nombre(padre)) + '</a>' : '')
+        // La vuelta de cada enlace que apunta acá. No está guardada en ningún
+        // lado: sale de recorrer los enlaces, así que no puede quedar vieja.
+        + vueltas.map(function (o) {
+            return '<a href="?p=' + esc(o) + '" data-ir="' + esc(o) + '">↩ '
+              + esc(nombre(o)) + '</a>';
+          }).join("")
         + '<a href="./taller.html">Índice del andamio</a>'
         + '<a href="./index.html?taller=1">Portada del taller</a>'
         + '<span style="color:var(--dim);font-size:.72rem">' + esc(SELLO) + '</span></div>';
@@ -210,6 +341,15 @@ h1{font-family:var(--disp);font-weight:400;font-size:clamp(1.7rem,6vw,2.6rem);
     // Se reinicia la animación de entrada: `innerHTML` no la vuelve a disparar
     // sola porque el elemento es el mismo.
     env.style.animation = "none"; void env.offsetWidth; env.style.animation = "";
+    /* Y se avisa. Este archivo se repinta entero —`innerHTML`—, así que cada
+       vez que se cambia de página el editor se queda con las marcas de
+       edición puestas sobre elementos que ya no existen: los textos dejan de
+       ser tocables y parece que el editor se rompió. Hasta `andamio-2` eso
+       era exactamente lo que pasaba al tocar una tarjeta desde el editor. */
+    if (typeof window.CY_SITIO === "object" && window.CY_SITIO
+        && typeof window.CY_SITIO.alPintar === "function") {
+      try { window.CY_SITIO.alPintar(id); } catch (e) { /* el editor no puede tumbar el andamio */ }
+    }
   }
 
   /* Navegación sin recargar, para que la transición se vea. Si algo de esto
@@ -248,30 +388,95 @@ h1{font-family:var(--disp);font-weight:400;font-size:clamp(1.7rem,6vw,2.6rem);
   window.CY_SITIO = {
     version: 2,
     GRUPOS: {},
-    aplicarOrden: function () {},
+    aplicarOrden: function (orden) {
+      // El andamio SÍ usa `orden`, y por eso esto ya no es un hueco: acá
+      // entran `pgs` y los `pg_<id>` que arman el árbol.
+      if (orden && typeof orden === "object") { ORDEN = orden; pintar(); }
+    },
     aplicarSecciones: function () {},
     ids: function () { return []; },
     idsSecciones: function () { return []; },
     ocultasAhora: function () { return []; },
     tituloDe: function (id) { return nombre(id); },
-    // Propio del andamio: el editor lo usa para ofrecer a qué página ir.
+
+    // ── Lo propio del andamio ──────────────────────────────────
+    // El editor lo usa para ofrecer a qué página ir y a cuál mover algo.
     paginasTaller: function () {
-      var l = [{ id: "", nombre: "Índice del andamio" }];
+      var l = [{ id: "", nombre: "Índice del andamio", nivel: 0 }];
       ARBOL.forEach(function (n) {
-        l.push({ id: n.id, nombre: nombre(n.id) });
-        n.hijas.forEach(function (h) { l.push({ id: h, nombre: "   " + nombre(h) }); });
+        l.push({ id: n.id, nombre: nombre(n.id), nivel: 1 });
+        n.hijas.forEach(function (h) { l.push({ id: h, nombre: nombre(h), nivel: 2 }); });
       });
       return l;
+    },
+    paginaActual: function () { return actual(); },
+    irAPagina: function (id) {
+      var url = id ? ("?p=" + encodeURIComponent(id)) : "./taller.html";
+      if (window.history && window.history.pushState) {
+        history.pushState({}, "", url); pintar(); window.scrollTo(0, 0);
+      } else location.href = url;
+    },
+    /* Cuántos bloques tiene hoy una página y cuál es el próximo número libre.
+       Lo contesta el andamio y no lo cuenta el editor, por lo mismo de
+       siempre: el que sabe cómo está hecha una página es el que la dibuja. */
+    bloquesDe: function (id) { return cuantosBloques(id); },
+    /* El PRIMER HUECO LIBRE, no el final. Una página recién nacida dibuja tres
+       bloques vacíos; si un bloque mudado aterrizara en el cuarto, quedaría
+       debajo de tres huecos y parecería que no llegó. Libre quiere decir que
+       no hay texto en NINGÚN idioma: aterrizar encima de algo escrito en
+       francés sería perderlo sin que nada avise. */
+    proximoBloque: function (id) {
+      var cuantos = cuantosBloques(id);
+      for (var n = 1; n <= cuantos; n++) {
+        var libre = true;
+        Object.keys(T).forEach(function (l) {
+          if ((T[l] || {})["pg." + id + ".b" + n] !== undefined) libre = false;
+        });
+        if (libre) return n;
+      }
+      return cuantos + 1;
+    },
+    // Los enlaces, tal como están guardados. El editor los edita y los
+    // devuelve enteros con `aplicarEnlaces`.
+    enlaces: function () { return JSON.parse(JSON.stringify(ENLACES)); },
+    aplicarEnlaces: function (e) { ENLACES = (e && typeof e === "object") ? e : {}; pintar(); },
+    proximoEnlace: function (id) {
+      var max = 0;
+      Object.keys(ENLACES).forEach(function (k) {
+        var p = k.split(".");
+        if (p[0] === id) max = Math.max(max, Number(p[1]) || 0);
+      });
+      return max + 1;
     },
     // Repinta con textos nuevos sin recargar: es lo que deja que el editor
     // muestre el cambio mientras se escribe.
     aplicarTextos: function (d) {
       if (!d) return false;
-      ["es", "fr"].forEach(function (l) {
+      // Los idiomas salen de lo que llega y no de un par escrito a mano: el
+      // sitio ya tiene tres y sumar uno no puede obligar a tocar este archivo.
+      Object.keys(d).forEach(function (l) {
         if (!d[l] || typeof d[l] !== "object") return;
         T[l] = T[l] || {};
         Object.keys(d[l]).forEach(function (k) { T[l][k] = d[l][k]; });
       });
+      pintar();
+      return true;
+    },
+    /* REEMPLAZA en vez de mezclar, y hace falta que sean dos.
+       `aplicarTextos` suma claves porque lo que llega de la base puede ser
+       parcial. Pero el editor manda SIEMPRE el contenido entero, y ahí
+       mezclar es un error con nombre: al mudar un bloque de página, la clave
+       vieja se borra en el editor y, mezclando, acá seguía viva — el bloque
+       quedaba en las dos páginas hasta recargar, o sea que la pantalla decía
+       que la mudanza no había pasado. */
+    reemplazarTextos: function (d) {
+      if (!d || typeof d !== "object") return false;
+      var nuevo = {};
+      Object.keys(d).forEach(function (l) {
+        if (d[l] && typeof d[l] === "object") nuevo[l] = d[l];
+      });
+      if (!Object.keys(nuevo).length) return false;
+      T = nuevo;
       pintar();
       return true;
     },
@@ -291,7 +496,9 @@ h1{font-family:var(--disp);font-weight:400;font-size:clamp(1.7rem,6vw,2.6rem);
     .then(function (j) {
       if (!j || !j.fields) return;
       var d = mapa(j.fields);
-      ["es", "fr"].forEach(function (l) { if (d[l]) T[l] = d[l]; });
+      Object.keys(T).forEach(function (l) { if (d[l]) T[l] = d[l]; });
+      if (d.orden && typeof d.orden === "object") ORDEN = d.orden;
+      if (d.enlaces && typeof d.enlaces === "object") ENLACES = d.enlaces;
       pintar();
     })
     .catch(function () { /* con la semilla ya se puede navegar */ });

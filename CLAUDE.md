@@ -199,7 +199,7 @@ el agente y **no es opcional**: que el JavaScript parsee **como MÓDULO**
 —`node --input-type=module --check < archivo.js`, y no `node --check`—,
 incluidos los módulos que viven adentro de un `.html`; que **los cinco bancos
 corran** —`node pruebas-secciones.mjs` (16 casos), `node pruebas-reportes.mjs`
-(64 casos), `node pruebas-andamio.mjs` (34 casos), `node
+(64 casos), `node pruebas-andamio.mjs` (81 casos), `node
 pruebas-puertas.mjs` (30 casos) y `node pruebas-modelos.mjs` (56 casos), los
 cinco sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
 sellos hayan subido, con la `VERSION` del `sw.js` si el archivo está en `SHELL`
@@ -360,6 +360,36 @@ verdad después del cambio.
   nueva, sin regla nueva, y editables con el editor de siempre. **Y no hay
   camino de acá al sitio publicado**: el enlace vive dentro del `if (TALLER)` de
   `index.html` y hay una prueba que falla si se escapa de ahí.
+- **El andamio se NOMBRA, se ORDENA, se REPARTE y se ENLAZA** (`andamio-2`,
+  24-sep-2026). Y la primera de las cuatro ya estaba escrita en el HTML y no
+  andaba: `cablear()` sólo vuelve tocable una clave que YA exista en el idioma
+  fuente, y `sitio/taller` tenía **cero claves `pg.*`** — las doce páginas se
+  veían y no se podía tocar ni un nombre ni un bloque. El andamio se entregó
+  con su camino de edición muerto y nada lo decía. Ahora una clave `pg.*` nace
+  al escribirla, y es la única excepción a esa regla: acá el nombre de la clave
+  no se adivina, lo genera `taller.html` con un patrón conocido.
+  - **El orden va al mapa `orden`**, el mismo donde viven `traj`, `dif`, `of`
+    y `mod`: `orden.pgs` son las secciones y `orden.pg_<id>` las nietas. Rige
+    §3.35 — una lista guardada nunca puede hacer desaparecer una página.
+  - **Mudar un bloque de página es una operación sobre TEXTOS y la hace el
+    editor**, que es el único que los tiene en todos los idiomas a la vez. Si
+    se hiciera idioma por idioma, un corte de red dejaría el bloque en dos
+    páginas distintas según en qué idioma se mire. Aterriza en el **primer
+    hueco libre** —libre en TODOS los idiomas— y el origen se compacta.
+  - **De un botón de enlace, el rótulo es texto y el destino no.** El rótulo
+    va al diccionario y se traduce; el destino va al mapa `enlaces` del
+    documento. Si viajaran juntos, traducir el botón podría romper adónde
+    lleva. **Y la vuelta no se guarda: se deduce** recorriendo los enlaces.
+    Guardarla sería guardar el mismo hecho dos veces, y el día que alguien
+    cambiara la ida quedaría una vuelta apuntando a ninguna parte.
+  - **El andamio AVISA cuando se repinta** (`CY_SITIO.alPintar`). Se dibuja
+    con `innerHTML`, así que cada cambio de página tira todas las marcas de
+    edición: sin ese aviso, tocar una tarjeta adentro del editor dejaba la
+    página siguiente intocable y parecía que el editor se había roto.
+  - **Y el editor REEMPLAZA los textos, no los mezcla** (`reemplazarTextos`).
+    `aplicarTextos` suma porque lo que llega de la base puede ser parcial;
+    el editor manda el contenido entero, y mezclando el bloque mudado se
+    quedaba también en la página de donde salió hasta recargar.
 - **La transición del andamio nunca es una dependencia para navegar.** Los
   enlaces son `href` de verdad; la View Transitions API es un adorno encima. Y
   respeta `prefers-reduced-motion` — a algunas personas una transición que se

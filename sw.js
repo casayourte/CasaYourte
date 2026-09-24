@@ -109,12 +109,18 @@
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v48';
+const VERSION = 'cy-shell-v49';
 
 // v39 (14-sep-2026) — entra el TALLER: index.html lee sitio/taller con
 //   ?taller=1 y sabe mover y apagar secciones (contrato CY_SITIO v2);
 //   editar.html (editar-9) suma el chip «En vivo | Taller». Va encima de la
 //   v38, de la misma fecha: dos tandas seguidas tocando el SHELL.
+//
+//   v49 · 24-sep-2026 · el andamio del taller se puede nombrar, ordenar,
+//   repartir y enlazar. `editar.html` suma la hoja de páginas, la mudanza de
+//   un bloque de una página a otra y los botones de enlace — y la excepción
+//   que deja nacer una clave `pg.*` al escribirla: sin ella el andamio
+//   estaba entero y no se podía tocar ni un nombre.
 //
 //   v48 · 24-sep-2026 · nace el cuadro de modelos con pestañas, y con él el
 //   grupo `mod` en `index.html`. `editar.html` cambia para traer su semilla:
