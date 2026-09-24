@@ -762,9 +762,9 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-24` |
 | `firebase-init.js` | (en el comentario) | `init-2` |
-| `sw.js` | `VERSION` | `cy-shell-v47` |
+| `sw.js` | `VERSION` | `cy-shell-v48` |
 | `admin.html` | `PANEL` | `admin-19` |
-| `editar.html` | `EDITOR` | `editar-13` |
+| `editar.html` | `EDITOR` | `editar-14` |
 | `taller.html` | `SELLO` | `andamio-1` |
 | `calculo.html` | `CY.PANEL` | `calculo-9` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-4` |
@@ -828,6 +828,7 @@ node pruebas-secciones.mjs
 node pruebas-reportes.mjs
 node pruebas-andamio.mjs
 node pruebas-puertas.mjs
+node pruebas-modelos.mjs
 ```
 
 Sin npm, sin navegador, sin dependencias: `node` a secas. Son 16 casos sobre el orden y el
@@ -838,6 +839,16 @@ guardado que ya no existe en el archivo, las bandas decorativas que viajan con s
 pie que nunca se mueve, y basura en los campos.
 
 Es el patrón que presta Harmonía (`PROTOCOLO-DESARROLLO.md`), y es el primero de CasaYourte.
+
+`pruebas-modelos.mjs` son 56 casos sobre el cuadro de modelos y sobre la medida del sitio.
+Existe por cuatro errores del 24-sep-2026 que tienen todos la misma forma: **no rompen nada
+visible**. Los rombos del fondo se dibujaban estirados —×8 en un monitor— y aparecían igual;
+`.hero-body` medía 244 px con un título de 118 px adentro y empujaba el encabezado a 1256 px;
+un `aspect-ratio` con `min-height` hacía que la foto de portada recalculara su ANCHO y sacaba
+barra horizontal en un teléfono; y un `data-i` puesto en el botón de una pestaña hacía que
+`paint()` borrara el `<small>` de adentro. Ninguno tira un error en la consola. El banco se
+probó al revés —volviendo a meter cada error, de a uno— y cada uno falla en la prueba que le
+corresponde.
 
 `pruebas-reportes.mjs` son 62 casos sobre los dos modos de la hoja de reportes, con el mismo
 criterio: extrae el `MODOS_REPORTE` real de `nucleo.js` y lo corre. Lo que de verdad cuida es

@@ -197,10 +197,11 @@ previene nada y sí pierde trabajo: ya pasó cuatro veces en dos días.
 Lo que reemplaza a ese momento de revisión es la verificación previa, que corre
 el agente y **no es opcional**: que el JavaScript parsee **como MÓDULO**
 —`node --input-type=module --check < archivo.js`, y no `node --check`—,
-incluidos los módulos que viven adentro de un `.html`; que **los cuatro bancos
+incluidos los módulos que viven adentro de un `.html`; que **los cinco bancos
 corran** —`node pruebas-secciones.mjs` (16 casos), `node pruebas-reportes.mjs`
-(59 casos) y `node pruebas-andamio.mjs` (34 casos) y `node
-pruebas-puertas.mjs` (30 casos), los cuatro sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
+(64 casos), `node pruebas-andamio.mjs` (34 casos), `node
+pruebas-puertas.mjs` (30 casos) y `node pruebas-modelos.mjs` (56 casos), los
+cinco sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
 sellos hayan subido, con la `VERSION` del `sw.js` si el archivo está en `SHELL`
 y los `?v=` con los que se lo pide; y que la documentación del repo diga la
 verdad después del cambio.
@@ -317,6 +318,40 @@ verdad después del cambio.
   piloto y no puede tocar lo publicado. **Y un diseñador entra con `taller` y
   NADA más**: si entra como `admin`, `con('contenido')` le da `true` por
   definición y el piloto deja de ser un piloto.
+- **El cuadro de modelos son PESTAÑAS, y salen del grupo `mod`** (24-sep-2026).
+  Lo pidió Mauro para que se vea cada modelo de un toque —yurta simple, con
+  doble techo, gemela— sin scrollear como un blog. **La tira no está escrita
+  en el HTML**: se arma leyendo los bloques del grupo, así que agregar un
+  modelo desde el editor agrega su pestaña sola. Los botones llevan `data-i`
+  en un HIJO y nunca en el botón: si el `data-i` fuera del botón, `paint()` le
+  escribiría el `textContent` y borraría el `<small>` de adentro, y el dato
+  técnico desaparecería en el primer pintado sin un solo error en la consola.
+  **Y la sección se apaga sola si ningún modelo tiene título**, que es lo que
+  deja probar el cuadro en el taller sin que el sitio publicado muestre un
+  marco vacío: el marcado está en los dos, el contenido sólo en `sitio/taller`.
+  Por eso **este archivo no trae textos semilla de modelos** y el banco lo
+  comprueba.
+- **Una medida de texto va en el `ch` de SU letra, no en la del padre**
+  (24-sep-2026, medido en un navegador a seis anchos). `.hero-body` tenía
+  `max-width:22ch` calculado con la letra del cuerpo —244 px— y adentro un h1
+  de 118 px: de 820 px de ancho para arriba el título se desbordaba de su
+  caja, se partía en cuatro renglones y empujaba el encabezado a 1256 px, más
+  alto que la pantalla, así que en un monitor apaisado no se veía nada más y
+  el video de fondo se recortaba para cubrir esa altura inventada. **Y el
+  ancho del sitio lo pone `--sangria`**, que crece sola pasada `--medida`:
+  centra el contenido sin recortar el fondo de `.paper` y `.offer`.
+- **Un fondo geométrico se dibuja en PÍXELES, nunca con `viewBox`.** Con
+  `viewBox` el navegador estira el dibujo hasta llenar la caja: los rombos de
+  las bandas iban ×1,125 en un teléfono y ×8 en un monitor, con los trazos
+  ocho veces más gruesos. Y se redibuja con un `ResizeObserver` y no con el
+  `resize` de la ventana, porque la caja de una banda también cambia cuando
+  carga una foto de más arriba. **Y nunca se inventa un tamaño cuando la caja
+  mide cero**: el `Math.max(r.width,320)` que había dibujaba algo, así que
+  nadie se enteraba de que la geometría estaba congelada mal.
+- **Un `aspect-ratio` con `min-height` deja que el navegador recalcule el
+  ANCHO** desde el alto mínimo. La foto de portada se iba a 684 px en una
+  pantalla de 360 y aparecía barra horizontal en todo el sitio. La forma de
+  una caja de imagen sale del ancho.
 - **`taller.html` es el andamio del taller: UN archivo, doce páginas.** Cuatro
   hijas y dos nietas cada una, pintadas según `?p=`. Doce `.html` serían doce
   archivos públicos que sincronizar — el mismo error que el taller evita siendo

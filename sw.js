@@ -109,12 +109,17 @@
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v47';
+const VERSION = 'cy-shell-v48';
 
 // v39 (14-sep-2026) — entra el TALLER: index.html lee sitio/taller con
 //   ?taller=1 y sabe mover y apagar secciones (contrato CY_SITIO v2);
 //   editar.html (editar-9) suma el chip «En vivo | Taller». Va encima de la
 //   v38, de la misma fecha: dos tandas seguidas tocando el SHELL.
+//
+//   v48 · 24-sep-2026 · nace el cuadro de modelos con pestañas, y con él el
+//   grupo `mod` en `index.html`. `editar.html` cambia para traer su semilla:
+//   sin ella un modelo nuevo nacería con todos los campos vacíos, y un
+//   elemento vacío mide cero y no hay forma de tocarlo con el pulgar.
 //
 //   v47 · 24-sep-2026 · `editar.html` era la única de las tres puertas que no
 //   le ponía el `uid` a `CY.usuario`, así que el globo mandaba un pedido con

@@ -266,7 +266,7 @@ import { CY } from "./nucleo.js";
 const $ = (id) => document.getElementById(id);
 
 // Sello de este archivo, para saber si quedó viejo en la caché.
-const EDITOR = "editar-13";
+const EDITOR = "editar-14";
 CY.PANEL = EDITOR;
 
 /* ═══════════════════════════════════════════════════════════════
@@ -751,6 +751,8 @@ const SEMILLA = {
           fr:{ yr:"Année", t:"Nouveau titre", b:"Nouveau texte." } },
   dif:  { es:{ s:"Dato técnico", t:"Título nuevo", b:"Texto nuevo." },
           fr:{ s:"Donnée technique", t:"Nouveau titre", b:"Nouveau texte." } },
+  mod:  { es:{ p:"Modelo", s:"Dato corto", t:"Título nuevo", b:"Texto nuevo." },
+          fr:{ p:"Modèle", s:"Donnée courte", t:"Nouveau titre", b:"Nouveau texte." } },
   of:   { es:{ n:"Línea", t:"Título nuevo", b:"Texto nuevo.", g:"Etiqueta",
                l:["Primer punto"] },
           fr:{ n:"Ligne", t:"Nouveau titre", b:"Nouveau texte.", g:"Étiquette",

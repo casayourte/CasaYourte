@@ -213,6 +213,45 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
 @media(min-width:900px){.idea-cols{grid-template-columns:1fr 1fr;gap:1.4rem 2.6rem}
   .idea-cols p:first-child{grid-column:1/-1;font-size:1.08rem;color:var(--wool);max-width:52ch}}
 
+/* ---------- modelos: las pestañas ----------
+   El cuadro que pidió Mauro el 2026-09-24: ver cada modelo de un toque, sin
+   scrollear como un blog. Es una PRESENTACIÓN del grupo `mod`, no una lista
+   escrita a mano: las pestañas se arman leyendo los bloques que hay, así que
+   agregar un modelo desde el editor agrega su pestaña sola. */
+.mods{margin-top:clamp(2rem,4vw,3rem)}
+.mod-tabs{display:flex;gap:.4rem;overflow-x:auto;scrollbar-width:none;
+  padding-bottom:2px;-webkit-overflow-scrolling:touch}
+.mod-tabs::-webkit-scrollbar{display:none}
+.mod-tab{flex:0 0 auto;min-width:7.5rem;text-align:left;cursor:pointer;
+  background:var(--ink-2);border:1px solid #35302a;border-bottom:0;
+  border-radius:10px 10px 0 0;padding:.85rem 1.1rem;color:#a89e8c;
+  font-family:var(--disp);font-size:clamp(1.05rem,1.6vw,1.35rem);line-height:1.1;
+  font-weight:500;transition:background .25s,color .25s,border-color .25s}
+.mod-tab-n{display:block}
+.mod-tab small{display:block;font-family:var(--mono);font-size:.6rem;
+  letter-spacing:.14em;text-transform:uppercase;color:#7d7566;margin-top:.4rem}
+.mod-tab:hover{color:var(--wool);border-color:#4a4238}
+.mod-tab[aria-selected="true"]{background:var(--ink-2);color:var(--wool);
+  border-color:var(--blond);box-shadow:inset 0 3px 0 var(--blond)}
+.mod-tab[aria-selected="true"] small{color:var(--blond)}
+.mod-tab:focus-visible{outline:2px solid var(--blond);outline-offset:2px}
+.mod-cuerpo{border:1px solid #35302a;background:var(--ink-2);
+  padding:clamp(1.1rem,3vw,2rem);border-radius:0 0 10px 10px;margin-top:-1px}
+.modelo{display:grid;gap:clamp(1.1rem,3vw,2rem);align-items:start}
+.modelo[hidden]{display:none}
+.modelo-fig{margin:0;aspect-ratio:16/10;overflow:hidden;background:#111;border-radius:6px}
+.modelo h3{font-size:clamp(1.3rem,2.4vw,1.9rem);margin-bottom:.6rem}
+.modelo p{font-size:.95rem;color:#c2b9a7;margin:0}
+@media(min-width:760px){.modelo{grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr)}}
+/* La entrada del panel al cambiar de pestaña. Es un adorno: si el sistema
+   pide menos movimiento, no corre, y la pestaña cambia igual. */
+.modelo.entra{animation:mod-entra .34s cubic-bezier(.2,.7,.2,1) both}
+@keyframes mod-entra{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.modelo.entra{animation:none}}
+/* Sin un solo modelo escrito, la sección no existe. Así el sitio publicado no
+   muestra un marco vacío mientras el cuadro se prueba en el taller. */
+.mods-vacia{display:none}
+
 /* ---------- proceso ---------- */
 .proc{margin:clamp(2.2rem,5vw,3.4rem) 0 0}
 .proc-stage{position:relative;aspect-ratio:16/9;overflow:hidden;background:#0E0C0A;
@@ -485,6 +524,43 @@ body.cy-en-taller{padding-top:1.9rem}
     </div>
   </details>
   <p class="idea-k" data-i="id.k"></p>
+</section>
+
+<!-- MODELOS · el cuadro de pestañas.
+     Va acá, justo después de quién es CasaYourte, porque ése es el momento en
+     que alguien quiere ver QUÉ se puede pedir. Lo pidió Mauro el 2026-09-24.
+     Los `src` son un pixel transparente a propósito: el marco vacío se toca
+     desde el editor y se le elige la foto, igual que un bloque recién creado. -->
+<section class="wrap" data-seccion="modelos">
+  <span class="eyebrow" data-i="mo.eyebrow"></span>
+  <h2 style="font-size:clamp(2rem,5.5vw,3.6rem);max-width:22ch" data-i="mo.title"></h2>
+  <p class="lede" style="color:#c2b9a7;margin-top:1.2rem" data-i="mo.lede"></p>
+
+  <div class="mods">
+    <div class="mod-tabs" role="tablist" aria-label="Modelos de yurta"></div>
+    <div class="mod-cuerpo" data-grupo="mod">
+      <article class="modelo" data-bloque="m1">
+        <figure class="modelo-fig"><img data-slot="mod1" alt="" loading="lazy" decoding="async"
+          src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></figure>
+        <div><h3 data-i="m1.t"></h3><p data-i="m1.b"></p></div>
+      </article>
+      <article class="modelo" data-bloque="m2">
+        <figure class="modelo-fig"><img data-slot="mod2" alt="" loading="lazy" decoding="async"
+          src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></figure>
+        <div><h3 data-i="m2.t"></h3><p data-i="m2.b"></p></div>
+      </article>
+      <article class="modelo" data-bloque="m3">
+        <figure class="modelo-fig"><img data-slot="mod3" alt="" loading="lazy" decoding="async"
+          src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></figure>
+        <div><h3 data-i="m3.t"></h3><p data-i="m3.b"></p></div>
+      </article>
+      <article class="modelo" data-bloque="m4">
+        <figure class="modelo-fig"><img data-slot="mod4" alt="" loading="lazy" decoding="async"
+          src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></figure>
+        <div><h3 data-i="m4.t"></h3><p data-i="m4.b"></p></div>
+      </article>
+    </div>
+  </div>
 </section>
 
 <!-- PROCESO -->
@@ -1060,9 +1136,110 @@ function textos(lang) {
   return Object.assign({}, T[CY_IDIOMAS.fuente()] || {}, T[lang] || {});
 }
 
+/* ---------- las pestañas de los modelos ----------
+   Se arman LEYENDO los bloques del grupo `mod`, nunca escritas a mano: un
+   modelo que se agregue desde el editor trae su pestaña sola, y uno que se
+   quite se la lleva. La alternativa —una tira escrita en el HTML— obligaría
+   a tocar este archivo para agregar un modelo, que es justo lo que el grupo
+   existe para evitar.
+
+   Los botones llevan `data-i`, así que los pinta el mismo `paint()` de
+   siempre y el editor los hace tocables como a cualquier otro texto: el
+   nombre de la pestaña se cambia tocando la pestaña.
+
+   Y se rehacen SÓLO cuando cambia la lista de bloques. Si se rehicieran en
+   cada `paint()`, un cambio de idioma tiraría los botones que el editor
+   acababa de volver tocables y el nombre dejaría de poder editarse hasta la
+   próxima vez que el editor recableara. */
+let modSel = null;                         // la pestaña elegida, entre repintados
+function modelosTabs(){
+  const cont=document.querySelector('[data-grupo="mod"]');
+  const tira=document.querySelector(".mod-tabs");
+  if(!cont||!tira) return;
+  const ids=[...cont.querySelectorAll(':scope > [data-bloque]')].map(x=>x.dataset.bloque);
+  if(tira.dataset.ids===ids.join(",")) return;      // la estructura no cambió
+  tira.dataset.ids=ids.join(",");
+  tira.replaceChildren();
+  ids.forEach(id=>{
+    const b=document.createElement("button");
+    b.type="button"; b.className="mod-tab"; b.setAttribute("role","tab");
+    b.id="mod-tab-"+id; b.setAttribute("aria-controls","mod-pan-"+id);
+    b.dataset.para=id;
+    // El `data-i` va en un HIJO y no en el botón. Si fuera del botón, `paint()`
+    // le escribiría el textContent y eso BORRARÍA el <small> de adentro, que
+    // lleva su propia clave: el dato técnico desaparecería en el primer pintado.
+    const n=document.createElement("span"); n.className="mod-tab-n"; n.dataset.i=id+".p";
+    const s=document.createElement("small"); s.dataset.i=id+".s";
+    b.append(n,s);
+    b.addEventListener("click",()=>modelosElegir(id,true));
+    tira.appendChild(b);
+  });
+  cont.querySelectorAll(':scope > [data-bloque]').forEach(el=>{
+    el.id="mod-pan-"+el.dataset.bloque;
+    el.setAttribute("role","tabpanel");
+    el.setAttribute("aria-labelledby","mod-tab-"+el.dataset.bloque);
+  });
+  // Las flechas mueven entre pestañas: es lo que espera quien navega con
+  // teclado, y sin esto la tira es una trampa para el tabulador.
+  tira.addEventListener("keydown",ev=>{
+    const paso=ev.key==="ArrowRight"?1:ev.key==="ArrowLeft"?-1:0;
+    if(!paso) return;
+    ev.preventDefault();
+    const lista=[...tira.querySelectorAll(".mod-tab")];
+    const i=lista.findIndex(x=>x.dataset.para===modSel);
+    const b=lista[(i+paso+lista.length)%lista.length];
+    if(b){ modelosElegir(b.dataset.para,true); b.focus(); }
+  });
+}
+function modelosElegir(id,animar){
+  const cont=document.querySelector('[data-grupo="mod"]'); if(!cont) return;
+  modSel=id;
+  cont.querySelectorAll(':scope > [data-bloque]').forEach(el=>{
+    const suyo=el.dataset.bloque===id;
+    el.hidden=!suyo;
+    el.classList.remove("entra");
+    if(suyo&&animar){ void el.offsetWidth; el.classList.add("entra"); }
+  });
+  document.querySelectorAll(".mod-tab").forEach(b=>{
+    const suya=b.dataset.para===id;
+    b.setAttribute("aria-selected",String(suya));
+    // En un teléfono la tira se desplaza: sin esto, una pestaña elegida con el
+    // teclado —o la que quedó elegida al abrir— puede estar fuera de la vista.
+    if(suya&&animar) b.scrollIntoView({inline:"nearest",block:"nearest"});
+  });
+}
+/* Se llama DESPUÉS de pintar los textos, porque las dos cosas que decide
+   dependen de lo que quedó escrito: el nombre de la pestaña cuando nadie le
+   puso uno corto, y si la sección tiene algo que mostrar.
+
+   Sin un solo modelo con título, la sección se apaga. Ése es el mecanismo que
+   deja que el cuadro se pruebe en el taller sin que el sitio publicado muestre
+   un marco vacío: el marcado está en los dos, el contenido no. */
+function modelosFin(){
+  const cont=document.querySelector('[data-grupo="mod"]');
+  const sec=document.querySelector('[data-seccion="modelos"]');
+  if(!cont||!sec) return;
+  const bloques=[...cont.querySelectorAll(':scope > [data-bloque]')];
+  bloques.forEach(el=>{
+    const b=document.getElementById("mod-tab-"+el.dataset.bloque);
+    const n=b&&b.querySelector(".mod-tab-n");
+    const h=el.querySelector("h3");
+    // Sin rótulo corto, la pestaña usa el título. Un modelo recién creado se
+    // ve desde el primer momento en vez de ser una pestaña en blanco.
+    if(n&&!n.textContent.trim()) n.textContent=(h&&h.textContent.trim())||el.dataset.bloque;
+  });
+  const hay=bloques.some(el=>(el.querySelector("h3")||{}).textContent &&
+                              el.querySelector("h3").textContent.trim());
+  sec.classList.toggle("mods-vacia",!hay);
+  if(!hay) return;
+  const vivos=bloques.map(el=>el.dataset.bloque);
+  modelosElegir(vivos.includes(modSel)?modSel:vivos[0],false);
+}
+
 function paint(lang){
   const d=textos(lang);
   document.documentElement.lang=lang;
+  modelosTabs();          // las pestañas llevan data-i: se arman antes de pintar
   document.querySelectorAll("[data-i]").forEach(el=>{
     const v=d[el.dataset.i]; if(v===undefined) return;
     if(/<em>/.test(v)) el.innerHTML=v; else el.textContent=v;
@@ -1082,6 +1259,7 @@ function paint(lang){
   });
   document.querySelectorAll(".lang button").forEach(b=>
     b.setAttribute("aria-pressed", String(b.dataset.set===lang)));
+  modelosFin();           // elegir la pestaña y apagar la sección si está vacía
 }
 /* ---------- los bloques repetibles ----------
    Tres grupos de la página son listas de lo mismo: la trayectoria, los
@@ -1104,6 +1282,10 @@ const GRUPOS = {
   traj: { prefijo:"s", slot:"traj", claves:["yr","t","b"], listas:[] },
   dif:  { prefijo:"d", slot:"dif",  claves:["s","t","b"],  listas:[] },
   of:   { prefijo:"o", slot:null,   claves:["n","t","b","g"], listas:["l"] },
+  // `p` es el rótulo corto de la pestaña —"Simple", "Doble techo"—, que no es
+  // el título: en la pestaña no entra una frase. Si queda vacío, la pestaña
+  // usa el título, así que un modelo nuevo se ve desde el primer momento.
+  mod:  { prefijo:"m", slot:"mod",  claves:["p","s","t","b"], listas:[] },
 };
 
 // Un pixel transparente: el bloque nuevo se ve como un marco vacío y se
