@@ -82,6 +82,15 @@
   --body:"Instrument Sans",system-ui,sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,monospace;
   --pad:clamp(1.25rem,5vw,5.5rem);
+  /* Lo más ancho que se deja leer una columna. Sin esto, en un monitor de
+     2560 px el texto se estiraba hasta 2384 px y los títulos quedaban
+     perdidos en el medio de la nada — medido el 2026-09-24. */
+  --medida:78rem;
+  /* El truco que centra el CONTENIDO sin recortar el FONDO: la sangría
+     crece sola cuando la pantalla pasa de `--medida`. Así `.paper` y
+     `.offer` siguen pintando de borde a borde y lo que se lee queda
+     centrado y con un ancho humano. */
+  --sangria:max(var(--pad), (100% - var(--medida)) / 2);
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -103,17 +112,21 @@ a{color:inherit}
   color:var(--blond);display:block;margin-bottom:1.6rem}
 .eyebrow::before{content:"";display:inline-block;width:1.6rem;height:1px;
   background:var(--blond);vertical-align:.32em;margin-right:.7rem}
-.wrap{padding:clamp(4rem,9vw,8rem) var(--pad)}
+.wrap{padding-block:clamp(4rem,9vw,8rem);padding-inline:var(--sangria)}
 .lede{font-size:clamp(1.1rem,1.1vw + .85rem,1.35rem);line-height:1.5;max-width:38ch;color:var(--wool)}
 .small{font-size:.86rem;line-height:1.55;color:#b7ae9d}
 
 /* ---------- lattice signature ---------- */
-.trei{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.trei{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;display:block}
 .trei line{stroke:var(--blond);stroke-width:1.15;opacity:.42;
   stroke-dasharray:var(--len);stroke-dashoffset:var(--len);
   animation:weave 1.5s cubic-bezier(.22,.7,.2,1) forwards;animation-delay:var(--d)}
 @keyframes weave{to{stroke-dashoffset:0}}
 .band{height:74px;overflow:hidden;position:relative;border-block:1px solid #35302a;background:var(--ink-2)}
+/* Sin esto el <svg> de la banda no tenía alto propio y se lo inventaba a
+   partir del viewBox: en un monitor quedaba de 1200 px y la banda, que mide
+   74, mostraba una tajada del dibujo con los trazos ocho veces más gruesos. */
+.band svg{position:absolute;inset:0;width:100%;height:100%;display:block}
 .band svg line{stroke:var(--moss);stroke-width:1;opacity:.55;animation:none;stroke-dashoffset:0}
 
 /* ---------- hero ---------- */
@@ -136,7 +149,7 @@ header.hero .trei line{opacity:.2}
   border-radius:999px;padding:.55rem .9rem;cursor:pointer;backdrop-filter:blur(4px)}
 .hero-play.on{display:inline-flex}
 header.hero{position:relative;min-height:min(100svh,860px);display:flex;flex-direction:column;
-  justify-content:space-between;padding:clamp(1.1rem,3vw,2.2rem) var(--pad) clamp(2.5rem,6vw,4rem);
+  justify-content:space-between;padding:clamp(1.1rem,3vw,2.2rem) var(--sangria) clamp(2.5rem,6vw,4rem);
   background:radial-gradient(120% 95% at 78% 8%,#2C2318 0%,var(--ink) 58%);overflow:hidden}
 .topbar{position:relative;z-index:3;display:flex;justify-content:space-between;
   align-items:center;gap:1rem;flex-wrap:wrap}
@@ -151,20 +164,40 @@ header.hero{position:relative;min-height:min(100svh,860px);display:flex;flex-dir
   border:0;color:#a89e8c;padding:.42rem .7rem;cursor:pointer;text-transform:uppercase}
 .lang button[aria-pressed="true"]{background:var(--blond);color:var(--ink)}
 .lang button:focus-visible{outline:2px solid var(--blond);outline-offset:2px}
-.hero-body{position:relative;z-index:3;max-width:22ch}
-h1{font-size:clamp(3rem,10.5vw,7.4rem);font-weight:300;
+/* Acá estaba el peor error de todo el diseño, y no se veía en un teléfono.
+   `max-width:22ch` se calcula con la letra de ESTE bloque —la del cuerpo,
+   17 px—, o sea 244 px. Adentro vive un h1 de 118 px. Resultado medido el
+   2026-09-24 en 1440, 1180 y 2560 px de ancho: el título se desbordaba de
+   su propia caja, se partía en cuatro renglones de 483 px de alto y
+   empujaba el encabezado a 1256 px — más alto que la pantalla, así que en
+   un monitor apaisado no se veía nada más, y el video de fondo se recortaba
+   para cubrir esa altura inventada. La medida de un texto va en el `ch` de
+   SU letra, y por eso ahora está en el h1 y en el `.lede`, no acá. */
+.hero-body{position:relative;z-index:3;max-width:min(100%,46rem)}
+h1{font-size:clamp(3rem,10.5vw,7.4rem);font-weight:300;max-width:11ch;
   font-variation-settings:"SOFT" 40,"WONK" 1}
 h1 em{font-style:italic;color:var(--blond);font-weight:400}
 .hero-meta{position:relative;z-index:3;display:flex;gap:clamp(1.2rem,4vw,3.5rem);
   flex-wrap:wrap;border-top:1px solid #3b342c;padding-top:1.4rem;margin-top:2.5rem}
-.hero-meta div{max-width:24ch}
+.hero-meta div{max-width:min(100%,24ch)}
 .hero-meta .k{color:var(--blond);display:block;margin-bottom:.35rem}
 .hero-meta .v{font-size:.92rem;color:#cfc6b4}
 
 /* ---------- full bleed ---------- */
-.bleed{position:relative;height:clamp(320px,60vh,660px)}
+/* Se recortaba en altura porque la caja era una franja: en un monitor de
+   2560 px medía 2560×660, o sea 3,9:1, y `object-fit:cover` tiraba dos
+   tercios de la foto. Ahora la caja tiene FORMA propia (16:9) con un piso
+   para el teléfono y un techo para que no se coma la pantalla.
+
+   Y va con `height`, no con `aspect-ratio`: probado el 2026-09-24, un
+   `aspect-ratio` con `min-height` le deja al navegador RECALCULAR EL ANCHO
+   a partir del alto mínimo — la figura se iba a 684 px en una pantalla de
+   360 y todo el sitio quedaba con barra horizontal. La proporción sale del
+   `46vw`, que es el ancho, que es lo que manda. */
+.bleed{position:relative;height:clamp(300px,46vw,720px);
+  max-width:120rem;margin-inline:auto}
 .bleed img{filter:saturate(.94)}
-.bleed figcaption{position:absolute;left:var(--pad);bottom:1.5rem;right:var(--pad);
+.bleed figcaption{position:absolute;left:var(--sangria);bottom:1.5rem;right:var(--sangria);
   color:var(--wool);text-shadow:0 1px 14px rgba(0,0,0,.85)}
 
 /* ---------- idea ---------- */
@@ -285,13 +318,13 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
 .cta-b:hover{border-color:var(--blond)}
 .contact{background:var(--ink-2);text-align:center}
 .contact h2{font-size:clamp(2rem,6vw,4rem);font-weight:300;margin-bottom:1.5rem;
-  font-variation-settings:"SOFT" 40,"WONK" 1}
+  font-variation-settings:"SOFT" 40,"WONK" 1;max-width:16ch;margin-inline:auto}
 .contact .rows{display:inline-grid;gap:.5rem;text-align:left;margin-top:1.5rem}
 .contact .rows div{display:grid;grid-template-columns:8rem 1fr;gap:1rem;
   border-bottom:1px solid #3b342c;padding-bottom:.5rem}
 .contact .rows .k{font-family:var(--mono);font-size:.63rem;letter-spacing:.15em;
   color:var(--blond);text-transform:uppercase;padding-top:.3rem}
-.foot{padding:1.6rem var(--pad);border-top:1px solid #35302a;display:flex;
+.foot{padding:1.6rem var(--sangria);border-top:1px solid #35302a;display:flex;
   justify-content:space-between;gap:1rem;flex-wrap:wrap;color:#8d8474}
 
 .reveal{opacity:0;transform:translateY(18px)}
@@ -409,7 +442,7 @@ body.cy-en-taller{padding-top:1.9rem}
   <button type="button" class="hero-play" id="hero-play" aria-label="Reproducir el video">
     ▶ Ver en movimiento
   </button>
-  <svg class="trei" data-lattice preserveAspectRatio="none" aria-hidden="true"></svg>
+  <svg class="trei" data-lattice aria-hidden="true"></svg>
 
   <div class="topbar">
     <div class="mark"><img class="logo" src="assets/logo.png" alt="CasaYourte" width="34" height="34">Casa<span>Yourte</span></div>
@@ -478,7 +511,7 @@ body.cy-en-taller{padding-top:1.9rem}
   </figure>
 </section>
 
-<div class="band" data-banda-de="trayectoria"><svg data-lattice-static preserveAspectRatio="none" aria-hidden="true"></svg></div>
+<div class="band" data-banda-de="trayectoria"><svg data-lattice-static aria-hidden="true"></svg></div>
 
 <!-- TRAJECTORY -->
 <section class="wrap paper" data-seccion="trayectoria">
@@ -659,7 +692,7 @@ body.cy-en-taller{padding-top:1.9rem}
   </div>
 </section>
 
-<div class="band" data-banda-de="taller"><svg data-lattice-static preserveAspectRatio="none" aria-hidden="true"></svg></div>
+<div class="band" data-banda-de="taller"><svg data-lattice-static aria-hidden="true"></svg></div>
 
 <!-- WORKSHOP -->
 <section class="wrap paper" data-seccion="taller">
@@ -716,7 +749,7 @@ body.cy-en-taller{padding-top:1.9rem}
 
 <!-- CONTACT -->
 <section class="wrap contact" data-seccion="contacto">
-  <svg class="trei" data-lattice preserveAspectRatio="none" aria-hidden="true" style="opacity:.5"></svg>
+  <svg class="trei" data-lattice aria-hidden="true" style="opacity:.5"></svg>
   <div style="position:relative;z-index:2">
     <span class="eyebrow" style="display:inline-block" data-i="ct.eyebrow"></span>
     <h2 data-i="ct.title"></h2>
@@ -1257,12 +1290,35 @@ paint(idiomaInicial());
   addEventListener("click", reintento, { once: true });
 })();
 
-/* ---------- trei lattice: two families of laths at 60° between them ---------- */
+/* ---------- trei: dos familias de listones a 60° entre sí ----------
+   Se dibuja en PÍXELES y sin `viewBox`, a propósito. Con viewBox el
+   navegador escala el dibujo hasta llenar la caja, y eso fue exactamente
+   lo que deformaba los rombos: medido el 2026-09-24, las bandas llevaban
+   un viewBox de 320×150 —tomado una vez, de una caja que todavía no
+   existía— estirado ×1,125 en un teléfono y ×8 en un monitor. Mismo
+   dibujo, ocho tamaños distintos y los trazos ocho veces más gruesos.
+
+   Sin viewBox, una unidad del SVG ES un píxel: el ángulo, el paso entre
+   listones y el grosor del trazo valen lo mismo en cualquier pantalla, y
+   lo único que cambia es cuántos rombos entran. Que es lo que uno espera
+   de un fondo geométrico.
+
+   La otra mitad del arreglo es el ResizeObserver. El `resize` de la
+   ventana no alcanza: la caja de una banda también cambia cuando carga una
+   foto de más arriba, cuando se abre un `details`, cuando se da vuelta el
+   teléfono o cuando el navegador esconde su barra. Sin eso, el primer
+   dibujo —hecho antes de que la caja midiera nada— se quedaba para
+   siempre. */
 function lattice(svg,{gap=64,animate=true}={}){
   const r=svg.getBoundingClientRect();
-  const W=Math.max(r.width,320), H=Math.max(r.height,120);
-  svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
-  const tan=Math.tan(30*Math.PI/180);   // ±30° from vertical = 60° apex
+  const W=Math.round(r.width), H=Math.round(r.height);
+  // Caja sin medida todavía: no se inventa un tamaño. Antes acá había un
+  // `Math.max(r.width,320)` y ese piso era el que congelaba la geometría
+  // mala: dibujaba algo, así que nadie se enteraba de que estaba mal.
+  if(W<2||H<2) return;
+  if(svg.dataset.dib===W+"x"+H) return;        // ya está dibujado así
+  svg.dataset.dib=W+"x"+H;
+  const tan=Math.tan(30*Math.PI/180);   // ±30° de la vertical = 60° de apertura
   const dx=H*tan, ns="http://www.w3.org/2000/svg";
   let i=0, frag=document.createDocumentFragment();
   for(const dir of [1,-1]){
@@ -1279,12 +1335,20 @@ function lattice(svg,{gap=64,animate=true}={}){
   }
   svg.replaceChildren(frag);
 }
-function drawAll(){
-  document.querySelectorAll("[data-lattice]").forEach(s=>lattice(s,{gap:78}));
-  document.querySelectorAll("[data-lattice-static]").forEach(s=>lattice(s,{gap:46,animate:false}));
+const PASO={lattice:78,"lattice-static":46};
+function dibujar(s){
+  const estatico=s.hasAttribute("data-lattice-static");
+  lattice(s,{gap:estatico?PASO["lattice-static"]:PASO.lattice,animate:!estatico});
 }
+function drawAll(){ document.querySelectorAll("[data-lattice],[data-lattice-static]").forEach(dibujar); }
 drawAll();
-let rt; addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(drawAll,220)});
+if(typeof ResizeObserver==="function"){
+  const ro=new ResizeObserver(es=>{ for(const e of es) dibujar(e.target); });
+  document.querySelectorAll("[data-lattice],[data-lattice-static]").forEach(s=>ro.observe(s));
+}else{
+  // Navegador viejo sin ResizeObserver: queda el camino de antes.
+  let rt; addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(drawAll,220)});
+}
 
 const PROC_SRC=["assets/p01.jpg","assets/p02.jpg","assets/p03.jpg","assets/p04.jpg","assets/p05.jpg","assets/p06.jpg","assets/p07.jpg","assets/p08.jpg","assets/p09.jpg","assets/p10.jpg","assets/p11.jpg","assets/p12.jpg"];
 /* ================= PROCESO ================= */
