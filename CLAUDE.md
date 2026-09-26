@@ -199,8 +199,8 @@ el agente y **no es opcional**: que el JavaScript parsee **como MÓDULO**
 —`node --input-type=module --check < archivo.js`, y no `node --check`—,
 incluidos los módulos que viven adentro de un `.html`; que **los cinco bancos
 corran** —`node pruebas-secciones.mjs` (16 casos), `node pruebas-reportes.mjs`
-(64 casos), `node pruebas-andamio.mjs` (81 casos), `node
-pruebas-puertas.mjs` (30 casos) y `node pruebas-modelos.mjs` (62 casos), los
+(64 casos), `node pruebas-andamio.mjs` (89 casos), `node
+pruebas-puertas.mjs` (30 casos) y `node pruebas-modelos.mjs` (65 casos), los
 cinco sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
 sellos hayan subido, con la `VERSION` del `sw.js` si el archivo está en `SHELL`
 y los `?v=` con los que se lo pide; y que la documentación del repo diga la
@@ -338,6 +338,12 @@ verdad después del cambio.
   publicado —que todavía no tiene el cuadro— sin ninguna de las dos hasta que
   alguien lleve el taller al sitio; así, en ese mismo acto una se va y la
   otra llega.
+  **Y en el editor el cuadro se decide DESPUÉS de escribir los textos**
+  (`antesDeEscribir` / `despuesDeEscribir` del contrato, llamados por
+  `pintarEnIframe()`). Con `?edit=1` la página no busca su contenido: lo
+  escribe el editor. Sin esos avisos el cuadro se evaluaba con la página
+  vacía y quedaba apagado, con la tabla a la vista, mientras `?taller=1` lo
+  mostraba bien (26-sep-2026).
 - **Una medida de texto va en el `ch` de SU letra, no en la del padre**
   (24-sep-2026, medido en un navegador a seis anchos). `.hero-body` tenía
   `max-width:22ch` calculado con la letra del cuerpo —244 px— y adentro un h1
@@ -397,6 +403,12 @@ verdad después del cambio.
     `aplicarTextos` suma porque lo que llega de la base puede ser parcial;
     el editor manda el contenido entero, y mezclando el bloque mudado se
     quedaba también en la página de donde salió hasta recargar.
+  - **Las cuentas del andamio las hace el editor con CONT, nunca con la
+    vista** (26-sep-2026). La vista sabe lo que había al cargar; CONT sabe
+    además lo escrito desde entonces. Preguntándole a la vista el primer
+    hueco, un bloque recién escrito figuraba vacío y la mudanza lo pisaba.
+    **Y la barra ▲▼→ va AL LADO del párrafo, nunca adentro**: el párrafo es
+    editable y lo que se guarda es su `textContent`.
 - **La transición del andamio nunca es una dependencia para navegar.** Los
   enlaces son `href` de verdad; la View Transitions API es un adorno encima. Y
   respeta `prefers-reduced-motion` — a algunas personas una transición que se

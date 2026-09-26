@@ -292,7 +292,7 @@ import { CY } from "./nucleo.js";
 const $ = (id) => document.getElementById(id);
 
 // Sello de este archivo, para saber si quedó viejo en la caché.
-const EDITOR = "editar-15";
+const EDITOR = "editar-16";
 CY.PANEL = EDITOR;
 
 /* ═══════════════════════════════════════════════════════════════
@@ -908,6 +908,10 @@ function ponerFlechas() {
 function pintarEnIframe() {
   const cfg = PAGS[pag];
   const d = CONT[idioma];
+  // Las pestañas de modelos llevan `data-i`: se arman ANTES de escribir, así
+  // un modelo recién agregado recibe su rótulo en la misma pasada.
+  const c = contrato();
+  if (c && typeof c.antesDeEscribir === "function") c.antesDeEscribir();
   doc_.querySelectorAll("[" + cfg.attr + "]").forEach((el) => {
     const v = d[cfg.prefijo + el.getAttribute(cfg.attr)];
     if (v === undefined || Array.isArray(v)) return;
@@ -928,6 +932,10 @@ function pintarEnIframe() {
     });
   });
   aplicarImagenes();
+  /* Y DESPUÉS, que la página decida lo que depende del texto: el cuadro de
+     modelos se muestra sólo si algún modelo tiene título. Sin esta línea se
+     decidía con la página vacía y el cuadro no aparecía nunca en el editor. */
+  if (c && typeof c.despuesDeEscribir === "function") c.despuesDeEscribir();
 }
 
 function aplicarImagenes() {
@@ -1422,9 +1430,9 @@ function moverPagina(id, paso) {
    escrito —«Ir a X»— porque un botón vacío mide cero y no hay forma de
    tocarlo con el pulgar para escribirle adentro. */
 function enlazarHacia(destino) {
-  const c = contrato(); const desde = paginaAbierta();
+  const desde = paginaAbierta();
   if (!desde) return aviso("Entrá primero a la página desde la que querés enlazar.", true);
-  const n = (typeof c.proximoEnlace === "function") ? c.proximoEnlace(desde) : 1;
+  const n = proximoEnlaceEnCont(desde);
   const nombreDestino = (paginasAndamio().filter(p => p.id === destino)[0] || {}).nombre || destino;
   CONT.enlaces = CONT.enlaces || {};
   CONT.enlaces[desde + "." + n] = destino;
@@ -1452,9 +1460,38 @@ function quitarEnlace(desde, n) {
    que se cuenta. */
 function textoBloque(l, pagina, n) { return (CONT[l] || {})["pg." + pagina + ".b" + n]; }
 
+/* LAS CUENTAS SALEN DE CONT, NUNCA DE LA VISTA. La vista (`taller.html`) sabe
+   lo que había cuando cargó; CONT sabe además lo que se escribió desde
+   entonces. Preguntándole a la vista cuál es el primer hueco libre, un bloque
+   recién escrito y todavía sin guardar figuraba como vacío — y el bloque mudado
+   aterrizaba ENCIMA. Pasó el 26-sep-2026. */
+const MINIMO_BLOQUES = 3;
+function bloquesEnCont(pagina) {
+  const re = new RegExp("^pg\\." + pagina + "\\.b(\\d+)$");
+  let max = MINIMO_BLOQUES;
+  IDIOMAS().forEach(l => Object.keys(CONT[l] || {}).forEach(k => {
+    const m = re.exec(k); if (m) max = Math.max(max, Number(m[1]));
+  }));
+  return max;
+}
+function huecoEnCont(pagina) {
+  const cuantos = bloquesEnCont(pagina);
+  for (let n = 1; n <= cuantos; n++) {
+    if (IDIOMAS().every(l => textoBloque(l, pagina, n) === undefined)) return n;
+  }
+  return cuantos + 1;
+}
+function proximoEnlaceEnCont(desde) {
+  let max = 0;
+  Object.keys(CONT.enlaces || {}).forEach(k => {
+    const p = k.split(".");
+    if (p[0] === desde) max = Math.max(max, Number(p[1]) || 0);
+  });
+  return max + 1;
+}
+
 function compactarBloques(pagina) {
-  const c = contrato();
-  const cuantos = (typeof c.bloquesDe === "function") ? c.bloquesDe(pagina) : 3;
+  const cuantos = bloquesEnCont(pagina);
   const vivos = [];
   for (let n = 1; n <= cuantos; n++) {
     const hay = IDIOMAS().some(l => textoBloque(l, pagina, n) !== undefined);
@@ -1468,8 +1505,8 @@ function compactarBloques(pagina) {
 }
 
 function moverBloqueA(origen, n, destino) {
-  const c = contrato();
-  const prox = (typeof c.proximoBloque === "function") ? c.proximoBloque(destino) : 1;
+  if (origen === destino) return aviso("Ese bloque ya está en esa página.", true);
+  const prox = huecoEnCont(destino);
   let algo = false;
   IDIOMAS().forEach(l => {
     CONT[l] = CONT[l] || {};
@@ -1488,6 +1525,9 @@ function moverBloqueA(origen, n, destino) {
 
 function moverBloqueEn(pagina, n, paso) {
   const m = n + paso;
+  // Ni por arriba del primero ni por debajo del último: `b0` no existe y un
+  // bloque que bajara más allá del último quedaría en una página más larga.
+  if (m < 1 || m > bloquesEnCont(pagina)) return;
   IDIOMAS().forEach(l => {
     CONT[l] = CONT[l] || {};
     const a = textoBloque(l, pagina, n), b = textoBloque(l, pagina, m);
@@ -1524,13 +1564,19 @@ function herramientasAndamio() {
   if (!pagina) return;                       // el índice no lleva bloques
   const vista = doc_.defaultView || window;
   doc_.querySelectorAll("p.bloque").forEach((el) => {
-    if (el.querySelector(":scope > .cy-ord")) return;
+    /* Los controles van AL LADO del párrafo y nunca adentro. El párrafo es
+       editable: con la barra adentro, `textContent` —que es lo que se guarda—
+       se llevaba «▲1▼→» pegado al texto, y el primer repintado del editor la
+       borraba con todo lo demás. En los bloques del sitio no pasa porque la
+       barra va en el <article>, no en el texto; acá no hay <article>. */
+    const prev = el.previousElementSibling;
+    if (prev && prev.classList.contains("cy-ord")) return;
     const k = el.getAttribute("data-i") || "";
     const m = /\.b(\d+)$/.exec(k); if (!m) return;
     const n = Number(m[1]);
-    if (vista.getComputedStyle(el).position === "static") el.style.position = "relative";
     const c = doc_.createElement("div");
     c.className = "cy-ord";
+    c.style.cssText = "position:static;display:inline-flex;margin:0 0 .3rem";
     c.innerHTML = '<button type="button" class="sube" aria-label="Subir">&#9650;</button>'
                 + '<span class="n">' + n + '</span>'
                 + '<button type="button" class="baja" aria-label="Bajar">&#9660;</button>'
@@ -1547,7 +1593,7 @@ function herramientasAndamio() {
       }
       moverBloqueEn(pagina, n, b.classList.contains("sube") ? -1 : 1);
     }, true);
-    el.insertBefore(c, el.firstChild);
+    el.parentNode.insertBefore(c, el);
   });
   // Y la cruz de cada botón de enlace, para poder sacarlo.
   doc_.querySelectorAll("a.salto").forEach((a) => {

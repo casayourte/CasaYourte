@@ -191,7 +191,11 @@ const paginasAndamio = () => {
   return l;
 };
 const padreDe = (id) => (/^[a-z]\d$/.test(id) ? id[0] : "");
-const contrato = () => ({
+/* El contrato de juguete MIENTE a propósito: dice que el primer hueco es
+   siempre el 1 y que ninguna página tiene enlaces. Es lo que contestaba la
+   vista real cuando el editor tenía cambios sin guardar. Si el editor le
+   creyera, las pruebas de abajo pisarían texto. */
+const contratoHonesto = () => ({
   bloquesDe: (p) => {
     let max = 3;
     IDIOMAS().forEach((l) => Object.keys(CONT[l] || {}).forEach((k) => {
@@ -216,14 +220,18 @@ const contrato = () => ({
     return max + 1;
   },
 });
+// Las mentiras van AL FINAL: en un literal, la última clave repetida gana.
+const contrato = () => ({ ...contratoHonesto(),
+  proximoBloque: () => 1, proximoEnlace: () => 1, bloquesDe: () => 3 });
 const lista_ = (v) => String(v || "").split(",").map((x) => x.trim()).filter(Boolean);
 
-const fuente = ["textoBloque", "compactarBloques", "moverBloqueA", "moverBloqueEn",
+const fuente = ["textoBloque", "bloquesEnCont", "huecoEnCont", "proximoEnlaceEnCont",
+                "compactarBloques", "moverBloqueA", "moverBloqueEn",
                 "enlazarHacia", "quitarEnlace", "moverPagina"]
   .map((n) => sacar(editor, n)).join("\n");
 const ops = new Function("CONT_", "IDIOMAS", "aviso", "confirm", "refrescarAndamio",
   "paginasAndamio", "padreDe", "contrato", "lista_", "paginaAbierta", "pintarPaginas",
-  fuente + "\n; var CONT = CONT_;"
+  "var MINIMO_BLOQUES = 3;\n" + fuente + "\n; var CONT = CONT_;"
   + "\n return { compactarBloques, moverBloqueA, moverBloqueEn, enlazarHacia, quitarEnlace, moverPagina,"
   + " ver: () => CONT };");
 
@@ -302,6 +310,35 @@ o.moverPagina("c", 1);
 ok("ni más allá del otro borde", CONT.orden.pgs === "b,a,c");
 o.moverPagina("a", -1);
 ok("y una que sí se puede mover, se mueve", CONT.orden.pgs === "a,b,c");
+
+titulo("17 bis · el editor cuenta con CONT, no con lo que dice la vista");
+/* 26-sep-2026: la vista (`taller.html`) sabe lo que había cuando cargó; CONT
+   sabe además lo que se escribió desde entonces. Preguntándole a la vista el
+   primer hueco libre, un bloque recién escrito y sin guardar figuraba vacío,
+   y el bloque mudado aterrizaba encima. */
+o = montar({ es: { "pg.a.b1": "el que se muda", "pg.c.b1": "recién escrito, sin guardar" },
+             fr: {}, orden: {}, enlaces: {} });
+o.moverBloqueA("a", 1, "c");
+ok("el bloque recién escrito del destino NO se pisa", CONT.es["pg.c.b1"] === "recién escrito, sin guardar");
+ok("y el mudado aterriza en el hueco siguiente", CONT.es["pg.c.b2"] === "el que se muda");
+o = montar({ es: {}, fr: {}, orden: {}, enlaces: { "a.1": "b" } }, "a");
+o.enlazarHacia("c");
+ok("un enlace nuevo no pisa uno que la vista todavía no conoce", CONT.enlaces["a.1"] === "b" && CONT.enlaces["a.2"] === "c");
+o = montar({ es: { "pg.a.b1": "x" }, fr: {}, orden: {}, enlaces: {} });
+o.moverBloqueA("a", 1, "a");
+ok("mudar a la misma página no hace nada y lo dice",
+   CONT.es["pg.a.b1"] === "x" && avisos.some((t) => /ya está/.test(t)));
+o = montar({ es: { "pg.a.b1": "uno", "pg.a.b2": "dos" }, fr: {}, orden: {}, enlaces: {} });
+o.moverBloqueEn("a", 1, -1);
+ok("subir el primero no inventa un b0", CONT.es["pg.a.b0"] === undefined && CONT.es["pg.a.b1"] === "uno");
+
+titulo("17 ter · los controles van AL LADO del texto, nunca adentro");
+/* El párrafo es editable, y lo que se guarda es su textContent: con la barra
+   adentro, «▲1▼→» se iba pegado al texto. */
+const herr = sacar(editor, "herramientasAndamio");
+ok("la barra se inserta como hermana del párrafo", /el\.parentNode\.insertBefore\(c, el\)/.test(herr));
+ok("y ya no adentro del párrafo", !/el\.insertBefore\(c, el\.firstChild\)/.test(herr));
+ok("no se pone dos veces después de un repintado", /previousElementSibling/.test(herr));
 
 titulo("18 · mudar un bloque tiene que poder BORRAR una clave");
 /* `aplicarTextos` suma claves porque lo que llega de la base puede ser

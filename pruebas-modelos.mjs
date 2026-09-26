@@ -173,5 +173,18 @@ ok("apagar secciones desde el editor lo recalcula, aunque no repinte",
 ok("la tabla sigue en el archivo: el publicado la necesita hasta la mudanza",
    /data-rows="ficha\.rows"/.test(marcado));
 
+/* ── 12 · dentro del editor ─────────────────────────────────── */
+titulo("12 · en el editor el cuadro se decide DESPUÉS de escribir los textos");
+/* Con ?edit=1 la página no busca su contenido: lo escribe el editor. El
+   26-sep-2026 el cuadro se evaluaba una sola vez, con la página vacía, y se
+   quedaba apagado —con la tabla a la vista— aunque `?taller=1` lo mostraba. */
+const editar_ = leer("editar.html");
+ok("la página ofrece los dos avisos en su contrato",
+   /antesDeEscribir:\(\)=>\{ modelosTabs\(\); \}/.test(codigo) && /despuesDeEscribir:\(\)=>\{ modelosFin\(\); \}/.test(codigo));
+const pinta_ = editar_.slice(editar_.indexOf("function pintarEnIframe()"), editar_.indexOf("function aplicarImagenes()"));
+const iA = pinta_.indexOf("c.antesDeEscribir()"), iE = pinta_.indexOf('querySelectorAll("[" + cfg.attr'), iD = pinta_.indexOf("c.despuesDeEscribir()");
+ok("el editor avisa ANTES de escribir", iA > -1 && iA < iE);
+ok("y DESPUÉS", iD > iE);
+
 console.log("\n" + bien + " bien · " + mal + " mal");
 process.exit(mal ? 1 : 0);

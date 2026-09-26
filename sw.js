@@ -109,12 +109,16 @@
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v49';
+const VERSION = 'cy-shell-v50';
 
 // v39 (14-sep-2026) — entra el TALLER: index.html lee sitio/taller con
 //   ?taller=1 y sabe mover y apagar secciones (contrato CY_SITIO v2);
 //   editar.html (editar-9) suma el chip «En vivo | Taller». Va encima de la
 //   v38, de la misma fecha: dos tandas seguidas tocando el SHELL.
+//
+//   v50 · 26-sep-2026 · `editar.html`: el cuadro de modelos no aparecía en el
+//   editor (se decidía con la página vacía) y mudar un bloque podía pisar uno
+//   recién escrito (el hueco se contaba con la vista y no con lo editado).
 //
 //   v49 · 24-sep-2026 · el andamio del taller se puede nombrar, ordenar,
 //   repartir y enlazar. `editar.html` suma la hoja de páginas, la mudanza de

@@ -1412,6 +1412,15 @@ function aplicarSecciones(orden, ocultas){
    declarado a propósito, no un interno del que colgarse: si mañana cambia
    la forma de armar un bloque, cambia acá y el editor no se entera. */
 window.CY_SITIO = { version:2, GRUPOS, aplicarOrden, aplicarSecciones,
+  /* Lo que el editor tiene que llamar ALREDEDOR de escribir los textos. Con
+     `?edit=1` esta página no busca su contenido: lo escribe el editor desde
+     afuera. Y el cuadro de modelos decide si se muestra MIRANDO el texto que
+     quedó escrito, así que sin este aviso se evaluaba una sola vez, con la
+     página todavía vacía, y se quedaba apagado — con la tabla de diámetros a
+     la vista. Pasó el 26-sep-2026: el taller mostraba las pestañas por
+     `?taller=1` y el editor no. */
+  antesDeEscribir:()=>{ modelosTabs(); },
+  despuesDeEscribir:()=>{ modelosFin(); },
   ids:(g)=>{ const c=document.querySelector('[data-grupo="'+g+'"]');
     return c ? [...c.querySelectorAll(':scope > [data-bloque]')].map(x=>x.dataset.bloque) : []; },
   idsSecciones:()=> seccionesEl().map(x => x.dataset.seccion),
