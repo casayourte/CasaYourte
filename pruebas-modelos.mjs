@@ -155,5 +155,23 @@ ok("no combina aspect-ratio con min-height",
    bleed ? !(bleed[1].includes("aspect-ratio") && bleed[1].includes("min-height")) : false);
 ok("su forma sale del ancho", bleed ? /height:clamp\([^)]*vw/.test(bleed[1]) : false);
 
+/* ── 11 · el cuadro REEMPLAZA a la tabla de diámetros ───────── */
+titulo("11 · el cuadro de modelos reemplaza a la tabla, sin un día sin ninguna");
+/* Pedido de Mauro, 26-sep-2026: «en lugar de este cuadro, las fichas». La
+   tabla no se borra: se esconde sola cuando el cuadro tiene contenido. Si se
+   borrara del HTML, el sitio publicado —que todavía no tiene el cuadro—
+   quedaría sin ninguna de las dos hasta que alguien lleve el taller. */
+ok("la tabla está marcada como reemplazable por el cuadro",
+   /<details[^>]*data-reemplaza-con="modelos"[^>]*>\s*<summary><span data-i="ui\.tabla">/.test(marcado));
+ok("y existe la clase que la esconde", /\.reemplazado\{display:none!important\}/.test(index));
+ok("modelosFin la esconde sólo si el cuadro tiene contenido Y está encendido",
+   /const reemplaza = hay && !sec\.classList\.contains\("cy-oculta"\)/.test(fin));
+ok("y la clase se aplica de verdad sobre la tabla",
+   /querySelectorAll\('\[data-reemplaza-con="modelos"\]'\)\.forEach\(el=>\s*el\.classList\.toggle\("reemplazado", reemplaza\)\)/.test(fin));
+ok("apagar secciones desde el editor lo recalcula, aunque no repinte",
+   /function aplicarSecciones[\s\S]{0,700}typeof modelosFin === "function"\) modelosFin\(\)/.test(codigo));
+ok("la tabla sigue en el archivo: el publicado la necesita hasta la mudanza",
+   /data-rows="ficha\.rows"/.test(marcado));
+
 console.log("\n" + bien + " bien · " + mal + " mal");
 process.exit(mal ? 1 : 0);

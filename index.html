@@ -251,6 +251,8 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
 /* Sin un solo modelo escrito, la sección no existe. Así el sitio publicado no
    muestra un marco vacío mientras el cuadro se prueba en el taller. */
 .mods-vacia{display:none}
+/* Lo que el cuadro de modelos reemplaza. Ver `modelosFin()`. */
+.reemplazado{display:none!important}
 
 /* ---------- proceso ---------- */
 .proc{margin:clamp(2.2rem,5vw,3.4rem) 0 0}
@@ -787,7 +789,13 @@ body.cy-en-taller{padding-top:1.9rem}
     </div>
   </div>
 
-  <details class="mas" style="margin-top:clamp(2.5rem,6vw,4rem)">
+  <!-- La tabla de diámetros la REEMPLAZA el cuadro de modelos (pedido de Mauro,
+       26-sep-2026: «en lugar de este cuadro, las fichas con pestañas»). No se
+       borra: se esconde sola cuando el cuadro tiene contenido. Así el sitio
+       publicado la sigue mostrando hasta que el taller se lleve al sitio, y
+       en ese mismo acto desaparece — sin un día en el medio con ninguna de
+       las dos. -->
+  <details class="mas" data-reemplaza-con="modelos" style="margin-top:clamp(2.5rem,6vw,4rem)">
     <summary><span data-i="ui.tabla">Ver la tabla de diámetros</span></summary>
     <div class="cuerpo">
       <h3 style="font-size:clamp(1.4rem,3vw,2rem)" data-i="ficha.title"></h3>
@@ -1231,6 +1239,12 @@ function modelosFin(){
   const hay=bloques.some(el=>(el.querySelector("h3")||{}).textContent &&
                               el.querySelector("h3").textContent.trim());
   sec.classList.toggle("mods-vacia",!hay);
+  // La tabla de diámetros se va cuando el cuadro está y se ve. Si alguien
+  // apaga la sección de modelos desde el editor, la tabla vuelve: nunca se
+  // quedan las dos afuera.
+  const reemplaza = hay && !sec.classList.contains("cy-oculta");
+  document.querySelectorAll('[data-reemplaza-con="modelos"]').forEach(el=>
+    el.classList.toggle("reemplazado", reemplaza));
   if(!hay) return;
   const vivos=bloques.map(el=>el.dataset.bloque);
   modelosElegir(vivos.includes(modSel)?modSel:vivos[0],false);
@@ -1376,6 +1390,9 @@ function aplicarSecciones(orden, ocultas){
     const b = bandaDe(el.dataset.seccion);
     if (b) b.classList.toggle("cy-oculta", apagada);
   });
+  // El editor apaga y enciende secciones sin repintar: sin esto, apagar el
+  // cuadro de modelos dejaba la página sin el cuadro y sin la tabla.
+  if (typeof modelosFin === "function") modelosFin();
 
   const orden_ = enLista(orden);
   if (!orden_.length) return;               // sin lista guardada, manda el HTML

@@ -200,7 +200,7 @@ el agente y **no es opcional**: que el JavaScript parsee **como MÓDULO**
 incluidos los módulos que viven adentro de un `.html`; que **los cinco bancos
 corran** —`node pruebas-secciones.mjs` (16 casos), `node pruebas-reportes.mjs`
 (64 casos), `node pruebas-andamio.mjs` (81 casos), `node
-pruebas-puertas.mjs` (30 casos) y `node pruebas-modelos.mjs` (56 casos), los
+pruebas-puertas.mjs` (30 casos) y `node pruebas-modelos.mjs` (62 casos), los
 cinco sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
 sellos hayan subido, con la `VERSION` del `sw.js` si el archivo está en `SHELL`
 y los `?v=` con los que se lo pide; y que la documentación del repo diga la
@@ -331,6 +331,13 @@ verdad después del cambio.
   marco vacío: el marcado está en los dos, el contenido sólo en `sitio/taller`.
   Por eso **este archivo no trae textos semilla de modelos** y el banco lo
   comprueba.
+  **Y el cuadro REEMPLAZA a la tabla de diámetros** (26-sep-2026, pedido de
+  Mauro: «en lugar de este cuadro, las fichas»). La tabla no se borra del
+  HTML: lleva `data-reemplaza-con="modelos"` y se esconde sola cuando el
+  cuadro tiene contenido y está encendido. Borrarla habría dejado al sitio
+  publicado —que todavía no tiene el cuadro— sin ninguna de las dos hasta que
+  alguien lleve el taller al sitio; así, en ese mismo acto una se va y la
+  otra llega.
 - **Una medida de texto va en el `ch` de SU letra, no en la del padre**
   (24-sep-2026, medido en un navegador a seis anchos). `.hero-body` tenía
   `max-width:22ch` calculado con la letra del cuerpo —244 px— y adentro un h1

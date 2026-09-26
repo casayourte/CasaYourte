@@ -840,7 +840,7 @@ pie que nunca se mueve, y basura en los campos.
 
 Es el patrón que presta Harmonía (`PROTOCOLO-DESARROLLO.md`), y es el primero de CasaYourte.
 
-`pruebas-modelos.mjs` son 56 casos sobre el cuadro de modelos y sobre la medida del sitio.
+`pruebas-modelos.mjs` son 62 casos sobre el cuadro de modelos y sobre la medida del sitio.
 Existe por cuatro errores del 24-sep-2026 que tienen todos la misma forma: **no rompen nada
 visible**. Los rombos del fondo se dibujaban estirados —×8 en un monitor— y aparecían igual;
 `.hero-body` medía 244 px con un título de 118 px adentro y empujaba el encabezado a 1256 px;
