@@ -187,6 +187,7 @@ body.taller #top{box-shadow:inset 0 -2px 0 var(--bad)}
     <span class="cuenta" id="cuenta">Tocá un texto o una foto · ▲▼ mueve · ＋ agrega · ✕ quita</span>
     <button class="btn" id="secciones" hidden>Secciones</button>
     <button class="btn" id="paginas-taller" hidden>Páginas</button>
+    <button class="btn" id="vista-previa" hidden title="El taller como lo vería el público">👁 Vista previa</button>
     <button class="btn" id="migrar" hidden>⇄ Al sitio</button>
     <button class="btn p" id="guardar">Publicar</button>
     <button class="btn" id="salir">✕</button>
@@ -292,7 +293,7 @@ import { CY } from "./nucleo.js";
 const $ = (id) => document.getElementById(id);
 
 // Sello de este archivo, para saber si quedó viejo en la caché.
-const EDITOR = "editar-17";
+const EDITOR = "editar-18";
 CY.PANEL = EDITOR;
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1106,6 +1107,9 @@ function pintarDestino() {
   if (PAGS[pag] && PAGS[pag].soloTaller && !enTaller()) { pag = "index"; marcar("paginas", "p", pag); }
   // Llevar el taller al sitio es publicar: lo pide el mismo permiso.
   $("migrar").hidden = !enTaller() || !puedePublicar();
+  // La vista previa la puede mirar cualquiera que esté en el taller: mirar no
+  // publica nada.
+  $("vista-previa").hidden = !enTaller();
   // Sin permiso de publicar no hay nada que elegir: el taller es el único
   // lugar donde esa cuenta puede escribir, y la regla de Firestore lo dice.
   $("destinos").classList.toggle("hide", !puedePublicar());
@@ -1615,6 +1619,17 @@ function herramientasAndamio() {
     a.appendChild(x);
   });
 }
+
+/* La vista previa muestra lo GUARDADO: lee `sitio/taller`, no lo que está en
+   memoria acá. Si hay cambios sin guardar se abre igual, pero se avisa — ver
+   una versión vieja creyendo que es la nueva es el error que esto evita. */
+$("vista-previa").addEventListener("click", () => {
+  const u = new URL("index.html", location.href);
+  u.searchParams.set("taller", "1");
+  u.searchParams.set("vista", "1");
+  window.open(CY_IDIOMAS.urlCon(u, idioma).toString(), "_blank", "noopener");
+  if (sucio()) aviso("Ojo: la vista previa muestra lo GUARDADO. Tenés cambios sin guardar.", true);
+});
 
 $("paginas-taller").addEventListener("click", () => {
   pgModo = null;

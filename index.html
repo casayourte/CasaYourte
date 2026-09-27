@@ -2268,6 +2268,12 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
   // el enlace se le puede pasar a alguien sin darle una cuenta. Pero no tiene
   // que entrar a Google: lleva noindex y una barra que lo dice.
   var TALLER = /[?&]taller=1/.test(location.search);
+  // LA VISTA PREVIA (pedida por Mauro el 27-sep-2026): el taller tal como lo
+  // vería el público si se publicara. Lee `sitio/taller`, pero sin la barra
+  // bordó y SIN la dirección del andamio — así los botones que en el sitio
+  // público no tendrían a dónde ir, tampoco la tienen acá. Una vista previa
+  // que mostrara más de lo que se va a publicar sería una promesa falsa.
+  var VISTA = TALLER && /[?&]vista=1/.test(location.search);
   var REST = "https://firestore.googleapis.com/v1/projects/casayourte-mauro"
     + "/databases/(default)/documents/sitio/" + (TALLER ? "taller" : "publicado")
     + "?key=AIzaSyDDD_xvpC4I_ec2OZymyDqVsm1K0ISTr4Q";
@@ -2276,11 +2282,30 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
     // La ÚNICA dirección del andamio en este archivo, y vive acá adentro a
     // propósito: el sitio publicado no tiene cómo enlazarlo. La usan la barra
     // y los botones del cuadro de líneas de trabajo.
-    window.CY_ANDAMIO = "./taller.html";
+    if (!VISTA) window.CY_ANDAMIO = "./taller.html";
     var m = document.createElement("meta");
     m.name = "robots"; m.content = "noindex, nofollow";
     document.head.appendChild(m);
-    document.addEventListener("DOMContentLoaded", function () {
+    // La misma dirección que se está mirando, con o sin `vista=1`: así se
+    // conserva el idioma (`lang=fr`) al ir y volver.
+    var conVista = function (si) {
+      var u = new URL(location.href);
+      if (si) u.searchParams.set("vista", "1"); else u.searchParams.delete("vista");
+      return u.pathname + u.search;
+    };
+    if (VISTA) document.addEventListener("DOMContentLoaded", function () {
+      // Lo ÚNICO que no es del sitio publicado: un botón chico para volver.
+      // Sin él, la vista previa sería una página sin salida.
+      var v = document.createElement("a");
+      v.id = "cy-vista"; v.href = conVista(false);
+      v.textContent = "Vista previa · volver al taller";
+      v.style.cssText = "position:fixed;left:12px;bottom:12px;z-index:9999;"
+        + "font:600 .7rem/1 system-ui,sans-serif;letter-spacing:.02em;color:#fff;"
+        + "background:rgba(122,44,60,.88);padding:.55rem .8rem;border-radius:999px;"
+        + "text-decoration:none;box-shadow:0 2px 10px rgba(0,0,0,.35)";
+      document.body.appendChild(v);
+    });
+    else document.addEventListener("DOMContentLoaded", function () {
       document.body.classList.add("cy-en-taller");
       var c = document.createElement("div");
       c.id = "cy-taller";
@@ -2290,7 +2315,8 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
       // verdad —no un botón con JavaScript— para que ande igual si algo del
       // script de esta página falla.
       c.innerHTML = 'Taller · sitio piloto — esto NO es casayourte.com'
-        + ' · <a href="' + window.CY_ANDAMIO + '" style="color:#fff">ver el andamio</a>';
+        + ' · <a href="' + window.CY_ANDAMIO + '" style="color:#fff">ver el andamio</a>'
+        + ' · <a href="' + conVista(true) + '" style="color:#fff">ver como publicado</a>';
       document.body.insertBefore(c, document.body.firstChild);
     });
   }

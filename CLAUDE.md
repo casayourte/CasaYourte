@@ -200,7 +200,7 @@ el agente y **no es opcional**: que el JavaScript parsee **como MÓDULO**
 incluidos los módulos que viven adentro de un `.html`; que **los cinco bancos
 corran** —`node pruebas-secciones.mjs` (16 casos), `node pruebas-reportes.mjs`
 (64 casos), `node pruebas-andamio.mjs` (89 casos), `node
-pruebas-puertas.mjs` (30 casos) y `node pruebas-modelos.mjs` (76 casos), los
+pruebas-puertas.mjs` (30 casos) y `node pruebas-modelos.mjs` (83 casos), los
 cinco sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
 sellos hayan subido, con la `VERSION` del `sw.js` si el archivo está en `SHELL`
 y los `?v=` con los que se lo pide; y que la documentación del repo diga la
@@ -437,6 +437,14 @@ verdad después del cambio.
   enlaces son `href` de verdad; la View Transitions API es un adorno encima. Y
   respeta `prefers-reduced-motion` — a algunas personas una transición que se
   nota les produce mareo.
+- **La vista previa muestra el taller como lo vería el público, ni más ni
+  menos** (27-sep-2026). `?taller=1&vista=1` lee `sitio/taller` pero sin la
+  barra bordó y **sin `CY_ANDAMIO`**: los botones que en el publicado no
+  tendrían a dónde ir, acá tampoco. Una vista previa que mostrara más de lo
+  que se va a publicar sería una promesa falsa. Lleva `noindex` igual y un
+  botón chico para volver. Se llega desde la barra del taller («ver como
+  publicado») y desde el editor («👁 Vista previa»), que avisa que muestra lo
+  GUARDADO si hay cambios sin guardar.
 - **La autoridad del contenido es Firestore** (`sitio/publicado`). `contenido.json` en
   el repo es respaldo, y los textos de `index.html` el último respaldo.
 - **No subir acá:** cálculos, costos, márgenes, tarifas, proveedores, documentación

@@ -220,5 +220,23 @@ ok("y CY_ANDAMIO se define SÓLO dentro del bloque del taller",
 ok("el archivo no trae textos semilla de líneas: el cuadro nace apagado",
    ![...index.matchAll(/"(ln\.[a-z]+|pg\.[a-z0-9]+\.[td])"\s*:\s*"([^"]+)"/g)].length);
 
+/* ── 14 · la vista previa ───────────────────────────────────── */
+titulo("14 · la vista previa muestra el taller como lo vería el público, ni más ni menos");
+/* Pedido de Mauro, 27-sep-2026. Una vista previa que mostrara algo que el
+   publicado no va a tener —los botones al andamio— sería una promesa falsa. */
+ok("existe el modo, y sólo dentro del taller", /var VISTA = TALLER && \/\[\?&\]vista=1\/\.test\(location\.search\);/.test(index));
+ok("en la vista previa NO se define la dirección del andamio",
+   /if \(!VISTA\) window\.CY_ANDAMIO = "\.\/taller\.html";/.test(index));
+ok("sin la barra bordó: la barra se arma sólo fuera de la vista previa",
+   /if \(VISTA\) document\.addEventListener[\s\S]{0,900}else document\.addEventListener\("DOMContentLoaded", function \(\) \{\s*document\.body\.classList\.add\("cy-en-taller"\)/.test(index));
+ok("pero con un botón para volver, que no deje la página sin salida", /v\.id = "cy-vista"; v\.href = conVista\(false\);/.test(index));
+ok("la barra del taller ofrece «ver como publicado»", /ver como publicado<\/a>/.test(index) && /conVista\(true\)/.test(index));
+ok("el noindex se pone igual: la vista previa tampoco es para Google",
+   /if \(TALLER\) \{[\s\S]{0,1200}m\.name = "robots"; m\.content = "noindex, nofollow";/.test(index)
+   && index.indexOf('m.name = "robots"') < index.indexOf("if (VISTA) document.addEventListener"));
+ok("el editor tiene su botón, y avisa si hay cambios sin guardar",
+   /id="vista-previa"/.test(editar_) && /u\.searchParams\.set\("vista", "1"\)/.test(editar_)
+   && /if \(sucio\(\)\) aviso\("Ojo: la vista previa muestra lo GUARDADO/.test(editar_));
+
 console.log("\n" + bien + " bien · " + mal + " mal");
 process.exit(mal ? 1 : 0);
