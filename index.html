@@ -306,6 +306,34 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
 .linea .ln-ir:not([href]){opacity:.55;cursor:default}
 .lineas-vacia{display:none}
 
+/* ---------- un grupo de bloques, en pestañas ----------
+   La propuesta de sitio limpio (Mauro, 27-sep-2026): la evolución técnica
+   —la trayectoria— como un cuadro de pestañas, igual que los modelos, en vez
+   de cinco bloques uno abajo del otro. NO es otro marcado: son los MISMOS
+   bloques del grupo, y la vista la elige el dato (`orden.traj_vista =
+   "pestanas"`), así que el taller la prueba y el sitio publicado sigue igual.
+   Mismas clases de pestaña que los otros dos cuadros; lo propio es la
+   versión sobre papel, porque la trayectoria vive sobre fondo claro. */
+.grp-tabs{margin-top:clamp(2rem,4vw,3rem)}
+[data-grupo].en-pestanas{display:block;border:1px solid #35302a;background:var(--ink-2);
+  padding:clamp(1.1rem,3vw,2rem);border-radius:0 0 10px 10px;margin-top:-1px}
+.en-pestanas>[data-bloque][hidden]{display:none}
+.en-pestanas>[data-bloque]{border-top:0;padding-top:0}
+.en-pestanas .step-fig{order:0!important}
+/* Adentro de una pestaña el texto se lee de una: el «Leer más» sería un
+   segundo clic para lo mismo. */
+.en-pestanas .mas>summary{display:none}
+.en-pestanas>[data-bloque].entra{animation:mod-entra .34s cubic-bezier(.2,.7,.2,1) both}
+@media(prefers-reduced-motion:reduce){.en-pestanas>[data-bloque].entra{animation:none}}
+.paper .grp-tabs .mod-tab{background:#e6dcc8;border-color:#cfc4ae;color:#6b6254}
+.paper .grp-tabs .mod-tab small{color:#8a8070}
+.paper .grp-tabs .mod-tab:hover{color:var(--ink);border-color:#b9ad96}
+.paper .grp-tabs .mod-tab[aria-selected="true"]{background:#f6f1e7;color:var(--ink);
+  border-color:var(--burg);box-shadow:inset 0 3px 0 var(--burg)}
+.paper .grp-tabs .mod-tab[aria-selected="true"] small{color:var(--burg)}
+.paper .grp-tabs .mod-tab:focus-visible{outline-color:var(--burg)}
+.paper [data-grupo].en-pestanas{background:#f6f1e7;border-color:#cfc4ae}
+
 /* ---------- proceso ---------- */
 .proc{margin:clamp(2.2rem,5vw,3.4rem) 0 0}
 .proc-stage{position:relative;aspect-ratio:16/9;overflow:hidden;background:#0E0C0A;
@@ -402,6 +430,11 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
   text-decoration:none;border:1px solid var(--blond);color:var(--blond);
   padding:.9rem 1.4rem;border-radius:2px;transition:background .25s,color .25s}
 .album-b:hover{background:var(--blond);color:var(--ink)}
+/* La portada CORTA de los álbumes (`orden.alb_vista = "obras"`): las tiras
+   se van a su propia página, `album.html`, y acá queda la invitación. Es lo
+   que pidió el sitio limpio: menos a la vista, y quien quiere más, lo tiene
+   a un toque. Ver `album.html`, «la vista de obras». */
+.alb-corta .alb-lista{display:none}
 
 /* ---------- contact ---------- */
 .cta{display:flex;gap:.7rem;justify-content:center;flex-wrap:wrap;margin-top:2rem}
@@ -1318,6 +1351,110 @@ function lineasFin(){
   lineasElegir(vivos.includes(lnSel)?lnSel:vivos[0],false);
 }
 
+/* ---------- un grupo de bloques, en pestañas ----------
+   La vista la decide el DATO, `orden.<grupo>_vista`, y no el archivo: con
+   "pestanas" el grupo se muestra como un cuadro de pestañas, y con cualquier
+   otra cosa —o nada— como siempre. Así el taller puede probar el sitio limpio
+   sin que el publicado cambie un píxel, y llevarlo al sitio es el mismo acto
+   de siempre.
+
+   `rotulo` es la clave de cada bloque que va en la pestaña: en la trayectoria
+   `sN.yr` —«Primera yurta», «Tierra y paja»—, que es corto y ya existe. Si un
+   bloque lo tiene vacío, la pestaña usa el título, como en los modelos. */
+const PESTANAS = { traj:{ rotulo:"yr" }, dif:{ rotulo:"s" } };
+const VISTAS = {};                         // grupo → "pestanas" | ""
+const grpSel = {};                         // la pestaña elegida, por grupo
+function pestanasArmar(){
+  Object.keys(PESTANAS).forEach(g=>{
+    const cont=document.querySelector('[data-grupo="'+g+'"]'); if(!cont) return;
+    let tira=document.querySelector('[data-tabs-de="'+g+'"]');
+    const bloques=[...cont.querySelectorAll(':scope > [data-bloque]')];
+    if(VISTAS[g]!=="pestanas"){
+      // Vuelta a la vista de siempre: el editor puede cambiar el dato con la
+      // página abierta, y un grupo no puede quedar con la mitad escondida.
+      if(tira) tira.remove();
+      if(cont.classList.contains("en-pestanas")){
+        cont.classList.remove("en-pestanas");
+        bloques.forEach(el=>{ el.hidden=false; el.removeAttribute("role");
+          el.removeAttribute("aria-labelledby"); });
+      }
+      return;
+    }
+    cont.classList.add("en-pestanas");
+    if(!tira){
+      tira=document.createElement("div");
+      tira.className="mod-tabs grp-tabs"; tira.setAttribute("role","tablist");
+      tira.dataset.tabsDe=g;
+      const h=cont.closest("section"); const t=h&&h.querySelector("h2");
+      tira.setAttribute("aria-label",(t&&t.textContent.trim())||g);
+      cont.parentNode.insertBefore(tira,cont);
+      tira.addEventListener("keydown",ev=>{
+        const paso=ev.key==="ArrowRight"?1:ev.key==="ArrowLeft"?-1:0;
+        if(!paso) return;
+        ev.preventDefault();
+        const l=[...tira.querySelectorAll(".mod-tab")];
+        const i=l.findIndex(x=>x.dataset.para===grpSel[g]);
+        const b=l[(i+paso+l.length)%l.length];
+        if(b){ pestanaElegir(g,b.dataset.para,true); b.focus(); }
+      });
+    }
+    bloques.forEach(el=>{
+      // Un bloque escondido en una pestaña nunca cruza la pantalla, así que
+      // la animación de entrada no lo destaparía: se lo da por visto.
+      el.classList.add("in");
+      el.querySelectorAll("details").forEach(d=>{ d.open=true; });
+      el.id=g+"-pan-"+el.dataset.bloque;
+      el.setAttribute("role","tabpanel");
+      el.setAttribute("aria-labelledby",g+"-tab-"+el.dataset.bloque);
+    });
+    const ids=bloques.map(x=>x.dataset.bloque);
+    if(tira.dataset.ids===ids.join(",")) return;          // no cambió el orden
+    tira.dataset.ids=ids.join(",");
+    tira.replaceChildren();
+    ids.forEach((id,i)=>{
+      const b=document.createElement("button");
+      b.type="button"; b.className="mod-tab"; b.setAttribute("role","tab");
+      b.id=g+"-tab-"+id; b.setAttribute("aria-controls",g+"-pan-"+id); b.dataset.para=id;
+      // El `data-i` en un hijo, por lo mismo que en los modelos.
+      const n=document.createElement("span"); n.className="mod-tab-n";
+      n.dataset.i=id+"."+PESTANAS[g].rotulo;
+      const k=document.createElement("small"); k.textContent=String(i+1).padStart(2,"0");
+      b.append(n,k);
+      b.addEventListener("click",()=>pestanaElegir(g,id,true));
+      tira.appendChild(b);
+    });
+  });
+}
+function pestanaElegir(g,id,animar){
+  const cont=document.querySelector('[data-grupo="'+g+'"]'); if(!cont) return;
+  grpSel[g]=id;
+  cont.querySelectorAll(':scope > [data-bloque]').forEach(el=>{
+    const suyo=el.dataset.bloque===id;
+    el.hidden=!suyo;
+    el.classList.remove("entra");
+    if(suyo&&animar){ void el.offsetWidth; el.classList.add("entra"); }
+  });
+  document.querySelectorAll('[data-tabs-de="'+g+'"] .mod-tab').forEach(b=>{
+    const suya=b.dataset.para===id;
+    b.setAttribute("aria-selected",String(suya));
+    if(suya&&animar) b.scrollIntoView({inline:"nearest",block:"nearest"});
+  });
+}
+function pestanasFin(){
+  Object.keys(PESTANAS).forEach(g=>{
+    if(VISTAS[g]!=="pestanas") return;
+    const cont=document.querySelector('[data-grupo="'+g+'"]'); if(!cont) return;
+    const bloques=[...cont.querySelectorAll(':scope > [data-bloque]')];
+    bloques.forEach(el=>{
+      const n=document.querySelector("#"+g+"-tab-"+el.dataset.bloque+" .mod-tab-n");
+      const h=el.querySelector("h3");
+      if(n&&!n.textContent.trim()) n.textContent=(h&&h.textContent.trim())||el.dataset.bloque;
+    });
+    const vivos=bloques.map(el=>el.dataset.bloque);
+    if(vivos.length) pestanaElegir(g,vivos.includes(grpSel[g])?grpSel[g]:vivos[0],false);
+  });
+}
+
 let modSel = null;                         // la pestaña elegida, entre repintados
 function modelosTabs(){
   const cont=document.querySelector('[data-grupo="mod"]');
@@ -1414,6 +1551,7 @@ function paint(lang){
   document.documentElement.lang=lang;
   modelosTabs();          // las pestañas llevan data-i: se arman antes de pintar
   lineasArmar();          // las tarjetas de las líneas, igual
+  pestanasArmar();        // y un grupo en pestañas, si el dato lo pide
   document.querySelectorAll("[data-i]").forEach(el=>{
     const v=d[el.dataset.i]; if(v===undefined) return;
     if(/<em>/.test(v)) el.innerHTML=v; else el.textContent=v;
@@ -1435,6 +1573,7 @@ function paint(lang){
     b.setAttribute("aria-pressed", String(b.dataset.set===lang)));
   modelosFin();           // elegir la pestaña y apagar la sección si está vacía
   lineasFin();
+  pestanasFin();
 }
 /* ---------- los bloques repetibles ----------
    Tres grupos de la página son listas de lo mismo: la trayectoria, los
@@ -1511,6 +1650,11 @@ function crearBloque(g,id){
 function aplicarOrden(orden){
   // El orden de las páginas del andamio también manda en el cuadro de líneas.
   if(orden && typeof orden.pgs==="string") ORDEN_PGS=orden.pgs;
+  // Las VISTAS también viajan en `orden`, que es donde vive la estructura.
+  // Se leen siempre, estén o no: una vista que se sacó tiene que volver.
+  Object.keys(PESTANAS).forEach(g=>{ VISTAS[g]=String((orden||{})[g+"_vista"]||""); });
+  const albs=document.getElementById("albumes");
+  if(albs) albs.classList.toggle("alb-corta", (orden||{}).alb_vista==="obras");
   Object.keys(GRUPOS).forEach(g=>{
     const cont=document.querySelector('[data-grupo="'+g+'"]'); if(!cont) return;
     const lista=((orden||{})[g]||"").split(",").map(x=>x.trim()).filter(Boolean);
@@ -1525,6 +1669,9 @@ function aplicarOrden(orden){
       if(!lista.includes(el.dataset.bloque)) el.remove();
     });
   });
+  // La tira de un grupo en pestañas sale de sus bloques: se rehace acá, con
+  // la estructura, y el editor no tiene que saber que existe.
+  pestanasArmar();
 }
 
 /* ---------- las secciones de la página ----------
@@ -1584,8 +1731,8 @@ window.CY_SITIO = { version:2, GRUPOS, aplicarOrden, aplicarSecciones,
      página todavía vacía, y se quedaba apagado — con la tabla de diámetros a
      la vista. Pasó el 26-sep-2026: el taller mostraba las pestañas por
      `?taller=1` y el editor no. */
-  antesDeEscribir:()=>{ modelosTabs(); lineasArmar(); },
-  despuesDeEscribir:()=>{ modelosFin(); lineasFin(); },
+  antesDeEscribir:()=>{ modelosTabs(); lineasArmar(); pestanasArmar(); },
+  despuesDeEscribir:()=>{ modelosFin(); lineasFin(); pestanasFin(); },
   ids:(g)=>{ const c=document.querySelector('[data-grupo="'+g+'"]');
     return c ? [...c.querySelectorAll(':scope > [data-bloque]')].map(x=>x.dataset.bloque) : []; },
   idsSecciones:()=> seccionesEl().map(x => x.dataset.seccion),
@@ -1615,11 +1762,23 @@ document.querySelectorAll(".lang button").forEach(b=>
     const u = CY_IDIOMAS.urlCon(new URL(location.href), b.dataset.set);
     history.replaceState(null,"",u);
     // El enlace al álbum se lleva el idioma elegido.
-    document.querySelectorAll('a[href^="album.html"]').forEach(a=>{
-      a.setAttribute("href", "album.html" + CY_IDIOMAS.sufijoUrl(b.dataset.set));
-    });
+    enlazarAlbum(b.dataset.set);
   }));
+/* El enlace a los álbumes se lleva el idioma Y el taller. Sin lo segundo, el
+   botón del sitio limpio llevaba del taller al álbum PUBLICADO, que es otra
+   página: quien estaba mirando la propuesta salía de ella sin darse cuenta.
+   Con `vista=1` sigue siendo la vista previa del otro lado también. */
+function enlazarAlbum(l){
+  const aqui=new URLSearchParams(location.search);
+  const q=new URLSearchParams();
+  ["taller","vista"].forEach(k=>{ if(aqui.get(k)==="1") q.set(k,"1"); });
+  if(l && l!==CY_IDIOMAS.fuente()) q.set("lang",l);
+  const s=q.toString();
+  document.querySelectorAll('a[href^="album.html"]').forEach(a=>
+    a.setAttribute("href","album.html"+(s?"?"+s:"")));
+}
 paint(idiomaInicial());
+enlazarAlbum(idiomaInicial());
 
 /* ---------- video de portada ----------
    Con autoplay muted debería arrancar solo, pero no siempre pasa: el
@@ -2142,7 +2301,10 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
   /* ---------- traer ---------- */
   let pedido = false;
   async function cargar() {
-    if (pedido) return; pedido = true;
+    if (pedido) return;
+    // En la portada corta las tiras viven en album.html: acá no se piden.
+    if (seccion.classList.contains("alb-corta")) return;
+    pedido = true;
     estado.textContent = txt("ui.albCargando");
     try {
       const todos = await traer("albums");
@@ -2159,6 +2321,8 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
         if (fotos.length) ALB.push({ ...a, fotos });
       }
       if (!ALB.length) { estado.textContent = txt("ui.albVacio"); return; }
+      // El taller pudo decir «portada corta» mientras esto viajaba.
+      if (seccion.classList.contains("alb-corta")) return;
       pintar();
     } catch (e) {
       // Sin álbumes el sitio sigue entero: la sección se queda con su invitación.

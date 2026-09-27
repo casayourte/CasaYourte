@@ -142,8 +142,15 @@ titulo("14 · las claves del andamio pueden nacer al escribirlas");
 /* El 24-sep-2026 `sitio/taller` tenía CERO claves `pg.*`: las doce páginas se
    veían y no se podía tocar ni un nombre. `cablear()` sólo vuelve tocable una
    clave que YA exista en el idioma fuente. */
-ok("el editor hace la excepción, y sólo para `pg.`",
-   /&& !\/\^pg\\\.\/\.test\(clave\)\) return;/.test(editor));
+/* Desde el 27-sep-2026 la excepción vale también para las descripciones de las
+   obras (`alb.obra.<id>`), por el mismo motivo: la clave la arma la página con
+   un patrón conocido. Se corre la expresión de verdad: tiene que dejar nacer
+   ésas dos familias y NINGUNA otra. */
+const exc = /&& !(\/[^\n]*?\/)\.test\(clave\)\) return;/.exec(editor);
+const nace = exc ? new Function("return " + exc[1])() : null;
+ok("el editor hace la excepción, y sólo para `pg.` y `alb.obra.`",
+   !!nace && nace.test("pg.a.t") && nace.test("pg.b.b3") && nace.test("alb.obra.primeras-obras")
+   && !nace.test("alb.lede") && !nace.test("m1.t") && !nace.test("hero.lede") && !nace.test("xpg.a"));
 
 titulo("15 · `enlaces` viaja con el contenido");
 /* `setDoc` reemplaza el documento entero: un campo que no viaje se pierde. */

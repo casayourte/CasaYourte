@@ -180,8 +180,8 @@ titulo("12 · en el editor el cuadro se decide DESPUÉS de escribir los textos")
    quedaba apagado —con la tabla a la vista— aunque `?taller=1` lo mostraba. */
 const editar_ = leer("editar.html");
 ok("la página ofrece los dos avisos en su contrato",
-   /antesDeEscribir:\(\)=>\{ modelosTabs\(\); lineasArmar\(\); \}/.test(codigo)
-   && /despuesDeEscribir:\(\)=>\{ modelosFin\(\); lineasFin\(\); \}/.test(codigo));
+   /antesDeEscribir:\(\)=>\{ modelosTabs\(\); lineasArmar\(\);[^}]*\}/.test(codigo)
+   && /despuesDeEscribir:\(\)=>\{ modelosFin\(\); lineasFin\(\);[^}]*\}/.test(codigo));
 const pinta_ = editar_.slice(editar_.indexOf("function pintarEnIframe()"), editar_.indexOf("function aplicarImagenes()"));
 const iA = pinta_.indexOf("c.antesDeEscribir()"), iE = pinta_.indexOf('querySelectorAll("[" + cfg.attr'), iD = pinta_.indexOf("c.despuesDeEscribir()");
 ok("el editor avisa ANTES de escribir", iA > -1 && iA < iE);
@@ -252,6 +252,83 @@ ok("el logo del negocio NO es el blanco sobre transparente (en fondo claro no se
    ldw.some((x) => x["@type"] === "LocalBusiness" && x.logo && !/assets\/logo\.png/.test(x.logo)));
 const robots = leer("robots.txt");
 ok("robots.txt no bloquea los íconos", !/Disallow: \/favicon/.test(robots) && /Allow: \/favicon\.ico/.test(robots));
+
+/* ── 16 · el sitio limpio ──────────────────────────────── */
+titulo("16 · El sitio limpio: vistas que elige el dato, no el archivo");
+/* 27-sep-2026, pedido de Mauro: menos contenido a la vista, la evolución
+   técnica en pestañas y una página de obras con su pase automático. Todo
+   eso lo PRUEBA el taller: si una vista dependiera del archivo y no del
+   dato, el sitio publicado cambiaría el mismo día sin que nadie lo apruebe. */
+const album = leer("album.html");
+const codAlbum = sinComentarios(album);
+ok("la trayectoria puede ir en pestañas, con su renglón «yr» como rótulo",
+   /const PESTANAS = \{ traj:\{ rotulo:"yr" \}/.test(codigo));
+ok("la vista sale de `orden.<grupo>_vista`, leída en aplicarOrden",
+   /VISTAS\[g\]=String\(\(orden\|\|\{\}\)\[g\+"_vista"\]\|\|""\)/.test(codigo)
+   && codigo.indexOf("VISTAS[g]=") > codigo.indexOf("function aplicarOrden"));
+ok("sin «pestanas», el grupo vuelve a la vista de siempre (el editor puede cambiarlo en vivo)",
+   /if\(VISTAS\[g\]!=="pestanas"\)\{[\s\S]{0,200}tira\.remove\(\)[\s\S]{0,200}el\.hidden=false/.test(codigo));
+ok("la tira va AFUERA del grupo (aplicarOrden borra lo que no es un bloque)",
+   /cont\.parentNode\.insertBefore\(tira,cont\)/.test(codigo));
+ok("el rótulo va en un HIJO del botón, como en los modelos",
+   /n\.dataset\.i=id\+"\."\+PESTANAS\[g\]\.rotulo/.test(codigo));
+ok("un paso escondido en una pestaña se da por visto (si no, quedaba invisible)",
+   /el\.classList\.add\("in"\)/.test(codigo.slice(codigo.indexOf("function pestanasArmar"))));
+ok("se arma antes de escribir y se elige después, en paint() y en el contrato",
+   /pestanasArmar\(\);[\s\S]{0,400}querySelectorAll\("\[data-i\]"\)[\s\S]*pestanasFin\(\);\s*\}/.test(codigo.slice(codigo.indexOf("function paint(lang)")))
+   && /antesDeEscribir:\(\)=>\{[^}]*pestanasArmar\(\)/.test(codigo)
+   && /despuesDeEscribir:\(\)=>\{[^}]*pestanasFin\(\)/.test(codigo));
+ok("y se rehace con la estructura, al final de aplicarOrden",
+   /pestanasArmar\(\);\s*\}\s*\/\*/.test(index.slice(index.indexOf("function aplicarOrden"))));
+ok("la portada corta de álbumes la pide `orden.alb_vista`",
+   /classList\.toggle\("alb-corta", \(orden\|\|\{\}\)\.alb_vista==="obras"\)/.test(codigo)
+   && /\.alb-corta \.alb-lista\{display:none\}/.test(index));
+ok("y en ella la portada NO baja las tiras (ni antes ni después de pedirlas)",
+   (codigo.match(/seccion\.classList\.contains\("alb-corta"\)/g) || []).length === 2);
+ok("el enlace al álbum conserva el taller y la vista previa",
+   /\["taller","vista"\]\.forEach\(k=>\{ if\(aqui\.get\(k\)==="1"\) q\.set\(k,"1"\); \}\)/.test(codigo)
+   && /enlazarAlbum\(idiomaInicial\(\)\)/.test(codigo));
+ok("album.html lee el TALLER cuando se lo pide la dirección",
+   /"sitio\/" \+ \(TALLER \? "taller" : "publicado"\)/.test(codAlbum));
+ok("y en el taller no entra a Google y lleva el cartel",
+   /if \(TALLER\) \{[\s\S]{0,160}noindex, nofollow/.test(codAlbum) && /id = "cy-taller"/.test(codAlbum));
+ok("la vista de obras la elige el dato",
+   /orden\.alb_vista === "obras"/.test(codAlbum) && /if \(OBRAS\) return pintarObras\(\)/.test(codAlbum));
+ok("una obra es un álbum que no es producto (la yurta mongol no es un proyecto)",
+   /albumes\.filter\(\(a\) => a\.tipo !== "producto"\)/.test(codAlbum));
+ok("la descripción es el texto `alb.obra.<id>`, por idioma",
+   /desc\.dataset\.t = "obra\." \+ a\.id/.test(codAlbum) && /d\["obra\." \+ a\.id\]/.test(codAlbum));
+ok("el pase no corre en el editor, ni con el visor abierto, ni fuera de pantalla",
+   /const debe = this\.visible && !this\.manual && !abiertas\[a\.id\] && !visorAbierto\s*&& !EDITANDO/.test(codAlbum));
+ok("quien pidió menos movimiento recibe el pase quieto",
+   /prefers-reduced-motion: reduce/.test(codAlbum) && /manual: QUIETO/.test(codAlbum));
+ok("sin deslizar con el dedo (pelea con el desplazamiento de la página)",
+   !/touchstart|pointerdown|swipe/i.test(codAlbum));
+ok("el editor se entera cuando llegan las fotos",
+   /window\.CY_SITIO = \{ version: 2, GRUPOS: \{\}/.test(codAlbum) && (codAlbum.match(/avisar\(\)/g) || []).length >= 4);
+ok("el visor recibe el NOMBRE de la etapa, no el id (decía «undefined»)",
+   /etapaTxt: etapa \? nombreEtapa\(etapa\) : d\.sinEtapa/.test(codAlbum)
+   && !/nombreEtapa\(f\.etapa\)/.test(codAlbum));
+// El orden del pase y el de la rejilla tienen que ser el mismo: la foto N del
+// pase abre la foto base+N del visor. Se corre la función de verdad.
+const trozo = (ini, fin) => codAlbum.slice(codAlbum.indexOf(ini), codAlbum.indexOf(fin, codAlbum.indexOf(ini)));
+const fuente = trozo("const ETAPAS", "const idiomaDeducido") + trozo("const legible", "function nombreEtapa")
+  + trozo("function enOrdenDeObra", "const CADA");
+const enOrden = new Function("CY_IDIOMAS", fuente + "; return enOrdenDeObra;")({ fuente: () => "es" });
+const prueba = { etapas: [{ id: "b", es: "b" }, { id: "a", es: "a" }],
+  fotos: [{ id: 1, etapa: "a", orden: 1 }, { id: 2, etapa: "x", orden: 0 },
+          { id: 3, etapa: "b", orden: 5 }, { id: 4, etapa: "b", orden: 2 }] };
+ok("el pase va en el orden de la obra: etapa del álbum, después `orden`, lo suelto al final",
+   enOrden(prueba).map((f) => f.id).join() === "4,3,1,2");
+ok("que es el orden en que la rejilla las dibuja y las suma al visor",
+   /const cats = etapasDe\(a\)[\s\S]{0,400}if \(sueltas\.length\) grupos\.push\(\[null, sueltas\]\)/.test(codAlbum)
+   && /pintarEtapas\(etapas, a\)/.test(codAlbum) && /abrirVisor\(base \+ pase\.cur\)/.test(codAlbum));
+ok("el editor deja escribir la descripción de una obra aunque no exista todavía",
+   /!\/\^\(pg\|alb\\\.obra\)\\\.\/\.test\(clave\)/.test(editar));
+ok("y vuelve a escribir y cablear cuando la página de álbumes se repinta",
+   /if \(c0 && pag === "album"\) c0\.alPintar = \(\) => \{ pintarEnIframe\(\); cablear\(\); \}/.test(editar));
+ok("mover un paso en pestañas rehace la tira",
+   /cont\.classList\.contains\("en-pestanas"\)\) \{ pintarEnIframe\(\); cablear\(\); \}/.test(editar));
 
 console.log("\n" + bien + " bien · " + mal + " mal");
 process.exit(mal ? 1 : 0);

@@ -200,7 +200,7 @@ el agente y **no es opcional**: que el JavaScript parsee **como MÓDULO**
 incluidos los módulos que viven adentro de un `.html`; que **los cinco bancos
 corran** —`node pruebas-secciones.mjs` (16 casos), `node pruebas-reportes.mjs`
 (64 casos), `node pruebas-andamio.mjs` (89 casos), `node
-pruebas-puertas.mjs` (63 casos) y `node pruebas-modelos.mjs` (89 casos), los
+pruebas-puertas.mjs` (64 casos) y `node pruebas-modelos.mjs` (115 casos), los
 cinco sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
 sellos hayan subido, con la `VERSION` del `sw.js` si el archivo está en `SHELL`
 y los `?v=` con los que se lo pide; y que la documentación del repo diga la
@@ -474,6 +474,29 @@ verdad después del cambio.
   botón chico para volver. Se llega desde la barra del taller («ver como
   publicado») y desde el editor («👁 Vista previa»), que avisa que muestra lo
   GUARDADO si hay cambios sin guardar.
+- **El sitio limpio es una propuesta que elige el DATO, no el archivo**
+  (27-sep-2026, pedido de Mauro: menos a la vista, más a un toque). Tres
+  piezas, las tres en `sitio/taller` y ninguna en el HTML: `secciones` y
+  `ocultas` dejan siete secciones a la vista; `orden.traj_vista = "pestanas"`
+  muestra la trayectoria como el cuadro de «evolución técnica», con los MISMOS
+  bloques; y `orden.alb_vista = "obras"` hace que la portada sólo invite a los
+  álbumes y que `album.html?taller=1` sea una página por obra, con su pase
+  automático y su descripción (`alb.obra.<id>`). **Por eso el publicado no
+  cambió un píxel**, y llevarlo al sitio es el «Al sitio» de siempre. Si
+  alguna vez una vista pasa a depender del archivo, el publicado cambia el día
+  que se sube, sin que nadie lo apruebe.
+  **`album.html` también tiene taller**: con `?taller=1` lee `sitio/taller`,
+  lleva noindex y el cartel, y todas sus vueltas —la marca, el pie, «volver»—
+  vuelven al taller. Y el enlace de la portada a los álbumes conserva `taller`
+  y `vista`: antes el botón sacaba a quien miraba la propuesta hacia el álbum
+  publicado sin que se diera cuenta.
+  **El pase de cada obra es el de la portada**: fundido, sin deslizar con el
+  dedo (pelea con el desplazamiento), corre sólo en pantalla, se frena con el
+  visor, con Pausa, con las fotos desplegadas y en el editor, y arranca quieto
+  si el teléfono pide menos movimiento. Su orden es el de la obra —etapa del
+  álbum y después `orden`—, que es el mismo en que la rejilla dibuja las fotos
+  y las suma al visor: por eso la foto N del pase abre la foto N del visor.
+  **Una obra es un álbum que no es `producto`**: la yurta mongol no aparece.
 - **El ícono de Google NO es `assets/logo.png`** (27-sep-2026). Hasta ese día
   la portada no declaraba ícono y en la raíz no había `favicon.ico`: Google
   mostraba el globito genérico. El logo es blanco sobre transparente y en un

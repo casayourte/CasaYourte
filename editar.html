@@ -411,6 +411,25 @@ body.taller #top{box-shadow:inset 0 -2px 0 var(--bad)}
         todavía no aparece, porque las páginas sólo existen en el taller.</p>
     </div></details>
 
+    <details><summary>La evolución técnica, en pestañas</summary><div class="det">
+      <p>En el taller, la <b>trayectoria</b> se muestra como un cuadro de
+        pestañas, igual que los modelos. Son <b>los mismos bloques de
+        siempre</b>: el nombre de cada pestaña es el renglón chico de arriba
+        del título («Primera yurta», «Tierra y paja»), y se toca ahí.</p>
+      <p><b>▲ ▼</b> cambia el orden de las pestañas, y <b>＋</b> suma una.
+        En el sitio publicado la trayectoria sigue en su forma de siempre
+        hasta que el taller se publique.</p>
+    </div></details>
+
+    <details><summary>Álbumes: una página por obra</summary><div class="det">
+      <p>Arriba, <b>Álbumes</b> abre la página de las obras. En el taller cada
+        obra tiene su pase de fotos, que corre solo, y una
+        <b>descripción</b>: tocala y escribí de qué se trata esa obra. Una
+        descripción vacía no se ve en el sitio.</p>
+      <p>Las fotos, su orden y sus etapas se siguen eligiendo en el panel de
+        álbumes: acá sólo se escribe el texto.</p>
+    </div></details>
+
     <details><summary>Andamio: las páginas</summary><div class="det">
       <p>Arriba, <b>Andamio</b> abre las páginas del taller: cuatro secciones
         con dos páginas adentro de cada una. Abajo aparece el botón
@@ -473,7 +492,7 @@ import { CY } from "./nucleo.js";
 const $ = (id) => document.getElementById(id);
 
 // Sello de este archivo, para saber si quedó viejo en la caché.
-const EDITOR = "editar-21";
+const EDITOR = "editar-22";
 CY.PANEL = EDITOR;
 
 /* ═══════════════════════════════════════════════════════════════
@@ -841,6 +860,10 @@ function preparar() {
      parecía que el editor se había roto. Ahora recablea solo. */
   const c0 = contrato();
   if (c0 && esAndamio()) c0.alPintar = () => { cablear(); if (!$("hoja-pgs").classList.contains("hide")) pintarPaginas(); };
+  /* LOS ÁLBUMES TAMBIÉN. Las fotos llegan por la red DESPUÉS de que el editor
+     escribió los textos, y con ellas las descripciones de cada obra: sin este
+     aviso quedaban vacías e intocables. */
+  if (c0 && pag === "album") c0.alPintar = () => { pintarEnIframe(); cablear(); };
 
   // El orden, las altas y las bajas se aplican con el contrato de la página.
   aplicarEstructura();
@@ -899,7 +922,9 @@ function cablear() {
        no inventa nada. */
     // Y vale en cualquier página, no sólo en el andamio: desde el 27-sep-2026
     // el cuadro de líneas del sitio muestra los MISMOS `pg.<id>.t/.d`.
-    if (!(clave in (CONT[FUENTE] || {})) && !/^pg\./.test(clave)) return;
+    // Las descripciones de las obras (`alb.obra.<id>`) son el mismo caso: la
+    // clave la arma `album.html` con el id del álbum, y nace al escribirla.
+    if (!(clave in (CONT[FUENTE] || {})) && !/^(pg|alb\.obra)\./.test(clave)) return;
     if (Array.isArray(CONT[FUENTE][clave])) return;   // listas y tablas, aparte
     if (el.dataset.editable === clave) return;        // ya está atado
     el.dataset.editable = clave;
@@ -1115,7 +1140,9 @@ function mover(cont, el, dir) {
   /* Los modelos tienen además su tira de pestañas, que se arma leyendo los
      bloques: mover uno sin rehacerla dejaba las pestañas en el orden viejo
      hasta recargar — el manual dice que ▲▼ ordena, y tiene que ser cierto. */
-  if (cont.dataset.grupo === "mod") { pintarEnIframe(); cablear(); }
+  // Y lo mismo cualquier grupo que el taller muestre en pestañas (la
+  // trayectoria del sitio limpio): la tira también sale de los bloques.
+  if (cont.dataset.grupo === "mod" || cont.classList.contains("en-pestanas")) { pintarEnIframe(); cablear(); }
   contar();
   el.scrollIntoView({ block: "center", behavior: "smooth" });
 }

@@ -135,6 +135,7 @@ titulo("EL MANUAL DEL EDITOR — que exista, que se llegue, y que no mienta");
     ["Mudar un bloque (→)", /<b>→<\/b>/, /class="muda"/],
     ["Enlazar (🔗)", /🔗/, /liga\.textContent = "🔗"/],
     ["El globo de pedidos", /globo/, /id="globo"/],
+    ["La página de obras", /<b>Álbumes<\/b> abre la página de las obras/, /data-p="album"/],
   ];
   for (const [t, enManual, enEditor] of temas)
     ok("el manual explica «" + t + "» y el editor lo tiene", enManual.test(man) && enEditor.test(ed));
