@@ -376,10 +376,9 @@ body.taller #top{box-shadow:inset 0 -2px 0 var(--bad)}
           para reemplazar. Si lleva foto, tocá el marco vacío para elegirla.</li>
         <li><b>✕</b> lo quita.</li>
       </ul>
-      <p class="ojo">Los bloques que <b>ya venían</b> con el sitio vuelven a
-        aparecer la próxima vez que alguien guarda, aunque los quites. Si
-        querés sacar uno de esos, pedilo con el globo. Los que agregaste vos
-        con ＋ sí se quitan del todo.</p>
+      <p>Quitar es definitivo para la página, también con los bloques que ya
+        venían con el sitio. Los textos quedan guardados: si alguna vez hay que
+        recuperar uno, se pide con el globo.</p>
     </div></details>
 
     <details><summary>Secciones de la página</summary><div class="det">
@@ -474,7 +473,7 @@ import { CY } from "./nucleo.js";
 const $ = (id) => document.getElementById(id);
 
 // Sello de este archivo, para saber si quedó viejo en la caché.
-const EDITOR = "editar-20";
+const EDITOR = "editar-21";
 CY.PANEL = EDITOR;
 
 /* ═══════════════════════════════════════════════════════════════
@@ -980,10 +979,20 @@ function aplicarEstructura() {
 // Los bloques que estén en el HTML y no en la lista guardada se suman al
 // final. Nunca al revés: una lista vieja no puede hacer desaparecer algo
 // que el archivo trae (§3.35).
+/* LOS QUE SE QUITARON A PROPÓSITO (27-sep-2026). La unión de abajo existe para
+   que una lista vieja no haga desaparecer un bloque que el archivo trae (§3.35).
+   Pero no distinguía un bloque NUEVO en el archivo de uno que alguien QUITÓ, y
+   sumaba los dos: quitar uno de fábrica duraba hasta el próximo guardado. Pasó
+   con la yurta gemela. Ahora quitar lo anota en `orden.<grupo>_fuera` —el mismo
+   mapa `orden`, sin campo nuevo— y la unión lo respeta. */
+const fueraDe = (g) => String((CONT.orden || {})[g + "_fuera"] || "")
+  .split(",").map(x => x.trim()).filter(Boolean);
+
 function unirBloquesDelHtml() {
   const c = contrato(); if (!c) return;
   Object.keys(c.GRUPOS).forEach((g) => {
-    const enHtml = c.ids(g);
+    const fuera = fueraDe(g);
+    const enHtml = c.ids(g).filter((id) => !fuera.includes(id));
     if (!enHtml.length) return;
     const guardada = String(CONT.orden[g] || "").split(",").map(x => x.trim()).filter(Boolean);
     if (!guardada.length) {
@@ -1058,14 +1067,18 @@ function agregarBloque(g, despuesDe) {
 }
 
 function quitarBloque(g, id) {
-  if (!confirm("¿Quitar este bloque del sitio?\n\nSus textos quedan guardados: si lo volvés "
-             + "a agregar, vuelven con él.")) return;
+  if (!confirm("¿Quitar este bloque del sitio?\n\nSe va de la página. Sus textos quedan "
+             + "guardados, por si alguna vez hay que recuperarlo.")) return;
   const lista = String(CONT.orden[g] || "").split(",").map(x => x.trim()).filter(Boolean);
   const i = lista.indexOf(id);
   if (i < 0) return;
   if (lista.length === 1) return aviso("Un grupo no puede quedar sin ningún bloque", true);
   lista.splice(i, 1);
   CONT.orden[g] = lista.join(",");
+  // Y se anota que se quitó A PROPÓSITO: sin esto, si el bloque está escrito en
+  // el archivo, la unión lo volvía a sumar la próxima vez que alguien abría.
+  const fuera = fueraDe(g);
+  if (!fuera.includes(id)) { fuera.push(id); CONT.orden[g + "_fuera"] = fuera.join(","); }
   rehacer();
   aviso("Bloque quitado. Falta publicar.");
 }

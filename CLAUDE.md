@@ -200,7 +200,7 @@ el agente y **no es opcional**: que el JavaScript parsee **como MÓDULO**
 incluidos los módulos que viven adentro de un `.html`; que **los cinco bancos
 corran** —`node pruebas-secciones.mjs` (16 casos), `node pruebas-reportes.mjs`
 (64 casos), `node pruebas-andamio.mjs` (89 casos), `node
-pruebas-puertas.mjs` (56 casos) y `node pruebas-modelos.mjs` (83 casos), los
+pruebas-puertas.mjs` (63 casos) y `node pruebas-modelos.mjs` (89 casos), los
 cinco sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
 sellos hayan subido, con la `VERSION` del `sw.js` si el archivo está en `SHELL`
 y los `?v=` con los que se lo pide; y que la documentación del repo diga la
@@ -362,9 +362,13 @@ verdad después del cambio.
   suma a la lista guardada todo bloque escrito en el HTML (§3.35), así que un
   bloque que exista acá VUELVE cada vez que alguien guarda aunque se lo haya
   quitado: pasó con la yurta gemela. Un modelo nuevo se agrega desde el
-  editor y nace de la lista. Ojo que lo mismo vale para la trayectoria, los
-  diferenciales y la oferta: quitar uno de sus bloques escritos en el HTML no
-  dura.
+  editor y nace de la lista.
+  **Y desde `editar-21` quitar un bloque DURA** (27-sep-2026, pedido de Mauro).
+  La unión de §3.35 no distinguía un bloque NUEVO en el archivo de uno QUITADO
+  a propósito, y sumaba los dos. Ahora `quitarBloque()` lo anota en
+  `orden.<grupo>_fuera` —el mismo mapa `orden`, sin campo nuevo— y
+  `unirBloquesDelHtml()` lo respeta; un bloque nuevo del archivo se sigue
+  sumando. El sitio no lee esas claves: `aplicarOrden` sólo recorre `GRUPOS`.
   **Cada modelo lleva además `c`, la comparación con el anterior**, y un
   modelo sin foto propia no muestra un marco negro: la yurta mongol no es una
   obra de CasaYourte y ninguna foto de los álbumes la ilustra.
@@ -441,9 +445,9 @@ verdad después del cambio.
   Pedido de Mauro: que Romina entienda sola cómo se edita cada cosa. Se abre
   con el **«?»** de arriba a la izquierda —para todos, no sólo para quien no
   publica— y la orientación del primer ingreso lleva a él. Está en
-  desplegables, un tema por cosa editable, y avisa las dos trampas que hoy
-  existen: los bloques de fábrica que vuelven al quitarlos, y que guardar
-  escribe el taller ENTERO.
+  desplegables, un tema por cosa editable, y dice lo que no se deduce
+  mirando: que guardar escribe el taller ENTERO (y que Guardar avisa si otro
+  lo cambió), y que quitar un bloque es definitivo para la página.
   **Si cambia algo del editor, el manual cambia en la misma tanda**:
   `pruebas-puertas.mjs` ata cada tema del manual a un botón que exista, y
   falla si se saca el botón y el manual lo sigue nombrando. Y como el editor
@@ -470,6 +474,14 @@ verdad después del cambio.
   botón chico para volver. Se llega desde la barra del taller («ver como
   publicado») y desde el editor («👁 Vista previa»), que avisa que muestra lo
   GUARDADO si hay cambios sin guardar.
+- **El ícono de Google NO es `assets/logo.png`** (27-sep-2026). Hasta ese día
+  la portada no declaraba ícono y en la raíz no había `favicon.ico`: Google
+  mostraba el globito genérico. El logo es blanco sobre transparente y en un
+  resultado con fondo claro no se vería nada; por eso `favicon.ico` y
+  `favicon.png` salen de `icono-512.png` recortado, con su fondo oscuro. Google
+  pide un cuadrado de lado múltiplo de 48 px. Y el nombre en los resultados
+  lo da el bloque `WebSite` de la portada. Tarda: Google vuelve a leer el
+  ícono cuando vuelve a rastrear la portada, en días o semanas.
 - **La autoridad del contenido es Firestore** (`sitio/publicado`). `contenido.json` en
   el repo es respaldo, y los textos de `index.html` el último respaldo.
 - **No subir acá:** cálculos, costos, márgenes, tarifas, proveedores, documentación

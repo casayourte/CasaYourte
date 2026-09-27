@@ -138,7 +138,8 @@ titulo("EL MANUAL DEL EDITOR — que exista, que se llegue, y que no mienta");
   ];
   for (const [t, enManual, enEditor] of temas)
     ok("el manual explica «" + t + "» y el editor lo tiene", enManual.test(man) && enEditor.test(ed));
-  ok("advierte que los bloques de fábrica vuelven al quitarlos", /vuelven a\s+aparecer/.test(man));
+  ok("dice que quitar un bloque es definitivo, y ya no la trampa vieja",
+     /Quitar es definitivo/.test(man) && !/vuelven a\s+aparecer/.test(man));
   ok("explica que Guardar avisa si otro cambió el taller", /<b>Guardar te avisa<\/b>/.test(man));
   ok("el reporte de fallas se hace desde el manual, porque el editor no tiene menú de cuenta",
      /id="manual-falla"/.test(man) && /\$\("manual-falla"\)[\s\S]{0,120}CY\.reportar\("falla"\)/.test(ed)
@@ -181,6 +182,49 @@ titulo("GUARDAR AVISA SI OTRO CAMBIÓ EL DOCUMENTO — corrido de verdad");
   ok("y después de guardar la referencia se renueva, o se avisaría a sí mismo",
      /REF = referencia\(nuevo\.exists\(\) \? nuevo\.data\(\) : null\);/.test(ed));
   ok("la referencia se toma al cargar el contenido", /const d = await getDoc\(doc\(db, "sitio", destino\)\);\s*REF = referencia/.test(ed));
+}
+
+titulo("QUITAR UN BLOQUE DURA — corrido de verdad");
+/* 27-sep-2026. La unión con el archivo (§3.35) volvía a sumar los bloques que
+   alguien quitó, si estaban escritos en el HTML: pasó con la yurta gemela. */
+{
+  const ed = leer("editar.html");
+  const sacar = (n) => {
+    const i = ed.indexOf("function " + n + "("); if (i < 0) throw new Error("no está " + n);
+    let j = ed.indexOf("{", i), k = j, d = 0;
+    for (; k < ed.length; k++) { if (ed[k] === "{") d++; else if (ed[k] === "}" && !--d) break; }
+    return ed.slice(i, k + 1);
+  };
+  const fueraSrc = ed.slice(ed.indexOf("const fueraDe = "), ed.indexOf("function unirBloquesDelHtml"));
+  const armar = (enHtml, orden) => {
+    const CONT = { orden: { ...orden } }, ORIG = { orden: { ...orden } }, avisos = [];
+    const f = new Function("CONT", "ORIG", "contrato", "confirm", "rehacer", "aviso",
+      fueraSrc + sacar("unirBloquesDelHtml") + "\n" + sacar("quitarBloque")
+      + "\nreturn { unirBloquesDelHtml, quitarBloque };")(
+      CONT, ORIG, () => ({ GRUPOS: { traj: {} }, ids: () => enHtml.slice() }),
+      () => true, () => {}, (t) => avisos.push(t));
+    return { ...f, CONT, avisos };
+  };
+  // s1..s5 escritos en el archivo, y la lista guardada igual.
+  let t = armar(["s1","s2","s3","s4","s5"], { traj: "s1,s2,s3,s4,s5" });
+  t.quitarBloque("traj", "s3");
+  ok("quitar saca el bloque de la lista", t.CONT.orden.traj === "s1,s2,s4,s5");
+  ok("y lo anota como quitado a propósito", t.CONT.orden.traj_fuera === "s3");
+  t.unirBloquesDelHtml();               // lo que pasa al volver a abrir el editor
+  ok("al volver a abrir, el quitado NO vuelve aunque esté en el archivo", t.CONT.orden.traj === "s1,s2,s4,s5");
+  t = armar(["s1","s2","s3","s4","s5","s6"], { traj: "s1,s2,s4,s5", traj_fuera: "s3" });
+  t.unirBloquesDelHtml();
+  ok("pero un bloque NUEVO en el archivo se suma igual (§3.35 sigue valiendo)", t.CONT.orden.traj === "s1,s2,s4,s5,s6");
+  t = armar(["s1","s2","s3"], { traj: "s1,s2,s3" });
+  t.quitarBloque("traj", "s2"); t.quitarBloque("traj", "s2");
+  ok("quitar dos veces el mismo no lo anota dos veces", t.CONT.orden.traj_fuera === "s2");
+  t = armar(["s1"], { traj: "s1" });
+  t.quitarBloque("traj", "s1");
+  ok("el último bloque de un grupo no se puede quitar, ni queda anotado",
+     t.CONT.orden.traj === "s1" && !t.CONT.orden.traj_fuera && t.avisos.some((x) => /sin ningún bloque/.test(x)));
+  t = armar(["s1","s2","s3"], {});
+  t.unirBloquesDelHtml();
+  ok("la primera vez, sin lista guardada, la lista sale del archivo", t.CONT.orden.traj === "s1,s2,s3");
 }
 
 console.log(`\n${bien} bien · ${mal} mal`);

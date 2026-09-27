@@ -238,5 +238,20 @@ ok("el editor tiene su botón, y avisa si hay cambios sin guardar",
    /id="vista-previa"/.test(editar_) && /u\.searchParams\.set\("vista", "1"\)/.test(editar_)
    && /if \(sucio\(\)\) aviso\("Ojo: la vista previa muestra lo GUARDADO/.test(editar_));
 
+/* ── 15 · el ícono y el nombre en Google ───────────────────── */
+titulo("15 · Google encuentra el ícono y el nombre del sitio");
+/* 27-sep-2026: en los resultados salía el globito genérico y «casayourte.com»
+   en vez de «CasaYourte». La portada no declaraba ningún ícono y en la raíz no
+   había favicon.ico. */
+ok("la portada declara el favicon.ico", /<link rel="icon" href="\/favicon\.ico"/.test(marcado));
+ok("y un PNG de 192 px, múltiplo de 48 como pide Google", /<link rel="icon" href="\/favicon\.png" type="image\/png" sizes="192x192">/.test(marcado));
+ok("los dos archivos existen en la raíz", (() => { try { leer("favicon.ico"); leer("favicon.png"); return true; } catch (e) { return false; } })());
+const ldw = [...index.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((m) => JSON.parse(m[1]));
+ok("declara el sitio con su nombre (WebSite · CasaYourte)", ldw.some((x) => x["@type"] === "WebSite" && x.name === "CasaYourte"));
+ok("el logo del negocio NO es el blanco sobre transparente (en fondo claro no se ve)",
+   ldw.some((x) => x["@type"] === "LocalBusiness" && x.logo && !/assets\/logo\.png/.test(x.logo)));
+const robots = leer("robots.txt");
+ok("robots.txt no bloquea los íconos", !/Disallow: \/favicon/.test(robots) && /Allow: \/favicon\.ico/.test(robots));
+
 console.log("\n" + bien + " bien · " + mal + " mal");
 process.exit(mal ? 1 : 0);

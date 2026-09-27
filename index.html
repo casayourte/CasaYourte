@@ -7,6 +7,16 @@
 <meta name="description" content="Yurtas desmontables con la resistencia de una construcción fija: trei a 60°, doble anillo periférico, doble techo ventilado y piso aislado. Yurta completa, planos para autoconstrucción, lonas a medida, montaje y formación. Uruguay, Argentina y Brasil; en Europa con talleres amigos.">
 <meta name="author" content="Mauro Gastaldello">
 <link rel="canonical" href="https://casayourte.com/">
+<!-- EL ÍCONO, que es lo que Google pone al lado del nombre en los resultados.
+     Hasta el 27-sep-2026 esta página no declaraba ninguno y en la raíz no había
+     favicon.ico: Google mostraba el globito genérico. Se usa un ícono PROPIO y
+     no assets/logo.png, porque el logo es blanco sobre transparente y en un
+     resultado con fondo claro no se vería nada. Google pide un cuadrado de
+     lado múltiplo de 48 px: el .ico trae 16, 32 y 48, y el .png 192. -->
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" href="/favicon.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
 
 <!-- Dos direcciones, una por idioma. Sin esto Google no tiene qué indexar
      en francés: el botón de idioma cambia el texto pero no la dirección. -->
@@ -41,7 +51,7 @@
   "description": "Construcción de yurtas de estructura calculada, desmontables con la resistencia de una construcción fija. Lonas a medida, planos para autoconstrucción, montaje y formación.",
   "url": "https://casayourte.com/",
   "image": "https://casayourte.com/assets/hero.jpg",
-  "logo": "https://casayourte.com/assets/logo.png",
+  "logo": "https://casayourte.com/icono-512.png",
   "founder": { "@type": "Person", "name": "Mauro Gastaldello" },
   "telephone": "+59899696333",
   "email": "casayourte@gmail.com",
@@ -63,6 +73,18 @@
     { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Yurta completa, de 2 a 12 metros de diámetro" } },
     { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Montaje colaborativo y formación" } }
   ]
+}
+</script>
+<!-- El NOMBRE del sitio en los resultados. Sin esto Google muestra el
+     dominio —«casayourte.com»— en vez de «CasaYourte». Va sólo en la portada,
+     que es donde Google lo busca. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "CasaYourte",
+  "alternateName": ["Casa Yourte", "casayourte.com"],
+  "url": "https://casayourte.com/"
 }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">

@@ -13,6 +13,13 @@ Allow: /$
 Allow: /index.html
 Allow: /album.html
 Allow: /assets/
+# Los íconos, explícitos: son lo que Google muestra al lado del nombre, y si un
+# día alguien cierra la raíz con un Disallow general, esto no se tiene que ir
+# con ella.
+Allow: /favicon.ico
+Allow: /favicon.png
+Allow: /icono-512.png
+Allow: /apple-touch-icon.png
 
 Disallow: /admin.html
 Disallow: /editar.html

@@ -762,9 +762,9 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-24` |
 | `firebase-init.js` | (en el comentario) | `init-2` |
-| `sw.js` | `VERSION` | `cy-shell-v54` |
+| `sw.js` | `VERSION` | `cy-shell-v55` |
 | `admin.html` | `PANEL` | `admin-19` |
-| `editar.html` | `EDITOR` | `editar-20` |
+| `editar.html` | `EDITOR` | `editar-21` |
 | `taller.html` | `SELLO` | `andamio-2` |
 | `calculo.html` | `CY.PANEL` | `calculo-9` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-4` |
@@ -848,7 +848,13 @@ las funciones reales (`estable`, `referencia`, `conflicto`) y las corren contra 
 juguete — mismo documento, claves en otro orden, otra persona, la misma desde otra pestaña, y
 un cambio de Claude que no toca la fecha.
 
-`pruebas-modelos.mjs` son 83 casos sobre el cuadro de modelos y sobre la medida del sitio.
+**El ícono en Google** son `favicon.ico` (16, 32 y 48 px) y `favicon.png` (192 px), en la raíz,
+declarados en `index.html` y `album.html`. Salen de `icono-512.png` recortado para que el aro
+ocupe casi todo el cuadrado; NO de `assets/logo.png`, que es blanco sobre transparente y en un
+resultado con fondo claro no se ve. El nombre «CasaYourte» en los resultados lo da el bloque
+`WebSite` de datos estructurados de la portada.
+
+`pruebas-modelos.mjs` son 89 casos sobre el cuadro de modelos y sobre la medida del sitio.
 Existe por cuatro errores del 24-sep-2026 que tienen todos la misma forma: **no rompen nada
 visible**. Los rombos del fondo se dibujaban estirados —×8 en un monitor— y aparecían igual;
 `.hero-body` medía 244 px con un título de 118 px adentro y empujaba el encabezado a 1256 px;
