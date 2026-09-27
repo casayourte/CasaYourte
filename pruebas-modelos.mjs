@@ -281,10 +281,13 @@ ok("se arma antes de escribir y se elige después, en paint() y en el contrato",
 ok("y se rehace con la estructura, al final de aplicarOrden",
    /pestanasArmar\(\);\s*\}\s*\/\*/.test(index.slice(index.indexOf("function aplicarOrden"))));
 ok("la portada corta de álbumes la pide `orden.alb_vista`",
-   /classList\.toggle\("alb-corta", \(orden\|\|\{\}\)\.alb_vista==="obras"\)/.test(codigo)
+   /const corta=\(orden\|\|\{\}\)\.alb_vista==="obras";[\s\S]{0,120}classList\.toggle\("alb-corta", corta\)/.test(codigo)
    && /\.alb-corta \.alb-lista\{display:none\}/.test(index));
 ok("y en ella la portada NO baja las tiras (ni antes ni después de pedirlas)",
-   (codigo.match(/seccion\.classList\.contains\("alb-corta"\)/g) || []).length === 2);
+   (codigo.match(/seccion\.classList\.contains\("alb-corta"\)/g) || []).length === 3);
+ok("y si el editor vuelve a las tiras con la página abierta, se piden o se dibujan",
+   /if\(antes!==corta\) document\.dispatchEvent\(new Event\("cy-albumes"\)\)/.test(codigo)
+   && /addEventListener\("cy-albumes", \(\) => \{[\s\S]{0,120}if \(ALB\.length\) pintar\(\); else if \(!pedido\) mirar\(\);/.test(codigo));
 ok("el enlace al álbum conserva el taller y la vista previa",
    /\["taller","vista"\]\.forEach\(k=>\{ if\(aqui\.get\(k\)==="1"\) q\.set\(k,"1"\); \}\)/.test(codigo)
    && /enlazarAlbum\(idiomaInicial\(\)\)/.test(codigo));

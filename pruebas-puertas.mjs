@@ -136,6 +136,8 @@ titulo("EL MANUAL DEL EDITOR — que exista, que se llegue, y que no mienta");
     ["Enlazar (🔗)", /🔗/, /liga\.textContent = "🔗"/],
     ["El globo de pedidos", /globo/, /id="globo"/],
     ["La página de obras", /<b>Álbumes<\/b> abre la página de las obras/, /data-p="album"/],
+    ["Cómo se muestra", /<b>Cómo se muestra<\/b>/, /id="v-lista"/],
+    ["Volver a copiar el sitio", /<b>Volver a copiar el sitio<\/b>/, /id="s-reset"/],
   ];
   for (const [t, enManual, enEditor] of temas)
     ok("el manual explica «" + t + "» y el editor lo tiene", enManual.test(man) && enEditor.test(ed));
@@ -145,6 +147,88 @@ titulo("EL MANUAL DEL EDITOR — que exista, que se llegue, y que no mienta");
   ok("el reporte de fallas se hace desde el manual, porque el editor no tiene menú de cuenta",
      /id="manual-falla"/.test(man) && /\$\("manual-falla"\)[\s\S]{0,120}CY\.reportar\("falla"\)/.test(ed)
      && !/renderNav/.test(ed));
+}
+
+titulo("EL MANUAL ES COHERENTE — con el editor, con el sitio y consigo mismo");
+/* 27-sep-2026, pedido de Mauro al revisar el manual: «que todos los procesos
+   sean coherentes». Cada cosa que el manual promete se ata acá a lo que el
+   código hace, y lo que se dice en dos lugares tiene que decir lo mismo. */
+{
+  const ed = leer("editar.html");
+  const idx = leer("index.html"), alb = leer("album.html");
+  const man = ed.slice(ed.indexOf('<div id="manual"'), ed.indexOf('<div id="aviso">'));
+  const guia = ed.slice(ed.indexOf('<div id="guia"'), ed.indexOf('id="globo"'));
+  const sacar = (n) => {
+    const i = ed.indexOf("function " + n + "("); if (i < 0) throw new Error("no está " + n);
+    let j = ed.indexOf("{", i), k = j, d = 0;
+    for (; k < ed.length; k++) { if (ed[k] === "{") d++; else if (ed[k] === "}" && !--d) break; }
+    return ed.slice(i, k + 1);
+  };
+  // «Cómo se muestra»: cada vista que ofrece el editor la tiene que saber
+  // dibujar el sitio. Un botón que escribe un valor que nadie lee no cambia
+  // nada y parece roto.
+  const vistas = /const VISTAS = (\[[\s\S]*?\n\]);/.exec(ed);
+  const V = vistas ? new Function("return " + vistas[1])() : [];
+  ok("el editor ofrece tres formas de mostrar", V.length === 3);
+  const pest = /const PESTANAS = \{([^}]*\}[^}]*\}[^}]*)\}/.exec(idx);
+  for (const v of V) {
+    const valores = v.opciones.map((o) => o[0]);
+    const g = v.campo.replace(/_vista$/, "");
+    const entiende = valores.includes("pestanas")
+      ? !!pest && new RegExp("\\b" + g + ":\\{").test(pest[1])
+      : /alb_vista==="obras"/.test(idx) && /orden\.alb_vista === "obras"/.test(alb);
+    ok("«" + v.nombre + "»: el sitio sabe dibujar sus dos formas, y una es la de siempre ('')",
+       entiende && valores.includes("") && valores.length === 2);
+    ok("«" + v.nombre + "» nombra una sección que existe", idx.includes('data-seccion="' + v.seccion + '"'));
+  }
+  // Corrido con un DOM de juguete: tocar una forma escribe `orden` y repinta.
+  // `innerHTML = ""` vacía, como en un navegador: si no, el repintado sumaría
+  // filas nuevas debajo de las viejas y la prueba miraría las viejas.
+  const el = () => ({ ch: [], attr: {}, className: "", textContent: "", onclick: null, _h: "",
+    get innerHTML() { return this._h; }, set innerHTML(v) { this._h = v; if (v === "") this.ch = []; },
+    append(...x) { this.ch.push(...x); }, appendChild(x) { this.ch.push(x); },
+    setAttribute(k, v) { this.attr[k] = v; } });
+  const lista = el();
+  const CONT = { orden: { traj_vista: "pestanas" }, ocultas: "diferencial" };
+  let repintes = 0;
+  const f = new Function("$", "document", "CY", "enLista", "CONT", "refrescarVista",
+    vistas[0] + sacar("pintarVistas") + sacar("ponerVista") + "; return { pintarVistas };");
+  const api = f(() => lista, { createElement: el }, { esc: (x) => x },
+    (v) => String(v || "").split(",").filter(Boolean), CONT, () => repintes++);
+  api.pintarVistas();
+  const botones = (i) => lista.ch[i].ch[1].ch;
+  ok("marca la forma que está puesta", botones(0)[0].attr["aria-pressed"] === "true"
+     && botones(0)[1].attr["aria-pressed"] === "false" && botones(2)[1].attr["aria-pressed"] === "true");
+  ok("avisa cuando la sección está apagada", /apagada/.test(lista.ch[1].ch[0].innerHTML) && !/apagada/.test(lista.ch[0].ch[0].innerHTML));
+  botones(2)[0].onclick();
+  ok("tocar «Una página por obra» escribe orden.alb_vista y repinta la vista",
+     CONT.orden.alb_vista === "obras" && repintes === 1 && botones(2)[0].attr["aria-pressed"] === "true");
+  botones(0)[1].onclick();
+  ok("y «Uno abajo del otro» vuelve a la forma de siempre", CONT.orden.traj_vista === "");
+  // El contador: sin esto, mover o apagar una sección dejaba Guardar apagado.
+  const contar = sacar("contar");
+  ok("el contador suma las secciones (si no, Guardar quedaba apagado)",
+     /\["secciones", "ocultas"\]\.filter/.test(contar) && /n \+ im \+ or \+ en \+ se/.test(contar));
+  ok("y en el taller dice «sin guardar», con la palabra del botón",
+     /enTaller\(\) \? " sin guardar" : " sin publicar"/.test(contar)
+     && /textContent = enTaller\(\) \? "Guardar" : "Publicar"/.test(ed));
+  // Lo que se dice en dos lugares dice lo mismo.
+  const nota = /nota:\s*'([^']*)'\s*\+\s*'([^']*)'/.exec(nucleo);
+  ok("la nota del pedido, el manual y la bienvenida dicen lo mismo del plazo",
+     !!nota && /hasta un día/.test(nota[2]) && /hasta un\s+día/.test(man) && /hasta un\s+día/.test(guia)
+     && !/una vez por día/.test(man + guia));
+  ok("la bienvenida no llama «vacías» a las páginas del andamio", !/páginas vacías/.test(guia));
+  ok("Secciones: el manual dice dónde aparece, y es donde aparece",
+     /aparece en el <b>Taller<\/b>, en la\s+página <b>Sitio<\/b>/.test(man)
+     && /\$\("secciones"\)\.hidden = !enTaller\(\) \|\| pag !== "index"/.test(ed));
+  ok("«Volver a copiar el sitio» avisa que reemplaza TODO, y no se guarda solo",
+     /Se reemplaza TODO/.test(ed) && /reemplaza <b>todo<\/b>/.test(man));
+  ok("en el editor el pase de las obras está quieto, como dice el manual",
+     /pase está <b>quieto<\/b>/.test(man) && /!visorAbierto\s*&& !EDITANDO/.test(alb));
+  ok("la descripción vacía dice lo que el manual promete",
+     /Tocá para escribir…/.test(man) && /content:"Tocá para escribir de qué se trata esta obra\."/.test(alb));
+  ok("el ejemplo de pestaña de las decisiones es un renglón real del sitio",
+     /«Doble anillo periférico»/.test(man) && /data-i="d2\.s"/.test(idx));
 }
 
 titulo("GUARDAR AVISA SI OTRO CAMBIÓ EL DOCUMENTO — corrido de verdad");

@@ -762,9 +762,9 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-24` |
 | `firebase-init.js` | (en el comentario) | `init-2` |
-| `sw.js` | `VERSION` | `cy-shell-v56` |
+| `sw.js` | `VERSION` | `cy-shell-v57` |
 | `admin.html` | `PANEL` | `admin-19` |
-| `editar.html` | `EDITOR` | `editar-22` |
+| `editar.html` | `EDITOR` | `editar-23` |
 | `taller.html` | `SELLO` | `andamio-2` |
 | `calculo.html` | `CY.PANEL` | `calculo-9` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-4` |
@@ -840,10 +840,12 @@ pie que nunca se mueve, y basura en los campos.
 
 Es el patrón que presta Harmonía (`PROTOCOLO-DESARROLLO.md`), y es el primero de CasaYourte.
 
-`pruebas-puertas.mjs` suma 17 casos sobre el **manual del editor** (el «?» de arriba a la
+`pruebas-puertas.mjs` suma 19 casos sobre el **manual del editor** (el «?» de arriba a la
 izquierda): que exista, que se llegue desde la orientación, y que cada tema que explica
 corresponda a un botón que el editor tiene de verdad. Si se saca un botón y el manual lo sigue
-nombrando, falla. Y 10 más sobre **el aviso de Guardar** cuando otro cambió el documento: extraen
+nombrando, falla. Y 20 más sobre **su coherencia**: que cada forma de «Cómo se muestra» la sepa
+dibujar el sitio (se corre con un DOM de juguete), que el contador cuente las secciones, y que lo
+que se dice en dos lugares —el manual, la bienvenida, la nota del pedido— diga lo mismo. Y 10 más sobre **el aviso de Guardar** cuando otro cambió el documento: extraen
 las funciones reales (`estable`, `referencia`, `conflicto`) y las corren contra documentos de
 juguete — mismo documento, claves en otro orden, otra persona, la misma desde otra pestaña, y
 un cambio de Claude que no toca la fecha.
@@ -855,6 +857,7 @@ archivo. En `sitio/taller`:
 | Dato | Qué hace |
 |---|---|
 | `secciones` / `ocultas` | la portada queda en portada, la idea, los modelos, las formas de trabajo, la evolución técnica, las obras y el contacto; el resto se apaga (no se borra) |
+| `orden.dif_vista = "pestanas"` | lo mismo para las decisiones técnicas, con `dN.s` de rótulo |
 | `orden.traj_vista = "pestanas"` | la trayectoria se muestra como un cuadro de pestañas —«evolución técnica»—, con el renglón `sN.yr` como rótulo. Son los mismos bloques; sin el dato, vuelve a su forma de siempre |
 | `orden.alb_vista = "obras"` | la portada deja de bajar las tiras de álbumes y sólo invita, y `album.html?taller=1` muestra **una sección por obra**: su pase de fotos automático, su descripción (`alb.obra.<id>`) y «Ver las N fotos, por etapa» |
 
@@ -865,8 +868,9 @@ escriben tocándolas en el editor, en **Álbumes**; una vacía no se ve. Y el en
 portada a los álbumes **conserva el taller** (y la vista previa): antes llevaba del taller al
 álbum publicado.
 
-Llevarlo al sitio es el acto de siempre, «Al sitio» en el editor: los datos viajan con el
-documento.
+Las tres vistas se cambian **desde el editor**, en el Taller: **Secciones → Cómo se muestra**,
+con un toque, y se guardan con Guardar como todo lo demás. Llevarlo al sitio es el acto de
+siempre, «Al sitio»: los datos viajan con el documento.
 
 **El ícono en Google** son `favicon.ico` (16, 32 y 48 px) y `favicon.png` (192 px), en la raíz,
 declarados en `index.html` y `album.html`. Salen de `icono-512.png` recortado para que el aro
@@ -874,7 +878,7 @@ ocupe casi todo el cuadrado; NO de `assets/logo.png`, que es blanco sobre transp
 resultado con fondo claro no se ve. El nombre «CasaYourte» en los resultados lo da el bloque
 `WebSite` de datos estructurados de la portada.
 
-`pruebas-modelos.mjs` son 115 casos sobre el cuadro de modelos, la medida del sitio y el
+`pruebas-modelos.mjs` son 116 casos sobre el cuadro de modelos, la medida del sitio y el
 **sitio limpio** (sección 16, de abajo).
 Existe por cuatro errores del 24-sep-2026 que tienen todos la misma forma: **no rompen nada
 visible**. Los rombos del fondo se dibujaban estirados —×8 en un monitor— y aparecían igual;

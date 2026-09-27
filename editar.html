@@ -119,6 +119,13 @@ button{cursor:pointer}
   border-radius:6px;padding:.45rem .6rem;font-size:.8rem;line-height:1;flex:none;min-width:2.1rem}
 .s-fila button[aria-pressed="true"]{background:var(--blond);border-color:var(--blond);color:var(--ink)}
 .s-fila button:disabled{opacity:.3}
+.s-sub{font-size:.95rem;margin:1.2rem 0 .2rem;font-weight:600}
+.s-nota{font-size:.8rem;color:var(--dim);margin:0 0 .4rem;line-height:1.4}
+/* Una fila de vista: el nombre arriba y las dos formas abajo, a lo ancho —
+   con el texto de cada opción no entran al lado del nombre en un teléfono. */
+.s-fila.v-fila{flex-wrap:wrap}
+.v-fila .opciones{display:flex;gap:.35rem;width:100%}
+.v-fila .opciones button{flex:1;font-size:.75rem;padding:.55rem .4rem;line-height:1.2}
 #top .modo{font-family:var(--mono);font-size:.5rem;letter-spacing:.1em;color:var(--blond)}
 body.taller #top{box-shadow:inset 0 -2px 0 var(--bad)}
 
@@ -237,13 +244,15 @@ body.taller #top{box-shadow:inset 0 -2px 0 var(--bad)}
       <ol>
         <li><b>Tocá un texto o una foto</b> para cambiarla. Los
           <b>▲▼</b> mueven bloques, <b>＋</b> agrega y <b>✕</b> quita.</li>
-        <li><b>Secciones</b> mueve y apaga secciones enteras de la página.
-          Eso acá se puede; en el sitio en vivo, no.</li>
-        <li><b>Andamio</b> son doce páginas vacías —cuatro, y dos adentro de
-          cada una— para repartir la información como te parezca.</li>
+        <li><b>Secciones</b> mueve y apaga secciones enteras de la página, y
+          elige cómo se muestran algunas (por ejemplo, en pestañas). Eso acá se
+          puede; en el sitio en vivo, no.</li>
+        <li><b>Andamio</b> son doce páginas —cuatro, y dos adentro de cada
+          una— para repartir la información como te parezca.</li>
         <li><b>El globo de abajo pide cambios</b> a los que no llegás vos:
           colores, tipografía, una sección nueva. Se puede mandar una foto.
-          Lo lee una IA una vez por día y lo hace acá, en el taller.</li>
+          Lo recoge una IA y lo hace acá, en el taller; puede tardar hasta un
+          día.</li>
       </ol>
       <p class="sub">El botón <b>?</b> de arriba a la izquierda tiene el
         manual completo: cómo se edita cada cosa, una por una.</p>
@@ -284,7 +293,15 @@ body.taller #top{box-shadow:inset 0 -2px 0 var(--bad)}
       <h2>Las secciones de la página</h2>
       <span class="lugar">Mover con ▲▼ · el ojo apaga y enciende</span>
     </div>
-    <div class="cuerpo"><div id="s-lista"></div></div>
+    <div class="cuerpo"><div id="s-lista"></div>
+      <!-- CÓMO SE MUESTRA. Algunas secciones tienen dos formas de verse, y la
+           elige el DATO (`orden.<algo>_vista`), no el archivo: por eso se
+           cambia acá, con un toque, y viaja con Guardar como todo lo demás. -->
+      <h3 class="s-sub">Cómo se muestra</h3>
+      <p class="s-nota">Algunas partes se pueden ver de dos formas. Tocá la que
+        quieras: la página cambia en el momento.</p>
+      <div id="v-lista"></div>
+    </div>
     <div class="pie">
       <button class="btn" id="s-reset">Volver a copiar el sitio</button>
       <button class="btn p" id="s-cerrar">Listo</button>
@@ -326,12 +343,15 @@ body.taller #top{box-shadow:inset 0 -2px 0 var(--bad)}
       <p>Arriba, <b>Taller</b> es el sitio piloto: lo ve sólo quien tenga el
         enlace. <b>En vivo</b> es casayourte.com, y sólo lo toca quien puede
         publicar. La barra bordó te recuerda en cuál estás.</p>
-      <p><b>Guardar</b> se enciende cuando hay algo cambiado, y al lado dice
-        cuántos cambios hay. Guardá seguido: lo que no guardaste se pierde si
-        se cierra la pestaña.</p>
+      <p><b>Guardar</b> se enciende cuando hay algo cambiado. Abajo a la
+        izquierda dice cuántos cambios hay sin guardar. Guardá seguido: lo que
+        no guardaste se pierde si se cierra la pestaña. (En vivo, el mismo
+        botón se llama <b>Publicar</b>.)</p>
       <p><b>👁 Vista previa</b> abre el taller como lo vería el público, sin la
         barra bordó. Muestra lo <b>guardado</b>, no lo que tenés abierto.</p>
-      <p><b>⇄ Al sitio</b> lleva todo el taller a casayourte.com. Es de Mauro.</p>
+      <p><b>⇄ Al sitio</b> lleva todo el taller a casayourte.com: textos,
+        fotos, orden, secciones y cómo se muestra cada una. Sólo lo ve quien
+        puede publicar.</p>
       <p class="ojo">Guardar escribe el taller <b>entero</b> con lo que tenés
         vos. Si Mauro o Claude lo cambiaron mientras lo tenías abierto,
         <b>Guardar te avisa</b> quién fue y te deja elegir: guardar igual (y sus
@@ -369,7 +389,8 @@ body.taller #top{box-shadow:inset 0 -2px 0 var(--bad)}
 
     <details><summary>Bloques que se repiten: ▲ ▼ ＋ ✕</summary><div class="det">
       <p>La trayectoria, los diferenciales, la oferta y los modelos son listas
-        de bloques iguales. Cada bloque tiene arriba una barrita:</p>
+        de bloques iguales. Cada bloque tiene arriba a la izquierda una
+        barrita:</p>
       <ul>
         <li><b>▲ ▼</b> lo sube o lo baja.</li>
         <li><b>＋</b> agrega otro igual justo abajo, con textos de muestra
@@ -379,13 +400,31 @@ body.taller #top{box-shadow:inset 0 -2px 0 var(--bad)}
       <p>Quitar es definitivo para la página, también con los bloques que ya
         venían con el sitio. Los textos quedan guardados: si alguna vez hay que
         recuperar uno, se pide con el globo.</p>
+      <p>Si la lista se muestra <b>en pestañas</b>, es lo mismo: cada pestaña
+        es un bloque, <b>▲ ▼</b> la corre de lugar en la tira y <b>＋</b>
+        agrega la siguiente.</p>
     </div></details>
 
     <details><summary>Secciones de la página</summary><div class="det">
-      <p><b>Secciones</b> (abajo) lista las partes de la página en orden:
-        <b>▲ ▼</b> las mueve y el <b>ojo</b> las apaga o las enciende.</p>
-      <p>Apagar no borra: la sección queda guardada con sus textos, y volver a
-        encenderla es tocar el mismo ojo.</p>
+      <p>El botón <b>Secciones</b> (abajo) aparece en el <b>Taller</b>, en la
+        página <b>Sitio</b>. Abre la lista de las partes de la página, en
+        orden:</p>
+      <ul>
+        <li><b>▲ ▼</b> mueve una sección.</li>
+        <li>El <b>ojo</b> la apaga o la enciende. Apagar no borra: la sección
+          queda guardada con sus textos.</li>
+        <li><b>Cómo se muestra</b>, más abajo en la misma hoja: algunas partes
+          se pueden ver de dos formas —la trayectoria y las decisiones técnicas
+          <b>en pestañas</b> o <b>uno abajo del otro</b>; las obras con <b>una
+          página por obra</b> o <b>en tiras en la portada</b>—. Tocás la que
+          querés y la página cambia en el momento.</li>
+      </ul>
+      <p>Todo esto cuenta como un cambio: después hay que tocar
+        <b>Guardar</b>.</p>
+      <p class="ojo"><b>Volver a copiar el sitio</b> reemplaza <b>todo</b> el
+        taller —textos, fotos, orden y secciones— por lo que hoy está
+        publicado. No se guarda solo: si te arrepentís, recargá la página sin
+        tocar Guardar.</p>
     </div></details>
 
     <details><summary>Modelos: las pestañas de yurtas</summary><div class="det">
@@ -407,33 +446,46 @@ body.taller #top{box-shadow:inset 0 -2px 0 var(--bad)}
       <p>El nombre y la bajada de cada pestaña <b>son los de su página del
         Andamio</b>: si los cambiás acá, cambian allá, y al revés. El orden es
         el mismo que el de las páginas.</p>
-      <p>El botón «Ver el detalle» lleva a esa página. En el sitio publicado
-        todavía no aparece, porque las páginas sólo existen en el taller.</p>
+      <p>El botón «Ver el detalle» lleva a esa página cuando se mira el taller.
+        Adentro del editor los enlaces no navegan: para ir a la página, arriba
+        tocá <b>Andamio</b>. En el sitio publicado el botón todavía no
+        aparece, porque las páginas sólo existen en el taller.</p>
     </div></details>
 
     <details><summary>La evolución técnica, en pestañas</summary><div class="det">
-      <p>En el taller, la <b>trayectoria</b> se muestra como un cuadro de
-        pestañas, igual que los modelos. Son <b>los mismos bloques de
-        siempre</b>: el nombre de cada pestaña es el renglón chico de arriba
-        del título («Primera yurta», «Tierra y paja»), y se toca ahí.</p>
-      <p><b>▲ ▼</b> cambia el orden de las pestañas, y <b>＋</b> suma una.
-        En el sitio publicado la trayectoria sigue en su forma de siempre
-        hasta que el taller se publique.</p>
+      <p>La <b>trayectoria</b> se puede mostrar como un cuadro de pestañas,
+        igual que los modelos. Se elige en <b>Secciones → Cómo se
+        muestra</b>. Son <b>los mismos bloques de siempre</b>, así que no se
+        pierde nada al cambiar de forma.</p>
+      <p>El nombre de cada pestaña es el renglón chico de arriba del título
+        («Primera yurta», «Tierra y paja»), y se toca ahí, en el cuadro. El
+        texto se lee entero, sin «Leer más».</p>
+      <p>Las <b>decisiones técnicas</b> pueden ir igual; su pestaña lleva el
+        renglón chico de cada una («Doble anillo periférico»).</p>
     </div></details>
 
     <details><summary>Álbumes: una página por obra</summary><div class="det">
-      <p>Arriba, <b>Álbumes</b> abre la página de las obras. En el taller cada
-        obra tiene su pase de fotos, que corre solo, y una
-        <b>descripción</b>: tocala y escribí de qué se trata esa obra. Una
-        descripción vacía no se ve en el sitio.</p>
-      <p>Las fotos, su orden y sus etapas se siguen eligiendo en el panel de
-        álbumes: acá sólo se escribe el texto.</p>
+      <p>Arriba, <b>Álbumes</b> abre la página de las obras. Con la forma
+        <b>«Una página por obra»</b> (en <b>Secciones → Cómo se muestra</b>,
+        desde la página Sitio), cada obra tiene su pase de fotos y una
+        <b>descripción</b>.</p>
+      <ul>
+        <li>La <b>descripción</b> está debajo del pase: tocala y escribí de
+          qué se trata esa obra. Una vacía dice «Tocá para escribir…» acá, y
+          en el sitio no se ve.</li>
+        <li>El título de arriba de la página y su texto también se tocan.</li>
+        <li>En el editor el pase está <b>quieto</b>, para que nada se mueva
+          mientras escribís. En el sitio corre solo.</li>
+      </ul>
+      <p>Las fotos, su orden y sus etapas se eligen en el panel de
+        <b>álbumes</b>, no acá. La yurta mongol no aparece como obra: es un
+        modelo, no un proyecto.</p>
     </div></details>
 
     <details><summary>Andamio: las páginas</summary><div class="det">
       <p>Arriba, <b>Andamio</b> abre las páginas del taller: cuatro secciones
-        con dos páginas adentro de cada una. Abajo aparece el botón
-        <b>Páginas</b>:</p>
+        con dos páginas adentro de cada una. Sólo existe en el
+        <b>Taller</b>. Abajo aparece el botón <b>Páginas</b>:</p>
       <ul>
         <li><b>Tocar un nombre</b> te lleva a esa página, con las mismas
           herramientas.</li>
@@ -460,9 +512,9 @@ body.taller #top{box-shadow:inset 0 -2px 0 var(--bad)}
       <p>El <b>globo</b> de abajo a la derecha es para lo que no se puede
         hacer desde acá: colores, tipografía, una sección nueva, un cuadro
         distinto. Se puede adjuntar una <b>foto</b> o una captura.</p>
-      <p>Lo lee una IA —Claude— una vez por día, y el cambio lo hace en el
-        taller. No es un chat en vivo: si hay que ir y venir, coordinalo con
-        Mauro.</p>
+      <p>Lo recoge una IA —Claude— y el cambio lo hace en el taller. No es un
+        chat en vivo: puede tardar hasta un día. Si hay que ir y venir,
+        coordinalo con Mauro.</p>
     </div></details>
 
     <details><summary>Si algo no anda</summary><div class="det">
@@ -492,7 +544,7 @@ import { CY } from "./nucleo.js";
 const $ = (id) => document.getElementById(id);
 
 // Sello de este archivo, para saber si quedó viejo en la caché.
-const EDITOR = "editar-22";
+const EDITOR = "editar-23";
 CY.PANEL = EDITOR;
 
 /* ═══════════════════════════════════════════════════════════════
@@ -746,16 +798,23 @@ function contar() {
   // cambio existía en memoria y no había forma de subirlo.
   const en = Object.keys({ ...(ORIG.enlaces || {}), ...(CONT.enlaces || {}) })
     .filter(k => ((CONT.enlaces || {})[k] || "") !== ((ORIG.enlaces || {})[k] || "")).length;
+  /* Las secciones también son un cambio. Hasta editar-23 no se contaban: mover
+     o apagar una sección dejaba Guardar APAGADO, y si no había otro cambio al
+     lado no había forma de guardarlo — la hoja decía que se podía y no se
+     podía (visto el 27-sep-2026, revisando el manual). */
+  const se = ["secciones", "ocultas"].filter(k => (CONT[k] || "") !== (ORIG[k] || "")).length;
   const c = $("cuenta");
-  const total = n + im + or + en;
+  const total = n + im + or + en + se;
   c.classList.toggle("sucio", total > 0);
   const partes = [];
   if (n) partes.push(`${n} texto${n === 1 ? "" : "s"}`);
   if (im) partes.push(`${im} imagen${im === 1 ? "" : "es"}`);
   if (or) partes.push(`${or} orden${or === 1 ? "" : "es"}`);
   if (en) partes.push(`${en} enlace${en === 1 ? "" : "s"}`);
+  if (se) partes.push("las secciones");
+  // En el taller se GUARDA, no se publica: el contador usa la palabra del botón.
   c.textContent = total
-    ? partes.join(" y ") + " sin publicar"
+    ? partes.join(" y ") + (enTaller() ? " sin guardar" : " sin publicar")
     : "Tocá un texto o una foto · ▲▼ mueve · ＋ agrega · ✕ quita";
   $("guardar").disabled = total === 0;
 }
@@ -1556,7 +1615,51 @@ function apagarSeccion(id) {
   const off = new Set(enLista(CONT.ocultas));
   off.has(id) ? off.delete(id) : off.add(id);
   CONT.ocultas = [...off].join(",");
-  pintarSecciones(); refrescarVista();
+  pintarSecciones(); pintarVistas(); refrescarVista();
+}
+
+/* ---------- cómo se muestra ----------
+   Las formas de ver una sección que el sitio sabe dibujar. El valor vive en
+   `orden` —el mismo mapa que ya viaja con Guardar y con «Al sitio»—, así que
+   no hay campo nuevo ni regla nueva. Sin valor, la sección se ve como
+   siempre. Para sumar una vista, el sitio tiene que saber dibujarla primero
+   (ver `PESTANAS` en index.html) y después va un renglón acá. */
+const VISTAS = [
+  { campo: "traj_vista", seccion: "trayectoria", nombre: "La trayectoria (evolución técnica)",
+    opciones: [["pestanas", "En pestañas"], ["", "Uno abajo del otro"]] },
+  { campo: "dif_vista", seccion: "diferencial", nombre: "Las decisiones técnicas",
+    opciones: [["pestanas", "En pestañas"], ["", "Uno abajo del otro"]] },
+  { campo: "alb_vista", seccion: "albumes", nombre: "Las obras (álbumes)",
+    opciones: [["obras", "Una página por obra"], ["", "Tiras en la portada"]] },
+];
+function pintarVistas() {
+  const cont = $("v-lista"); cont.innerHTML = "";
+  const off = new Set(enLista(CONT.ocultas));
+  VISTAS.forEach((v) => {
+    const actual = String((CONT.orden || {})[v.campo] || "");
+    const f = document.createElement("div");
+    f.className = "s-fila v-fila";
+    const nom = document.createElement("span");
+    nom.className = "nom";
+    nom.innerHTML = "<b>" + CY.esc(v.seccion) + "</b>" + CY.esc(v.nombre)
+      + (off.has(v.seccion) ? "<small>Esta sección está apagada: la forma se nota cuando la encendés.</small>" : "");
+    const op = document.createElement("div");
+    op.className = "opciones";
+    v.opciones.forEach(([valor, rotulo]) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = rotulo;
+      b.setAttribute("aria-pressed", String(actual === valor));
+      b.onclick = () => ponerVista(v.campo, valor);
+      op.appendChild(b);
+    });
+    f.append(nom, op);
+    cont.appendChild(f);
+  });
+}
+function ponerVista(campo, valor) {
+  CONT.orden = CONT.orden || {};
+  CONT.orden[campo] = valor;
+  pintarVistas(); refrescarVista();
 }
 
 $("secciones").addEventListener("click", () => {
@@ -1566,13 +1669,16 @@ $("secciones").addEventListener("click", () => {
         + "mover o apagar secciones.", true);
     return;
   }
-  unirSecciones(); pintarSecciones();
+  unirSecciones(); pintarSecciones(); pintarVistas();
   $("hoja-sec").classList.remove("hide");
 });
 $("s-cerrar").addEventListener("click", () => $("hoja-sec").classList.add("hide"));
 $("s-reset").addEventListener("click", async () => {
-  if (!confirm("Volver a copiar el sitio publicado al taller.\n\nSe pierde todo lo "
-      + "que hayas movido acá. El sitio no se toca.\n\n¿Seguro?")) return;
+  // El aviso dice TODO lo que se reemplaza: decía «lo que hayas movido», y se
+  // van también los textos y las fotos del taller.
+  if (!confirm("Volver a copiar el sitio publicado al taller.\n\nSe reemplaza TODO "
+      + "el taller —textos, fotos, orden y secciones— por lo publicado. No se guarda "
+      + "solo: si te arrepentís, recargá sin tocar Guardar. El sitio no se toca.\n\n¿Seguro?")) return;
   try {
     await copiarDesdePublicado();
     $("hoja-sec").classList.add("hide");

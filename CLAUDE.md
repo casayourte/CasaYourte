@@ -200,7 +200,7 @@ el agente y **no es opcional**: que el JavaScript parsee **como MÓDULO**
 incluidos los módulos que viven adentro de un `.html`; que **los cinco bancos
 corran** —`node pruebas-secciones.mjs` (16 casos), `node pruebas-reportes.mjs`
 (64 casos), `node pruebas-andamio.mjs` (89 casos), `node
-pruebas-puertas.mjs` (64 casos) y `node pruebas-modelos.mjs` (115 casos), los
+pruebas-puertas.mjs` (86 casos) y `node pruebas-modelos.mjs` (116 casos), los
 cinco sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
 sellos hayan subido, con la `VERSION` del `sw.js` si el archivo está en `SHELL`
 y los `?v=` con los que se lo pide; y que la documentación del repo diga la
@@ -453,6 +453,12 @@ verdad después del cambio.
   falla si se saca el botón y el manual lo sigue nombrando. Y como el editor
   no dibuja el menú de cuenta del panel, «Reportar una falla» está adentro
   del manual.
+  **Y lo que se dice en dos lugares dice lo mismo** (revisión del 27-sep-2026,
+  pedido de Mauro): el manual, la bienvenida y la nota del pedido coinciden
+  en el plazo —«puede tardar hasta un día»—, y el banco lo comprueba. En esa
+  misma revisión apareció un error que el manual escondía: **mover o apagar
+  una sección no contaba como cambio** y Guardar quedaba apagado. El manual
+  decía que se podía; `contar()` no sumaba `secciones` ni `ocultas`.
 - **Guardar AVISA si alguien más cambió el documento mientras el editor estaba
   abierto** (27-sep-2026). Guardar es un `setDoc` del documento entero, así
   que lo que otro guardó en el medio se perdía sin aviso. Al cargar se toma una
@@ -485,6 +491,13 @@ verdad después del cambio.
   cambió un píxel**, y llevarlo al sitio es el «Al sitio» de siempre. Si
   alguna vez una vista pasa a depender del archivo, el publicado cambia el día
   que se sube, sin que nadie lo apruebe.
+  **Las vistas se cambian en el editor, en «Secciones → Cómo se muestra»**
+  (`editar-23`): una lista `VISTAS` con el campo, la sección y las dos formas,
+  y una de las dos es SIEMPRE la de siempre (`""`). Para sumar una vista, el
+  sitio tiene que saber dibujarla primero y después va un renglón ahí;
+  `pruebas-puertas.mjs` falla si el editor ofrece una forma que el sitio no
+  lee. Y la portada escucha el cambio en vivo: volver a «Tiras en la portada»
+  pide los álbumes sin recargar.
   **`album.html` también tiene taller**: con `?taller=1` lee `sitio/taller`,
   lleva noindex y el cartel, y todas sus vueltas —la marca, el pie, «volver»—
   vuelven al taller. Y el enlace de la portada a los álbumes conserva `taller`

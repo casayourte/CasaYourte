@@ -1654,7 +1654,14 @@ function aplicarOrden(orden){
   // Se leen siempre, estén o no: una vista que se sacó tiene que volver.
   Object.keys(PESTANAS).forEach(g=>{ VISTAS[g]=String((orden||{})[g+"_vista"]||""); });
   const albs=document.getElementById("albumes");
-  if(albs) albs.classList.toggle("alb-corta", (orden||{}).alb_vista==="obras");
+  if(albs){
+    const corta=(orden||{}).alb_vista==="obras";
+    const antes=albs.classList.contains("alb-corta");
+    albs.classList.toggle("alb-corta", corta);
+    // El editor puede volver a las tiras con la página abierta: se avisa, y
+    // los álbumes se piden (o se dibujan, si ya habían llegado).
+    if(antes!==corta) document.dispatchEvent(new Event("cy-albumes"));
+  }
   Object.keys(GRUPOS).forEach(g=>{
     const cont=document.querySelector('[data-grupo="'+g+'"]'); if(!cont) return;
     const lista=((orden||{})[g]||"").split(",").map(x=>x.trim()).filter(Boolean);
@@ -2331,14 +2338,23 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
   }
 
   // Se pide recién cuando la sección se acerca.
-  if ("IntersectionObserver" in window) {
-    const obs = new IntersectionObserver((es) => es.forEach((e) => {
-      if (e.isIntersecting) { obs.disconnect(); cargar(); }
-    }), { rootMargin: "600px 0px" });
-    obs.observe(seccion);
-  } else {
-    addEventListener("load", cargar);
+  function mirar() {
+    if ("IntersectionObserver" in window) {
+      const obs = new IntersectionObserver((es) => es.forEach((e) => {
+        if (e.isIntersecting) { obs.disconnect(); cargar(); }
+      }), { rootMargin: "600px 0px" });
+      obs.observe(seccion);
+    } else if (document.readyState === "complete") cargar();
+    else addEventListener("load", cargar);
   }
+  mirar();
+  // De la portada corta a las tiras, con la página abierta (lo hace el editor
+  // desde «Secciones → Cómo se muestra»): si ya habían llegado se dibujan, y
+  // si no se piden. Sin esto la sección quedaba vacía hasta recargar.
+  document.addEventListener("cy-albumes", () => {
+    if (seccion.classList.contains("alb-corta")) return;
+    if (ALB.length) pintar(); else if (!pedido) mirar();
+  });
 
   // Al cambiar de idioma se vuelven a escribir las leyendas y los rótulos.
   const _paint = paint;
