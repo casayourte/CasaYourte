@@ -332,10 +332,10 @@ body.taller #top{box-shadow:inset 0 -2px 0 var(--bad)}
       <p><b>👁 Vista previa</b> abre el taller como lo vería el público, sin la
         barra bordó. Muestra lo <b>guardado</b>, no lo que tenés abierto.</p>
       <p><b>⇄ Al sitio</b> lleva todo el taller a casayourte.com. Es de Mauro.</p>
-      <p class="ojo">Si Mauro o Claude cambian el taller mientras lo tenés
-        abierto, <b>recargá la página antes de guardar</b>. Guardar escribe el
-        taller entero con lo que tenés vos, y se llevaría lo que hicieron
-        ellos.</p>
+      <p class="ojo">Guardar escribe el taller <b>entero</b> con lo que tenés
+        vos. Si Mauro o Claude lo cambiaron mientras lo tenías abierto,
+        <b>Guardar te avisa</b> quién fue y te deja elegir: guardar igual (y sus
+        cambios se pierden) o no guardar todavía y recargar para verlos.</p>
     </div></details>
 
     <details><summary>Textos</summary><div class="det">
@@ -474,7 +474,7 @@ import { CY } from "./nucleo.js";
 const $ = (id) => document.getElementById(id);
 
 // Sello de este archivo, para saber si quedó viejo en la caché.
-const EDITOR = "editar-19";
+const EDITOR = "editar-20";
 CY.PANEL = EDITOR;
 
 /* ═══════════════════════════════════════════════════════════════
@@ -535,6 +535,49 @@ const puedePublicar = () => CY.esAdmin() || CY.puede("contenido");
 let pag = "index";
 let idioma = FUENTE;
 let CONT = null;        // { <idioma>:{} … , imagenes:{}, orden:{}, secciones:"", ocultas:"" }
+
+/* ═══════════════════════════════════════════════════════════════
+   QUIÉN MÁS CAMBIÓ ESTO MIENTRAS LO TENÍA ABIERTO (27-sep-2026)
+   ---------------------------------------------------------------
+   Guardar hace un `setDoc` del documento ENTERO: lo que otra persona haya
+   guardado mientras este editor estaba abierto, se pierde. Hasta hoy la única
+   defensa era una frase en el manual —«recargá antes de guardar»—, o sea
+   acordarse. Ahora el editor se acuerda solo.
+
+   Al cargar se toma una HUELLA del documento guardado; al guardar se lo vuelve
+   a leer y se compara. Se compara el CONTENIDO y no sólo la fecha de
+   `guardado`, a propósito: cuando Claude escribe el taller no pasa por este
+   editor y no toca esa fecha, así que mirando sólo la fecha sus cambios serían
+   invisibles — y son justamente los que más fácil se pisan, porque llegan
+   cuando nadie está mirando. La fecha sirve para otra cosa: para decir QUIÉN.
+   ═══════════════════════════════════════════════════════════════ */
+let REF = null;         // { huella, guardado } del documento tal como se cargó
+
+// Texto estable de un valor: las claves ordenadas, porque dos lecturas del
+// mismo documento no prometen el mismo orden, y una fecha por su número.
+function estable(v) {
+  if (v === null || v === undefined) return "null";
+  if (typeof v !== "object") return JSON.stringify(v);
+  if (typeof v.toMillis === "function") return String(v.toMillis());
+  if (Array.isArray(v)) return "[" + v.map(estable).join(",") + "]";
+  return "{" + Object.keys(v).sort().map(k => JSON.stringify(k) + ":" + estable(v[k])).join(",") + "}";
+}
+const milis = (g) => (g && typeof g.toMillis === "function") ? g.toMillis() : (g || null);
+function referencia(x) { return { huella: estable(x), guardado: milis(x && x.guardado) }; }
+
+/* ¿Cambió el documento desde que se cargó? Devuelve null si no, o QUIÉN y
+   CUÁNDO si sí. Es una función pura a propósito: el banco la corre sin base. */
+function conflicto(ref, x, yoMail) {
+  if (!ref) return null;
+  if (estable(x) === ref.huella) return null;
+  const g = milis(x && x.guardado);
+  if (g !== ref.guardado && x && x.guardadoPor) {
+    return { quien: x.guardadoPor === yoMail ? "vos, desde otra pestaña u otro teléfono" : x.guardadoPor,
+             cuando: g };
+  }
+  // Cambió el contenido y NO la fecha: no pasó por un editor.
+  return { quien: "Claude (un pedido que se hizo en el taller)", cuando: null };
+}
 let ORIG = null;
 let ORDEN = porIdioma(() => []);
 let BASE = null;        // el contenido.json del repositorio, tal cual
@@ -643,6 +686,7 @@ async function cargarContenido() {
   IDIOMAS().forEach(l => ORDEN[l] = Object.keys((BASE.textos || {})[l] || {}));
 
   const d = await getDoc(doc(db, "sitio", destino));
+  REF = referencia(d.exists() ? d.data() : null);
   if (d.exists() && d.data().es) {
     const x = d.data();
     // MEZCLA, no reemplazo: lo publicado manda para lo que tiene y el archivo
@@ -1845,6 +1889,19 @@ $("pg-cerrar").addEventListener("click", () => {
 $("guardar").addEventListener("click", async () => {
   const b = $("guardar"); b.disabled = true; b.textContent = "…";
   try {
+    // Antes de pisar nada: ¿alguien más guardó mientras esto estaba abierto?
+    const ahora = await getDoc(doc(db, "sitio", destino));
+    const c = conflicto(REF, ahora.exists() ? ahora.data() : null, yo.email);
+    if (c) {
+      const cuando = c.cuando ? " (" + new Date(c.cuando).toLocaleString("es-UY") + ")" : "";
+      const ok = confirm("Alguien cambió " + (enTaller() ? "el taller" : "el sitio")
+        + " después de que abriste el editor: " + c.quien + cuando + ".\n\n"
+        + "Si guardás ahora, tu versión REEMPLAZA la suya y sus cambios se pierden.\n\n"
+        + "Aceptar = guardar igual.\n"
+        + "Cancelar = no guardar todavía. Para ver sus cambios recargá la página "
+        + "(ojo: lo que no guardaste se pierde al recargar; copiá antes lo que te importe).");
+      if (!ok) { aviso("No se guardó. Lo tuyo sigue acá, sin guardar.", true); return; }
+    }
     // El mapa completo con setDoc: nunca updateDoc de una clave con punto.
     // En vivo, esto ES el sitio: lo ve cualquiera que entre a casayourte.com
     // en el acto. En el taller no lo ve nadie salvo quien tenga el enlace.
@@ -1858,6 +1915,10 @@ $("guardar").addEventListener("click", async () => {
       guardado: serverTimestamp(), guardadoPor: yo.email,
     });
     ORIG = JSON.parse(JSON.stringify(CONT));
+    // La referencia pasa a ser lo que acabo de guardar, con la fecha que le
+    // puso el servidor: si no, el próximo Guardar se avisaría a sí mismo.
+    const nuevo = await getDoc(doc(db, "sitio", destino));
+    REF = referencia(nuevo.exists() ? nuevo.data() : null);
     contar();
     aviso(enTaller() ? "Guardado en el taller. El sitio publicado no cambió."
                      : "Publicado. Ya se ve en el sitio.");

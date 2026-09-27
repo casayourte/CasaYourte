@@ -762,9 +762,9 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-24` |
 | `firebase-init.js` | (en el comentario) | `init-2` |
-| `sw.js` | `VERSION` | `cy-shell-v53` |
+| `sw.js` | `VERSION` | `cy-shell-v54` |
 | `admin.html` | `PANEL` | `admin-19` |
-| `editar.html` | `EDITOR` | `editar-19` |
+| `editar.html` | `EDITOR` | `editar-20` |
 | `taller.html` | `SELLO` | `andamio-2` |
 | `calculo.html` | `CY.PANEL` | `calculo-9` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-4` |
@@ -843,7 +843,10 @@ Es el patrón que presta Harmonía (`PROTOCOLO-DESARROLLO.md`), y es el primero 
 `pruebas-puertas.mjs` suma 16 casos sobre el **manual del editor** (el «?» de arriba a la
 izquierda): que exista, que se llegue desde la orientación, y que cada tema que explica
 corresponda a un botón que el editor tiene de verdad. Si se saca un botón y el manual lo sigue
-nombrando, falla.
+nombrando, falla. Y 10 más sobre **el aviso de Guardar** cuando otro cambió el documento: extraen
+las funciones reales (`estable`, `referencia`, `conflicto`) y las corren contra documentos de
+juguete — mismo documento, claves en otro orden, otra persona, la misma desde otra pestaña, y
+un cambio de Claude que no toca la fecha.
 
 `pruebas-modelos.mjs` son 83 casos sobre el cuadro de modelos y sobre la medida del sitio.
 Existe por cuatro errores del 24-sep-2026 que tienen todos la misma forma: **no rompen nada

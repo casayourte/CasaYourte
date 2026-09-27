@@ -109,12 +109,15 @@
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v53';
+const VERSION = 'cy-shell-v54';
 
 // v39 (14-sep-2026) — entra el TALLER: index.html lee sitio/taller con
 //   ?taller=1 y sabe mover y apagar secciones (contrato CY_SITIO v2);
 //   editar.html (editar-9) suma el chip «En vivo | Taller». Va encima de la
 //   v38, de la misma fecha: dos tandas seguidas tocando el SHELL.
+//
+//   v54 · 27-sep-2026 · `editar.html`: Guardar avisa si alguien más cambió el
+//   documento mientras el editor estaba abierto.
 //
 //   v53 · 27-sep-2026 · `editar.html`: el manual del editor, con el «?» arriba.
 //

@@ -139,10 +139,48 @@ titulo("EL MANUAL DEL EDITOR — que exista, que se llegue, y que no mienta");
   for (const [t, enManual, enEditor] of temas)
     ok("el manual explica «" + t + "» y el editor lo tiene", enManual.test(man) && enEditor.test(ed));
   ok("advierte que los bloques de fábrica vuelven al quitarlos", /vuelven a\s+aparecer/.test(man));
-  ok("advierte recargar antes de guardar si otro cambió el taller", /recargá la página antes de guardar/.test(man));
+  ok("explica que Guardar avisa si otro cambió el taller", /<b>Guardar te avisa<\/b>/.test(man));
   ok("el reporte de fallas se hace desde el manual, porque el editor no tiene menú de cuenta",
      /id="manual-falla"/.test(man) && /\$\("manual-falla"\)[\s\S]{0,120}CY\.reportar\("falla"\)/.test(ed)
      && !/renderNav/.test(ed));
+}
+
+titulo("GUARDAR AVISA SI OTRO CAMBIÓ EL DOCUMENTO — corrido de verdad");
+/* 27-sep-2026. Guardar es un setDoc del documento ENTERO: lo que otro haya
+   guardado mientras el editor estaba abierto se pierde. Se extraen las
+   funciones reales y se corren contra documentos de juguete. */
+{
+  const ed = leer("editar.html");
+  const sacar = (n) => {
+    const i = ed.indexOf("function " + n + "("); if (i < 0) throw new Error("no está " + n);
+    let j = ed.indexOf("{", i), k = j, d = 0;
+    for (; k < ed.length; k++) { if (ed[k] === "{") d++; else if (ed[k] === "}" && !--d) break; }
+    return ed.slice(i, k + 1);
+  };
+  const milisSrc = ed.match(/const milis = [^\n]+\n/)[0];
+  const f = new Function(sacar("estable") + "\n" + milisSrc + sacar("referencia") + "\n" + sacar("conflicto")
+    + "\nreturn { referencia, conflicto };")();
+  const ts = (n) => ({ toMillis: () => n });                 // una fecha de Firestore, de juguete
+  const base = { es: { a: "uno", b: "dos" }, orden: { mod: "m1,m2" }, guardado: ts(1000), guardadoPor: "romina@x" };
+  const ref = f.referencia(base);
+  const r0 = f.conflicto(ref, { ...base });
+  ok("el mismo documento no avisa" + (r0 ? " — dio " + JSON.stringify(r0) : ""), r0 === null);
+  ok("las claves en otro orden NO son un cambio",
+     f.conflicto(ref, { guardadoPor: "romina@x", guardado: ts(1000), orden: { mod: "m1,m2" }, es: { b: "dos", a: "uno" } }) === null);
+  let c = f.conflicto(ref, { ...base, es: { a: "UNO", b: "dos" }, guardado: ts(2000), guardadoPor: "mauro@x" }, "romina@x");
+  ok("si otra persona guardó, dice quién y cuándo", c && c.quien === "mauro@x" && c.cuando === 2000);
+  c = f.conflicto(ref, { ...base, es: { a: "UNO", b: "dos" }, guardado: ts(2000), guardadoPor: "romina@x" }, "romina@x");
+  ok("si fue ella misma desde otra pestaña, se lo dice así", c && /otra pestaña/.test(c.quien));
+  c = f.conflicto(ref, { ...base, es: { a: "uno", b: "dos", c: "tres" } }, "romina@x");
+  ok("si cambió el contenido SIN cambiar la fecha, fue Claude — y se avisa igual", c && /Claude/.test(c.quien) && c.cuando === null);
+  ok("sin referencia (no se llegó a cargar) no inventa un aviso", f.conflicto(null, base) === null);
+  c = f.conflicto(f.referencia(null), base, "romina@x");
+  ok("si el documento no existía al abrir y ahora sí, avisa", !!c);
+  ok("Guardar pregunta ANTES del setDoc",
+     ed.indexOf("const c = conflicto(REF") > -1 && ed.indexOf("const c = conflicto(REF") < ed.indexOf('await setDoc(doc(db, "sitio", destino)'));
+  ok("y después de guardar la referencia se renueva, o se avisaría a sí mismo",
+     /REF = referencia\(nuevo\.exists\(\) \? nuevo\.data\(\) : null\);/.test(ed));
+  ok("la referencia se toma al cargar el contenido", /const d = await getDoc\(doc\(db, "sitio", destino\)\);\s*REF = referencia/.test(ed));
 }
 
 console.log(`\n${bien} bien · ${mal} mal`);

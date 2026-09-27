@@ -200,7 +200,7 @@ el agente y **no es opcional**: que el JavaScript parsee **como MÓDULO**
 incluidos los módulos que viven adentro de un `.html`; que **los cinco bancos
 corran** —`node pruebas-secciones.mjs` (16 casos), `node pruebas-reportes.mjs`
 (64 casos), `node pruebas-andamio.mjs` (89 casos), `node
-pruebas-puertas.mjs` (46 casos) y `node pruebas-modelos.mjs` (83 casos), los
+pruebas-puertas.mjs` (56 casos) y `node pruebas-modelos.mjs` (83 casos), los
 cinco sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
 sellos hayan subido, con la `VERSION` del `sw.js` si el archivo está en `SHELL`
 y los `?v=` con los que se lo pide; y que la documentación del repo diga la
@@ -443,12 +443,25 @@ verdad después del cambio.
   publica— y la orientación del primer ingreso lleva a él. Está en
   desplegables, un tema por cosa editable, y avisa las dos trampas que hoy
   existen: los bloques de fábrica que vuelven al quitarlos, y que guardar
-  escribe el taller ENTERO (si otro lo cambió, se recarga antes).
+  escribe el taller ENTERO.
   **Si cambia algo del editor, el manual cambia en la misma tanda**:
   `pruebas-puertas.mjs` ata cada tema del manual a un botón que exista, y
   falla si se saca el botón y el manual lo sigue nombrando. Y como el editor
   no dibuja el menú de cuenta del panel, «Reportar una falla» está adentro
   del manual.
+- **Guardar AVISA si alguien más cambió el documento mientras el editor estaba
+  abierto** (27-sep-2026). Guardar es un `setDoc` del documento entero, así
+  que lo que otro guardó en el medio se perdía sin aviso. Al cargar se toma una
+  huella (`referencia()`), al guardar se relee y se compara (`conflicto()`),
+  y si cambió se dice quién y cuándo y se pregunta. **Se compara el CONTENIDO
+  y no sólo la fecha `guardado`, y no es un detalle**: cuando Claude escribe
+  `sitio/taller` no pasa por el editor ni toca esa fecha, así que mirando sólo
+  la fecha sus cambios serían invisibles — y son los que más fácil se pisan,
+  porque llegan cuando nadie mira. La fecha sirve para decir QUIÉN: si cambió,
+  fue un editor (`guardadoPor`); si no, fue Claude. La huella ordena las
+  claves, porque dos lecturas del mismo documento no prometen el mismo orden.
+  Después de guardar, la referencia se renueva, o el próximo Guardar se
+  avisaría a sí mismo.
 - **La vista previa muestra el taller como lo vería el público, ni más ni
   menos** (27-sep-2026). `?taller=1&vista=1` lee `sitio/taller` pero sin la
   barra bordó y **sin `CY_ANDAMIO`**: los botones que en el publicado no
