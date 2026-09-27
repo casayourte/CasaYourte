@@ -112,5 +112,38 @@ ok("CY.arrancar también", /CY\.usuario = \{ uid: u\.uid, \.\.\.d\.data\(\) \}/.
 ok("y ninguna guarda `d.data()` pelado",
    !/(yo|CY\.usuario) = d\.data\(\);/.test(leer("admin.html") + leer("editar.html") + nucleo));
 
+titulo("EL MANUAL DEL EDITOR — que exista, que se llegue, y que no mienta");
+/* Pedido de Mauro, 27-sep-2026: «todo documentado y explicado para que Romina
+   al acceder pueda comprender cómo editar cada aspecto». Un manual que nombra
+   un botón que ya no existe es peor que no tener manual, porque se le cree:
+   por eso estas pruebas atan cada tema del manual a lo que el editor tiene. */
+{
+  const ed = leer("editar.html");
+  const man = ed.slice(ed.indexOf('<div id="manual"'), ed.indexOf('<div id="aviso">'));
+  ok("existe el manual", man.length > 1000);
+  ok("se abre con el «?» de la barra de arriba, para todos",
+     /id="ayuda"/.test(ed) && /\$\("ayuda"\)\.addEventListener\("click", abrirManual\)/.test(ed));
+  ok("la orientación del primer ingreso lleva al manual", /id="guia-manual"/.test(ed));
+  const temas = [
+    ["Taller y Guardar", /Guardar/, /id="guardar"/],
+    ["Vista previa", /Vista previa/, /id="vista-previa"/],
+    ["Al sitio", /Al sitio/, /id="migrar"/],
+    ["Idiomas", /ES · FR · EN/, /id="idiomas"/],
+    ["Fotos y «Volver a la original»", /Volver a la original/, /id="h-repo"/],
+    ["Secciones", /<b>Secciones<\/b>/, /id="secciones"/],
+    ["Páginas del andamio", /<b>Páginas<\/b>/, /id="paginas-taller"/],
+    ["Mudar un bloque (→)", /<b>→<\/b>/, /class="muda"/],
+    ["Enlazar (🔗)", /🔗/, /liga\.textContent = "🔗"/],
+    ["El globo de pedidos", /globo/, /id="globo"/],
+  ];
+  for (const [t, enManual, enEditor] of temas)
+    ok("el manual explica «" + t + "» y el editor lo tiene", enManual.test(man) && enEditor.test(ed));
+  ok("advierte que los bloques de fábrica vuelven al quitarlos", /vuelven a\s+aparecer/.test(man));
+  ok("advierte recargar antes de guardar si otro cambió el taller", /recargá la página antes de guardar/.test(man));
+  ok("el reporte de fallas se hace desde el manual, porque el editor no tiene menú de cuenta",
+     /id="manual-falla"/.test(man) && /\$\("manual-falla"\)[\s\S]{0,120}CY\.reportar\("falla"\)/.test(ed)
+     && !/renderNav/.test(ed));
+}
+
 console.log(`\n${bien} bien · ${mal} mal`);
 process.exit(mal ? 1 : 0);

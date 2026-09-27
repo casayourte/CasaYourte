@@ -134,6 +134,34 @@ body.taller #top{box-shadow:inset 0 -2px 0 var(--bad)}
 #guia li{margin:0 0 .7rem;line-height:1.5;font-size:.92rem}
 #guia li b{color:var(--blond);font-weight:600}
 #guia .btn{width:100%}
+#guia .btn + .btn{margin-top:.5rem}
+
+/* EL MANUAL. Lo que la orientación no puede decir en cuatro renglones: cómo
+   se edita CADA cosa. Pedido por Mauro el 27-sep-2026 para que Romina lo
+   entienda sola. Siempre a mano con el «?», para todos —no sólo para quien no
+   publica—, y en desplegables: en un teléfono, una página de manual abierta
+   entera no se lee. */
+#top .ayuda{flex:none;width:1.9rem;height:1.9rem;border-radius:50%;border:1px solid var(--blond);
+  background:none;color:var(--blond);font:600 .95rem/1 var(--body);cursor:pointer;padding:0}
+#manual{position:fixed;inset:0;z-index:90;background:var(--ink);overflow:auto;
+  padding:1rem 1rem calc(5rem + var(--safe))}
+#manual .caja{max-width:36rem;margin:0 auto}
+#manual h2{font-family:var(--disp);font-weight:400;font-size:1.5rem;margin:.4rem 0 .2rem}
+#manual p.sub{color:var(--dim);margin:0 0 1rem;font-size:.9rem;line-height:1.5}
+#manual details{border-top:1px solid var(--line)}
+#manual details:last-of-type{border-bottom:1px solid var(--line)}
+#manual summary{cursor:pointer;padding:.85rem .1rem;font-weight:600;font-size:.95rem;
+  list-style:none;display:flex;justify-content:space-between;gap:1rem}
+#manual summary::after{content:"+";color:var(--blond)}
+#manual details[open] summary::after{content:"–"}
+#manual summary::-webkit-details-marker{display:none}
+#manual .det{padding:0 .1rem 1rem;font-size:.9rem;line-height:1.55}
+#manual .det p{margin:0 0 .6rem}
+#manual .det ul{margin:0 0 .6rem;padding-left:1.1rem}
+#manual .det li{margin:0 0 .35rem}
+#manual b{color:var(--blond);font-weight:600}
+#manual .ojo{border-left:2px solid var(--bad);padding-left:.7rem;color:var(--wool)}
+#manual .cerrar{position:sticky;bottom:0;width:100%;margin-top:1.2rem}
 
 #aviso{position:fixed;left:.8rem;right:.8rem;bottom:calc(4.5rem + var(--safe));z-index:120;
   background:var(--blond);color:var(--ink);border-radius:6px;padding:.7rem .9rem;
@@ -159,6 +187,8 @@ body.taller #top{box-shadow:inset 0 -2px 0 var(--bad)}
 
 <div id="app" class="hide">
   <div id="top">
+    <button type="button" class="ayuda" id="ayuda" title="Cómo se edita cada cosa"
+            aria-label="Abrir el manual del editor">?</button>
     <span class="t">Casa<b>Yourte</b> <span class="mono" id="sello"
       style="color:var(--dim);font-size:.5rem"></span></span>
     <div class="grupo-chips" id="destinos" role="group" aria-label="Dónde se guarda lo que se toca">
@@ -215,7 +245,10 @@ body.taller #top{box-shadow:inset 0 -2px 0 var(--bad)}
           colores, tipografía, una sección nueva. Se puede mandar una foto.
           Lo lee una IA una vez por día y lo hace acá, en el taller.</li>
       </ol>
+      <p class="sub">El botón <b>?</b> de arriba a la izquierda tiene el
+        manual completo: cómo se edita cada cosa, una por una.</p>
       <button class="btn p" id="guia-ok" type="button">Entendido, empezar</button>
+      <button class="btn" id="guia-manual" type="button">Ver el manual ahora</button>
     </div>
   </div>
 
@@ -278,6 +311,154 @@ body.taller #top{box-shadow:inset 0 -2px 0 var(--bad)}
   </div>
 </div>
 
+<!-- EL MANUAL DEL EDITOR. Si algo del editor cambia, esto cambia EN LA MISMA
+     TANDA: un manual que describe botones que ya no existen es peor que no
+     tener manual, porque se le cree. `pruebas-puertas.mjs` comprueba que
+     nombre cada una de las cosas que se pueden editar. -->
+<div id="manual" class="hide" role="dialog" aria-modal="true" aria-labelledby="manual-t">
+  <div class="caja">
+    <h2 id="manual-t">Cómo se edita cada cosa</h2>
+    <p class="sub">Tocá un tema para abrirlo. Todo lo que hagas en el
+      <b>Taller</b> es una prueba: el sitio de verdad no cambia hasta que
+      Mauro lo lleve.</p>
+
+    <details open><summary>Dónde estás: Taller, Vista previa y Guardar</summary><div class="det">
+      <p>Arriba, <b>Taller</b> es el sitio piloto: lo ve sólo quien tenga el
+        enlace. <b>En vivo</b> es casayourte.com, y sólo lo toca quien puede
+        publicar. La barra bordó te recuerda en cuál estás.</p>
+      <p><b>Guardar</b> se enciende cuando hay algo cambiado, y al lado dice
+        cuántos cambios hay. Guardá seguido: lo que no guardaste se pierde si
+        se cierra la pestaña.</p>
+      <p><b>👁 Vista previa</b> abre el taller como lo vería el público, sin la
+        barra bordó. Muestra lo <b>guardado</b>, no lo que tenés abierto.</p>
+      <p><b>⇄ Al sitio</b> lleva todo el taller a casayourte.com. Es de Mauro.</p>
+      <p class="ojo">Si Mauro o Claude cambian el taller mientras lo tenés
+        abierto, <b>recargá la página antes de guardar</b>. Guardar escribe el
+        taller entero con lo que tenés vos, y se llevaría lo que hicieron
+        ellos.</p>
+    </div></details>
+
+    <details><summary>Textos</summary><div class="det">
+      <p>Todo texto con un recuadro punteado se edita <b>tocándolo</b> y
+        escribiendo. No hay que apretar nada para confirmar: el contador de
+        abajo suma el cambio.</p>
+      <p>Los textos que están plegados («Leer más») se abren solos en el
+        editor, para que se puedan tocar.</p>
+    </div></details>
+
+    <details><summary>Idiomas: ES · FR · EN</summary><div class="det">
+      <p>Los botones de idioma de arriba cambian <b>qué idioma estás
+        escribiendo</b>. Cada idioma es aparte: cambiar el español no cambia el
+        francés.</p>
+      <p>Lo que no esté escrito en francés o en inglés se muestra en español,
+        así que nunca queda un hueco.</p>
+    </div></details>
+
+    <details><summary>Fotos</summary><div class="det">
+      <p><b>Tocá la foto</b> y elegí otra de los álbumes; arriba de la hoja se
+        cambia de álbum. <b>Volver a la original</b> deshace el cambio.</p>
+      <p>Para usar una foto que todavía no está en ningún álbum, primero
+        subila desde el panel, en <b>Álbumes</b>, y después elegila acá.</p>
+    </div></details>
+
+    <details><summary>Listas y tablas</summary><div class="det">
+      <p>Al tocar una lista se abre una hoja: <b>un ítem por renglón</b>. En
+        una tabla, una fila por renglón y las celdas separadas con
+        <b>|</b>.</p>
+    </div></details>
+
+    <details><summary>Bloques que se repiten: ▲ ▼ ＋ ✕</summary><div class="det">
+      <p>La trayectoria, los diferenciales, la oferta y los modelos son listas
+        de bloques iguales. Cada bloque tiene arriba una barrita:</p>
+      <ul>
+        <li><b>▲ ▼</b> lo sube o lo baja.</li>
+        <li><b>＋</b> agrega otro igual justo abajo, con textos de muestra
+          para reemplazar. Si lleva foto, tocá el marco vacío para elegirla.</li>
+        <li><b>✕</b> lo quita.</li>
+      </ul>
+      <p class="ojo">Los bloques que <b>ya venían</b> con el sitio vuelven a
+        aparecer la próxima vez que alguien guarda, aunque los quites. Si
+        querés sacar uno de esos, pedilo con el globo. Los que agregaste vos
+        con ＋ sí se quitan del todo.</p>
+    </div></details>
+
+    <details><summary>Secciones de la página</summary><div class="det">
+      <p><b>Secciones</b> (abajo) lista las partes de la página en orden:
+        <b>▲ ▼</b> las mueve y el <b>ojo</b> las apaga o las enciende.</p>
+      <p>Apagar no borra: la sección queda guardada con sus textos, y volver a
+        encenderla es tocar el mismo ojo.</p>
+    </div></details>
+
+    <details><summary>Modelos: las pestañas de yurtas</summary><div class="det">
+      <ul>
+        <li>El <b>nombre de la pestaña</b> y el dato corto de abajo se tocan
+          en la misma pestaña.</li>
+        <li>El <b>título</b>, el <b>texto</b> y la <b>comparación</b> (la
+          línea en dorado) se tocan en la ficha.</li>
+        <li>La <b>foto</b> se toca como cualquier foto. Si un modelo no tiene
+          foto, la ficha se ve sin marco.</li>
+        <li>Para <b>agregar un modelo</b>, ＋ en la barrita de una ficha: su
+          pestaña aparece sola.</li>
+      </ul>
+      <p>Este cuadro reemplaza a la vieja tabla de diámetros: mientras tenga
+        contenido, la tabla no se muestra.</p>
+    </div></details>
+
+    <details><summary>Las cuatro formas de trabajo</summary><div class="det">
+      <p>El nombre y la bajada de cada pestaña <b>son los de su página del
+        Andamio</b>: si los cambiás acá, cambian allá, y al revés. El orden es
+        el mismo que el de las páginas.</p>
+      <p>El botón «Ver el detalle» lleva a esa página. En el sitio publicado
+        todavía no aparece, porque las páginas sólo existen en el taller.</p>
+    </div></details>
+
+    <details><summary>Andamio: las páginas</summary><div class="det">
+      <p>Arriba, <b>Andamio</b> abre las páginas del taller: cuatro secciones
+        con dos páginas adentro de cada una. Abajo aparece el botón
+        <b>Páginas</b>:</p>
+      <ul>
+        <li><b>Tocar un nombre</b> te lleva a esa página, con las mismas
+          herramientas.</li>
+        <li><b>▲ ▼</b> ordena las páginas.</li>
+        <li><b>🔗</b> pone, en la página donde estás, un botón que lleva a esa
+          otra. <b>La vuelta aparece sola</b> en la otra página: no hay que
+          ponerla.</li>
+      </ul>
+      <p>El <b>nombre</b> y la <b>bajada</b> de cada página se tocan en la
+        página misma. Cada página arranca con tres bloques de texto.</p>
+    </div></details>
+
+    <details><summary>Andamio: mover contenido entre páginas</summary><div class="det">
+      <p>Arriba de cada bloque de texto hay una barrita:</p>
+      <ul>
+        <li><b>▲ ▼</b> lo mueve dentro de la página.</li>
+        <li><b>→</b> lo muda a otra página: elegís cuál en la lista. Llega al
+          primer lugar libre, en todos los idiomas a la vez.</li>
+      </ul>
+      <p>Un botón de enlace se saca con su <b>✕</b>.</p>
+    </div></details>
+
+    <details><summary>Pedir un cambio: el globo</summary><div class="det">
+      <p>El <b>globo</b> de abajo a la derecha es para lo que no se puede
+        hacer desde acá: colores, tipografía, una sección nueva, un cuadro
+        distinto. Se puede adjuntar una <b>foto</b> o una captura.</p>
+      <p>Lo lee una IA —Claude— una vez por día, y el cambio lo hace en el
+        taller. No es un chat en vivo: si hay que ir y venir, coordinalo con
+        Mauro.</p>
+    </div></details>
+
+    <details><summary>Si algo no anda</summary><div class="det">
+      <p>Reportalo acá mismo: contá qué hiciste, qué esperabas y qué pasó, y
+        si podés, sumá una captura. Llega con la página donde estabas.</p>
+      <p><button class="btn" id="manual-falla" type="button">Reportar una falla</button></p>
+      <p>Si el editor muestra algo viejo, recargá la página. Arriba, al lado
+        de CasaYourte, está el número de versión.</p>
+    </div></details>
+
+    <button class="btn p cerrar" id="manual-cerrar" type="button">Cerrar el manual</button>
+  </div>
+</div>
+
 <div id="aviso"></div>
 
 <!-- Clásico y antes del módulo: el catálogo tiene que estar en window
@@ -293,7 +474,7 @@ import { CY } from "./nucleo.js";
 const $ = (id) => document.getElementById(id);
 
 // Sello de este archivo, para saber si quedó viejo en la caché.
-const EDITOR = "editar-18";
+const EDITOR = "editar-19";
 CY.PANEL = EDITOR;
 
 /* ═══════════════════════════════════════════════════════════════
@@ -874,6 +1055,10 @@ function mover(cont, el, dir) {
   else cont.insertBefore(hijos[j], el);
   CONT.orden[cont.dataset.grupo] = bloquesDe(cont).map(x => x.dataset.bloque).join(",");
   numerar(cont);
+  /* Los modelos tienen además su tira de pestañas, que se arma leyendo los
+     bloques: mover uno sin rehacerla dejaba las pestañas en el orden viejo
+     hasta recargar — el manual dice que ▲▼ ordena, y tiene que ser cierto. */
+  if (cont.dataset.grupo === "mod") { pintarEnIframe(); cablear(); }
   contar();
   el.scrollIntoView({ block: "center", behavior: "smooth" });
 }
@@ -1155,6 +1340,22 @@ function quizasGuia() {
   if (vista) return;
   $("guia").classList.remove("hide");
 }
+function abrirManual() { $("manual").classList.remove("hide"); $("manual-cerrar").focus(); }
+function cerrarManual() { $("manual").classList.add("hide"); }
+$("ayuda").addEventListener("click", abrirManual);
+$("manual-cerrar").addEventListener("click", cerrarManual);
+// El editor no dibuja la navegación del panel —tiene su propia barra—, así que
+// no tiene el menú de cuenta donde vive «Reportar una falla». Sin este botón,
+// el manual mandaría a buscar un menú que acá no existe.
+$("manual-falla").addEventListener("click", () => { cerrarManual(); CY.reportar("falla"); });
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !$("manual").classList.contains("hide")) cerrarManual();
+});
+$("guia-manual").addEventListener("click", () => {
+  $("guia").classList.add("hide");
+  try { localStorage.setItem(VISTA_GUIA, "1"); } catch (e) {}
+  abrirManual();
+});
 $("guia-ok").addEventListener("click", () => {
   $("guia").classList.add("hide");
   try { localStorage.setItem(VISTA_GUIA, "1"); } catch (e) {}

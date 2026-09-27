@@ -762,9 +762,9 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-24` |
 | `firebase-init.js` | (en el comentario) | `init-2` |
-| `sw.js` | `VERSION` | `cy-shell-v52` |
+| `sw.js` | `VERSION` | `cy-shell-v53` |
 | `admin.html` | `PANEL` | `admin-19` |
-| `editar.html` | `EDITOR` | `editar-18` |
+| `editar.html` | `EDITOR` | `editar-19` |
 | `taller.html` | `SELLO` | `andamio-2` |
 | `calculo.html` | `CY.PANEL` | `calculo-9` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-4` |
@@ -839,6 +839,11 @@ guardado que ya no existe en el archivo, las bandas decorativas que viajan con s
 pie que nunca se mueve, y basura en los campos.
 
 Es el patrón que presta Harmonía (`PROTOCOLO-DESARROLLO.md`), y es el primero de CasaYourte.
+
+`pruebas-puertas.mjs` suma 16 casos sobre el **manual del editor** (el «?» de arriba a la
+izquierda): que exista, que se llegue desde la orientación, y que cada tema que explica
+corresponda a un botón que el editor tiene de verdad. Si se saca un botón y el manual lo sigue
+nombrando, falla.
 
 `pruebas-modelos.mjs` son 83 casos sobre el cuadro de modelos y sobre la medida del sitio.
 Existe por cuatro errores del 24-sep-2026 que tienen todos la misma forma: **no rompen nada
