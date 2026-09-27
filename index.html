@@ -267,20 +267,21 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
    27-sep-2026). NO tienen textos propios: el nombre y la bajada de cada
    tarjeta son LOS MISMOS `pg.<id>.t` y `pg.<id>.d` de su página. Romina
    escribe una vez, en la tarjeta o en la página, y se ve en los dos lados. */
-.lineas{margin-top:clamp(2rem,4vw,3rem);display:grid;gap:1px;background:#35302a;
-  border:1px solid #35302a}
-.linea{background:var(--ink-2);padding:clamp(1.3rem,3vw,2rem);display:flex;
-  flex-direction:column;gap:.7rem}
-.linea .n{font-family:var(--mono);font-size:.64rem;letter-spacing:.2em;color:var(--blond)}
-.linea h3{font-size:clamp(1.2rem,2vw,1.55rem)}
-.linea p{font-size:.93rem;color:#c2b9a7;margin:0;flex:1}
-.linea .ln-ir{align-self:flex-start;margin-top:.4rem;font-family:var(--mono);font-size:.64rem;
+/* Mismas pestañas que los modelos (pedido de Mauro, 27-sep-2026: «la misma
+   presentación en pestañas, lo más minimalista posible»). Reusa las clases
+   `.mod-tabs`, `.mod-tab` y `.mod-cuerpo`: dos cuadros con la misma forma se
+   leen como un sistema, y un solo juego de estilos no se desparejan. Lo único
+   propio es el panel, que es texto y un botón. */
+.linea{display:flex;flex-direction:column;gap:1rem;align-items:flex-start}
+.linea[hidden]{display:none}
+.linea p{font-size:1rem;color:#c2b9a7;margin:0;max-width:52ch}
+.linea.entra{animation:mod-entra .34s cubic-bezier(.2,.7,.2,1) both}
+@media(prefers-reduced-motion:reduce){.linea.entra{animation:none}}
+.linea .ln-ir{font-family:var(--mono);font-size:.64rem;
   letter-spacing:.14em;text-transform:uppercase;text-decoration:none;color:var(--blond);
-  border:1px solid var(--blond);border-radius:999px;padding:.55rem .9rem}
+  border:1px solid var(--blond);border-radius:999px;padding:.6rem 1rem}
 .linea .ln-ir:hover{background:var(--blond);color:var(--ink)}
 .linea .ln-ir:not([href]){opacity:.55;cursor:default}
-@media(min-width:720px){.lineas{grid-template-columns:1fr 1fr}}
-@media(min-width:1180px){.lineas{grid-template-columns:repeat(4,1fr)}}
 .lineas-vacia{display:none}
 
 /* ---------- proceso ---------- */
@@ -585,11 +586,11 @@ body.cy-en-taller{padding-top:1.9rem}
           src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></figure>
         <div><h3 data-i="m3.t"></h3><p data-i="m3.b"></p><p class="cmp" data-i="m3.c"></p></div>
       </article>
-      <article class="modelo" data-bloque="m4">
-        <figure class="modelo-fig"><img data-slot="mod4" alt="" loading="lazy" decoding="async"
-          src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></figure>
-        <div><h3 data-i="m4.t"></h3><p data-i="m4.b"></p><p class="cmp" data-i="m4.c"></p></div>
-      </article>
+      <!-- Son TRES en el archivo, y no cuatro, a propósito. El editor suma a la
+           lista guardada todo bloque que esté escrito acá (§3.35), así que un
+           cuarto modelo en el HTML vuelve cada vez que alguien guarda aunque
+           se lo haya sacado — pasó el 27-sep-2026 con la yurta gemela. Un
+           modelo nuevo se agrega desde el editor, con ＋, y nace de la lista. -->
     </div>
   </div>
 </section>
@@ -602,7 +603,10 @@ body.cy-en-taller{padding-top:1.9rem}
   <span class="eyebrow" data-i="ln.eyebrow"></span>
   <h2 style="font-size:clamp(2rem,5.5vw,3.6rem);max-width:22ch" data-i="ln.title"></h2>
   <p class="lede" style="color:#c2b9a7;margin-top:1.2rem" data-i="ln.lede"></p>
-  <div class="lineas" data-lineas></div>
+  <div class="mods">
+    <div class="mod-tabs" role="tablist" aria-label="Formas de trabajo" data-lineas-tabs></div>
+    <div class="mod-cuerpo" data-lineas></div>
+  </div>
 </section>
 
 <!-- PROCESO -->
@@ -1210,24 +1214,65 @@ function lineasIds(){
   LINEAS_BASE.forEach(x=>{ if(!l.includes(x)) l.push(x); });   // §3.35
   return l.slice(0,8);
 }
+let lnSel = null;                          // la pestaña de línea elegida
 function lineasArmar(){
-  const cont=document.querySelector("[data-lineas]"); if(!cont) return;
+  const cont=document.querySelector("[data-lineas]");
+  const tira=document.querySelector("[data-lineas-tabs]");
+  if(!cont||!tira) return;
   const ids=lineasIds();
   if(cont.dataset.ids===ids.join(",")) return;          // no cambió el orden
   cont.dataset.ids=ids.join(",");
-  cont.replaceChildren();
+  cont.replaceChildren(); tira.replaceChildren();
   ids.forEach((id,i)=>{
+    // La pestaña: el NOMBRE de la página, y su número. El `data-i` va en un
+    // hijo del botón, por lo mismo que en los modelos.
+    const b=document.createElement("button");
+    b.type="button"; b.className="mod-tab"; b.setAttribute("role","tab");
+    b.id="ln-tab-"+id; b.setAttribute("aria-controls","ln-pan-"+id); b.dataset.para=id;
+    const n=document.createElement("span"); n.className="mod-tab-n"; n.dataset.i="pg."+id+".t";
+    const k=document.createElement("small"); k.textContent=String(i+1).padStart(2,"0");
+    b.append(n,k);
+    b.addEventListener("click",()=>lineasElegir(id,true));
+    tira.appendChild(b);
+    // El panel: la BAJADA de la página y el botón que lleva a ella. Nada más.
     const a=document.createElement("article");
-    a.className="linea"; a.dataset.pg=id;
-    const n=document.createElement("span"); n.className="n"; n.textContent=String(i+1).padStart(2,"0");
-    const h=document.createElement("h3"); h.dataset.i="pg."+id+".t";
+    a.className="linea"; a.dataset.pg=id; a.id="ln-pan-"+id;
+    a.setAttribute("role","tabpanel"); a.setAttribute("aria-labelledby","ln-tab-"+id);
     const p=document.createElement("p"); p.dataset.i="pg."+id+".d";
-    // El rótulo va en un HIJO del enlace, por lo mismo que las pestañas.
     const ir=document.createElement("a"); ir.className="ln-ir";
     const r=document.createElement("span"); r.dataset.i="ln.ir";
     ir.append(r, document.createTextNode(" →"));
-    a.append(n,h,p,ir);
+    a.append(p,ir);
     cont.appendChild(a);
+  });
+  // La tira se rehace si cambia el orden, pero ella misma es la misma: el
+  // escuchador se ata UNA vez, o cada reorden sumaría otro y las flechas
+  // saltarían de a dos.
+  if(tira.dataset.teclado) return;
+  tira.dataset.teclado="1";
+  tira.addEventListener("keydown",ev=>{
+    const paso=ev.key==="ArrowRight"?1:ev.key==="ArrowLeft"?-1:0;
+    if(!paso) return;
+    ev.preventDefault();
+    const l=[...tira.querySelectorAll(".mod-tab")];
+    const i=l.findIndex(x=>x.dataset.para===lnSel);
+    const b=l[(i+paso+l.length)%l.length];
+    if(b){ lineasElegir(b.dataset.para,true); b.focus(); }
+  });
+}
+function lineasElegir(id,animar){
+  const cont=document.querySelector("[data-lineas]"); if(!cont) return;
+  lnSel=id;
+  cont.querySelectorAll(".linea").forEach(el=>{
+    const suyo=el.dataset.pg===id;
+    el.hidden=!suyo;
+    el.classList.remove("entra");
+    if(suyo&&animar){ void el.offsetWidth; el.classList.add("entra"); }
+  });
+  document.querySelectorAll("[data-lineas-tabs] .mod-tab").forEach(b=>{
+    const suya=b.dataset.para===id;
+    b.setAttribute("aria-selected",String(suya));
+    if(suya&&animar) b.scrollIntoView({inline:"nearest",block:"nearest"});
   });
 }
 function lineasFin(){
@@ -1236,7 +1281,7 @@ function lineasFin(){
   if(!sec||!cont) return;
   // Sin una sola línea con nombre, la sección no existe: el publicado no la
   // muestra hasta que el taller se lleve al sitio.
-  const hay=[...cont.querySelectorAll(".linea h3")].some(h=>h.textContent.trim());
+  const hay=[...document.querySelectorAll("[data-lineas-tabs] .mod-tab-n")].some(h=>h.textContent.trim());
   sec.classList.toggle("lineas-vacia",!hay);
   // El destino SÓLO existe en el taller (`window.CY_ANDAMIO` lo pone el bloque
   // del taller, más abajo). En el publicado el botón no tiene a dónde ir.
@@ -1246,6 +1291,9 @@ function lineasFin(){
     else ir.removeAttribute("href");
     ir.hidden = !window.CY_ANDAMIO && !/[?&]edit=1/.test(location.search);
   });
+  if(!hay) return;
+  const vivos=[...cont.querySelectorAll(".linea")].map(el=>el.dataset.pg);
+  lineasElegir(vivos.includes(lnSel)?lnSel:vivos[0],false);
 }
 
 let modSel = null;                         // la pestaña elegida, entre repintados

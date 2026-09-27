@@ -200,7 +200,7 @@ el agente y **no es opcional**: que el JavaScript parsee **como MÓDULO**
 incluidos los módulos que viven adentro de un `.html`; que **los cinco bancos
 corran** —`node pruebas-secciones.mjs` (16 casos), `node pruebas-reportes.mjs`
 (64 casos), `node pruebas-andamio.mjs` (89 casos), `node
-pruebas-puertas.mjs` (30 casos) y `node pruebas-modelos.mjs` (77 casos), los
+pruebas-puertas.mjs` (30 casos) y `node pruebas-modelos.mjs` (76 casos), los
 cinco sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
 sellos hayan subido, con la `VERSION` del `sw.js` si el archivo está en `SHELL`
 y los `?v=` con los que se lo pide; y que la documentación del repo diga la
@@ -355,6 +355,16 @@ verdad después del cambio.
   `if (TALLER)`; afuera el botón no tiene destino. El día que el cuadro salga
   al aire, las cuatro páginas tienen que volverse páginas públicas de verdad —
   eso es una decisión pendiente, no un olvido.
+  **Y son PESTAÑAS, con las mismas clases que los modelos** (pedido de Mauro
+  el mismo día: «la misma presentación, lo más minimalista posible»): el
+  nombre en la pestaña; en el panel, la bajada y el botón. Nada más.
+  **El archivo trae TRES modelos, no cuatro, y no es un descuido.** El editor
+  suma a la lista guardada todo bloque escrito en el HTML (§3.35), así que un
+  bloque que exista acá VUELVE cada vez que alguien guarda aunque se lo haya
+  quitado: pasó con la yurta gemela. Un modelo nuevo se agrega desde el
+  editor y nace de la lista. Ojo que lo mismo vale para la trayectoria, los
+  diferenciales y la oferta: quitar uno de sus bloques escritos en el HTML no
+  dura.
   **Cada modelo lleva además `c`, la comparación con el anterior**, y un
   modelo sin foto propia no muestra un marco negro: la yurta mongol no es una
   obra de CasaYourte y ninguna foto de los álbumes la ilustra.

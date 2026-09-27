@@ -60,7 +60,7 @@ ok("sus claves son p, s, t, b y c (la comparación)", JSON.stringify(CLAVES) ===
 /* ── 2 · un nombre, un lugar, un archivo ────────────────── */
 titulo("2 · cada bloque y su imagen llevan el mismo número");
 const bloques = [...marcado.matchAll(/data-bloque="(m\d+)"([\s\S]*?)<\/article>/g)];
-ok("hay al menos cuatro modelos en el HTML", bloques.length >= 4);
+ok("hay tres modelos en el HTML: mongol, contemporánea, doble techo", bloques.length === 3);
 for (const [, id, cuerpo] of bloques) {
   const n = id.slice(1);
   ok(id + " usa el lugar de imagen mod" + n, cuerpo.includes('data-slot="mod' + n + '"'));
@@ -199,13 +199,20 @@ ok("va inmediatamente después del cuadro de modelos",
 // Del texto CRUDO: el filtro de comentarios de arriba confunde un `image/*` del
 // marcado con el principio de un comentario y se come código de verdad.
 const lin = index.slice(index.indexOf("const LINEAS_BASE"), index.indexOf("let modSel"));
-ok("cada tarjeta usa el nombre de SU página, no un texto propio", /h\.dataset\.i="pg\."\+id\+"\.t"/.test(lin));
+ok("cada pestaña usa el nombre de SU página, no un texto propio", /n\.dataset\.i="pg\."\+id\+"\.t"/.test(lin));
 ok("y la bajada de su página", /p\.dataset\.i="pg\."\+id\+"\.d"/.test(lin));
 ok("el orden sale de orden.pgs, el mismo con el que se ordenan las páginas",
    /if\(orden && typeof orden\.pgs==="string"\) ORDEN_PGS=orden\.pgs;/.test(index));
 ok("una lista guardada no hace desaparecer una línea (§3.35)",
    /LINEAS_BASE\.forEach\(x=>\{ if\(!l\.includes\(x\)\) l\.push\(x\); \}\)/.test(lin));
 ok("sin ninguna línea con nombre, la sección se apaga", /classList\.toggle\("lineas-vacia",!hay\)/.test(lin));
+/* 27-sep-2026: «la misma presentación en pestañas». Mismas clases que los
+   modelos, para que los dos cuadros no se desparejen nunca. */
+ok("las líneas son pestañas con las MISMAS clases que los modelos",
+   /<div class="mod-tabs" role="tablist" aria-label="Formas de trabajo" data-lineas-tabs><\/div>\s*<div class="mod-cuerpo" data-lineas>/.test(marcado)
+   && /b\.className="mod-tab"/.test(lin));
+ok("se ve una sola línea por vez", /el\.hidden=!suyo/.test(lin) && /\.linea\[hidden\]\{display:none\}/.test(index));
+ok("el escuchador del teclado se ata una sola vez", /if\(tira\.dataset\.teclado\) return;/.test(lin));
 ok("el enlace SÓLO se pone si existe CY_ANDAMIO", /if\(window\.CY_ANDAMIO\) ir\.setAttribute\("href"/.test(lin));
 ok("y CY_ANDAMIO se define SÓLO dentro del bloque del taller",
    /if \(TALLER\) \{[\s\S]{0,400}window\.CY_ANDAMIO = "\.\/taller\.html";/.test(index)
