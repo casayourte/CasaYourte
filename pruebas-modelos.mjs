@@ -55,7 +55,7 @@ titulo("1 · el grupo de modelos");
 const grupo = /mod:\s*\{\s*prefijo:"m",\s*slot:"mod",\s*claves:\[([^\]]*)\]/.exec(codigo);
 ok("GRUPOS trae `mod` con prefijo m y lugar de imagen mod", !!grupo);
 const CLAVES = grupo ? grupo[1].split(",").map(x => x.trim().replace(/"/g, "")) : [];
-ok("sus claves son p, s, t, b", JSON.stringify(CLAVES) === JSON.stringify(["p","s","t","b"]));
+ok("sus claves son p, s, t, b y c (la comparación)", JSON.stringify(CLAVES) === JSON.stringify(["p","s","t","b","c"]));
 
 /* ── 2 · un nombre, un lugar, un archivo ────────────────── */
 titulo("2 · cada bloque y su imagen llevan el mismo número");
@@ -180,11 +180,38 @@ titulo("12 · en el editor el cuadro se decide DESPUÉS de escribir los textos")
    quedaba apagado —con la tabla a la vista— aunque `?taller=1` lo mostraba. */
 const editar_ = leer("editar.html");
 ok("la página ofrece los dos avisos en su contrato",
-   /antesDeEscribir:\(\)=>\{ modelosTabs\(\); \}/.test(codigo) && /despuesDeEscribir:\(\)=>\{ modelosFin\(\); \}/.test(codigo));
+   /antesDeEscribir:\(\)=>\{ modelosTabs\(\); lineasArmar\(\); \}/.test(codigo)
+   && /despuesDeEscribir:\(\)=>\{ modelosFin\(\); lineasFin\(\); \}/.test(codigo));
 const pinta_ = editar_.slice(editar_.indexOf("function pintarEnIframe()"), editar_.indexOf("function aplicarImagenes()"));
 const iA = pinta_.indexOf("c.antesDeEscribir()"), iE = pinta_.indexOf('querySelectorAll("[" + cfg.attr'), iD = pinta_.indexOf("c.despuesDeEscribir()");
 ok("el editor avisa ANTES de escribir", iA > -1 && iA < iE);
 ok("y DESPUÉS", iD > iE);
+
+/* ── 13 · el cuadro de las líneas de trabajo ─────────────────── */
+titulo("13 · las cuatro líneas: los mismos textos que sus páginas, y sin camino al andamio desde el publicado");
+/* Pedido de Mauro, 27-sep-2026: después de los modelos, un cuadro que presente
+   las cuatro páginas de Romina con una bajada y un enlace a cada una. */
+ok("existe la sección, con su lugar para las tarjetas",
+   /<section class="wrap" data-seccion="lineas">[\s\S]{0,400}data-lineas/.test(marcado));
+ok("va inmediatamente después del cuadro de modelos",
+   marcado.indexOf('data-seccion="lineas"') > marcado.indexOf('data-seccion="modelos"')
+   && marcado.indexOf('data-seccion="lineas"') < marcado.indexOf('data-seccion="proceso"'));
+// Del texto CRUDO: el filtro de comentarios de arriba confunde un `image/*` del
+// marcado con el principio de un comentario y se come código de verdad.
+const lin = index.slice(index.indexOf("const LINEAS_BASE"), index.indexOf("let modSel"));
+ok("cada tarjeta usa el nombre de SU página, no un texto propio", /h\.dataset\.i="pg\."\+id\+"\.t"/.test(lin));
+ok("y la bajada de su página", /p\.dataset\.i="pg\."\+id\+"\.d"/.test(lin));
+ok("el orden sale de orden.pgs, el mismo con el que se ordenan las páginas",
+   /if\(orden && typeof orden\.pgs==="string"\) ORDEN_PGS=orden\.pgs;/.test(index));
+ok("una lista guardada no hace desaparecer una línea (§3.35)",
+   /LINEAS_BASE\.forEach\(x=>\{ if\(!l\.includes\(x\)\) l\.push\(x\); \}\)/.test(lin));
+ok("sin ninguna línea con nombre, la sección se apaga", /classList\.toggle\("lineas-vacia",!hay\)/.test(lin));
+ok("el enlace SÓLO se pone si existe CY_ANDAMIO", /if\(window\.CY_ANDAMIO\) ir\.setAttribute\("href"/.test(lin));
+ok("y CY_ANDAMIO se define SÓLO dentro del bloque del taller",
+   /if \(TALLER\) \{[\s\S]{0,400}window\.CY_ANDAMIO = "\.\/taller\.html";/.test(index)
+   && (index.match(/window\.CY_ANDAMIO\s*=/g) || []).length === 1);
+ok("el archivo no trae textos semilla de líneas: el cuadro nace apagado",
+   ![...index.matchAll(/"(ln\.[a-z]+|pg\.[a-z0-9]+\.[td])"\s*:\s*"([^"]+)"/g)].length);
 
 console.log("\n" + bien + " bien · " + mal + " mal");
 process.exit(mal ? 1 : 0);

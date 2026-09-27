@@ -200,7 +200,7 @@ el agente y **no es opcional**: que el JavaScript parsee **como MÓDULO**
 incluidos los módulos que viven adentro de un `.html`; que **los cinco bancos
 corran** —`node pruebas-secciones.mjs` (16 casos), `node pruebas-reportes.mjs`
 (64 casos), `node pruebas-andamio.mjs` (89 casos), `node
-pruebas-puertas.mjs` (30 casos) y `node pruebas-modelos.mjs` (65 casos), los
+pruebas-puertas.mjs` (30 casos) y `node pruebas-modelos.mjs` (77 casos), los
 cinco sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
 sellos hayan subido, con la `VERSION` del `sw.js` si el archivo está en `SHELL`
 y los `?v=` con los que se lo pide; y que la documentación del repo diga la
@@ -344,6 +344,20 @@ verdad después del cambio.
   escribe el editor. Sin esos avisos el cuadro se evaluaba con la página
   vacía y quedaba apagado, con la tabla a la vista, mientras `?taller=1` lo
   mostraba bien (26-sep-2026).
+- **Después de los modelos va el cuadro de LÍNEAS DE TRABAJO** (27-sep-2026):
+  las cuatro páginas del andamio presentadas en el sitio, una tarjeta cada
+  una. **Las tarjetas no tienen textos propios**: el nombre y la bajada son
+  los MISMOS `pg.<id>.t` y `pg.<id>.d` de su página, y el orden sale de
+  `orden.pgs` — Romina escribe y ordena una vez y se ve en los dos lados. Por
+  eso la excepción de `cablear()` para `pg.*` vale en cualquier página y no
+  sólo en el andamio. **Y el sitio publicado nunca enlaza el andamio**: la
+  dirección vive en `window.CY_ANDAMIO`, que se define SÓLO dentro del
+  `if (TALLER)`; afuera el botón no tiene destino. El día que el cuadro salga
+  al aire, las cuatro páginas tienen que volverse páginas públicas de verdad —
+  eso es una decisión pendiente, no un olvido.
+  **Cada modelo lleva además `c`, la comparación con el anterior**, y un
+  modelo sin foto propia no muestra un marco negro: la yurta mongol no es una
+  obra de CasaYourte y ninguna foto de los álbumes la ilustra.
 - **Una medida de texto va en el `ch` de SU letra, no en la del padre**
   (24-sep-2026, medido en un navegador a seis anchos). `.hero-body` tenía
   `max-width:22ch` calculado con la letra del cuerpo —244 px— y adentro un h1

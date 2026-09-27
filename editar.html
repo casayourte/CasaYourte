@@ -292,7 +292,7 @@ import { CY } from "./nucleo.js";
 const $ = (id) => document.getElementById(id);
 
 // Sello de este archivo, para saber si quedó viejo en la caché.
-const EDITOR = "editar-16";
+const EDITOR = "editar-17";
 CY.PANEL = EDITOR;
 
 /* ═══════════════════════════════════════════════════════════════
@@ -672,7 +672,9 @@ function cablear() {
        de la clave no se adivina: lo genera `taller.html` con un patrón
        conocido (`pg.<pagina>.<campo>`), así que dejarla nacer al escribirla
        no inventa nada. */
-    if (!(clave in (CONT[FUENTE] || {})) && !(esAndamio() && /^pg\./.test(clave))) return;
+    // Y vale en cualquier página, no sólo en el andamio: desde el 27-sep-2026
+    // el cuadro de líneas del sitio muestra los MISMOS `pg.<id>.t/.d`.
+    if (!(clave in (CONT[FUENTE] || {})) && !/^pg\./.test(clave)) return;
     if (Array.isArray(CONT[FUENTE][clave])) return;   // listas y tablas, aparte
     if (el.dataset.editable === clave) return;        // ya está atado
     el.dataset.editable = clave;
@@ -802,8 +804,8 @@ const SEMILLA = {
           fr:{ yr:"Année", t:"Nouveau titre", b:"Nouveau texte." } },
   dif:  { es:{ s:"Dato técnico", t:"Título nuevo", b:"Texto nuevo." },
           fr:{ s:"Donnée technique", t:"Nouveau titre", b:"Nouveau texte." } },
-  mod:  { es:{ p:"Modelo", s:"Dato corto", t:"Título nuevo", b:"Texto nuevo." },
-          fr:{ p:"Modèle", s:"Donnée courte", t:"Nouveau titre", b:"Nouveau texte." } },
+  mod:  { es:{ p:"Modelo", s:"Dato corto", t:"Título nuevo", b:"Texto nuevo.", c:"Frente al anterior: …" },
+          fr:{ p:"Modèle", s:"Donnée courte", t:"Nouveau titre", b:"Nouveau texte.", c:"Face au précédent : …" } },
   of:   { es:{ n:"Línea", t:"Título nuevo", b:"Texto nuevo.", g:"Etiqueta",
                l:["Primer punto"] },
           fr:{ n:"Ligne", t:"Nouveau titre", b:"Nouveau texte.", g:"Étiquette",

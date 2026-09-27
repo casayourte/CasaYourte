@@ -242,6 +242,14 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
 .modelo-fig{margin:0;aspect-ratio:16/10;overflow:hidden;background:#111;border-radius:6px}
 .modelo h3{font-size:clamp(1.3rem,2.4vw,1.9rem);margin-bottom:.6rem}
 .modelo p{font-size:.95rem;color:#c2b9a7;margin:0}
+.modelo .cmp{margin-top:1rem;padding-top:.8rem;border-top:1px solid #3b342c;
+  font-family:var(--disp);font-style:italic;color:var(--blond);font-size:1rem}
+.modelo .cmp:empty{display:none}
+/* Un modelo sin foto elegida no muestra un marco negro: el texto ocupa el
+   ancho. Pasa con la yurta mongol, que no es una obra de CasaYourte y no
+   tiene foto propia en los álbumes. */
+.modelo-fig:has(img[src^="data:"]){display:none}
+.modelo:has(.modelo-fig img[src^="data:"]){grid-template-columns:1fr}
 @media(min-width:760px){.modelo{grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr)}}
 /* La entrada del panel al cambiar de pestaña. Es un adorno: si el sistema
    pide menos movimiento, no corre, y la pestaña cambia igual. */
@@ -253,6 +261,27 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
 .mods-vacia{display:none}
 /* Lo que el cuadro de modelos reemplaza. Ver `modelosFin()`. */
 .reemplazado{display:none!important}
+
+/* ---------- las líneas de trabajo ----------
+   Las cuatro páginas del andamio, presentadas en el sitio (pedido de Mauro,
+   27-sep-2026). NO tienen textos propios: el nombre y la bajada de cada
+   tarjeta son LOS MISMOS `pg.<id>.t` y `pg.<id>.d` de su página. Romina
+   escribe una vez, en la tarjeta o en la página, y se ve en los dos lados. */
+.lineas{margin-top:clamp(2rem,4vw,3rem);display:grid;gap:1px;background:#35302a;
+  border:1px solid #35302a}
+.linea{background:var(--ink-2);padding:clamp(1.3rem,3vw,2rem);display:flex;
+  flex-direction:column;gap:.7rem}
+.linea .n{font-family:var(--mono);font-size:.64rem;letter-spacing:.2em;color:var(--blond)}
+.linea h3{font-size:clamp(1.2rem,2vw,1.55rem)}
+.linea p{font-size:.93rem;color:#c2b9a7;margin:0;flex:1}
+.linea .ln-ir{align-self:flex-start;margin-top:.4rem;font-family:var(--mono);font-size:.64rem;
+  letter-spacing:.14em;text-transform:uppercase;text-decoration:none;color:var(--blond);
+  border:1px solid var(--blond);border-radius:999px;padding:.55rem .9rem}
+.linea .ln-ir:hover{background:var(--blond);color:var(--ink)}
+.linea .ln-ir:not([href]){opacity:.55;cursor:default}
+@media(min-width:720px){.lineas{grid-template-columns:1fr 1fr}}
+@media(min-width:1180px){.lineas{grid-template-columns:repeat(4,1fr)}}
+.lineas-vacia{display:none}
 
 /* ---------- proceso ---------- */
 .proc{margin:clamp(2.2rem,5vw,3.4rem) 0 0}
@@ -544,25 +573,36 @@ body.cy-en-taller{padding-top:1.9rem}
       <article class="modelo" data-bloque="m1">
         <figure class="modelo-fig"><img data-slot="mod1" alt="" loading="lazy" decoding="async"
           src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></figure>
-        <div><h3 data-i="m1.t"></h3><p data-i="m1.b"></p></div>
+        <div><h3 data-i="m1.t"></h3><p data-i="m1.b"></p><p class="cmp" data-i="m1.c"></p></div>
       </article>
       <article class="modelo" data-bloque="m2">
         <figure class="modelo-fig"><img data-slot="mod2" alt="" loading="lazy" decoding="async"
           src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></figure>
-        <div><h3 data-i="m2.t"></h3><p data-i="m2.b"></p></div>
+        <div><h3 data-i="m2.t"></h3><p data-i="m2.b"></p><p class="cmp" data-i="m2.c"></p></div>
       </article>
       <article class="modelo" data-bloque="m3">
         <figure class="modelo-fig"><img data-slot="mod3" alt="" loading="lazy" decoding="async"
           src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></figure>
-        <div><h3 data-i="m3.t"></h3><p data-i="m3.b"></p></div>
+        <div><h3 data-i="m3.t"></h3><p data-i="m3.b"></p><p class="cmp" data-i="m3.c"></p></div>
       </article>
       <article class="modelo" data-bloque="m4">
         <figure class="modelo-fig"><img data-slot="mod4" alt="" loading="lazy" decoding="async"
           src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></figure>
-        <div><h3 data-i="m4.t"></h3><p data-i="m4.b"></p></div>
+        <div><h3 data-i="m4.t"></h3><p data-i="m4.b"></p><p class="cmp" data-i="m4.c"></p></div>
       </article>
     </div>
   </div>
+</section>
+
+<!-- LÍNEAS DE TRABAJO · las cuatro páginas del andamio, presentadas.
+     Las tarjetas se arman desde `orden.pgs`: si Romina reordena las páginas,
+     el cuadro las sigue. El botón lleva a la página SÓLO en el taller: el
+     sitio publicado nunca enlaza el andamio. -->
+<section class="wrap" data-seccion="lineas">
+  <span class="eyebrow" data-i="ln.eyebrow"></span>
+  <h2 style="font-size:clamp(2rem,5.5vw,3.6rem);max-width:22ch" data-i="ln.title"></h2>
+  <p class="lede" style="color:#c2b9a7;margin-top:1.2rem" data-i="ln.lede"></p>
+  <div class="lineas" data-lineas></div>
 </section>
 
 <!-- PROCESO -->
@@ -1159,6 +1199,55 @@ function textos(lang) {
    cada `paint()`, un cambio de idioma tiraría los botones que el editor
    acababa de volver tocables y el nombre dejaría de poder editarse hasta la
    próxima vez que el editor recableara. */
+/* ---------- las líneas de trabajo ----------
+   El orden sale de `orden.pgs`, el mismo campo con el que Romina ordena sus
+   páginas en el andamio. `aplicarOrden` lo guarda acá. */
+const LINEAS_BASE = ["a","b","c","d"];
+let ORDEN_PGS = "";
+function lineasIds(){
+  const l = String(ORDEN_PGS||"").split(",").map(x=>x.trim()).filter(Boolean)
+    .filter(x=>/^[a-z0-9]+$/.test(x));
+  LINEAS_BASE.forEach(x=>{ if(!l.includes(x)) l.push(x); });   // §3.35
+  return l.slice(0,8);
+}
+function lineasArmar(){
+  const cont=document.querySelector("[data-lineas]"); if(!cont) return;
+  const ids=lineasIds();
+  if(cont.dataset.ids===ids.join(",")) return;          // no cambió el orden
+  cont.dataset.ids=ids.join(",");
+  cont.replaceChildren();
+  ids.forEach((id,i)=>{
+    const a=document.createElement("article");
+    a.className="linea"; a.dataset.pg=id;
+    const n=document.createElement("span"); n.className="n"; n.textContent=String(i+1).padStart(2,"0");
+    const h=document.createElement("h3"); h.dataset.i="pg."+id+".t";
+    const p=document.createElement("p"); p.dataset.i="pg."+id+".d";
+    // El rótulo va en un HIJO del enlace, por lo mismo que las pestañas.
+    const ir=document.createElement("a"); ir.className="ln-ir";
+    const r=document.createElement("span"); r.dataset.i="ln.ir";
+    ir.append(r, document.createTextNode(" →"));
+    a.append(n,h,p,ir);
+    cont.appendChild(a);
+  });
+}
+function lineasFin(){
+  const sec=document.querySelector('[data-seccion="lineas"]');
+  const cont=document.querySelector("[data-lineas]");
+  if(!sec||!cont) return;
+  // Sin una sola línea con nombre, la sección no existe: el publicado no la
+  // muestra hasta que el taller se lleve al sitio.
+  const hay=[...cont.querySelectorAll(".linea h3")].some(h=>h.textContent.trim());
+  sec.classList.toggle("lineas-vacia",!hay);
+  // El destino SÓLO existe en el taller (`window.CY_ANDAMIO` lo pone el bloque
+  // del taller, más abajo). En el publicado el botón no tiene a dónde ir.
+  cont.querySelectorAll(".linea").forEach(el=>{
+    const ir=el.querySelector(".ln-ir");
+    if(window.CY_ANDAMIO) ir.setAttribute("href", window.CY_ANDAMIO+"?p="+encodeURIComponent(el.dataset.pg));
+    else ir.removeAttribute("href");
+    ir.hidden = !window.CY_ANDAMIO && !/[?&]edit=1/.test(location.search);
+  });
+}
+
 let modSel = null;                         // la pestaña elegida, entre repintados
 function modelosTabs(){
   const cont=document.querySelector('[data-grupo="mod"]');
@@ -1254,6 +1343,7 @@ function paint(lang){
   const d=textos(lang);
   document.documentElement.lang=lang;
   modelosTabs();          // las pestañas llevan data-i: se arman antes de pintar
+  lineasArmar();          // las tarjetas de las líneas, igual
   document.querySelectorAll("[data-i]").forEach(el=>{
     const v=d[el.dataset.i]; if(v===undefined) return;
     if(/<em>/.test(v)) el.innerHTML=v; else el.textContent=v;
@@ -1274,6 +1364,7 @@ function paint(lang){
   document.querySelectorAll(".lang button").forEach(b=>
     b.setAttribute("aria-pressed", String(b.dataset.set===lang)));
   modelosFin();           // elegir la pestaña y apagar la sección si está vacía
+  lineasFin();
 }
 /* ---------- los bloques repetibles ----------
    Tres grupos de la página son listas de lo mismo: la trayectoria, los
@@ -1299,7 +1390,9 @@ const GRUPOS = {
   // `p` es el rótulo corto de la pestaña —"Simple", "Doble techo"—, que no es
   // el título: en la pestaña no entra una frase. Si queda vacío, la pestaña
   // usa el título, así que un modelo nuevo se ve desde el primer momento.
-  mod:  { prefijo:"m", slot:"mod",  claves:["p","s","t","b"], listas:[] },
+  // `c` es la comparación con el modelo anterior, que Mauro pidió el
+  // 27-sep-2026: ver qué cambia de uno al otro sin tener que leer los dos.
+  mod:  { prefijo:"m", slot:"mod",  claves:["p","s","t","b","c"], listas:[] },
 };
 
 // Un pixel transparente: el bloque nuevo se ve como un marco vacío y se
@@ -1346,6 +1439,8 @@ function crearBloque(g,id){
 }
 
 function aplicarOrden(orden){
+  // El orden de las páginas del andamio también manda en el cuadro de líneas.
+  if(orden && typeof orden.pgs==="string") ORDEN_PGS=orden.pgs;
   Object.keys(GRUPOS).forEach(g=>{
     const cont=document.querySelector('[data-grupo="'+g+'"]'); if(!cont) return;
     const lista=((orden||{})[g]||"").split(",").map(x=>x.trim()).filter(Boolean);
@@ -1419,8 +1514,8 @@ window.CY_SITIO = { version:2, GRUPOS, aplicarOrden, aplicarSecciones,
      página todavía vacía, y se quedaba apagado — con la tabla de diámetros a
      la vista. Pasó el 26-sep-2026: el taller mostraba las pestañas por
      `?taller=1` y el editor no. */
-  antesDeEscribir:()=>{ modelosTabs(); },
-  despuesDeEscribir:()=>{ modelosFin(); },
+  antesDeEscribir:()=>{ modelosTabs(); lineasArmar(); },
+  despuesDeEscribir:()=>{ modelosFin(); lineasFin(); },
   ids:(g)=>{ const c=document.querySelector('[data-grupo="'+g+'"]');
     return c ? [...c.querySelectorAll(':scope > [data-bloque]')].map(x=>x.dataset.bloque) : []; },
   idsSecciones:()=> seccionesEl().map(x => x.dataset.seccion),
@@ -2130,6 +2225,10 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
     + "?key=AIzaSyDDD_xvpC4I_ec2OZymyDqVsm1K0ISTr4Q";
 
   if (TALLER) {
+    // La ÚNICA dirección del andamio en este archivo, y vive acá adentro a
+    // propósito: el sitio publicado no tiene cómo enlazarlo. La usan la barra
+    // y los botones del cuadro de líneas de trabajo.
+    window.CY_ANDAMIO = "./taller.html";
     var m = document.createElement("meta");
     m.name = "robots"; m.content = "noindex, nofollow";
     document.head.appendChild(m);
@@ -2143,7 +2242,7 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
       // verdad —no un botón con JavaScript— para que ande igual si algo del
       // script de esta página falla.
       c.innerHTML = 'Taller · sitio piloto — esto NO es casayourte.com'
-        + ' · <a href="./taller.html" style="color:#fff">ver el andamio</a>';
+        + ' · <a href="' + window.CY_ANDAMIO + '" style="color:#fff">ver el andamio</a>';
       document.body.insertBefore(c, document.body.firstChild);
     });
   }

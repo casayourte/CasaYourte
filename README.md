@@ -762,9 +762,9 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-24` |
 | `firebase-init.js` | (en el comentario) | `init-2` |
-| `sw.js` | `VERSION` | `cy-shell-v50` |
+| `sw.js` | `VERSION` | `cy-shell-v51` |
 | `admin.html` | `PANEL` | `admin-19` |
-| `editar.html` | `EDITOR` | `editar-16` |
+| `editar.html` | `EDITOR` | `editar-17` |
 | `taller.html` | `SELLO` | `andamio-2` |
 | `calculo.html` | `CY.PANEL` | `calculo-9` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-4` |
@@ -840,7 +840,7 @@ pie que nunca se mueve, y basura en los campos.
 
 Es el patrón que presta Harmonía (`PROTOCOLO-DESARROLLO.md`), y es el primero de CasaYourte.
 
-`pruebas-modelos.mjs` son 65 casos sobre el cuadro de modelos y sobre la medida del sitio.
+`pruebas-modelos.mjs` son 77 casos sobre el cuadro de modelos y sobre la medida del sitio.
 Existe por cuatro errores del 24-sep-2026 que tienen todos la misma forma: **no rompen nada
 visible**. Los rombos del fondo se dibujaban estirados —×8 en un monitor— y aparecían igual;
 `.hero-body` medía 244 px con un título de 118 px adentro y empujaba el encabezado a 1256 px;

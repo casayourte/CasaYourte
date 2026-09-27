@@ -143,7 +143,7 @@ titulo("14 · las claves del andamio pueden nacer al escribirlas");
    veían y no se podía tocar ni un nombre. `cablear()` sólo vuelve tocable una
    clave que YA exista en el idioma fuente. */
 ok("el editor hace la excepción, y sólo para `pg.`",
-   /!\(esAndamio\(\) && \/\^pg\\\.\/\.test\(clave\)\)/.test(editor));
+   /&& !\/\^pg\\\.\/\.test\(clave\)\) return;/.test(editor));
 
 titulo("15 · `enlaces` viaja con el contenido");
 /* `setDoc` reemplaza el documento entero: un campo que no viaje se pierde. */
