@@ -12,7 +12,7 @@
 
 export const CY = {};
 
-CY.VERSION = 'nucleo-24';
+CY.VERSION = 'nucleo-25';
 
 // ═════════════════════════════════════════════════════════════
 //  BOTÓN ATRÁS DE ANDROID
@@ -977,6 +977,176 @@ async function enviarReporte(cerrar) {
 
 
 // ═════════════════════════════════════════════════════════════
+//  MIS AVISOS POR WHATSAPP (nucleo-25, 30-sep-2026)
+//
+//  Cada persona guarda SU número y SU clave de CallMeBot, y decide si Claude
+//  —la ronda diaria del agente— le puede escribir. Es la misma colección, con
+//  la misma forma, que «Mis avisos» de Casa Verde (avisos_contacto/{uid}):
+//  el agente la lee de a una persona desde datos/herramientas/avisos.mjs, y
+//  los criterios —qué merece un WhatsApp, el tope de tres por día, que el
+//  texto no lleve teléfonos ni plata— están en protocolos/PROTOCOLO-AVISOS.md
+//  del repo datos.
+//
+//  Una hoja y no una página, por lo mismo que el reporte: vive en el menú de
+//  la cuenta, que es el único lugar que dibuja la navegación.
+//
+//  LA PRUEBA MANDA POR LA FUNCIÓN DE NETLIFY DE CASA VERDE. Es el puente de
+//  todo el ecosistema: el destinatario viaja en el pedido, así que no hay
+//  nada que configurar por sitio. Y CallMeBot contesta 200 aunque rechace
+//  (cuenta en pausa, clave mala): la respuesta se LEE, como hace Casa Verde.
+// ═════════════════════════════════════════════════════════════
+CY.PUENTE_WA = 'https://serene-scone-76bd4e.netlify.app/.netlify/functions/notify-whatsapp';
+
+/* Lo mismo que CV2._leerRespuestaWa de Casa Verde, en corto. */
+CY.leerRespuestaWa = function (txt) {
+  const crudo = String(txt || '');
+  const b = crudo.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+  if (b.includes('paused') || b.includes('pausada'))
+    return { ok: false, detalle: 'Tu cuenta de CallMeBot está en pausa: mandale «resume» al bot desde tu WhatsApp.' };
+  if (b.includes('apikey') && (b.includes('not valid') || b.includes('invalid') || b.includes('missing') || b.includes('wrong')))
+    return { ok: false, detalle: 'CallMeBot no acepta esa clave. Mandale «Recover APIKey» al bot y te la reenvía.' };
+  if (b.includes('not found') || b.includes('no registrado') || b.includes('not registered'))
+    return { ok: false, detalle: 'Ese número no está dado de alta en CallMeBot.' };
+  if (b.includes('limit') || b.includes('too many'))
+    return { ok: false, detalle: 'CallMeBot frenó por límite de uso. Probá en un rato.' };
+  if (crudo.toLowerCase().includes('color:red')) return { ok: false, detalle: b.slice(0, 200) };
+  return { ok: true, detalle: b.slice(0, 200) };
+};
+
+/* El '+' se guarda porque se lee mejor, y viaja SIN él: es la forma que el
+   propio bot entrega y la que está probada en Casa Verde. */
+const telLimpio = (v) => { const d = String(v || '').replace(/[^\d]/g, ''); return d ? '+' + d : ''; };
+
+CY._hojaAvisos = null;
+function armarHojaAvisos() {
+  if (CY._hojaAvisos) return CY._hojaAvisos;
+  const tapa = document.createElement('div');
+  tapa.className = 'tapa';
+  const hoja = document.createElement('div');
+  hoja.className = 'hoja rep';
+  hoja.innerHTML =
+    `<div class="agarre"></div>
+     <h4>Mis avisos por WhatsApp</h4>
+     <div style="padding:0 .6rem .6rem">
+       <p class="ayuda" style="margin:.1rem 0 .4rem">
+         Claude, la IA que recoge los pedidos y las fallas, te puede escribir por WhatsApp
+         cuando aparezca algo que te toca: lo que pediste quedó hecho, o hace falta que
+         contestes algo. Como mucho tres por día, y sin datos sensibles en el texto.</p>
+       <label class="etiq">¿Querés que Claude te escriba?</label>
+       <div class="rep-seg" id="av-agente">
+         <button type="button" data-v="no" class="on">No</button>
+         <button type="button" data-v="si">Sí, que me escriba</button>
+       </div>
+       <label class="etiq" for="av-tel">Tu número, con código de país</label>
+       <input type="tel" id="av-tel" inputmode="tel" maxlength="20" placeholder="+33612345678">
+       <label class="etiq" for="av-key">Tu clave de CallMeBot</label>
+       <input type="text" id="av-key" maxlength="40" autocomplete="off" placeholder="1234567">
+       <details style="margin-top:.6rem">
+         <summary class="ayuda">No tengo clave: cómo conseguirla</summary>
+         <ol class="ayuda" style="margin:.4rem 0 0 1rem;padding:0">
+           <li>Buscá el número del bot en callmebot.com/blog/free-api-whatsapp-messages/
+             (cambia cada tanto: miralo en el momento).</li>
+           <li>Desde tu WhatsApp, mandale exactamente: I allow callmebot to send me messages</li>
+           <li>Te contesta con tu clave. Pegala acá, tocá Guardar y después Probar.</li>
+           <li>Si otro sitio ya te manda avisos por CallMeBot, la clave es la misma.</li>
+         </ol>
+       </details>
+       <p class="ayuda" style="margin:.6rem 0 0">Tu número y tu clave los ve sólo tu cuenta
+         y Claude, para escribirte. Para cortar todo: No, acá arriba, o mandale stop al bot.</p>
+       <p class="ayuda" id="av-estado" style="margin:.5rem 0 0"></p>
+       <div style="display:flex;gap:.5rem;margin-top:.7rem">
+         <button class="btn" id="av-probar" style="flex:1">Probar</button>
+         <button class="btn p" id="av-guardar" style="flex:1">Guardar</button>
+       </div>
+     </div>`;
+  document.body.appendChild(tapa);
+  document.body.appendChild(hoja);
+  hoja.querySelector('#av-agente').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    hoja.querySelectorAll('#av-agente button').forEach((x) => x.classList.toggle('on', x === b));
+  });
+  hoja.querySelector('#av-tel').addEventListener('blur', (e) => { e.target.value = telLimpio(e.target.value); });
+  CY._hojaAvisos = { tapa, hoja };
+  return CY._hojaAvisos;
+}
+
+async function fbAvisos() {
+  const fb = await import('./firebase-init.js');
+  if (!(await CY.conFirebase(fb.cargarFirebase))) throw new Error('no bajó el SDK de Firebase');
+  const u = CY.usuario || {};
+  if (!u.uid) throw new Error('la sesión no trae el identificador de tu cuenta: cerrá sesión y volvé a entrar.');
+  return { fb, u };
+}
+
+/** Abre la hoja con lo que la persona ya tenía guardado. */
+CY.misAvisos = async function () {
+  const { tapa, hoja } = armarHojaAvisos();
+  const est = hoja.querySelector('#av-estado');
+  const elegir = (v) => hoja.querySelectorAll('#av-agente button')
+    .forEach((x) => x.classList.toggle('on', x.dataset.v === v));
+  hoja.querySelector('#av-tel').value = '';
+  hoja.querySelector('#av-key').value = '';
+  elegir('no');
+  est.textContent = 'Cargando…';
+  tapa.classList.add('on'); hoja.classList.add('on');
+  const cerrar = CY.capaAtras(() => { tapa.classList.remove('on'); hoja.classList.remove('on'); });
+  tapa.onclick = cerrar;
+
+  try {
+    const { fb, u } = await fbAvisos();
+    const d = await fb.getDoc(fb.doc(fb.db, 'avisos_contacto', u.uid));
+    const c = d.exists() ? (d.data() || {}) : {};
+    hoja.querySelector('#av-tel').value = c.telefono || '';
+    hoja.querySelector('#av-key').value = c.apikey || '';
+    elegir(c.agente === true ? 'si' : 'no');
+    est.textContent = c.telefono && c.apikey ? 'Tu número está guardado.' : '';
+  } catch (e) { est.textContent = 'No se pudo leer lo guardado: ' + CY.explicar(e); }
+
+  hoja.querySelector('#av-guardar').onclick = async () => {
+    const tel = telLimpio(hoja.querySelector('#av-tel').value);
+    const key = hoja.querySelector('#av-key').value.trim();
+    const agente = hoja.querySelector('#av-agente button.on').dataset.v === 'si';
+    if (agente && tel.length < 9) { est.textContent = 'El número parece corto: va con el código de país, por ejemplo +33612345678.'; return; }
+    if (agente && !/^[A-Za-z0-9_-]{4,40}$/.test(key)) { est.textContent = 'Falta la clave de CallMeBot (mirá cómo conseguirla, acá arriba).'; return; }
+    const b = hoja.querySelector('#av-guardar'); b.disabled = true; est.textContent = 'Guardando…';
+    try {
+      const { fb, u } = await fbAvisos();
+      await fb.setDoc(fb.doc(fb.db, 'avisos_contacto', u.uid), {
+        telefono: tel, apikey: key, nombre: u.nombre || '', agente,
+        actualizadoEn: fb.serverTimestamp()
+      }, { merge: true });
+      hoja.querySelector('#av-tel').value = tel;
+      est.textContent = agente ? 'Guardado. Tocá Probar para confirmar que llega.' : 'Guardado: Claude no te escribe.';
+    } catch (e) { est.textContent = 'No se pudo guardar: ' + CY.explicar(e); }
+    b.disabled = false;
+  };
+
+  hoja.querySelector('#av-probar').onclick = async () => {
+    const tel = telLimpio(hoja.querySelector('#av-tel').value);
+    const key = hoja.querySelector('#av-key').value.trim();
+    if (!tel || !key) { est.textContent = 'Primero tu número y tu clave.'; return; }
+    const b = hoja.querySelector('#av-probar'); b.disabled = true; est.textContent = 'Mandando…';
+    try {
+      const r = await fetch(CY.PUENTE_WA, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: 'Prueba de CasaYourte: si leés esto, tu WhatsApp está listo para los avisos.',
+                               phone: tel.replace(/[^\d]/g, ''), apikey: key })
+      });
+      const d = await r.json().catch(() => null);
+      if (!d || d.ok !== true) est.textContent = 'No salió: ' + ((d && d.error) || ('el servidor contestó ' + r.status));
+      else {
+        const x = CY.leerRespuestaWa(d.respuesta);
+        est.textContent = x.ok ? 'Mandado. Si en un minuto no llega, el problema es de CallMeBot. Contestó: ' + x.detalle
+                               : x.detalle;
+      }
+    } catch (e) { est.textContent = 'No salió: ' + CY.explicar(e); }
+    // CallMeBot deja uno por minuto al mismo número.
+    setTimeout(() => { b.disabled = false; }, 60000);
+  };
+};
+
+
+// ═════════════════════════════════════════════════════════════
 //  PWA
 // ═════════════════════════════════════════════════════════════
 CY.registrarSW = async function () {
@@ -1050,6 +1220,10 @@ CY.renderNav = function (activo) {
          <span>${CY.esc(u?.nombre || 'Mi cuenta')}
            <small>${CY.esc(u?.email || '')} · ${u?.rol === 'admin' ? 'administrador' : 'colaborador'}</small></span>
        </button>
+       <button class="item" id="cy-avisos">
+         <span class="material-icons">chat</span>
+         <span>Mis avisos por WhatsApp
+           <small>Si querés que Claude te escriba, y a qué número.</small></span></button>
        <button class="item" id="cy-reportar">
          <span class="material-icons">bug_report</span>
          <span>Reportar una falla
@@ -1081,6 +1255,10 @@ CY.renderNav = function (activo) {
   /* Se cierra la hoja ANTES de abrir la del reporte: dos hojas abiertas a la
      vez dejan dos capas en la pila del Atrás, y el primer Atrás cerraría la de
      abajo dejando la de arriba flotando sobre nada. */
+  document.getElementById('cy-avisos').addEventListener('click', () => {
+    if (cerrar) cerrar();
+    CY.misAvisos();
+  });
   document.getElementById('cy-reportar').addEventListener('click', () => {
     if (cerrar) cerrar();
     CY.reportar('falla');

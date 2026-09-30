@@ -2,6 +2,15 @@
 // CasaYourte — Reglas de Firestore
 // Se pegan COMPLETAS en la consola. Nunca por fragmentos.
 //
+// 30-sep-2026 · Entra `avisos_contacto/`: los avisos de Claude por WhatsApp.
+//   Cada persona guarda SU número y SU clave de CallMeBot desde Más → Mis
+//   avisos por WhatsApp, y enciende «Avisos de Claude» si quiere que la ronda
+//   diaria le escriba. El agente lee el documento de UNA persona por vez
+//   (`get`, nunca `list`) y no lo escribe. Por eso sale del comodín de
+//   lectura del agente y tiene su propio `get` abajo. Es la misma colección,
+//   con la misma forma, que Casa Verde. Criterios: protocolos/PROTOCOLO-AVISOS.md
+//   del repo `datos`.
+//
 // 15-sep-2026 · Entra `reportes/`: reportar una falla desde donde se vio.
 //   Molde de remate (su `REPORTES.md`). Quien trabaja en el panel ve algo mal
 //   y lo reporta desde la pantalla donde lo vio; después un agente lo lee y lo
@@ -88,7 +97,7 @@ service cloud.firestore {
     }
 
     match /{coleccion}/{resto=**} {
-      allow read: if esAgente() && !(coleccion in ['calculos', 'invitaciones']);
+      allow read: if esAgente() && !(coleccion in ['calculos', 'invitaciones', 'avisos_contacto']);
     }
 
     // ---------- usuarios ----------
@@ -217,6 +226,23 @@ service cloud.firestore {
                     && request.resource.data.texto == resource.data.texto
                     && request.resource.data.uid == resource.data.uid;
       allow delete: if admin();
+    }
+
+    // ---------- avisos_contacto (30-sep-2026) ----------
+    // El número y la clave de CallMeBot de cada persona, y `agente`: si
+    // quiere que Claude le escriba. Es de ella y de nadie más —acá, a
+    // diferencia de Casa Verde, ninguna pantalla le avisa a otro desde el
+    // navegador, así que el resto del equipo no lo necesita leer—. Una clave
+    // de CallMeBot sólo sirve para mandarle mensajes al número que la generó.
+    // El agente: `get` de a uno, para mandar un aviso. Nunca `list`, nunca
+    // escribir: el consentimiento lo da la persona.
+    match /avisos_contacto/{uid} {
+      allow get: if (activo() && request.auth.uid == uid) || esAgente();
+      allow create, update: if activo() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(
+             ['telefono', 'apikey', 'nombre', 'agente', 'actualizadoEn', 'agenteEn'])
+        && (!('agente' in request.resource.data) || request.resource.data.agente is bool);
+      allow delete: if activo() && request.auth.uid == uid;
     }
 
     // ---------- todo lo demás, cerrado ----------

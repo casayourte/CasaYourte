@@ -109,13 +109,15 @@
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v57';
+const VERSION = 'cy-shell-v58';
 
 // v39 (14-sep-2026) — entra el TALLER: index.html lee sitio/taller con
 //   ?taller=1 y sabe mover y apagar secciones (contrato CY_SITIO v2);
 //   editar.html (editar-9) suma el chip «En vivo | Taller». Va encima de la
 //   v38, de la misma fecha: dos tandas seguidas tocando el SHELL.
 //
+//   v58 · 30-sep-2026 · `nucleo.js` (nucleo-25): «Mis avisos por WhatsApp» en
+//     el menú de la cuenta, para que Claude le escriba a quien lo pida.
 //   v57 · 27-sep-2026 · `editar.html` (editar-23): «Secciones → Cómo se
 //     muestra» cambia las vistas del sitio limpio con un toque; el contador
 //     cuenta por fin las secciones (sin eso, mover o apagar una dejaba

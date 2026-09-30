@@ -65,6 +65,7 @@ confunda con secretos y los "proteja" rompiendo el sitio.
 | `api_secret` de Cloudinary | **en ninguna parte de este proyecto.** Es la razón por la que el panel no borra archivos de Cloudinary: quitar una foto la manda a la papelera, el archivo sigue en Cloudinary y se borra a mano desde su consola (ver `admin.html`, sección de papelera) |
 | Contraseña de cada persona del panel | **Firebase Authentication.** Es un dato de runtime del usuario final: nadie —ni el administrador— maneja contraseñas ajenas. El alta es por invitación y cada persona pone la suya; el reseteo es por mail (`sendPasswordResetEmail`) |
 | Rol y permisos de cada persona | **Firestore**, colección `usuarios/{uid}` (`rol`, `activo`, `permisos`), protegida por `REGLAS.txt`. Son datos, no reglas: se cambian desde `usuarios.html` sin republicar nada |
+| Número y clave de CallMeBot de cada persona (desde el 30-sep-2026) | **Firestore**, `avisos_contacto/{uid}`, lo carga cada uno en Más → Mis avisos por WhatsApp. Lo lee su dueño, y el agente de a uno para mandarle un aviso si lo encendió (`REGLAS.txt`). Una clave de CallMeBot sólo sirve para escribirle a ese número |
 | Invitaciones pendientes | **Firestore**, colección `invitaciones/{mail}`, protegida por `REGLAS.txt` |
 | Cálculos de taller (datos de clientes, medidas de obra) | **Firestore**, colección `calculos/{id}`. **No son públicos**: sólo con el permiso `calculo`. Costos, márgenes, tarifas y proveedores no van a este repositorio |
 | Contraseña del usuario del agente de Claude Code | **variables de entorno de Claude Code**, cargadas por Mauro en la web. El usuario vive en Firebase Authentication de `casayourte-mauro`, **sin ficha en `usuarios/`**: su acceso sale del bloque `esAgente()` de `REGLAS.txt`, que le da lectura de todo menos `calculos` e `invitaciones`. Lo usa `datos/herramientas/firestore.mjs` |
@@ -257,9 +258,20 @@ verdad después del cambio.
 - **El agente de Claude Code lee la base para compararla con el código**, y lo
   que no lee está escrito en dos lugares: el bloque `esAgente()` de `REGLAS.txt`
   y `selladas` del proyecto `casayourte` en `datos/herramientas/firestore.mjs`.
-  Hoy quedan afuera `calculos` e `invitaciones`. Si cambia una lista, cambia la
+  Hoy quedan afuera `calculos`, `invitaciones` y `avisos_contacto` (de ésta, un `get` de a uno para mandar un aviso). Si cambia una lista, cambia la
   otra en la misma tanda: el archivo da el mensaje claro, la regla da la
   garantía.
+- **Claude le escribe por WhatsApp a quien lo pidió, y a nadie más** (desde
+  `nucleo-25`, 30-sep-2026, línea `L-avisos`). En Más → «Mis avisos por
+  WhatsApp» cada persona guarda su número y su clave de CallMeBot en
+  `avisos_contacto/{uid}` —la misma colección y la misma forma que Casa
+  Verde— y elige si la ronda diaria le puede escribir (`agente`). **Es de
+  ella**: la regla deja leer y escribir sólo a su dueño, y al agente un `get`
+  de a uno, nunca `list` ni escribir. Por eso `avisos_contacto` salió del
+  comodín de lectura de `esAgente()` y entró a `selladas` de `casayourte` en
+  `datos/herramientas/firestore.mjs`, en la misma tanda. La prueba manda por
+  la función de Netlify de Casa Verde, que es el puente de todo el ecosistema.
+  Qué merece un aviso y qué no: `protocolos/PROTOCOLO-AVISOS.md` de `datos`.
 - **Una falla se reporta desde donde se vio** (desde `nucleo-19`, 15-sep-2026).
   Va a `reportes/` de ESTA base, no al panel de Mauro: el panel vive en otro
   proyecto de Firebase y un token sirve para uno solo. La entrada está en
