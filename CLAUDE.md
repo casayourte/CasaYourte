@@ -272,6 +272,13 @@ verdad después del cambio.
   `datos/herramientas/firestore.mjs`, en la misma tanda. La prueba manda por
   la función de Netlify de Casa Verde, que es el puente de todo el ecosistema.
   Qué merece un aviso y qué no: `protocolos/PROTOCOLO-AVISOS.md` de `datos`.
+- **El reporte despierta al chat de Claude en el acto** (desde `nucleo-26`,
+  3-oct-2026). Después de guardarlo, `CY.avisarClaude` le manda a la función
+  `avisar-claude` del Netlify de Casa Verde la base y el id, con el token de la
+  sesión — nunca el texto. La función verifica la ficha activa y dispara la
+  rutina «Consulta en vivo». Nunca bloquea: si falla, la ronda diaria lo trae
+  igual. **La nota sigue diciendo «puede tardar hasta un día»** hasta que se
+  vea andando: prometer minutos antes sería prometer de más.
 - **Una falla se reporta desde donde se vio** (desde `nucleo-19`, 15-sep-2026).
   Va a `reportes/` de ESTA base, no al panel de Mauro: el panel vive en otro
   proyecto de Firebase y un token sirve para uno solo. La entrada está en

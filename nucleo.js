@@ -12,7 +12,7 @@
 
 export const CY = {};
 
-CY.VERSION = 'nucleo-25';
+CY.VERSION = 'nucleo-26';
 
 // ═════════════════════════════════════════════════════════════
 //  BOTÓN ATRÁS DE ANDROID
@@ -940,7 +940,7 @@ async function enviarReporte(cerrar) {
        causa real que dejar que el servidor conteste algo cierto y engañoso. */
     if (!u.uid) throw new Error('la sesión no trae el identificador de tu cuenta. '
       + 'Cerrá sesión y volvé a entrar; si sigue, es un error de esta pantalla, no de tu ficha.');
-    await fb.addDoc(fb.collection(fb.db, 'reportes'), {
+    const ref = await fb.addDoc(fb.collection(fb.db, 'reportes'), {
       uid: u.uid,
       nombre: u.nombre || '',
       email: u.email || '',
@@ -964,6 +964,9 @@ async function enviarReporte(cerrar) {
       estado: 'nuevo',            // la regla exige que nazca así
       creadoEn: fb.serverTimestamp()
     });
+    // nucleo-26: despierta al chat de Claude en el acto. Si no puede, la
+    // ronda diaria lo levanta igual: nunca bloquea ni avisa error.
+    CY.avisarClaude(fb.auth, ref.id);
     quitarImagen(hoja);
     cerrar();
     CY.aviso(m.gracias);
@@ -996,6 +999,26 @@ async function enviarReporte(cerrar) {
 //  (cuenta en pausa, clave mala): la respuesta se LEE, como hace Casa Verde.
 // ═════════════════════════════════════════════════════════════
 CY.PUENTE_WA = 'https://serene-scone-76bd4e.netlify.app/.netlify/functions/notify-whatsapp';
+
+/* CONSULTA EN VIVO (nucleo-26, 3-oct-2026). Pedido de Mauro: que la consulta
+   de alguien registrado despierte al chat de Claude en el momento y no a la
+   mañana siguiente. Manda SÓLO la base y el id del reporte, con el token de
+   la sesión; la función avisar-claude del Netlify de Casa Verde verifica la
+   ficha y dispara la rutina. Es la misma forma que CV2.avisarClaude: cada
+   sitio tiene la suya porque cada uno tiene su SDK y su sesión. */
+CY.AVISAR_CLAUDE = 'https://serene-scone-76bd4e.netlify.app/.netlify/functions/avisar-claude';
+CY.avisarClaude = async function (auth, reporteId) {
+  try {
+    const u = auth && auth.currentUser;
+    if (!u || !reporteId) return;
+    const t = await u.getIdToken();
+    await fetch(CY.AVISAR_CLAUDE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t },
+      body: JSON.stringify({ base: 'casayourte', reporteId })
+    });
+  } catch (e) { /* silencio a propósito: el reporte ya quedó guardado */ }
+};
 
 /* Lo mismo que CV2._leerRespuestaWa de Casa Verde, en corto. */
 CY.leerRespuestaWa = function (txt) {
