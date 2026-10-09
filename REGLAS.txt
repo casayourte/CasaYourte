@@ -2,6 +2,13 @@
 // CasaYourte — Reglas de Firestore
 // Se pegan COMPLETAS en la consola. Nunca por fragmentos.
 //
+// 9-oct-2026 · Entra `avisos/`: el BUZÓN de avisos de Claude (tiempos:V10).
+//   Lo que Claude le avisa a una persona queda ahí y su Pizarra —la app de
+//   Android del ecosistema, ahora para todos— lo trae como notificación. Lo
+//   lee, lo marca leído o lo borra SÓLO su dueño; lo crea SÓLO el agente,
+//   con la forma fija. Es la única escritura del agente acá además de
+//   `sitio/taller`.
+//
 // 30-sep-2026 · Entra `avisos_contacto/`: los avisos de Claude por WhatsApp.
 //   Cada persona guarda SU número y SU clave de CallMeBot desde Más → Mis
 //   avisos por WhatsApp, y enciende «Avisos de Claude» si quiere que la ronda
@@ -243,6 +250,18 @@ service cloud.firestore {
              ['telefono', 'apikey', 'nombre', 'agente', 'actualizadoEn', 'agenteEn'])
         && (!('agente' in request.resource.data) || request.resource.data.agente is bool);
       allow delete: if activo() && request.auth.uid == uid;
+    }
+
+    // ---------- avisos (9-oct-2026) ----------
+    // El buzón de cada persona: lo que Claude le avisa, y que su Pizarra trae.
+    match /avisos/{id} {
+      allow read, delete: if activo() && resource.data.uid == request.auth.uid;
+      allow update: if activo() && resource.data.uid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['leido']);
+      allow create: if esAgente()
+        && request.resource.data.keys().hasOnly(['uid', 'sitio', 'tema', 'texto', 'creadoEn', 'leido'])
+        && request.resource.data.texto is string
+        && request.resource.data.texto.size() <= 600;
     }
 
     // ---------- todo lo demás, cerrado ----------

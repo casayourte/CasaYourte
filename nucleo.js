@@ -12,7 +12,7 @@
 
 export const CY = {};
 
-CY.VERSION = 'nucleo-26';
+CY.VERSION = 'nucleo-27';
 
 // ═════════════════════════════════════════════════════════════
 //  BOTÓN ATRÁS DE ANDROID
@@ -1055,6 +1055,10 @@ function armarHojaAvisos() {
          Claude, la IA que recoge los pedidos y las fallas, te puede escribir por WhatsApp
          cuando aparezca algo que te toca: lo que pediste quedó hecho, o hace falta que
          contestes algo. Como mucho tres por día, y sin datos sensibles en el texto.</p>
+       <p class="ayuda" style="margin:.1rem 0 .5rem">📲 <b>O en el teléfono, sin WhatsApp:</b> la
+         Pizarra, la app del equipo para Android, te muestra los avisos de Claude como
+         notificación. No viene de Play Store y el teléfono va a advertir:
+         <a href="https://maurogasta-crypto.github.io/datos/pizarra.html" target="_blank" rel="noopener">leé cómo se instala antes de bajarla</a>.</p>
        <label class="etiq">¿Querés que Claude te escriba?</label>
        <div class="rep-seg" id="av-agente">
          <button type="button" data-v="no" class="on">No</button>

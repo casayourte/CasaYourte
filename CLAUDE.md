@@ -323,8 +323,14 @@ verdad después del cambio.
   del botón de enviar: quien pide tiene derecho a saber quién le va a contestar
   y cuánto puede tardar ANTES de mandar. El banco comprueba las cinco cosas que
   tiene que decir.
+- **Y desde el 9-oct-2026 el agente también CREA en `avisos/`**, el buzón de
+  avisos de cada persona (`tiempos:V10`): lo que Claude le avisa a Romi queda
+  ahí y su **Pizarra** —la app de Android del ecosistema, ahora para todos— lo
+  muestra como notificación. Sólo crear, con la forma fija que exige
+  `REGLAS.txt`; lo lee, lo marca leído o lo borra sólo su dueño. «Mis avisos»
+  (nucleo-27) lleva a la guía de instalación, en `datos/pizarra.html`.
 - **El agente ESCRIBE `sitio/taller`, y ése es todo su alcance de escritura acá**
-  (21-sep-2026). Existe para ejecutar los pedidos de diseño sin que Mauro copie
+  (21-sep-2026), además del buzón de avisos de arriba. Existe para ejecutar los pedidos de diseño sin que Mauro copie
   y pegue cada cambio. **Lo que lo hace aceptable es el alcance:** si un chat
   interpreta mal un pedido, queda mal un documento que no ve nadie salvo quien
   tenga el enlace `?taller=1`; `sitio/publicado` no lo toca, y llevar el taller
