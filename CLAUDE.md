@@ -225,6 +225,12 @@ verdad después del cambio.
 > qué ramas quedan sin mergear, con el nombre exacto.** Contestada una vez, no
 > se vuelve a preguntar en esa sesión. Está en `PROTOCOLO-GENERAL.md` § 6.0.
 
+- **Toda contraseña tiene su ojo 👁 para verla mientras se tipea** (`nucleo-28`,
+  11-oct-2026, Mauro: «en todos los sitios»): `ojosEnClaves()` al final de
+  `nucleo.js`, que corre solo en `admin.html` y `editar.html` y también en los
+  campos que aparecen después. Es el mismo código en Tiempos, Casa Verde,
+  remate y el panel, y en la Pizarra va en Kotlin: si cambia en uno, cambia en
+  todos en la misma tanda.
 - **Una puerta se decide por PERMISO, nunca por rol.** `admin.html` y
   `editar.html` son las dos únicas pantallas que no pasan por `CY.arrancar`
   —son las que tienen el login— y fueron las dos que quedaron con la lógica
