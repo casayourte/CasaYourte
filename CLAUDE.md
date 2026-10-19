@@ -348,8 +348,14 @@ verdad después del cambio.
     cómo estaba el documento, y sin esa copia no escribe; la regla deja al
     agente crear ahí y nunca editar ni borrar. Volver atrás es
     `firestore.mjs casayourte deshacer <id>` (y `historial` los lista);
-  · **sólo `sitio/publicado`** —`sitio/traduccion` y lo demás siguen pidiendo
-    `contenido`—;
+  · **`sitio/publicado` y los álbumes con sus fotos**: los edita libremente;
+    **crear o borrar un álbum o una foto, sólo con la autorización de Mauro**
+    («sí, también los álbumes, pero quiero que puedas crear y eliminar bajo mi
+    autorización», 19-oct). La regla lo permite y la herramienta lo frena:
+    `--autorizado "<lo que dijo Mauro>"`, que queda en la entrada del
+    historial. Una foto nueva necesita además subir el archivo a Cloudinary,
+    que el agente no hace. `sitio/traduccion` y lo demás siguen pidiendo
+    `contenido`;
   · **lo pide un chat con Mauro**: la ronda diaria no publica sola.
   «Al sitio» desde el chat es `firestore.mjs casayourte copiar sitio taller
   publicado`: lo mismo que el botón del editor, copia entera y no mezcla.

@@ -13,8 +13,10 @@
 //     CREAR ahí y nunca editar ni borrar: no puede tapar sus propias huellas.
 //     Volver atrás es `firestore.mjs casayourte deshacer <id>`. Es el mismo
 //     mecanismo que tiene Casa Verde desde el 29-sep.
-//   · Sólo `sitio/publicado` (y el taller). `sitio/traduccion` y cualquier
-//     otro documento de `sitio/` siguen siendo de quien tiene `contenido`.
+//   · `sitio/publicado` (y el taller), y los ÁLBUMES con sus fotos: editarlos
+//     libremente; crearlos y borrarlos sólo con la autorización de Mauro,
+//     que exige la herramienta (ver el bloque de `albums`). `sitio/traduccion`
+//     y cualquier otro documento de `sitio/` siguen siendo de `contenido`.
 //   · Lo sigue pidiendo un chat con Mauro: la ronda diaria no publica sola.
 //
 // 9-oct-2026 · Entra `avisos/`: el BUZÓN de avisos de Claude (tiempos:V10).
@@ -167,13 +169,22 @@ service cloud.firestore {
     }
 
     // ---------- álbumes y fotos ----------
+    // Desde el 19-oct-2026 el AGENTE también escribe los álbumes y sus fotos
+    // (Mauro: «sí, también los álbumes, pero quiero que puedas crear y
+    // eliminar bajo mi autorización»). Los nombres de las etapas, las
+    // descripciones y las leyendas son el sitio público, igual que
+    // sitio/publicado. Siempre con copia previa en _historial.
+    // Crear y borrar los permite la regla, pero la herramienta del agente
+    // (firestore.mjs, `conAutorizacion`) no lo hace sin la autorización de
+    // Mauro citada, que queda escrita en la entrada del historial. Una regla
+    // no puede leer un chat: esa mitad de la garantía vive en la herramienta.
     match /albums/{album} {
       allow read: if true;                 // público: alimenta el sitio
-      allow create, update, delete: if con('albumes');
+      allow create, update, delete: if con('albumes') || esAgente();
 
       match /fotos/{foto} {
         allow read: if true;
-        allow create, update, delete: if con('albumes');
+        allow create, update, delete: if con('albumes') || esAgente();
       }
     }
 
