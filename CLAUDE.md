@@ -69,7 +69,7 @@ confunda con secretos y los "proteja" rompiendo el sitio.
 | Número y clave de CallMeBot de cada persona (desde el 30-sep-2026) | **Firestore**, `avisos_contacto/{uid}`, lo carga cada uno en Más → Mis avisos por WhatsApp. Lo lee su dueño, y el agente de a uno para mandarle un aviso si lo encendió (`REGLAS.txt`). Una clave de CallMeBot sólo sirve para escribirle a ese número |
 | Invitaciones pendientes | **Firestore**, colección `invitaciones/{mail}`, protegida por `REGLAS.txt` |
 | Cálculos de taller (datos de clientes, medidas de obra) | **Firestore**, colección `calculos/{id}`. **No son públicos**: sólo con el permiso `calculo`. Costos, márgenes, tarifas y proveedores no van a este repositorio |
-| Contraseña del usuario del agente de Claude Code | **variables de entorno de Claude Code**, cargadas por Mauro en la web. El usuario vive en Firebase Authentication de `casayourte-mauro`, **sin ficha en `usuarios/`**: su acceso sale del bloque `esAgente()` de `REGLAS.txt`, que le da lectura de todo menos `calculos` e `invitaciones`. Lo usa `datos/herramientas/firestore.mjs` |
+| Contraseña del usuario del agente de Claude Code | **variables de entorno de Claude Code**, cargadas por Mauro en la web. El usuario vive en Firebase Authentication de `casayourte-mauro`, **sin ficha en `usuarios/`**: su acceso sale del bloque `esAgente()` de `REGLAS.txt`, que le da lectura de todo menos `calculos` e `invitaciones`, y escritura en `sitio/taller`, `sitio/publicado` (desde el 19-oct-2026, con copia previa en `_historial/`) y `avisos/`. Lo usa `datos/herramientas/firestore.mjs` |
 | Login de las consolas: GitHub, Firebase, Cloudinary | **gestor de contraseñas personal de Mauro.** En ningún repositorio ni documento. *De quién es cada cuenta* se documenta en las **fichas del panel** (`fichas/`), no acá |
 
 **De quién son las cuentas** (titular de la consola de Firebase, de Cloudinary,
@@ -336,14 +336,23 @@ verdad después del cambio.
   muestra como notificación. Sólo crear, con la forma fija que exige
   `REGLAS.txt`; lo lee, lo marca leído o lo borra sólo su dueño. «Mis avisos»
   (nucleo-27) lleva a la guía de instalación, en `datos/pizarra.html`.
-- **El agente ESCRIBE `sitio/taller`, y ése es todo su alcance de escritura acá**
-  (21-sep-2026), además del buzón de avisos de arriba. Existe para ejecutar los pedidos de diseño sin que Mauro copie
-  y pegue cada cambio. **Lo que lo hace aceptable es el alcance:** si un chat
-  interpreta mal un pedido, queda mal un documento que no ve nadie salvo quien
-  tenga el enlace `?taller=1`; `sitio/publicado` no lo toca, y llevar el taller
-  al sitio sigue pidiendo el permiso `contenido`, que es un acto de una persona.
-  **Esa línea no se cruza**: el día que el agente escribiera `sitio/publicado`,
-  un pedido mal leído saldría al aire sin que nadie lo mire.
+- **El agente ESCRIBE `sitio/taller` y, desde el 19-oct-2026, también
+  `sitio/publicado`**, además del buzón de avisos de arriba. El taller entró el
+  21-sep-2026, para ejecutar los pedidos de diseño sin que Mauro copie y pegue
+  cada cambio. Lo publicado lo abrió Mauro el 19-oct-2026: «yo soy el que pone
+  la regla y da permiso… quiero que desde el chat puedas modificar el sitio
+  público». Hasta ese día este punto decía que esa línea no se cruzaba, porque
+  un pedido mal leído sale al aire sin que nadie lo mire. **El riesgo sigue
+  siendo ése; lo que lo contiene ahora es:**
+  · **la copia antes de cada cambio**: `firestore.mjs` guarda en `_historial/`
+    cómo estaba el documento, y sin esa copia no escribe; la regla deja al
+    agente crear ahí y nunca editar ni borrar. Volver atrás es
+    `firestore.mjs casayourte deshacer <id>` (y `historial` los lista);
+  · **sólo `sitio/publicado`** —`sitio/traduccion` y lo demás siguen pidiendo
+    `contenido`—;
+  · **lo pide un chat con Mauro**: la ronda diaria no publica sola.
+  «Al sitio» desde el chat es `firestore.mjs casayourte copiar sitio taller
+  publicado`: lo mismo que el botón del editor, copia entera y no mezcla.
 - **El taller es el sitio piloto, y la garantía está en las reglas y no en la
   pantalla.** `sitio/taller` acepta `contenido` **o** `taller`; `sitio/{doc}`
   acepta sólo `contenido`. Quien tiene sólo `taller` mueve, apaga y reescribe el

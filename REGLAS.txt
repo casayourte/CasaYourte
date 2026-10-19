@@ -2,6 +2,21 @@
 // CasaYourte — Reglas de Firestore
 // Se pegan COMPLETAS en la consola. Nunca por fragmentos.
 //
+// 19-oct-2026 · EL AGENTE ESCRIBE TAMBIÉN `sitio/publicado`, con copia antes.
+//   Lo decidió Mauro, que es quien pone estas reglas: «yo soy el que pone la
+//   regla y da permiso… quiero que desde el chat puedas modificar el sitio
+//   público». Hasta ese día la línea de abajo (21-sep) decía que eso no se
+//   cruzaba: un pedido mal leído saldría al aire sin que nadie lo mire. El
+//   riesgo sigue siendo ése, y lo que lo contiene ahora es otra cosa:
+//   · ANTES de cada cambio, la herramienta del agente guarda en `_historial/`
+//     cómo estaba el documento, y sin esa copia no escribe. El agente puede
+//     CREAR ahí y nunca editar ni borrar: no puede tapar sus propias huellas.
+//     Volver atrás es `firestore.mjs casayourte deshacer <id>`. Es el mismo
+//     mecanismo que tiene Casa Verde desde el 29-sep.
+//   · Sólo `sitio/publicado` (y el taller). `sitio/traduccion` y cualquier
+//     otro documento de `sitio/` siguen siendo de quien tiene `contenido`.
+//   · Lo sigue pidiendo un chat con Mauro: la ronda diaria no publica sola.
+//
 // 9-oct-2026 · Entra `avisos/`: el BUZÓN de avisos de Claude (tiempos:V10).
 //   Lo que Claude le avisa a una persona queda ahí y su Pizarra —la app de
 //   Android del ecosistema, ahora para todos— lo trae como notificación. Lo
@@ -196,9 +211,20 @@ service cloud.firestore {
       allow write: if con('contenido') || con('taller') || esAgente();
     }
 
+    // Desde el 19-oct-2026 el agente escribe también `sitio/publicado` —sólo
+    // ése—, con su copia previa en `_historial/` (ver la cabecera).
     match /sitio/{doc} {
       allow read: if true;
-      allow write: if con('contenido');
+      allow write: if con('contenido') || (esAgente() && doc == 'publicado');
+    }
+
+    // ---------- el historial del agente ----------
+    // Cómo estaba un documento antes de que el agente lo cambiara. Lo crea
+    // SÓLO el agente, y nadie lo edita ni lo borra —ni siquiera él—. Lo lee
+    // el agente por el comodín de arriba (para `deshacer`) y el admin.
+    match /_historial/{id} {
+      allow create: if esAgente();
+      allow read: if admin();
     }
 
     // ---------- reportes ----------
