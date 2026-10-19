@@ -125,7 +125,7 @@ h1{font-family:var(--disp);font-weight:400;font-size:clamp(1.7rem,6vw,2.6rem);
      Rige la misma regla que las secciones del sitio (§3.35): la lista MANDA
      para el orden pero NUNCA puede hacer desaparecer una página que este
      archivo trae. Una lista vieja no borra nada. */
-  var SELLO = "andamio-2";
+  var SELLO = "andamio-3";
 
   var ARBOL_BASE = [
     { id: "a", hijas: ["a1", "a2"] },
@@ -180,7 +180,7 @@ h1{font-family:var(--disp);font-weight:400;font-size:clamp(1.7rem,6vw,2.6rem);
     + "/databases/(default)/documents/sitio/taller"
     + "?key=AIzaSyDDD_xvpC4I_ec2OZymyDqVsm1K0ISTr4Q";
 
-  var T = { es: {}, fr: {}, en: {} };
+  var T = { es: {}, fr: {}, en: {}, pt: {} };
   var LANG = "es";
 
   function valor(v) {
@@ -483,7 +483,7 @@ h1{font-family:var(--disp);font-weight:400;font-size:clamp(1.7rem,6vw,2.6rem);
     idioma: function (l) { if (T[l]) { LANG = l; pintar(); } }
   };
 
-  var m = /[?&]lang=(es|fr)/.exec(location.search);
+  var m = /[?&]lang=([a-z]{2})/.exec(location.search);
   if (m) LANG = m[1];
 
   /* Se pinta ANTES de que conteste la red, con la semilla, y se repinta al
@@ -496,7 +496,10 @@ h1{font-family:var(--disp);font-weight:400;font-size:clamp(1.7rem,6vw,2.6rem);
     .then(function (j) {
       if (!j || !j.fields) return;
       var d = mapa(j.fields);
-      Object.keys(T).forEach(function (l) { if (d[l]) T[l] = d[l]; });
+      // Cada mapa de idioma que traiga el documento, no sólo los de T.
+      Object.keys(d).forEach(function (l) {
+        if (/^[a-z]{2}$/.test(l) && d[l] && typeof d[l] === "object") T[l] = d[l];
+      });
       if (d.orden && typeof d.orden === "object") ORDEN = d.orden;
       if (d.enlaces && typeof d.enlaces === "object") ENLACES = d.enlaces;
       pintar();

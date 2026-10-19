@@ -18,10 +18,13 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
 
-<!-- Dos direcciones, una por idioma. Sin esto Google no tiene qué indexar
-     en francés: el botón de idioma cambia el texto pero no la dirección. -->
+<!-- Una dirección por idioma. Sin esto Google no tiene qué indexar en otro
+     idioma: el botón cambia el texto pero no la dirección. Es el respaldo
+     para un buscador sin JS: idiomas.js los rehace desde el catálogo. -->
 <link rel="alternate" hreflang="es" href="https://casayourte.com/">
 <link rel="alternate" hreflang="fr" href="https://casayourte.com/?lang=fr">
+<link rel="alternate" hreflang="en" href="https://casayourte.com/?lang=en">
+<link rel="alternate" hreflang="pt" href="https://casayourte.com/?lang=pt">
 <link rel="alternate" hreflang="x-default" href="https://casayourte.com/">
 
 <!-- Vista previa al compartir el enlace por WhatsApp, Facebook o Instagram -->
@@ -29,6 +32,8 @@
 <meta property="og:site_name" content="CasaYourte">
 <meta property="og:locale" content="es_UY">
 <meta property="og:locale:alternate" content="fr_FR">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:locale:alternate" content="pt_BR">
 <meta property="og:url" content="https://casayourte.com/">
 <meta property="og:title" content="CasaYourte · Constructor de yurtas en Uruguay, Argentina y Brasil">
 <meta property="og:description" content="Yurtas de estructura calculada: desmontables, con la resistencia de una construcción fija. Trei a 60°, doble anillo periférico, doble techo ventilado y piso aislado.">
@@ -63,7 +68,7 @@
     { "@type": "Country", "name": "France" },
     { "@type": "Country", "name": "Belgique" }
   ],
-  "knowsLanguage": ["es", "fr"],
+  "knowsLanguage": ["es", "fr", "en", "pt"],
   "knowsAbout": ["yurtas", "yourtes", "yurta habitable", "yourte habitable",
     "construcción desmontable", "bioconstrucción", "glamping", "autoconstrucción",
     "planos de yurta", "lonas para yurta", "toono", "trei", "hábitat ligero"],
@@ -303,7 +308,10 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
   letter-spacing:.14em;text-transform:uppercase;text-decoration:none;color:var(--blond);
   border:1px solid var(--blond);border-radius:999px;padding:.6rem 1rem}
 .linea .ln-ir:hover{background:var(--blond);color:var(--ink)}
-.linea .ln-ir:not([href]){opacity:.55;cursor:default}
+/* Sin destino no se muestra (19-oct-2026): en el sitio publicado no hay
+   páginas de detalle —el andamio vive sólo en el taller y está vacío—, y un
+   botón gris que no lleva a ningún lado es una promesa rota. */
+.linea .ln-ir:not([href]){display:none}
 .lineas-vacia{display:none}
 
 /* ---------- un grupo de bloques, en pestañas ----------
@@ -575,6 +583,8 @@ body.cy-en-taller{padding-top:1.9rem}
     <div class="lang" role="group" aria-label="Idioma / Langue">
       <button type="button" data-set="es" aria-pressed="true">ES</button>
       <button type="button" data-set="fr" aria-pressed="false">FR</button>
+      <button type="button" data-set="en" aria-pressed="false">EN</button>
+      <button type="button" data-set="pt" aria-pressed="false">PT</button>
     </div>
   </div>
 
@@ -983,7 +993,7 @@ body.cy-en-taller{padding-top:1.9rem}
   </div>
 </div>
 
-<script src="idiomas.js?v=1"></script>
+<script src="idiomas.js?v=2"></script>
 <script>
 /* ---------- content ---------- */
 const T = {
@@ -1200,6 +1210,27 @@ fr:{
  "ct.k4":"Couverture","ct.v4":"Uruguay, Argentine et Brésil",
  "ct.wa":"Écrivez-nous sur WhatsApp",
  "foot.r":"Mauro Gastaldello et sa famille"
+},
+/* El inglés y el portugués no tienen copia acá del sitio entero: sus textos
+   vienen de la base (sitio/publicado) y lo que falte cae al español, clave
+   por clave (`dic`). Lo que sí va acá son los RÓTULOS de la interfaz (`ui.*`),
+   que no viven en la base y no se editan desde el editor: sin ellos, una
+   página en portugués decía «Leer más» (19-oct-2026). */
+en:{
+ "ui.mas":"Read more","ui.tabla":"See the diameter table",
+ "ui.verTodas":"See all","ui.cerrar":"Close",
+ "ui.albCargando":"Looking for the published albums…",
+ "ui.albVacio":"No albums published yet.",
+ "ui.fotos":"photos","ui.sinEtapa":"other",
+ "ui.pausa":"Pause","ui.seguir":"Play"
+},
+pt:{
+ "ui.mas":"Ler mais","ui.tabla":"Ver a tabela de diâmetros",
+ "ui.verTodas":"Ver todas","ui.cerrar":"Fechar",
+ "ui.albCargando":"Buscando os álbuns publicados…",
+ "ui.albVacio":"Ainda não há álbuns publicados.",
+ "ui.fotos":"fotos","ui.sinEtapa":"outras",
+ "ui.pausa":"Pausa","ui.seguir":"Continuar"
 }};
 
 /* ---------- qué idioma mostrar ----------
@@ -2397,7 +2428,9 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
   function aplicarTextos(d) {
     if (!d) return false;
     var hubo = false;
-    ["es", "fr"].forEach(function (l) {
+    // Todos los idiomas del catálogo, no una lista escrita a mano: hasta el
+    // 19-oct-2026 decía ["es", "fr"] y el inglés publicado nunca se aplicaba.
+    CY_IDIOMAS.ids().forEach(function (l) {
       if (!d[l] || typeof d[l] !== "object") return;
       // Un idioma que todavía no existe en T se crea: si no, publicar un
       // idioma nuevo rompería acá antes de llegar a pintarse.

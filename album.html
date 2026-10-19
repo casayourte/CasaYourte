@@ -8,12 +8,16 @@
 <link rel="canonical" href="https://casayourte.com/album.html">
 <link rel="alternate" hreflang="es" href="https://casayourte.com/album.html">
 <link rel="alternate" hreflang="fr" href="https://casayourte.com/album.html?lang=fr">
+<link rel="alternate" hreflang="en" href="https://casayourte.com/album.html?lang=en">
+<link rel="alternate" hreflang="pt" href="https://casayourte.com/album.html?lang=pt">
 <link rel="alternate" hreflang="x-default" href="https://casayourte.com/album.html">
 <meta name="author" content="Mauro Gastaldello">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="CasaYourte">
 <meta property="og:locale" content="es_UY">
 <meta property="og:locale:alternate" content="fr_FR">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:locale:alternate" content="pt_BR">
 <meta property="og:url" content="https://casayourte.com/album.html">
 <meta property="og:title" content="Álbumes de obra · CasaYourte">
 <meta property="og:description" content="Cada yurta paso a paso, del taller a la yurta habitada.">
@@ -35,7 +39,7 @@
   "@id": "https://casayourte.com/album.html#album",
   "name": "Álbumes de obra · CasaYourte",
   "description": "Archivo fotográfico de cada yurta construida por CasaYourte, ordenado por etapa de obra: terreno y apoyos, plancher, trei, anillo periférico, toono, techo, lonas, aislación, aberturas y skydome.",
-  "inLanguage": ["es", "fr"],
+  "inLanguage": ["es", "fr", "en", "pt"],
   "isPartOf": { "@id": "https://casayourte.com/#casayourte" },
   "about": { "@id": "https://casayourte.com/#casayourte" },
   "author": { "@type": "Person", "name": "Mauro Gastaldello" }
@@ -199,6 +203,8 @@ body.cy-en-taller header{top:1.9rem}
   <div class="lang" role="group" aria-label="Idioma">
     <button type="button" data-set="es" aria-pressed="true">ES</button>
     <button type="button" data-set="fr" aria-pressed="false">FR</button>
+    <button type="button" data-set="en" aria-pressed="false">EN</button>
+    <button type="button" data-set="pt" aria-pressed="false">PT</button>
   </div>
 </header>
 
@@ -230,7 +236,7 @@ body.cy-en-taller header{top:1.9rem}
   </div>
 </div>
 
-<script src="idiomas.js?v=1"></script>
+<script src="idiomas.js?v=2"></script>
 <script>
 /* ═══════════════════════════════════════════════════════════════
    ÁLBUM PÚBLICO
@@ -301,6 +307,21 @@ const T = {
     pausa: "Pause",
     seguir: "Play",
   },
+  pt: {
+    eyebrow: "Arquivo de obra",
+    titulo: "Cada yurt, <em>passo a passo</em>.",
+    lede: "Da oficina à yurt habitada. As fotos seguem a ordem real da construção, agrupadas por etapa: o anel periférico, o toono, o trei, o telhado, as lonas. O trabalho como foi, não como aparece no catálogo.",
+    cargando: "Carregando os álbuns…",
+    vacio: "Ainda não há álbuns publicados. Volte em breve.",
+    error: "Não foi possível carregar os álbuns agora.",
+    volver: "← Voltar ao site",
+    fotos: "fotos",
+    sinEtapa: "outras",
+    verFotos: "Ver as {n} fotos, por etapa",
+    cerrarFotos: "Fechar as fotos",
+    pausa: "Pausa",
+    seguir: "Continuar",
+  },
 };
 
 // Las 16 etapas, en el orden de la obra. Es la misma lista del panel y del
@@ -311,10 +332,11 @@ const ETAPAS = ["01-terreno-y-apoyos","02-taller-piezas","03-plancher","04-trei"
   "13-terminada-exterior","14-terminada-interior","15-equipo-y-obra","16-desmontaje"];
 
 /* Los nombres de las 16 categorías por idioma, para los álbumes viejos que no
-   tienen su propia lista. Sólo está el francés: un idioma que se sume entra
-   acá cuando sus nombres pasen por la pantalla de traducción, no antes —son
-   términos del oficio y no se inventan desde el código. Mientras tanto caen a
-   `legible(id)`, que da el nombre en español. */
+   tienen su propia lista. Un idioma que se sume entra acá cuando sus nombres
+   están decididos —son términos del oficio—: el inglés copia los que ya
+   pasaron por la pantalla de traducción en las listas de los álbumes, y el
+   portugués entra el 19-oct-2026 con los cuatro idiomas del sitio. Lo que
+   falte cae a `legible(id)`, que da el nombre en español. */
 const NOMBRE_ETAPA = {
   fr: {
     "01-terreno-y-apoyos":"terrain et appuis","02-taller-piezas":"atelier · pièces",
@@ -324,6 +346,24 @@ const NOMBRE_ETAPA = {
     "11-aberturas-y-umbrales":"ouvertures et seuils","12-skydome":"skydome",
     "13-terminada-exterior":"terminée · extérieur","14-terminada-interior":"terminée · intérieur",
     "15-equipo-y-obra":"équipe et chantier","16-desmontaje":"démontage",
+  },
+  en: {
+    "01-terreno-y-apoyos":"site and supports","02-taller-piezas":"workshop · parts",
+    "03-plancher":"floor platform","04-trei":"trei","05-anillo-periferico":"perimeter ring",
+    "06-toono":"toono","07-techo-triangulos":"roof triangles","08-perchas":"roof poles",
+    "09-lonas-y-costura":"covers and sewing","10-aislacion":"insulation",
+    "11-aberturas-y-umbrales":"openings and thresholds","12-skydome":"skydome",
+    "13-terminada-exterior":"finished · exterior","14-terminada-interior":"finished · interior",
+    "15-equipo-y-obra":"team and build","16-desmontaje":"dismantling",
+  },
+  pt: {
+    "01-terreno-y-apoyos":"terreno e apoios","02-taller-piezas":"oficina · peças",
+    "03-plancher":"plataforma do piso","04-trei":"trei","05-anillo-periferico":"anel periférico",
+    "06-toono":"toono","07-techo-triangulos":"telhado · triângulos","08-perchas":"caibros",
+    "09-lonas-y-costura":"lonas e costura","10-aislacion":"isolamento",
+    "11-aberturas-y-umbrales":"aberturas e soleiras","12-skydome":"skydome",
+    "13-terminada-exterior":"pronta · exterior","14-terminada-interior":"pronta · interior",
+    "15-equipo-y-obra":"equipe e obra","16-desmontaje":"desmontagem",
   },
 };
 

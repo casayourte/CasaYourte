@@ -2,7 +2,8 @@
 
 ## Qué es este proyecto
 
-Sitio público, catálogo bilingüe (español/francés) y panel de administración de
+Sitio público, catálogo en cuatro idiomas (español, francés, inglés y portugués,
+desde `idiomas-4`, 19-oct-2026) y panel de administración de
 **Casa Yourte**. Es un sitio **estático**: sin build, sin servidor propio, sin `npm`,
 sin dependencias que instalar. Todos los archivos viven en la raíz del repositorio,
 a propósito (se sube y se edita desde el celular, por la web de GitHub).
@@ -201,7 +202,7 @@ el agente y **no es opcional**: que el JavaScript parsee **como MÓDULO**
 incluidos los módulos que viven adentro de un `.html`; que **los cinco bancos
 corran** —`node pruebas-secciones.mjs` (16 casos), `node pruebas-reportes.mjs`
 (64 casos), `node pruebas-andamio.mjs` (89 casos), `node
-pruebas-puertas.mjs` (86 casos) y `node pruebas-modelos.mjs` (116 casos), los
+pruebas-puertas.mjs` (102 casos) y `node pruebas-modelos.mjs` (116 casos), los
 cinco sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
 sellos hayan subido, con la `VERSION` del `sw.js` si el archivo está en `SHELL`
 y los `?v=` con los que se lo pide; y que la documentación del repo diga la
@@ -385,7 +386,11 @@ verdad después del cambio.
   dirección vive en `window.CY_ANDAMIO`, que se define SÓLO dentro del
   `if (TALLER)`; afuera el botón no tiene destino. El día que el cuadro salga
   al aire, las cuatro páginas tienen que volverse páginas públicas de verdad —
-  eso es una decisión pendiente, no un olvido.
+  eso es una decisión pendiente, no un olvido. **Y el 19-oct-2026 el cuadro
+  sale al aire SIN las páginas** (pasaje del taller al sitio, pedido de Mauro):
+  en lo publicado el botón «Ver el detalle» no se muestra (`.ln-ir:not([href])`
+  va con `display:none`) y la bajada `ln.lede` ya no promete una página por
+  línea. En el taller el botón sigue llevando al andamio.
   **Y son PESTAÑAS, con las mismas clases que los modelos** (pedido de Mauro
   el mismo día: «la misma presentación, lo más minimalista posible»): el
   nombre en la pestaña; en el panel, la bajada y el botón. Nada más.

@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    idiomas.js — EL CATÁLOGO DE IDIOMAS DEL SITIO PÚBLICO.
-   Sello: idiomas-3
+   Sello: idiomas-4
 
    Fuente única. Para sumar un idioma se agrega UNA entrada acá abajo y se
    escriben sus textos; no se toca ninguna otra lógica.
@@ -68,11 +68,10 @@
       corta: "EN",
       larga: "English",
       fuente: false,
-      // EN PREPARACIÓN. Existe para el panel y la pantalla de traducción; no
-      // aparece en el conmutador del sitio, no se deduce solo y no lleva
-      // hreflang. Se le saca esta línea cuando los textos estén, y ese día
-      // sale a la vez en el conmutador, en la deducción y en los buscadores.
-      publico: false,
+      // PÚBLICO desde idiomas-4 (19-oct-2026, Mauro: «el pasaje de la
+      // propuesta de taller a la página pública, con la traducción coherente
+      // en cuatro idiomas»). Hasta ese día estaba en preparación, con
+      // `publico: false`.
       prefijos: ["en"],
       // Sin zonas horarias a propósito: el inglés se habla en demasiados
       // lugares como para deducirlo de dónde está la persona, y varios de
@@ -82,6 +81,26 @@
            + "word: look up how each yurt-building term is actually said in "
            + "English before deciding. Neutral register, second person, no "
            + "regionalisms (neither British nor US-specific)."
+    },
+    {
+      id: "pt",
+      corta: "PT",
+      larga: "Português",
+      fuente: false,
+      // El cuarto idioma, desde idiomas-4 (19-oct-2026, elegido por Mauro):
+      // portugués de Brasil, el público vecino de Uruguay y de Argentina.
+      prefijos: ["pt"],
+      // Brasil por zona horaria, por lo mismo que Francia en el francés:
+      // un teléfono en inglés o en español dentro de Brasil lee mejor en
+      // portugués que en español. Portugal se deduce por el idioma del aparato.
+      zonas: ["America/Sao_Paulo", "America/Bahia", "America/Fortaleza",
+              "America/Recife", "America/Belem", "America/Manaus",
+              "America/Cuiaba", "America/Campo_Grande", "America/Porto_Velho",
+              "America/Boa_Vista", "America/Rio_Branco", "America/Maceio",
+              "America/Araguaina", "America/Santarem", "America/Noronha"],
+      brief: "TRADUÇÃO para o português do Brasil. Traduza o USO, não a palavra: "
+           + "procure como cada termo de construção de yurts se diz no Brasil "
+           + "antes de decidir. Tratamento por você."
     },
     // ↑ La coma queda a propósito: sumar un idioma tiene que ser pegar una
     //   línea acá abajo, sin tener que acordarse de tocar la de arriba.
@@ -251,6 +270,6 @@
     deducido: deducido, elegido: elegido, recordar: recordar,
     inicial: inicial, pintarConmutador: pintarConmutador,
     pintarAlternas: pintarAlternas,
-    SELLO: "idiomas-3"
+    SELLO: "idiomas-4"
   };
 })(window);

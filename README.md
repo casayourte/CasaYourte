@@ -1,6 +1,6 @@
 # CasaYourte
 
-Sitio, catálogo bilingüe y panel de administración. Estático: sin build, sin servidor,
+Sitio, catálogo en cuatro idiomas (español, francés, inglés y portugués) y panel de administración. Estático: sin build, sin servidor,
 sin dependencias que instalar.
 
 | | |
@@ -48,7 +48,7 @@ menú ⋮ → *Agregar a la pantalla principal*.
 
 | Archivo | Qué es |
 |---|---|
-| `contenido.json` | 143 textos por idioma, español y francés, y los reemplazos de imagen |
+| `contenido.json` | el respaldo del sitio publicado: 180 textos por idioma en los cuatro idiomas, el orden, las secciones y los reemplazos de imagen (regenerado del taller el 19-oct-2026) |
 | `assets/` | las imágenes, el video y las dos láminas del cálculo |
 | `icono-192.png` · `icono-512.png` · `apple-touch-icon.png` | iconos de la app |
 | `CNAME` | declara el dominio propio. Una línea |
@@ -762,14 +762,14 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-28` |
 | `firebase-init.js` | (en el comentario) | `init-2` |
-| `sw.js` | `VERSION` | `cy-shell-v61` |
+| `sw.js` | `VERSION` | `cy-shell-v62` |
 | `admin.html` | `PANEL` | `admin-19` |
 | `editar.html` | `EDITOR` | `editar-23` |
-| `taller.html` | `SELLO` | `andamio-2` |
+| `taller.html` | `SELLO` | `andamio-3` |
 | `calculo.html` | `CY.PANEL` | `calculo-9` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-4` |
 | `diagnostico.html` | `CY.PANEL` | `diagnostico-8` |
-| `idiomas.js` | `SELLO` | `idiomas-3` |
+| `idiomas.js` | `SELLO` | `idiomas-4` |
 | `traducir.html` | `TRADUCTOR` | `traducir-15` |
 
 *Verificados uno por uno contra los archivos el 2026-09-14, en la tanda del SDK
@@ -916,15 +916,34 @@ El botón ↻ del panel borra las cachés y recarga.
 
 ## Idiomas
 
-Español y francés. El botón de idioma cambia el texto y también la dirección:
+Español, francés, inglés y portugués, los cuatro públicos desde `idiomas-4`
+(19-oct-2026, pedido de Mauro: «el pasaje del taller a la página pública, con la
+traducción coherente en cuatro idiomas»; el portugués lo eligió él). El botón de idioma
+cambia el texto y también la dirección:
 
 ```
 https://casayourte.com/            español
 https://casayourte.com/?lang=fr    francés
+https://casayourte.com/?lang=en    inglés
+https://casayourte.com/?lang=pt    portugués (de Brasil)
 ```
 
-Esa segunda dirección es la que conviene compartir con clientes franceses: sin ella, para
-un buscador la versión en francés no existe.
+Esas direcciones son las que conviene compartir con cada cliente: sin ellas, para un
+buscador la versión en otro idioma no existe. El portugués también se deduce solo por la
+zona horaria de Brasil, como el francés por la de Francia.
+
+**Tres cosas que se arreglaron al pasar a cuatro, para que no vuelvan:**
+
+- `index.html` aplicaba de la base sólo `["es", "fr"]`, escrito a mano: **el inglés
+  publicado nunca se mostró**. Ahora recorre `CY_IDIOMAS.ids()`.
+- Los rótulos de la interfaz (`ui.*` de `index.html`, los de `album.html` y los nombres de
+  las 16 etapas) no viven en la base: estaban en dos idiomas, y una página en portugués
+  decía «Leer más». Ahora están en los cuatro, y `pruebas-puertas.mjs` falla si a un idioma
+  del catálogo le falta uno.
+- En lo publicado, el botón «Ver el detalle» de las líneas de trabajo **no se muestra**: las
+  páginas de detalle (el andamio, `taller.html`) viven sólo en el taller y están vacías, y un
+  botón gris que no lleva a ningún lado es una promesa rota. En el taller sigue, con su
+  destino. Hacerlas públicas es una decisión pendiente.
 
 **En el editor se edita el idioma que se está viendo.** Para cambiar el francés hay que
 pasar a FR primero.

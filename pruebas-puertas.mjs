@@ -312,5 +312,57 @@ titulo("QUITAR UN BLOQUE DURA — corrido de verdad");
   ok("la primera vez, sin lista guardada, la lista sale del archivo", t.CONT.orden.traj === "s1,s2,s3");
 }
 
+{
+  titulo("los cuatro idiomas (19-oct-2026): ningún idioma del catálogo queda a medias");
+  // El catálogo, cargado como lo carga el navegador: un script clásico que
+  // cuelga CY_IDIOMAS de la ventana.
+  const ventana = {};
+  new Function("window", leer("idiomas.js"))(ventana);
+  const I = ventana.CY_IDIOMAS;
+  const ids = I.ids();
+  ok("el catálogo tiene es, fr, en y pt", ["es","fr","en","pt"].every((l) => ids.includes(l)));
+  ok("los cuatro son públicos (salen en el conmutador y en los buscadores)",
+     I.publicos().map((l) => l.id).join(",") === ids.join(","));
+
+  // index.html: los rótulos de la interfaz (ui.*) existen en TODOS los
+  // idiomas. No viven en la base: si faltan, la página en ese idioma dice
+  // «Leer más» en español.
+  const index = leer("index.html");
+  const lineas = index.split("\n");
+  const desde = lineas.findIndex((l) => /^const T = \{/.test(l));
+  const hasta = lineas.findIndex((l, i) => i > desde && /^\}\};/.test(l));
+  const T = new Function(lineas.slice(desde, hasta + 1).join("\n").replace(/^const T =/, "return") )();
+  const ui = Object.keys(T.es).filter((k) => k.startsWith("ui."));
+  for (const l of ids) {
+    const faltan = ui.filter((k) => !(T[l] || {})[k]);
+    ok(`index.html tiene los ${ui.length} rótulos ui.* en ${l}` + (faltan.length ? ` (faltan ${faltan.join(", ")})` : ""), !faltan.length);
+  }
+  // Y aplica los textos de la base de TODOS los idiomas, no de una lista
+  // escrita a mano: hasta este día decía ["es", "fr"] y el inglés publicado
+  // nunca se mostraba.
+  ok("index.html aplica los textos de la base con CY_IDIOMAS.ids()",
+     /CY_IDIOMAS\.ids\(\)\.forEach\(function \(l\)/.test(sinComentarios(index)) &&
+     !/\[\s*"es"\s*,\s*"fr"\s*\]\.forEach/.test(sinComentarios(index)));
+
+  // album.html: sus rótulos y los nombres de las 16 etapas, en todos.
+  const album = leer("album.html");
+  const bloque = (nombre) => {
+    const i = album.indexOf("const " + nombre + " = {");
+    const f = album.indexOf("\n};", i);
+    return new Function("return " + album.slice(i + ("const " + nombre + " = ").length, f + 2))();
+  };
+  const TA = bloque("T"), NE = bloque("NOMBRE_ETAPA");
+  for (const l of ids) {
+    const faltan = Object.keys(TA.es).filter((k) => !(TA[l] || {})[k]);
+    ok(`album.html tiene sus rótulos en ${l}` + (faltan.length ? ` (faltan ${faltan.join(", ")})` : ""), !faltan.length);
+    if (l !== I.fuente())
+      ok(`album.html nombra las 16 etapas en ${l}`, Object.keys(NE[l] || {}).length === 16);
+  }
+  // Los respaldos para un buscador sin JS dicen los mismos idiomas.
+  for (const [f, txt] of [["index.html", index], ["album.html", album]])
+    ok(`${f} declara hreflang para los ${ids.length} idiomas`,
+       ids.every((l) => new RegExp('hreflang="' + l + '"').test(txt)));
+}
+
 console.log(`\n${bien} bien · ${mal} mal`);
 process.exit(mal ? 1 : 0);
