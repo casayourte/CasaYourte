@@ -3,13 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Álbumes de obra · CasaYourte</title>
-<meta name="description" content="Archivo de obra de CasaYourte: cada yurta paso a paso, del taller a la yurta habitada. Anillo periférico, toono, trei a 60°, doble techo y lonas.">
-<link rel="canonical" href="https://casayourte.com/album.html">
+<title>Yurtas paso a paso: obras de CasaYourte</title>
+<meta name="description" content="Cada yurta de CasaYourte paso a paso, del taller a la yurta habitada, con fotos de cada etapa: anillo periférico, toono, trei a 60°, doble techo y lonas.">
+<!-- Sin canonical escrito: lo pone CY_IDIOMAS.pintarCabeza() para el idioma
+     que se muestra (idiomas-5). Ver el mismo comentario en index.html. -->
 <link rel="alternate" hreflang="es" href="https://casayourte.com/album.html">
+<link rel="alternate" hreflang="es-UY" href="https://casayourte.com/album.html">
+<link rel="alternate" hreflang="es-AR" href="https://casayourte.com/album.html">
 <link rel="alternate" hreflang="fr" href="https://casayourte.com/album.html?lang=fr">
+<link rel="alternate" hreflang="fr-FR" href="https://casayourte.com/album.html?lang=fr">
+<link rel="alternate" hreflang="fr-BE" href="https://casayourte.com/album.html?lang=fr">
 <link rel="alternate" hreflang="en" href="https://casayourte.com/album.html?lang=en">
 <link rel="alternate" hreflang="pt" href="https://casayourte.com/album.html?lang=pt">
+<link rel="alternate" hreflang="pt-BR" href="https://casayourte.com/album.html?lang=pt">
 <link rel="alternate" hreflang="x-default" href="https://casayourte.com/album.html">
 <meta name="author" content="Mauro Gastaldello">
 <meta property="og:type" content="website">
@@ -236,7 +242,7 @@ body.cy-en-taller header{top:1.9rem}
   </div>
 </div>
 
-<script src="idiomas.js?v=2"></script>
+<script src="idiomas.js?v=3"></script>
 <script>
 /* ═══════════════════════════════════════════════════════════════
    ÁLBUM PÚBLICO
@@ -511,9 +517,21 @@ function textos(lang) {
   return Object.assign({}, T[CY_IDIOMAS.fuente()] || {}, T[lang] || {});
 }
 
+// La cabecera de los álbumes en cada idioma (idiomas-5): ver CABEZA en index.html.
+const CABEZA = {
+  es: { t: "Yurtas paso a paso: obras de CasaYourte",
+        d: "Cada yurta de CasaYourte paso a paso, del taller a la yurta habitada, con fotos de cada etapa: anillo periférico, toono, trei a 60°, doble techo y lonas." },
+  fr: { t: "Yourtes étape par étape : chantiers de CasaYourte",
+        d: "Chaque yourte de CasaYourte étape par étape, de l'atelier à la yourte habitée, en photos : anneau périphérique, toono, trei à 60°, double toit et toiles." },
+  en: { t: "Yurts step by step: CasaYourte builds",
+        d: "Every CasaYourte yurt step by step, from workshop to lived-in yurt, with photos of each stage: perimeter ring, toono, trei at 60°, double roof and covers." },
+  pt: { t: "Yurts passo a passo: obras da CasaYourte",
+        d: "Cada yurt da CasaYourte passo a passo, da oficina à yurt habitada, com fotos de cada etapa: anel periférico, toono, trei a 60°, telhado duplo e lonas." }
+};
 function pintarTextos() {
   const d = textos(idioma);
   document.documentElement.lang = idioma;
+  if (!TALLER) CY_IDIOMAS.pintarCabeza("https://casayourte.com/album.html", idioma, CABEZA);
   document.querySelectorAll("[data-t]").forEach((el) => {
     const v = d[el.dataset.t];
     if (v === undefined) return;

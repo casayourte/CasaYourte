@@ -40,7 +40,12 @@
       larga: "Español",
       fuente: true,      // el idioma en el que se escribe el contenido primero
       prefijos: [],      // no hace falta: es el que queda si no gana ningún otro
-      zonas: []
+      zonas: [],
+      // Para los buscadores (idiomas-5): el código de la vista previa al
+      // compartir, y los países donde se busca en este idioma. Cada región
+      // es un hreflang más que apunta a la MISMA dirección del idioma.
+      locale: "es_UY",
+      regiones: ["UY", "AR"]
     },
     {
       id: "fr",
@@ -54,6 +59,8 @@
       prefijos: ["fr"],
       zonas: ["Europe/Paris", "Europe/Brussels", "Indian/Reunion",
               "America/Martinique", "America/Guadeloupe", "America/Cayenne"],
+      locale: "fr_FR",
+      regiones: ["FR", "BE"],
       // Lo que se le pide a quien traduce a este idioma. Va acá y no en la
       // pantalla de traducción porque es del IDIOMA, no de la herramienta:
       // traducir el uso y no la palabra, y el tratamiento, cambian con cada
@@ -77,6 +84,8 @@
       // lugares como para deducirlo de dónde está la persona, y varios de
       // esos lugares son de habla hispana. El idioma del aparato alcanza.
       zonas: [],
+      locale: "en_US",
+      regiones: [],
       brief: "TRANSLATION into international English. Translate the USE, not the "
            + "word: look up how each yurt-building term is actually said in "
            + "English before deciding. Neutral register, second person, no "
@@ -98,6 +107,8 @@
               "America/Cuiaba", "America/Campo_Grande", "America/Porto_Velho",
               "America/Boa_Vista", "America/Rio_Branco", "America/Maceio",
               "America/Araguaina", "America/Santarem", "America/Noronha"],
+      locale: "pt_BR",
+      regiones: ["BR"],
       brief: "TRADUÇÃO para o português do Brasil. Traduza o USO, não a palavra: "
            + "procure como cada termo de construção de yurts se diz no Brasil "
            + "antes de decidir. Tratamento por você."
@@ -164,7 +175,22 @@
      localStorage con el sitio público. Sin la excepción de `edit=1`, haber
      tocado FR una vez haría que el editor abriera en francés mientras se está
      editando el español. En modo edición manda la dirección y nada más. */
+  /* Un buscador ve el idioma de la DIRECCIÓN, nunca uno deducido
+     (idiomas-5, 19-oct-2026). Google rastrea con el navegador en inglés: desde
+     que el inglés es público, la deducción le mostraba `/` —la dirección del
+     castellano— en inglés, y la versión en castellano no tenía cómo entrar a
+     Google. No es mostrarle otra cosa al robot: es mostrarle exactamente lo
+     que la dirección y el hreflang dicen que hay ahí. Las vistas previas de
+     WhatsApp, Facebook y compañía entran en la misma bolsa. */
+  var ROBOT = /bot\b|bot\/|crawl|spider|slurp|inspectiontool|facebookexternalhit|whatsapp|telegram|linkedin|embedly|preview/i;
+  function esRobot() {
+    try { return ROBOT.test(navigator.userAgent || ""); } catch (e) { return false; }
+  }
   function inicial() {
+    if (esRobot()) {
+      var pedida = (location.search.match(/[?&]lang=([a-z]{2})/) || [])[1];
+      return pedida && existe(pedida) && esPublico(porId(pedida)) ? pedida : fuente();
+    }
     var editando = /[?&]edit=1/.test(location.search);
     var guardado = editando ? null : elegido();
     if (guardado && existe(guardado)) return guardado;
@@ -259,8 +285,49 @@
       l.setAttribute("href", urlCon(new URL(u.href), idioma).toString());
       cabeza.appendChild(l);
     };
-    publicos().forEach(function (l) { poner(l.id, l.id); });
+    publicos().forEach(function (l) {
+      poner(l.id, l.id);
+      (l.regiones || []).forEach(function (r) { poner(l.id + "-" + r, l.id); });
+    });
     poner("x-default", fuente());
+  }
+
+  /* La CABECERA en el idioma que se muestra (idiomas-5): título, descripción,
+     vista previa al compartir y canonical. Hasta acá eran sólo los del HTML,
+     en castellano, y el canonical apuntaba a `/` también desde `?lang=fr`: le
+     decía a Google que la versión francesa era una copia de la castellana, y
+     una copia no se muestra.
+
+     El canonical NO está escrito en el HTML a propósito: un canonical en el
+     HTML y otro distinto puesto por JS son dos señales que se contradicen, y
+     Google pide que, si lo pone el JS, el HTML no traiga otro. Cada idioma es
+     canónico de sí mismo. `datos` es {t, d} por idioma; sin el del idioma,
+     queda el del idioma fuente. */
+  function pintarCabeza(base, idioma, datos) {
+    if (typeof document === "undefined" || !document.head) return;
+    var cab = document.head;
+    var x = (datos && (datos[idioma] || datos[fuente()])) || {};
+    var u;
+    try { u = new URL(base); } catch (e) { return; }
+    var url = urlCon(u, idioma).toString();
+    var meta = function (atr, nombre, valor) {
+      if (!valor) return;
+      var m = cab.querySelector("meta[" + atr + '="' + nombre + '"]');
+      if (!m) { m = document.createElement("meta"); m.setAttribute(atr, nombre); cab.appendChild(m); }
+      m.setAttribute("content", valor);
+    };
+    if (x.t) document.title = x.t;
+    meta("name", "description", x.d);
+    meta("property", "og:title", x.t);
+    meta("property", "og:description", x.d);
+    meta("name", "twitter:title", x.t);
+    meta("name", "twitter:description", x.d);
+    meta("property", "og:url", url);
+    var l = porId(idioma);
+    if (l && l.locale) meta("property", "og:locale", l.locale);
+    var c = cab.querySelector('link[rel="canonical"]');
+    if (!c) { c = document.createElement("link"); c.setAttribute("rel", "canonical"); cab.appendChild(c); }
+    c.setAttribute("href", url);
   }
 
   raiz.CY_IDIOMAS = {
@@ -269,7 +336,7 @@
     lista: LISTA, ids: ids, existe: existe, fuente: fuente,
     deducido: deducido, elegido: elegido, recordar: recordar,
     inicial: inicial, pintarConmutador: pintarConmutador,
-    pintarAlternas: pintarAlternas,
-    SELLO: "idiomas-4"
+    pintarAlternas: pintarAlternas, pintarCabeza: pintarCabeza, esRobot: esRobot,
+    SELLO: "idiomas-5"
   };
 })(window);

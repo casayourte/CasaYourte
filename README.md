@@ -762,14 +762,14 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-28` |
 | `firebase-init.js` | (en el comentario) | `init-2` |
-| `sw.js` | `VERSION` | `cy-shell-v62` |
+| `sw.js` | `VERSION` | `cy-shell-v63` |
 | `admin.html` | `PANEL` | `admin-19` |
 | `editar.html` | `EDITOR` | `editar-23` |
 | `taller.html` | `SELLO` | `andamio-3` |
 | `calculo.html` | `CY.PANEL` | `calculo-9` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-4` |
 | `diagnostico.html` | `CY.PANEL` | `diagnostico-8` |
-| `idiomas.js` | `SELLO` | `idiomas-4` |
+| `idiomas.js` | `SELLO` | `idiomas-5` |
 | `traducir.html` | `TRADUCTOR` | `traducir-15` |
 
 *Verificados uno por uno contra los archivos el 2026-09-14, en la tanda del SDK
@@ -947,6 +947,36 @@ zona horaria de Brasil, como el francés por la de Francia.
 
 **En el editor se edita el idioma que se está viendo.** Para cambiar el francés hay que
 pasar a FR primero.
+
+### Para los buscadores (`idiomas-5`, 19-oct-2026)
+
+Pedido de Mauro: «fácil de encontrar para quien busque un proyecto así en Francia,
+Bélgica, Brasil, Argentina o Uruguay». Tres arreglos, y dos de ellos eran errores que
+sacaban versiones enteras de Google sin que se viera nada:
+
+- **Un buscador ve el idioma de la DIRECCIÓN, nunca uno deducido.** Google rastrea con el
+  navegador en inglés: desde que el inglés es público, `/` —la dirección del castellano— le
+  salía en inglés, y el castellano no tenía cómo entrar. `CY_IDIOMAS.esRobot()` lo
+  reconoce por el agente (Google, Bing, las vistas previas de WhatsApp y Facebook) y
+  `inicial()` le da el de `?lang=`, o el castellano. Las personas siguen con la deducción.
+- **Cada idioma es canónico de sí mismo.** El `<link rel="canonical">` escrito decía «la de
+  verdad es `/`» también desde `?lang=fr`: Google descartaba la francesa como copia. Ahora
+  no está escrito en el HTML —un canonical escrito y otro puesto por JS se contradicen— y
+  lo pone `CY_IDIOMAS.pintarCabeza()`, con el título, la descripción y la vista previa del
+  idioma, desde `CABEZA` de `index.html` y de `album.html`. Cada uno con la palabra que se
+  busca en su país: **yurta** (Uruguay, Argentina), **yourte** (Francia, Bélgica),
+  **yurt** (Brasil y en inglés). Hasta 60 caracteres el título y 160 la descripción.
+- **Los países, declarados.** Además de `es`, `fr`, `en` y `pt`, el `hreflang` lleva
+  `es-UY`, `es-AR`, `fr-FR`, `fr-BE` y `pt-BR`, apuntando a la dirección de su idioma —en el
+  HTML, en el catálogo (`regiones`) y en `sitemap.xml`—, y los datos estructurados nombran
+  los cinco países con su código.
+
+`pruebas-puertas.mjs` lo comprueba con un Googlebot y una persona de mentira.
+
+**Lo que no se puede hacer desde el código, y es lo que más pesa:** dar de alta el sitio
+en **Google Search Console** y en **Bing Webmaster Tools** (Bing lo importa de Search
+Console) y mandarles `https://casayourte.com/sitemap.xml`. Lo hace el titular de la
+cuenta; sin eso Google llega solo, pero tarde y sin decir qué no pudo leer.
 
 ---
 

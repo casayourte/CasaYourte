@@ -202,7 +202,7 @@ el agente y **no es opcional**: que el JavaScript parsee **como MÓDULO**
 incluidos los módulos que viven adentro de un `.html`; que **los cinco bancos
 corran** —`node pruebas-secciones.mjs` (16 casos), `node pruebas-reportes.mjs`
 (64 casos), `node pruebas-andamio.mjs` (89 casos), `node
-pruebas-puertas.mjs` (102 casos) y `node pruebas-modelos.mjs` (119 casos), los
+pruebas-puertas.mjs` (122 casos) y `node pruebas-modelos.mjs` (119 casos), los
 cinco sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
 sellos hayan subido, con la `VERSION` del `sw.js` si el archivo está en `SHELL`
 y los `?v=` con los que se lo pide; y que la documentación del repo diga la
@@ -582,6 +582,16 @@ verdad después del cambio.
   pide un cuadrado de lado múltiplo de 48 px. Y el nombre en los resultados
   lo da el bloque `WebSite` de la portada. Tarda: Google vuelve a leer el
   ícono cuando vuelve a rastrear la portada, en días o semanas.
+- **Un buscador ve el idioma de la dirección, y cada idioma tiene su cabecera**
+  (`idiomas-5`, 19-oct-2026, Mauro: «fácil de encontrar en Francia, Bélgica,
+  Brasil, Argentina o Uruguay»). `CY_IDIOMAS.inicial()` no deduce el idioma para
+  un robot —Google rastrea en inglés y veía `/` en inglés—, y
+  `CY_IDIOMAS.pintarCabeza()` pone título, descripción, vista previa y
+  **canonical** por idioma desde `CABEZA` de `index.html` y `album.html`. **Por eso
+  no hay un canonical escrito en el HTML, y no se vuelve a escribir:** el que había
+  apuntaba a `/` también desde `?lang=fr` y le decía a Google que la francesa era
+  una copia. Si cambia lo que el sitio ofrece o dónde, cambia `CABEZA` en la misma
+  tanda: un título que promete otra cosa que la página es peor que ninguno.
 - **La autoridad del contenido es Firestore** (`sitio/publicado`). `contenido.json` en
   el repo es respaldo, y los textos de `index.html` el último respaldo.
 - **No subir acá:** cálculos, costos, márgenes, tarifas, proveedores, documentación

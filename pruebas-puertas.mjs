@@ -364,5 +364,55 @@ titulo("QUITAR UN BLOQUE DURA — corrido de verdad");
        ids.every((l) => new RegExp('hreflang="' + l + '"').test(txt)));
 }
 
+{
+  titulo("los buscadores (idiomas-5, 19-oct-2026): cada idioma con su cabecera, y el robot ve el de la dirección");
+  // El catálogo con un navegador de mentira: idioma del aparato, agente y dirección.
+  const cargar = (ua, langs, search) => {
+    const ventana = {};
+    const prev = { navigator: globalThis.navigator, location: globalThis.location, localStorage: globalThis.localStorage };
+    Object.defineProperty(globalThis, "navigator", { value: { userAgent: ua, languages: langs, language: langs[0] }, configurable: true });
+    globalThis.location = { search };
+    globalThis.localStorage = { getItem: () => null, setItem() {} };
+    new Function("window", leer("idiomas.js"))(ventana);
+    const r = ventana.CY_IDIOMAS.inicial();
+    Object.defineProperty(globalThis, "navigator", { value: prev.navigator, configurable: true });
+    globalThis.location = prev.location; globalThis.localStorage = prev.localStorage;
+    return r;
+  };
+  const GOOGLE = "Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)";
+  const BING = "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)";
+  const PERSONA = "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36";
+  ok("Google, con el navegador en inglés, ve / en castellano (no el inglés deducido)", cargar(GOOGLE, ["en-US"], "") === "es");
+  ok("Google ve ?lang=fr en francés y ?lang=pt en portugués",
+     cargar(GOOGLE, ["en-US"], "?lang=fr") === "fr" && cargar(GOOGLE, ["en-US"], "?lang=pt") === "pt");
+  ok("Bing, igual", cargar(BING, ["en-US"], "") === "es");
+  ok("una persona con el teléfono en inglés sigue viendo el inglés deducido", cargar(PERSONA, ["en-US"], "") === "en");
+  ok("una persona con el teléfono en francés, el francés", cargar(PERSONA, ["fr-BE"], "") === "fr");
+
+  const index = leer("index.html"), album = leer("album.html");
+  const sinCom = (t) => t.replace(/<!--[\s\S]*?-->/g, "");
+  for (const [f, txt] of [["index.html", index], ["album.html", album]]) {
+    ok(`${f} no trae un canonical escrito (lo pone pintarCabeza, por idioma)`, !/<link rel="canonical"/.test(sinCom(txt)));
+    ok(`${f} declara los países: es-UY, es-AR, fr-FR, fr-BE, pt-BR`,
+       ["es-UY","es-AR","fr-FR","fr-BE","pt-BR"].every((c) => txt.includes('hreflang="' + c + '"')));
+  }
+  ok("index.html pone la cabecera al pintar, fuera del editor y del taller",
+     /if\(!\/\[\?&\]\(edit\|taller\)=1\/\.test\(location\.search\)\) CY_IDIOMAS\.pintarCabeza\("https:\/\/casayourte\.com\/",lang,CABEZA\);/.test(index));
+  ok("album.html pone la cabecera al pintar, fuera del taller",
+     /if \(!TALLER\) CY_IDIOMAS\.pintarCabeza\("https:\/\/casayourte\.com\/album\.html", idioma, CABEZA\);/.test(album));
+  const cabeza = (txt, patron) => { const m = txt.match(patron); return m ? new Function("return " + m[1])() : null; };
+  const CI = cabeza(index, /const CABEZA=(\{[\s\S]*?\n\});/), CA = cabeza(album, /const CABEZA = (\{[\s\S]*?\n\});/);
+  const palabra = { es: /yurta/i, fr: /yourte/i, en: /yurt/i, pt: /yurt/i };
+  for (const [f, C] of [["index.html", CI], ["album.html", CA]])
+    for (const l of ["es", "fr", "en", "pt"]) {
+      const x = (C || {})[l] || {};
+      ok(`${f} · ${l}: título de hasta 60 y descripción de hasta 160, con «${palabra[l].source}»`,
+         !!x.t && !!x.d && x.t.length <= 60 && x.d.length <= 160 && palabra[l].test(x.t) && palabra[l].test(x.d));
+    }
+  const mapa = leer("sitemap.xml");
+  ok("sitemap.xml: cada dirección con sus 10 alternas (4 idiomas, 5 países, x-default)",
+     (mapa.match(/<url>/g) || []).length === 8 && (mapa.match(/hreflang=/g) || []).length === 80);
+}
+
 console.log(`\n${bien} bien · ${mal} mal`);
 process.exit(mal ? 1 : 0);

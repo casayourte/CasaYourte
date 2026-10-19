@@ -109,13 +109,18 @@
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v62';
+const VERSION = 'cy-shell-v63';
 
 // v39 (14-sep-2026) — entra el TALLER: index.html lee sitio/taller con
 //   ?taller=1 y sabe mover y apagar secciones (contrato CY_SITIO v2);
 //   editar.html (editar-9) suma el chip «En vivo | Taller». Va encima de la
 //   v38, de la misma fecha: dos tandas seguidas tocando el SHELL.
 //
+//   v63 · 19-oct-2026 · `idiomas.js` (idiomas-5): para los buscadores. Un
+//     robot ve el idioma de la dirección (no el deducido: Google rastrea en
+//     inglés y veía `/` en inglés), cada idioma pone su título, descripción y
+//     canonical (pintarCabeza), y hreflang por país (es-UY, es-AR, fr-FR,
+//     fr-BE, pt-BR). Los `?v=3` que lo piden.
 //   v62 · 19-oct-2026 · `idiomas.js` (idiomas-4): cuatro idiomas públicos —
 //     es, fr, en y pt—, y los `?v=2` que lo piden en editar, traducir y
 //     diagnóstico. `index.html` y `album.html` cambian también (aplican todos

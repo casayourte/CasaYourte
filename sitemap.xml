@@ -7,7 +7,9 @@
   sin este archivo el buscador no tiene forma de saber que existe otra
   versión: el botón cambia el texto y la dirección se queda igual.
 
-  Cada dirección declara a las otras con xhtml:link. Es lo que le dice a
+  Cada dirección declara a las otras con xhtml:link, y desde el 19-oct-2026
+  (idiomas-5) también por país: es-UY y es-AR, fr-FR y fr-BE, pt-BR, que
+  apuntan a la misma dirección de su idioma. Es lo que le dice a
   Google «estas dos son la misma página en dos idiomas» en lugar de
   «estas dos son contenido duplicado».
 
@@ -21,9 +23,14 @@
   <url>
     <loc>https://casayourte.com/</loc>
     <xhtml:link rel="alternate" hreflang="es" href="https://casayourte.com/"/>
+    <xhtml:link rel="alternate" hreflang="es-UY" href="https://casayourte.com/"/>
+    <xhtml:link rel="alternate" hreflang="es-AR" href="https://casayourte.com/"/>
     <xhtml:link rel="alternate" hreflang="fr" href="https://casayourte.com/?lang=fr"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://casayourte.com/?lang=fr"/>
+    <xhtml:link rel="alternate" hreflang="fr-BE" href="https://casayourte.com/?lang=fr"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://casayourte.com/?lang=en"/>
     <xhtml:link rel="alternate" hreflang="pt" href="https://casayourte.com/?lang=pt"/>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://casayourte.com/?lang=pt"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://casayourte.com/"/>
     <lastmod>2026-10-19</lastmod>
     <changefreq>monthly</changefreq>
@@ -33,9 +40,14 @@
   <url>
     <loc>https://casayourte.com/?lang=fr</loc>
     <xhtml:link rel="alternate" hreflang="es" href="https://casayourte.com/"/>
+    <xhtml:link rel="alternate" hreflang="es-UY" href="https://casayourte.com/"/>
+    <xhtml:link rel="alternate" hreflang="es-AR" href="https://casayourte.com/"/>
     <xhtml:link rel="alternate" hreflang="fr" href="https://casayourte.com/?lang=fr"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://casayourte.com/?lang=fr"/>
+    <xhtml:link rel="alternate" hreflang="fr-BE" href="https://casayourte.com/?lang=fr"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://casayourte.com/?lang=en"/>
     <xhtml:link rel="alternate" hreflang="pt" href="https://casayourte.com/?lang=pt"/>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://casayourte.com/?lang=pt"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://casayourte.com/"/>
     <lastmod>2026-10-19</lastmod>
     <changefreq>monthly</changefreq>
@@ -45,9 +57,14 @@
   <url>
     <loc>https://casayourte.com/?lang=en</loc>
     <xhtml:link rel="alternate" hreflang="es" href="https://casayourte.com/"/>
+    <xhtml:link rel="alternate" hreflang="es-UY" href="https://casayourte.com/"/>
+    <xhtml:link rel="alternate" hreflang="es-AR" href="https://casayourte.com/"/>
     <xhtml:link rel="alternate" hreflang="fr" href="https://casayourte.com/?lang=fr"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://casayourte.com/?lang=fr"/>
+    <xhtml:link rel="alternate" hreflang="fr-BE" href="https://casayourte.com/?lang=fr"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://casayourte.com/?lang=en"/>
     <xhtml:link rel="alternate" hreflang="pt" href="https://casayourte.com/?lang=pt"/>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://casayourte.com/?lang=pt"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://casayourte.com/"/>
     <lastmod>2026-10-19</lastmod>
     <changefreq>monthly</changefreq>
@@ -57,9 +74,14 @@
   <url>
     <loc>https://casayourte.com/?lang=pt</loc>
     <xhtml:link rel="alternate" hreflang="es" href="https://casayourte.com/"/>
+    <xhtml:link rel="alternate" hreflang="es-UY" href="https://casayourte.com/"/>
+    <xhtml:link rel="alternate" hreflang="es-AR" href="https://casayourte.com/"/>
     <xhtml:link rel="alternate" hreflang="fr" href="https://casayourte.com/?lang=fr"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://casayourte.com/?lang=fr"/>
+    <xhtml:link rel="alternate" hreflang="fr-BE" href="https://casayourte.com/?lang=fr"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://casayourte.com/?lang=en"/>
     <xhtml:link rel="alternate" hreflang="pt" href="https://casayourte.com/?lang=pt"/>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://casayourte.com/?lang=pt"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://casayourte.com/"/>
     <lastmod>2026-10-19</lastmod>
     <changefreq>monthly</changefreq>
@@ -69,9 +91,14 @@
   <url>
     <loc>https://casayourte.com/album.html</loc>
     <xhtml:link rel="alternate" hreflang="es" href="https://casayourte.com/album.html"/>
+    <xhtml:link rel="alternate" hreflang="es-UY" href="https://casayourte.com/album.html"/>
+    <xhtml:link rel="alternate" hreflang="es-AR" href="https://casayourte.com/album.html"/>
     <xhtml:link rel="alternate" hreflang="fr" href="https://casayourte.com/album.html?lang=fr"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://casayourte.com/album.html?lang=fr"/>
+    <xhtml:link rel="alternate" hreflang="fr-BE" href="https://casayourte.com/album.html?lang=fr"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://casayourte.com/album.html?lang=en"/>
     <xhtml:link rel="alternate" hreflang="pt" href="https://casayourte.com/album.html?lang=pt"/>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://casayourte.com/album.html?lang=pt"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://casayourte.com/album.html"/>
     <lastmod>2026-10-19</lastmod>
     <changefreq>weekly</changefreq>
@@ -81,9 +108,14 @@
   <url>
     <loc>https://casayourte.com/album.html?lang=fr</loc>
     <xhtml:link rel="alternate" hreflang="es" href="https://casayourte.com/album.html"/>
+    <xhtml:link rel="alternate" hreflang="es-UY" href="https://casayourte.com/album.html"/>
+    <xhtml:link rel="alternate" hreflang="es-AR" href="https://casayourte.com/album.html"/>
     <xhtml:link rel="alternate" hreflang="fr" href="https://casayourte.com/album.html?lang=fr"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://casayourte.com/album.html?lang=fr"/>
+    <xhtml:link rel="alternate" hreflang="fr-BE" href="https://casayourte.com/album.html?lang=fr"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://casayourte.com/album.html?lang=en"/>
     <xhtml:link rel="alternate" hreflang="pt" href="https://casayourte.com/album.html?lang=pt"/>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://casayourte.com/album.html?lang=pt"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://casayourte.com/album.html"/>
     <lastmod>2026-10-19</lastmod>
     <changefreq>weekly</changefreq>
@@ -93,9 +125,14 @@
   <url>
     <loc>https://casayourte.com/album.html?lang=en</loc>
     <xhtml:link rel="alternate" hreflang="es" href="https://casayourte.com/album.html"/>
+    <xhtml:link rel="alternate" hreflang="es-UY" href="https://casayourte.com/album.html"/>
+    <xhtml:link rel="alternate" hreflang="es-AR" href="https://casayourte.com/album.html"/>
     <xhtml:link rel="alternate" hreflang="fr" href="https://casayourte.com/album.html?lang=fr"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://casayourte.com/album.html?lang=fr"/>
+    <xhtml:link rel="alternate" hreflang="fr-BE" href="https://casayourte.com/album.html?lang=fr"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://casayourte.com/album.html?lang=en"/>
     <xhtml:link rel="alternate" hreflang="pt" href="https://casayourte.com/album.html?lang=pt"/>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://casayourte.com/album.html?lang=pt"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://casayourte.com/album.html"/>
     <lastmod>2026-10-19</lastmod>
     <changefreq>weekly</changefreq>
@@ -105,9 +142,14 @@
   <url>
     <loc>https://casayourte.com/album.html?lang=pt</loc>
     <xhtml:link rel="alternate" hreflang="es" href="https://casayourte.com/album.html"/>
+    <xhtml:link rel="alternate" hreflang="es-UY" href="https://casayourte.com/album.html"/>
+    <xhtml:link rel="alternate" hreflang="es-AR" href="https://casayourte.com/album.html"/>
     <xhtml:link rel="alternate" hreflang="fr" href="https://casayourte.com/album.html?lang=fr"/>
+    <xhtml:link rel="alternate" hreflang="fr-FR" href="https://casayourte.com/album.html?lang=fr"/>
+    <xhtml:link rel="alternate" hreflang="fr-BE" href="https://casayourte.com/album.html?lang=fr"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://casayourte.com/album.html?lang=en"/>
     <xhtml:link rel="alternate" hreflang="pt" href="https://casayourte.com/album.html?lang=pt"/>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://casayourte.com/album.html?lang=pt"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://casayourte.com/album.html"/>
     <lastmod>2026-10-19</lastmod>
     <changefreq>weekly</changefreq>
