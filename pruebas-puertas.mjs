@@ -409,6 +409,8 @@ titulo("QUITAR UN BLOQUE DURA — corrido de verdad");
       ok(`${f} · ${l}: título de hasta 60 y descripción de hasta 160, con «${palabra[l].source}»`,
          !!x.t && !!x.d && x.t.length <= 60 && x.d.length <= 160 && palabra[l].test(x.t) && palabra[l].test(x.d));
     }
+  ok("los datos estructurados no declaran un Product sin precio (Search Console: problema crítico)",
+     !/"@type":\s*"Product"/.test(index) || /"price"/.test(index));
   const mapa = leer("sitemap.xml");
   ok("sitemap.xml: cada dirección con sus 10 alternas (4 idiomas, 5 países, x-default)",
      (mapa.match(/<url>/g) || []).length === 8 && (mapa.match(/hreflang=/g) || []).length === 80);
