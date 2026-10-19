@@ -973,6 +973,11 @@ sacaban versiones enteras de Google sin que se viera nada:
 
 `pruebas-puertas.mjs` lo comprueba con un Googlebot y una persona de mentira.
 
+**Search Console, verificado por archivo** (19-oct-2026): `googledcd58c0da40c5605.html`
+en la raíz es la prueba de que el sitio es nuestro, como propiedad «Prefijo de la URL»
+`https://casayourte.com/`. **No se borra**: Google lo relee y, sin él, deja de mostrar los
+datos del sitio. No es un secreto (Google lo pide público).
+
 **Lo que no se puede hacer desde el código, y es lo que más pesa:** dar de alta el sitio
 en **Google Search Console** y en **Bing Webmaster Tools** (Bing lo importa de Search
 Console) y mandarles `https://casayourte.com/sitemap.xml`. Lo hace el titular de la

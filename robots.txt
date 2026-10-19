@@ -20,6 +20,10 @@ Allow: /favicon.ico
 Allow: /favicon.png
 Allow: /icono-512.png
 Allow: /apple-touch-icon.png
+# La verificación de Google Search Console (19-oct-2026): un archivo de una
+# línea que Google relee de vez en cuando. Si se borra, el sitio deja de
+# estar verificado.
+Allow: /googledcd58c0da40c5605.html
 
 Disallow: /admin.html
 Disallow: /editar.html
