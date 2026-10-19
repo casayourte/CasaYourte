@@ -282,12 +282,28 @@ ok("y se rehace con la estructura, al final de aplicarOrden",
    /pestanasArmar\(\);\s*\}\s*\/\*/.test(index.slice(index.indexOf("function aplicarOrden"))));
 ok("la portada corta de álbumes la pide `orden.alb_vista`",
    /const corta=\(orden\|\|\{\}\)\.alb_vista==="obras";[\s\S]{0,120}classList\.toggle\("alb-corta", corta\)/.test(codigo)
-   && /\.alb-corta \.alb-lista\{display:none\}/.test(index));
-ok("y en ella la portada NO baja las tiras (ni antes ni después de pedirlas)",
-   (codigo.match(/seccion\.classList\.contains\("alb-corta"\)/g) || []).length === 3);
-ok("y si el editor vuelve a las tiras con la página abierta, se piden o se dibujan",
+   && !/\.alb-corta \.alb-lista\{display:none\}/.test(index));
+// Desde el 19-oct-2026 (Mauro: «debe pasar las fotos del álbum de la última
+// obra y ofrecer ver el resto») la portada corta no queda vacía: pasa UNA obra.
+ok("y en ella pasa la ÚLTIMA obra, una sola, que no es un producto",
+   /const candidatos = corta[\s\S]{0,80}a\.tipo !== "producto"/.test(codigo)
+   && /if \(corta && juntos\.length\) break;/.test(codigo));
+ok("y si el editor cambia de vista con la página abierta, se vuelve a pedir y el pedido viejo no escribe",
    /if\(antes!==corta\) document\.dispatchEvent\(new Event\("cy-albumes"\)\)/.test(codigo)
-   && /addEventListener\("cy-albumes", \(\) => \{[\s\S]{0,120}if \(ALB\.length\) pintar\(\); else if \(!pedido\) mirar\(\);/.test(codigo));
+   && /addEventListener\("cy-albumes", \(\) => \{[\s\S]{0,300}turno\+\+;[\s\S]{0,200}if \(ALB\.length\) pintar\(\); else if \(!pedido\) mirar\(\);/.test(codigo)
+   && /if \(mio !== turno\) return;/.test(codigo));
+// En el teléfono (19-oct-2026, Mauro: «las pestañas de los cuadros se
+// pierden… hacer entrar todas en la pantalla… quitar los números que no
+// tienen sentido»).
+ok("las pestañas de líneas y de trayectoria no llevan número debajo",
+   (codigo.match(/b\.append\(n\);/g) || []).length >= 2
+   && !/document\.createElement\("small"\)[\s\S]{0,120}padStart\(2/.test(codigo));
+ok("en el teléfono las pestañas son una rejilla que entra entera, sin barra",
+   /@media\(max-width:699px\)\{\s*\.mod-tabs\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/.test(index)
+   && /\.mod-tab small\{display:none\}/.test(index));
+ok("el diámetro de un álbum va con su unidad, en la portada y en album.html",
+   /diam\(a\.diametro\)/.test(codigo) && (codAlbum.match(/diam\(a\.diametro\)/g) || []).length === 2
+   && !/\[a\.anio, a\.diametro/.test(codigo + codAlbum));
 ok("el enlace al álbum conserva el taller y la vista previa",
    /\["taller","vista"\]\.forEach\(k=>\{ if\(aqui\.get\(k\)==="1"\) q\.set\(k,"1"\); \}\)/.test(codigo)
    && /enlazarAlbum\(idiomaInicial\(\)\)/.test(codigo));

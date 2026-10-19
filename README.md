@@ -859,7 +859,7 @@ archivo. En `sitio/taller`:
 | `secciones` / `ocultas` | la portada queda en portada, la idea, los modelos, las formas de trabajo, la evolución técnica, las obras y el contacto; el resto se apaga (no se borra) |
 | `orden.dif_vista = "pestanas"` | lo mismo para las decisiones técnicas, con `dN.s` de rótulo |
 | `orden.traj_vista = "pestanas"` | la trayectoria se muestra como un cuadro de pestañas —«evolución técnica»—, con el renglón `sN.yr` como rótulo. Son los mismos bloques; sin el dato, vuelve a su forma de siempre |
-| `orden.alb_vista = "obras"` | la portada deja de bajar las tiras de álbumes y sólo invita, y `album.html?taller=1` muestra **una sección por obra**: su pase de fotos automático, su descripción (`alb.obra.<id>`) y «Ver las N fotos, por etapa» |
+| `orden.alb_vista = "obras"` | la portada deja de bajar las tiras de álbumes y pasa sólo la **última obra** (la del año más nuevo que no es `producto`), con «Ver las obras» abajo, y `album.html?taller=1` muestra **una sección por obra**: su pase de fotos automático, su descripción (`alb.obra.<id>`) y «Ver las N fotos, por etapa» |
 
 La página de obras corre el pase sólo en pantalla, se frena con el visor abierto o con Pausa,
 arranca quieta si el teléfono pide menos movimiento, y no se desliza con el dedo. Los
@@ -878,7 +878,7 @@ ocupe casi todo el cuadrado; NO de `assets/logo.png`, que es blanco sobre transp
 resultado con fondo claro no se ve. El nombre «CasaYourte» en los resultados lo da el bloque
 `WebSite` de datos estructurados de la portada.
 
-`pruebas-modelos.mjs` son 116 casos sobre el cuadro de modelos, la medida del sitio y el
+`pruebas-modelos.mjs` son 119 casos sobre el cuadro de modelos, la medida del sitio y el
 **sitio limpio** (sección 16, de abajo).
 Existe por cuatro errores del 24-sep-2026 que tienen todos la misma forma: **no rompen nada
 visible**. Los rombos del fondo se dibujaban estirados —×8 en un monitor— y aparecían igual;

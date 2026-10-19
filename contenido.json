@@ -1066,6 +1066,6 @@
   "traj_vista": "pestanas",
   "traj": "s1,s2,s3,s4,s5"
  },
- "secciones": "hero,idea,modelos,lineas,trayectoria,albumes,contacto,foto,proceso,diferencial,interior,oferta,co,taller",
- "ocultas": "foto,proceso,diferencial,interior,oferta,co,taller"
+ "secciones": "hero,foto,idea,modelos,lineas,trayectoria,albumes,contacto,proceso,diferencial,interior,oferta,co,taller",
+ "ocultas": "proceso,diferencial,interior,oferta,co,taller"
 }

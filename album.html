@@ -249,6 +249,10 @@ body.cy-en-taller header{top:1.9rem}
    dentro de ellos las fotos que no estén en la papelera. Nada se
    publica solo: marcar el álbum es una decisión explícita.
    ═══════════════════════════════════════════════════════════════ */
+  // El diámetro va con su unidad: «2024 · 7 · Francia» se leía como un número
+  // sin sentido. Un número pelado lleva «Ø … m»; un texto que ya la trae, no.
+  const diam = (d) => d == null || d === "" || Number(String(d).replace(",", ".")) === 0 ? "" :
+    /^\s*\d+([.,]\d+)?\s*$/.test(String(d)) ? "Ø " + String(d).trim() + " m" : String(d);
 
 const PROYECTO = "casayourte-mauro";
 const CLAVE = "AIzaSyDDD_xvpC4I_ec2OZymyDqVsm1K0ISTr4Q";
@@ -613,7 +617,7 @@ function pintar() {
   albumes.forEach((a) => {
     const sec = document.createElement("section");
     sec.className = "alb";
-    const meta = [a.anio, a.diametro, a.lugar].filter(Boolean).join(" · ");
+    const meta = [a.anio, diam(a.diametro), a.lugar].filter(Boolean).join(" · ");
     sec.innerHTML = `<div class="alb-hd"><h2></h2><span class="meta"></span></div>
                      <p class="alb-sub"></p>`;
     sec.querySelector("h2").textContent = a.titulo || a.id;
@@ -741,7 +745,7 @@ function pintarObras() {
       '</div>' +
       '<div class="obra-etapas hide"></div>';
     sec.querySelector("h2").textContent = a.titulo || a.id;
-    sec.querySelector(".meta").textContent = [a.anio, a.diametro, a.lugar].filter(Boolean).join(" · ");
+    sec.querySelector(".meta").textContent = [a.anio, diam(a.diametro), a.lugar].filter(Boolean).join(" · ");
     // La descripción es un texto del sitio, `alb.obra.<id>`: se escribe desde
     // el editor, por idioma, y no toca el álbum del panel.
     const desc = sec.querySelector(".obra-desc");

@@ -262,6 +262,29 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
   border-color:var(--blond);box-shadow:inset 0 3px 0 var(--blond)}
 .mod-tab[aria-selected="true"] small{color:var(--blond)}
 .mod-tab:focus-visible{outline:2px solid var(--blond);outline-offset:2px}
+/* EN EL TELÉFONO las pestañas entran TODAS en la pantalla (19-oct-2026,
+   Mauro: «si es un teléfono las pestañas de los cuadros se pierden; hay que
+   hacer entrar todas en la pantalla y darle dinamismo al texto»). Hasta ese
+   día eran una tira que se deslizaba de costado, y en 375 px la tercera
+   pestaña quedaba cortada y la cuarta y la quinta no se veían: nada decía que
+   existían. Ahora son una grilla de botones: tres por renglón, o dos si son
+   dos o cuatro (para que no quede una sola colgando), y el nombre se parte en
+   dos renglones antes que cortarse. La bajada chica de los modelos no entra
+   en un botón de un tercio de pantalla: el mismo dato está en el panel. */
+@media(max-width:699px){
+  .mod-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.4rem;
+    overflow:visible;margin-bottom:.55rem;padding-bottom:0}
+  .mod-tabs:has(>.mod-tab:nth-child(2):last-child),
+  .mod-tabs:has(>.mod-tab:nth-child(4):last-child){grid-template-columns:repeat(2,minmax(0,1fr))}
+  .mod-tabs:has(>.mod-tab:only-child){grid-template-columns:1fr}
+  .mod-tab{min-width:0;border-bottom:1px solid #35302a;border-radius:9px;
+    padding:.7rem .55rem;text-align:center;font-size:clamp(.9rem,4vw,1.05rem);
+    line-height:1.15;overflow-wrap:anywhere;hyphens:auto;
+    display:flex;align-items:center;justify-content:center;min-height:3.3rem}
+  .mod-tab[aria-selected="true"]{box-shadow:inset 0 0 0 1px var(--blond)}
+  .mod-tab small{display:none}
+  .mod-cuerpo{border-radius:10px;margin-top:0}
+}
 .mod-cuerpo{border:1px solid #35302a;background:var(--ink-2);
   padding:clamp(1.1rem,3vw,2rem);border-radius:0 0 10px 10px;margin-top:-1px}
 .modelo{display:grid;gap:clamp(1.1rem,3vw,2rem);align-items:start}
@@ -340,6 +363,12 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
   border-color:var(--burg);box-shadow:inset 0 3px 0 var(--burg)}
 .paper .grp-tabs .mod-tab[aria-selected="true"] small{color:var(--burg)}
 .paper .grp-tabs .mod-tab:focus-visible{outline-color:var(--burg)}
+/* Lo mismo en teléfono, sobre papel: va DESPUÉS de las reglas de arriba
+   porque pesan lo mismo y si no, ganan ellas. */
+@media(max-width:699px){
+  .paper .grp-tabs .mod-tab{border-bottom:1px solid #cfc4ae}
+  .paper .grp-tabs .mod-tab[aria-selected="true"]{box-shadow:inset 0 0 0 1px var(--burg)}
+}
 .paper [data-grupo].en-pestanas{background:#f6f1e7;border-color:#cfc4ae}
 
 /* ---------- proceso ---------- */
@@ -439,10 +468,10 @@ h1 em{font-style:italic;color:var(--blond);font-weight:400}
   padding:.9rem 1.4rem;border-radius:2px;transition:background .25s,color .25s}
 .album-b:hover{background:var(--blond);color:var(--ink)}
 /* La portada CORTA de los álbumes (`orden.alb_vista = "obras"`): las tiras
-   se van a su propia página, `album.html`, y acá queda la invitación. Es lo
-   que pidió el sitio limpio: menos a la vista, y quien quiere más, lo tiene
-   a un toque. Ver `album.html`, «la vista de obras». */
-.alb-corta .alb-lista{display:none}
+   se van a su propia página, `album.html`. Hasta el 19-oct-2026 acá quedaba
+   sólo la invitación; ese día Mauro pidió que pase las fotos de la ÚLTIMA
+   obra y ofrezca ver el resto: un solo álbum, con su pase, y el botón de
+   siempre a `album.html`. Ver `cargar()`. */
 
 /* ---------- contact ---------- */
 .cta{display:flex;gap:.7rem;justify-content:center;flex-wrap:wrap;margin-top:2rem}
@@ -1316,8 +1345,9 @@ function lineasArmar(){
     b.type="button"; b.className="mod-tab"; b.setAttribute("role","tab");
     b.id="ln-tab-"+id; b.setAttribute("aria-controls","ln-pan-"+id); b.dataset.para=id;
     const n=document.createElement("span"); n.className="mod-tab-n"; n.dataset.i="pg."+id+".t";
-    const k=document.createElement("small"); k.textContent=String(i+1).padStart(2,"0");
-    b.append(n,k);
+    // Sin número debajo (19-oct-2026, Mauro: «quitar los números que no
+    // tienen sentido»): el «01, 02…» no decía nada que no dijera el orden.
+    b.append(n);
     b.addEventListener("click",()=>lineasElegir(id,true));
     tira.appendChild(b);
     // El panel: la BAJADA de la página y el botón que lleva a ella. Nada más.
@@ -1449,8 +1479,8 @@ function pestanasArmar(){
       // El `data-i` en un hijo, por lo mismo que en los modelos.
       const n=document.createElement("span"); n.className="mod-tab-n";
       n.dataset.i=id+"."+PESTANAS[g].rotulo;
-      const k=document.createElement("small"); k.textContent=String(i+1).padStart(2,"0");
-      b.append(n,k);
+      // Sin número debajo (19-oct-2026): ver el cuadro de líneas.
+      b.append(n);
       b.addEventListener("click",()=>pestanaElegir(g,id,true));
       tira.appendChild(b);
     });
@@ -2032,6 +2062,10 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
   if (!seccion || !lista) return;
 
   const txt = (k) => textos(document.documentElement.lang)[k] || "";
+  // El diámetro va con su unidad: «2024 · 7 · Francia» se leía como un número
+  // sin sentido. Un número pelado lleva «Ø … m»; un texto que ya la trae, no.
+  const diam = (d) => d == null || d === "" || Number(String(d).replace(",", ".")) === 0 ? "" :
+    /^\s*\d+([.,]\d+)?\s*$/.test(String(d)) ? "Ø " + String(d).trim() + " m" : String(d);
   /* Tres medios (el campo 'clase' de cada foto): foto · secuencia · video.
      En la PORTADA nada se mueve solo salvo el pase de fotos, que es de
      cuadros quietos. Un video acá sería una descarga que nadie pidió:
@@ -2163,7 +2197,7 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
 
       art.querySelector(".alb-tit").textContent = a.titulo || a.id;
       art.querySelector(".alb-meta").textContent =
-        [a.anio, a.diametro, a.lugar].filter(Boolean).join(" · ");
+        [a.anio, diam(a.diametro), a.lugar].filter(Boolean).join(" · ");
 
       const caja  = art.querySelector(".alb-caja");
       const stage = art.querySelector(".alb-stage");
@@ -2338,11 +2372,16 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
 
   /* ---------- traer ---------- */
   let pedido = false;
+  let modoPedido = null;   // con qué vista se pidió lo que hay en ALB
+  let turno = 0;           // un pedido que quedó viejo no escribe ALB
   async function cargar() {
     if (pedido) return;
-    // En la portada corta las tiras viven en album.html: acá no se piden.
-    if (seccion.classList.contains("alb-corta")) return;
     pedido = true;
+    const mio = ++turno;
+    // En la portada corta va UNA obra, la última (19-oct-2026): las demás
+    // viven en album.html y se llega con el botón de abajo.
+    const corta = seccion.classList.contains("alb-corta");
+    modoPedido = corta;
     estado.textContent = txt("ui.albCargando");
     try {
       const todos = await traer("albums");
@@ -2350,21 +2389,32 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
         .sort((a, b) => String(b.anio || "").localeCompare(String(a.anio || ""))
           || String(a.titulo || a.id).localeCompare(String(b.titulo || b.id), "es"));
 
-      ALB = [];
-      for (const a of publicos.slice(0, 8)) {
+      // La última obra: un álbum que no es `producto` (la yurta mongol no es
+      // una obra de CasaYourte), el del año más nuevo y, entre los del mismo
+      // año, el creado más tarde.
+      const candidatos = corta
+        ? publicos.filter((a) => a.tipo !== "producto")
+            .sort((a, b) => String(b.anio || "").localeCompare(String(a.anio || ""))
+              || String(b.creado || "").localeCompare(String(a.creado || "")))
+        : publicos.slice(0, 8);
+      const juntos = [];
+      for (const a of candidatos) {
         let fotos = [];
         try { fotos = await traer("albums/" + a.id + "/fotos"); } catch (e) { fotos = []; }
         fotos = ordenarComoElPanel(a,
           fotos.filter((f) => !f.eliminada && f.usar === true && f.public_id));
-        if (fotos.length) ALB.push({ ...a, fotos });
+        if (fotos.length) juntos.push({ ...a, fotos });
+        if (corta && juntos.length) break;   // con una alcanza
       }
-      if (!ALB.length) { estado.textContent = txt("ui.albVacio"); return; }
-      // El taller pudo decir «portada corta» mientras esto viajaba.
-      if (seccion.classList.contains("alb-corta")) return;
+      // El editor pudo cambiar la vista mientras esto viajaba: lo pide otro.
+      if (mio !== turno) return;
+      if (!juntos.length) { estado.textContent = txt("ui.albVacio"); return; }
+      ALB = juntos;
+      estado.textContent = "";
       pintar();
     } catch (e) {
       // Sin álbumes el sitio sigue entero: la sección se queda con su invitación.
-      estado.textContent = txt("ui.albVacio");
+      if (mio === turno) estado.textContent = txt("ui.albVacio");
     }
   }
 
@@ -2383,7 +2433,11 @@ document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
   // desde «Secciones → Cómo se muestra»): si ya habían llegado se dibujan, y
   // si no se piden. Sin esto la sección quedaba vacía hasta recargar.
   document.addEventListener("cy-albumes", () => {
-    if (seccion.classList.contains("alb-corta")) return;
+    // Lo que hay se pidió para la otra vista: se tira y se pide de nuevo.
+    if (modoPedido !== null && modoPedido !== seccion.classList.contains("alb-corta")) {
+      turno++; pases.forEach((p) => p.parar()); pases = []; ALB = []; lista.innerHTML = "";
+      lista.appendChild(estado); pedido = false; mirar(); return;
+    }
     if (ALB.length) pintar(); else if (!pedido) mirar();
   });
 

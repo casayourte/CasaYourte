@@ -202,7 +202,7 @@ el agente y **no es opcional**: que el JavaScript parsee **como MÓDULO**
 incluidos los módulos que viven adentro de un `.html`; que **los cinco bancos
 corran** —`node pruebas-secciones.mjs` (16 casos), `node pruebas-reportes.mjs`
 (64 casos), `node pruebas-andamio.mjs` (89 casos), `node
-pruebas-puertas.mjs` (102 casos) y `node pruebas-modelos.mjs` (116 casos), los
+pruebas-puertas.mjs` (102 casos) y `node pruebas-modelos.mjs` (119 casos), los
 cinco sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
 sellos hayan subido, con la `VERSION` del `sw.js` si el archivo está en `SHELL`
 y los `?v=` con los que se lo pide; y que la documentación del repo diga la
@@ -536,12 +536,25 @@ verdad después del cambio.
   piezas, las tres en `sitio/taller` y ninguna en el HTML: `secciones` y
   `ocultas` dejan siete secciones a la vista; `orden.traj_vista = "pestanas"`
   muestra la trayectoria como el cuadro de «evolución técnica», con los MISMOS
-  bloques; y `orden.alb_vista = "obras"` hace que la portada sólo invite a los
-  álbumes y que `album.html?taller=1` sea una página por obra, con su pase
-  automático y su descripción (`alb.obra.<id>`). **Por eso el publicado no
+  bloques; y `orden.alb_vista = "obras"` hace que la portada pase SÓLO la
+  última obra —la del año más nuevo que no es `producto`— con «Ver las obras»
+  abajo (19-oct-2026, Mauro: «debe pasar las fotos del álbum de la última
+  obra y ofrecer ver el resto»; antes no mostraba ninguna), y que
+  `album.html?taller=1` sea una página por obra, con su pase automático y su
+  descripción (`alb.obra.<id>`). **Por eso el publicado no
   cambió un píxel**, y llevarlo al sitio es el «Al sitio» de siempre. Si
   alguna vez una vista pasa a depender del archivo, el publicado cambia el día
   que se sube, sin que nadie lo apruebe.
+  **En el teléfono las pestañas son una REJILLA que entra entera** (19-oct-2026,
+  Mauro: «las pestañas de los cuadros se pierden… hacer entrar todas en la
+  pantalla… quitar los números que no tienen sentido»): debajo de 700 px
+  `.mod-tabs` pasa de tira con barra a rejilla de 3 (2 si son 2 o 4), la letra
+  se ajusta con `clamp` y el `<small>` técnico se esconde; las pestañas de
+  líneas y de trayectoria ya no llevan el «01, 02…». Y la sección `foto` (la
+  foto de la portada original) volvió a estar a la vista, después del
+  encabezado, en `sitio/publicado` y en `sitio/taller`. El diámetro de un
+  álbum se muestra con su unidad («Ø 7 m», `diam()`), en la portada y en
+  `album.html`.
   **Las vistas se cambian en el editor, en «Secciones → Cómo se muestra»**
   (`editar-23`): una lista `VISTAS` con el campo, la sección y las dos formas,
   y una de las dos es SIEMPRE la de siempre (`""`). Para sumar una vista, el
