@@ -416,5 +416,20 @@ titulo("QUITAR UN BLOQUE DURA — corrido de verdad");
      (mapa.match(/<url>/g) || []).length === 8 && (mapa.match(/hreflang=/g) || []).length === 80);
 }
 
+titulo("consultas-2 · capturas y audios privados");
+{
+  const c = leer("consultas.html"), r = leer("REGLAS.txt"), fi = leer("firebase-init.js");
+  ok("la imagen se elige con DOS inputs, cámara y archivos",
+     /accept="image\/\*" capture="environment" id="a-camara"/.test(c) && /accept="image\/\*" id="a-archivo"/.test(c));
+  ok("van como bytes de la base, no a Cloudinary",
+     /Bytes\.fromUint8Array/.test(c) && !/CY\.subir\(/.test(c) && /writeBatch, Bytes \} = modFs/.test(fi));
+  ok("el techo de la página es el de la regla (900 KB)",
+     /const MAXIMO = 900000;/.test(c) && /request\.resource\.data\.datos\.size\(\) <= 900000/.test(r));
+  ok("la regla deja al agente sólo CREAR adjuntos, con forma fija",
+     /match \/adjuntos\/\{aid\}[\s\S]{0,120}allow read, delete: if con\('consultas'\);[\s\S]{0,80}allow create: if \(con\('consultas'\) \|\| esAgente\(\)\)[\s\S]{0,120}hasOnly/.test(r));
+  ok("la ficha lleva el teléfono aparte, y las viejas se leen igual",
+     /telefono: \$\("f-tel"\)/.test(c) && /const telDe =/.test(c));
+}
+
 console.log(`\n${bien} bien · ${mal} mal`);
 process.exit(mal ? 1 : 0);

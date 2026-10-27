@@ -68,7 +68,7 @@ confunda con secretos y los "proteja" rompiendo el sitio.
 | Rol y permisos de cada persona | **Firestore**, colección `usuarios/{uid}` (`rol`, `activo`, `permisos`), protegida por `REGLAS.txt`. Son datos, no reglas: se cambian desde `usuarios.html` sin republicar nada |
 | Número y clave de CallMeBot de cada persona (desde el 30-sep-2026) | **Firestore**, `avisos_contacto/{uid}`, lo carga cada uno en Más → Mis avisos por WhatsApp. Lo lee su dueño, y el agente de a uno para mandarle un aviso si lo encendió (`REGLAS.txt`). Una clave de CallMeBot sólo sirve para escribirle a ese número |
 | Invitaciones pendientes | **Firestore**, colección `invitaciones/{mail}`, protegida por `REGLAS.txt` |
-| Consultas de clientes y su conversación (desde el 27-oct-2026) | **Firestore**, `consultas/{id}`, con el permiso `consultas` (`consultas.html`). Llevan el contacto de la persona: **nunca** a un repositorio ni a un chat más allá de lo justo. El agente las lee y las crea o completa (con copia en `_historial/`), y no las borra |
+| Consultas de clientes y su conversación (desde el 27-oct-2026) | **Firestore**, `consultas/{id}`, con el permiso `consultas` (`consultas.html`). Llevan el contacto de la persona: **nunca** a un repositorio ni a un chat más allá de lo justo. El agente las lee y las crea o completa (con copia en `_historial/`), y no las borra. Sus capturas y audios de WhatsApp (desde consultas-2), en `consultas/{id}/adjuntos/` como bytes, nunca en Cloudinary ni en un repositorio |
 | Cálculos de taller (datos de clientes, medidas de obra) | **Firestore**, colección `calculos/{id}`. **No son públicos**: sólo con el permiso `calculo`. Costos, márgenes, tarifas y proveedores no van a este repositorio |
 | Contraseña del usuario del agente de Claude Code | **variables de entorno de Claude Code**, cargadas por Mauro en la web. El usuario vive en Firebase Authentication de `casayourte-mauro`, **sin ficha en `usuarios/`**: su acceso sale del bloque `esAgente()` de `REGLAS.txt`, que le da lectura de todo menos `calculos` e `invitaciones`, y escritura en `sitio/taller`, `sitio/publicado` (desde el 19-oct-2026, con copia previa en `_historial/`), `consultas/` (crear y completar, desde el 27-oct-2026) y `avisos/`. Lo usa `datos/herramientas/firestore.mjs` |
 | Login de las consolas: GitHub, Firebase, Cloudinary | **gestor de contraseñas personal de Mauro.** En ningún repositorio ni documento. *De quién es cada cuenta* se documenta en las **fichas del panel** (`fichas/`), no acá |
@@ -203,7 +203,7 @@ el agente y **no es opcional**: que el JavaScript parsee **como MÓDULO**
 incluidos los módulos que viven adentro de un `.html`; que **los cinco bancos
 corran** —`node pruebas-secciones.mjs` (16 casos), `node pruebas-reportes.mjs`
 (64 casos), `node pruebas-andamio.mjs` (89 casos), `node
-pruebas-puertas.mjs` (124 casos) y `node pruebas-modelos.mjs` (119 casos), los
+pruebas-puertas.mjs` (131 casos) y `node pruebas-modelos.mjs` (119 casos), los
 cinco sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
 sellos hayan subido, con la `VERSION` del `sw.js` si el archivo está en `SHELL`
 y los `?v=` con los que se lo pide; y que la documentación del repo diga la
@@ -613,6 +613,19 @@ verdad después del cambio.
   previa en `_historial/`, y nunca las borra: lo dice la regla. **Los precios
   que se dan acá son de una conversación**, no del sitio: el sitio público
   sigue sin precios. Hay que **publicar REGLAS.txt**.
+  **Desde `consultas-2` (27-oct, Mauro: «agregamos también el teléfono…
+  sacar fotos de las conversaciones de WhatsApp… copiar también los
+  audios»)** la ficha lleva el teléfono aparte (`cliente.telefono`, con
+  «Abrir en WhatsApp») y cada consulta sus **capturas y audios** en
+  `consultas/{id}/adjuntos/`, como BYTES en la base —una dirección de
+  Cloudinary es pública y acá no hay secreto para borrarla—, con forma fija y
+  techo de 900 KB que la regla, la página y la herramienta dicen igual (la foto
+  se achica en el teléfono). El agente sólo los crea (`firestore.mjs
+  casayourte adjuntar consultas <id> <archivo>`); quitarlos es de una persona.
+  `consultas.html?c=<id>` abre una directo. `firebase-init.js` exporta `Bytes`
+  (`init-3`). Cupo: una captura son 300–600 KB del GiB gratis de Spark —miles
+  antes de notarse— y una lectura por adjunto al abrir la consulta. Hay que
+  **publicar REGLAS.txt** otra vez.
 - **La autoridad del contenido es Firestore** (`sitio/publicado`). `contenido.json` en
   el repo es respaldo, y los textos de `index.html` el último respaldo.
 - **No subir acá:** cálculos, costos, márgenes, tarifas, proveedores, documentación

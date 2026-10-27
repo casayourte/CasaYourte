@@ -2,6 +2,10 @@
 // CasaYourte — Reglas de Firestore
 // Se pegan COMPLETAS en la consola. Nunca por fragmentos.
 //
+// 27-oct-2026 (tarde) · ENTRA `consultas/{id}/adjuntos/`: capturas y audios
+//   de WhatsApp de cada consulta, como bytes y con techo de 900 KB.
+//   El agente sólo los crea; leerlos y borrarlos, con el permiso 'consultas'.
+//
 // 27-oct-2026 · ENTRA `consultas/`: las consultas de clientes y su
 //   conversación (consultas.html, pedido de Mauro: «un registro de la
 //   comunicación… en la parte privada… para la continuación y el respaldo»).
@@ -209,6 +213,23 @@ service cloud.firestore {
     match /consultas/{id} {
       allow read, create, update, delete: if con('consultas');
       allow create, update: if esAgente();
+
+      // Las capturas y los audios de la conversación (consultas-2, 27-oct-2026,
+      // Mauro: «sacar fotos de las conversaciones de WhatsApp… copiar también
+      // los audios»). Como BYTES en la base y no en Cloudinary: una dirección
+      // de Cloudinary es pública y acá no hay secreto para borrarla. Forma
+      // fija y techo de 900 KB (un documento no pasa de 1 MiB). El agente sólo
+      // los crea (lo lee el comodín de arriba); borrarlos es de una persona.
+      match /adjuntos/{aid} {
+        allow read, delete: if con('consultas');
+        allow create: if (con('consultas') || esAgente())
+          && request.resource.data.keys().hasOnly(['en', 'tipo', 'mime', 'nombre', 'datos', 'por', 'nota'])
+          && request.resource.data.tipo in ['imagen', 'audio']
+          && request.resource.data.mime is string
+          && request.resource.data.mime.matches('(image|audio)/[a-z0-9.+-]+')
+          && request.resource.data.datos is bytes
+          && request.resource.data.datos.size() <= 900000;
+      }
     }
 
     // ---------- el sitio ----------

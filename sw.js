@@ -109,7 +109,7 @@
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v64';
+const VERSION = 'cy-shell-v65';
 
 // v64 · 27-oct-2026 · entra `consultas.html` (las consultas de clientes y su
 //   conversación) y `nucleo.js` (nucleo-29) suma su permiso y su lugar en «Más».

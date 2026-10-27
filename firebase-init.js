@@ -1,6 +1,7 @@
 // ═══════════════════════════════════════════════════════════════
 //  CASAYOURTE — firebase-init.js
-//  Sello: init-2
+//  Sello: init-3 (27-oct-2026: exporta `Bytes`, para las capturas y los
+//  audios privados de una consulta — consultas-2)
 //  Punto ÚNICO de contacto con el SDK de Firebase.
 //  Regla (Libro 1 §3.1): ninguna página importa de gstatic
 //  directamente; todo pasa por este módulo. La versión del SDK
@@ -58,7 +59,7 @@ export const firebaseConfig = {
 /* Enlaces vivos: `undefined` hasta que `cargarFirebase()` los rellena. */
 export let app, db, auth;
 export let doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc,
-           collection, serverTimestamp, writeBatch;
+           collection, serverTimestamp, writeBatch, Bytes;
 export let onAuthStateChanged, signInWithEmailAndPassword,
            createUserWithEmailAndPassword, signOut, sendPasswordResetEmail;
 
@@ -108,7 +109,7 @@ export function cargarFirebase() {
        createUserWithEmailAndPassword, signOut,
        sendPasswordResetEmail } = modAuth);
     ({ doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc,
-       collection, serverTimestamp, writeBatch } = modFs);
+       collection, serverTimestamp, writeBatch, Bytes } = modFs);
 
     // ── Firestore con caché persistente desde el día uno ─────────
     // Las lecturas repetidas salen del dispositivo (IndexedDB), el panel abre

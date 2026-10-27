@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
 <link rel="icon" href="./icono-192.png">
 <!--
-  consultas.html — Las consultas de clientes y cómo sigue cada una. Sello: consultas-1
+  consultas.html — Las consultas de clientes y cómo sigue cada una. Sello: consultas-2
 
   27-oct-2026, Mauro: «guarda un registro de la comunicación que estamos
   estableciendo con esta persona dentro del sitio de CasaYourte, en la parte
@@ -30,6 +30,17 @@
   eso no va nunca a un repositorio ni a un documento público. El agente la lee y
   la escribe para preparar las respuestas, con la copia de antes en `_historial/`
   (REGLAS.txt y `datos/herramientas/firestore.mjs`), y no la borra.
+
+  consultas-2 (27-oct-2026, Mauro: «agregamos también el teléfono del contacto…
+  sacar fotos de las conversaciones de WhatsApp eventualmente y posible copiar
+  también los audios»): la ficha lleva el TELÉFONO aparte (`cliente.telefono`,
+  con «Abrir en WhatsApp»), y cada consulta sus CAPTURAS y AUDIOS en
+  `consultas/{id}/adjuntos/`, como bytes en la base —no en Cloudinary, cuyas
+  direcciones son públicas y no se borran sin el secreto—. La foto se achica en
+  el teléfono antes (hasta 2000 px, JPEG) y nada pasa de 900 KB, que es lo que
+  exige la regla. Elegir guarda en el acto: es privado y se borra con 🗑.
+  `consultas.html?c=<id>` abre una consulta directo. Desde el chat se adjunta
+  con `firestore.mjs casayourte adjuntar consultas <id> <archivo>`.
 -->
 <style>
   .chip{display:inline-block;font-family:var(--mono);font-size:.6rem;letter-spacing:.08em;
@@ -48,6 +59,16 @@
   .msj .t{white-space:pre-wrap;font-size:.9rem;margin-top:.3rem}
   .msj .tr{white-space:pre-wrap;font-size:.8rem;color:var(--dim);margin-top:.35rem;border-top:1px solid var(--line);padding-top:.35rem}
   .msj button{background:none;border:0;color:var(--dim);padding:.1rem}
+  .adj{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.6rem;margin:.5rem 0}
+  .adj .a{border:1px solid var(--line);border-radius:var(--r);padding:.4rem;background:var(--ink2);display:flex;flex-direction:column;gap:.3rem}
+  .adj .a.audio{grid-column:1/-1}
+  .adj img{width:100%;max-height:260px;object-fit:cover;object-position:top;border-radius:calc(var(--r) - 2px);cursor:zoom-in}
+  .adj audio{width:100%}
+  .adj .q{font-family:var(--mono);font-size:.6rem;color:var(--dim2);display:flex;gap:.3rem;align-items:center}
+  .adj .q .grow{flex:1}
+  .adj .q button{background:none;border:0;color:var(--dim);padding:0}
+  .adj .n{font-size:.78rem;color:var(--dim)}
+  .elegir{display:none}
 </style>
 </head>
 <body>
@@ -74,7 +95,8 @@
 
     <div class="ficha">
       <label><span class="k">Nombre</span><input id="f-nombre" maxlength="80"></label>
-      <label><span class="k">Contacto (teléfono o mail)</span><input id="f-contacto" maxlength="120"></label>
+      <label><span class="k">Teléfono (con código de país)</span><input id="f-tel" maxlength="30" inputmode="tel" placeholder="+44 …"></label>
+      <label><span class="k">Mail u otro contacto</span><input id="f-contacto" maxlength="120"></label>
       <label><span class="k">País</span><input id="f-pais" maxlength="40"></label>
       <label><span class="k">Idioma</span><input id="f-idioma" maxlength="20" placeholder="en, es, fr, pt…"></label>
       <label><span class="k">Por dónde escribió</span><input id="f-canal" maxlength="40" placeholder="WhatsApp, mail, sitio…"></label>
@@ -83,6 +105,7 @@
     </div>
     <div class="row" style="margin-top:.6rem">
       <button class="btn p" id="guardar">Guardar la ficha</button>
+      <a class="btn hide" id="wa" target="_blank" rel="noopener"><span class="material-icons">chat</span> Abrir en WhatsApp</a>
       <span class="gris" id="dice"></span>
     </div>
 
@@ -100,16 +123,34 @@
       <label><span class="k">Traducción (si está en otro idioma)</span><textarea id="n-trad" rows="3"></textarea></label>
       <button class="btn" id="agregar"><span class="material-icons">add_comment</span> Agregar a la conversación</button>
     </div>
+
+    <h2 style="margin-top:1.4rem">Capturas y audios</h2>
+    <p class="gris">Capturas de la conversación de WhatsApp y los audios que mandó o se le
+    mandaron. Quedan acá, privados; la foto se achica antes de guardarla.</p>
+    <div id="adjuntos"></div>
+    <div class="card" style="margin-top:.6rem">
+      <label><span class="k">Nota (opcional, antes de elegir)</span><input id="a-nota" maxlength="200" placeholder="p. ej. «primer audio, pregunta por el piso»"></label>
+      <!-- DOS inputs para la imagen, cámara y archivos (regla de CasaYourte): uno solo no ofrece las dos cosas en iOS y Android. -->
+      <input type="file" accept="image/*" capture="environment" id="a-camara" class="elegir">
+      <input type="file" accept="image/*" id="a-archivo" class="elegir" multiple>
+      <input type="file" accept="audio/*,.opus,.ogg,.m4a,.aac,.amr" id="a-audio" class="elegir" multiple>
+      <div class="row" style="flex-wrap:wrap;gap:.5rem">
+        <button class="btn" data-elegir="a-camara"><span class="material-icons">photo_camera</span> Cámara</button>
+        <button class="btn" data-elegir="a-archivo"><span class="material-icons">image</span> Captura</button>
+        <button class="btn" data-elegir="a-audio"><span class="material-icons">mic</span> Audio</button>
+      </div>
+      <span class="gris" id="a-dice"></span>
+    </div>
   </section>
 </div>
 
 <script type="module">
 import { cargarFirebase,
-         db, auth, doc, getDoc, getDocs, setDoc, updateDoc,
-         collection, onAuthStateChanged, signOut } from "./firebase-init.js";
+         db, auth, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc,
+         collection, Bytes, onAuthStateChanged, signOut } from "./firebase-init.js";
 import { CY } from "./nucleo.js";
 
-CY.PANEL = "consultas-1";
+CY.PANEL = "consultas-2";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 // El SDK entra diferido (init-2): se espera antes de armar lo que recibe CY.arrancar.
@@ -139,13 +180,19 @@ const fecha = (iso) => {
 };
 const ultimo = (c) => (c.mensajes || []).reduce((m, x) => (String(x.en || "") > m ? String(x.en) : m), String(c.actualizadoISO || c.creadoISO || ""));
 
+/* El teléfono va aparte desde consultas-2. Una ficha de antes lo tenía en
+   `contacto`: si eso parece un teléfono, se muestra como teléfono. */
+const pareceTel = (x) => /^\+?[\d\s().-]{7,}$/.test(String(x || "").trim());
+const telDe = (cl) => (cl && (cl.telefono || (pareceTel(cl.contacto) ? cl.contacto : ""))) || "";
+const enlaceWhatsApp = (tel) => { const d = String(tel || "").replace(/\D/g, ""); return d.length >= 7 ? "https://wa.me/" + d : ""; };
+
 async function cargar() {
   try {
     const s = await getDocs(collection(db, "consultas"));
     consultas = s.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => ultimo(b).localeCompare(ultimo(a)));
     $("lista").innerHTML = consultas.length ? consultas.map((c) => `
       <div class="tarj card pulsa" data-abrir="${esc(c.id)}">
-        <div class="grow"><h3>${esc((c.cliente && (c.cliente.nombre || c.cliente.contacto)) || "(sin nombre)")}</h3>
+        <div class="grow"><h3>${esc((c.cliente && (c.cliente.nombre || telDe(c.cliente) || c.cliente.contacto)) || "(sin nombre)")}</h3>
           <div class="sub">${esc(c.pedido || "")}</div>
           <div class="sub">${esc([c.canal, c.cliente && c.cliente.pais, fecha(ultimo(c))].filter(Boolean).join(" · "))}</div></div>
         <span class="chip ${esc(c.estado || "nueva")}">${esc(c.estado || "nueva")}</span>
@@ -163,11 +210,15 @@ function abrir(c) {
   const cl = c.cliente || {};
   $("u-titulo").textContent = cl.nombre || cl.contacto || "(sin nombre)";
   $("u-sub").textContent = [c.canal, c.origen, c.creadoISO ? "desde " + fecha(c.creadoISO) : ""].filter(Boolean).join(" · ");
-  $("f-nombre").value = cl.nombre || ""; $("f-contacto").value = cl.contacto || "";
+  $("f-nombre").value = cl.nombre || ""; $("f-tel").value = telDe(cl);
+  $("f-contacto").value = cl.telefono || !pareceTel(cl.contacto) ? (cl.contacto || "") : "";
+  pintarWa();
   $("f-pais").value = cl.pais || ""; $("f-idioma").value = cl.idioma || "";
   $("f-canal").value = c.canal || ""; $("f-pedido").value = c.pedido || "";
   $("f-estado").value = c.estado || "nueva";
   pintarMensajes();
+  $("a-dice").textContent = "";
+  cargarAdjuntos();
   $("v-lista").classList.add("hide"); $("v-una").classList.remove("hide");
   window.scrollTo(0, 0);
 }
@@ -203,7 +254,7 @@ async function guardar(cambios) {
 }
 
 $("guardar").onclick = () => guardar({
-  cliente: { nombre: $("f-nombre").value.trim(), contacto: $("f-contacto").value.trim(),
+  cliente: { nombre: $("f-nombre").value.trim(), telefono: $("f-tel").value.trim(), contacto: $("f-contacto").value.trim(),
              pais: $("f-pais").value.trim(), idioma: $("f-idioma").value.trim() },
   canal: $("f-canal").value.trim(), pedido: $("f-pedido").value.trim(), estado: $("f-estado").value,
 });
@@ -224,6 +275,18 @@ $("agregar").onclick = async () => {
 document.addEventListener("click", async (ev) => {
   const a = ev.target.closest("[data-abrir]");
   if (a) return abrir(consultas.find((c) => c.id === a.dataset.abrir));
+  const el = ev.target.closest("[data-elegir]");
+  if (el) return $(el.dataset.elegir).click();
+  const ver = ev.target.closest("[data-ver]");
+  if (ver) return window.open(ver.src, "_blank");
+  const ba = ev.target.closest("[data-borrar-adj]");
+  if (ba) {
+    const x = adjuntos[+ba.dataset.borrarAdj];
+    if (!x || !confirm(`¿Quitar ${x.tipo === "audio" ? "este audio" : "esta captura"}? No vuelve.`)) return;
+    try { await deleteDoc(doc(db, "consultas", actual.id, "adjuntos", x.aid)); $("a-dice").textContent = "Quitado."; }
+    catch (e) { $("a-dice").textContent = CY.explicar(e); }
+    return cargarAdjuntos();
+  }
   const ord = JSON.parse($("mensajes").dataset.orden || "[]");
   const busca = (i) => (actual.mensajes || []).findIndex((m) => m.en + "|" + m.quien === ord[i]);
   const cp = ev.target.closest("[data-copiar]");
@@ -241,10 +304,93 @@ document.addEventListener("click", async (ev) => {
   }
 });
 
-$("volver").onclick = () => { actual = null; $("v-una").classList.add("hide"); $("v-lista").classList.remove("hide"); cargar(); };
+function pintarWa() {
+  const u = enlaceWhatsApp($("f-tel").value);
+  $("wa").classList.toggle("hide", !u); if (u) $("wa").href = u;
+}
+$("f-tel").addEventListener("input", pintarWa);
+
+/* ── Capturas y audios (consultas-2) ─────────────────────────────────────── */
+const MAXIMO = 900000;                      // el mismo techo que la regla
+let urls = [];                              // las URL de blob de lo que se muestra, para soltarlas
+let adjuntos = [];
+
+async function cargarAdjuntos() {
+  urls.forEach((u) => URL.revokeObjectURL(u)); urls = []; adjuntos = [];
+  if (!actual || !actual.id) { $("adjuntos").innerHTML = '<div class="empty">Guardá la ficha primero.</div>'; return; }
+  const id = actual.id;
+  $("adjuntos").innerHTML = '<div class="empty">Cargando…</div>';
+  try {
+    const s = await getDocs(collection(db, "consultas", id, "adjuntos"));
+    if (!actual || actual.id !== id) return;          // se cambió de consulta mientras bajaba
+    adjuntos = s.docs.map((d) => ({ aid: d.id, ...d.data() })).sort((a, b) => String(a.en || "").localeCompare(String(b.en || "")));
+    $("adjuntos").innerHTML = adjuntos.length ? '<div class="adj">' + adjuntos.map((a, i) => {
+      let u = "";
+      try { u = URL.createObjectURL(new Blob([a.datos.toUint8Array()], { type: a.mime })); urls.push(u); } catch (e) { /* sin bytes legibles: se muestra el nombre */ }
+      const cuerpo = !u ? `<div class="n">${esc(a.nombre || "(no se pudo leer)")}</div>`
+        : a.tipo === "imagen" ? `<img src="${u}" alt="${esc(a.nombre || "captura")}" data-ver="${i}">`
+        : `<audio controls preload="metadata" src="${u}"></audio>`;
+      return `<div class="a ${esc(a.tipo)}">
+        <div class="q"><span class="grow">${a.tipo === "audio" ? "🎙" : "🖼"} ${esc(fecha(a.en))}${a.por ? " · " + esc(a.por) : ""}</span>
+          <button data-borrar-adj="${i}" title="Quitar"><span class="material-icons" style="font-size:1rem">delete</span></button></div>
+        ${cuerpo}
+        ${a.nota ? `<div class="n">${esc(a.nota)}</div>` : ""}
+      </div>`;
+    }).join("") + "</div>" : '<div class="empty">Sin capturas ni audios todavía.</div>';
+  } catch (e) { $("adjuntos").innerHTML = `<div class="empty">${esc(CY.explicar(e))}</div>`; }
+}
+
+/* La foto se achica en el teléfono: una captura de WhatsApp se lee bien a
+   2000 px. Si todavía pasa el techo, se baja la calidad y después el tamaño. */
+async function achicar(archivo) {
+  const img = await createImageBitmap(archivo);
+  for (const [lado, q] of [[2000, 0.82], [2000, 0.65], [1500, 0.6], [1100, 0.55]]) {
+    const k = Math.min(1, lado / Math.max(img.width, img.height));
+    const c = document.createElement("canvas");
+    c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    const b = await new Promise((r) => c.toBlob(r, "image/jpeg", q));
+    if (b && b.size <= MAXIMO) return b;
+  }
+  throw new Error("la imagen no entra en 900 KB ni achicada");
+}
+
+async function adjuntar(archivo, tipo) {
+  const blob = tipo === "imagen" ? await achicar(archivo) : archivo;
+  if (blob.size > MAXIMO) throw new Error(`«${archivo.name}» pesa ${Math.round(blob.size / 1024)} KB y el techo es 900 KB`);
+  const mime = tipo === "imagen" ? "image/jpeg"
+    : (/^audio\/[a-z0-9.+-]+$/.test(archivo.type) ? archivo.type
+      : /\.(opus|ogg|oga)$/i.test(archivo.name) ? "audio/ogg" : /\.m4a$/i.test(archivo.name) ? "audio/mp4" : "audio/mpeg");
+  const cuerpo = { en: new Date().toISOString(), tipo, mime, nombre: String(archivo.name || tipo).slice(0, 120),
+    datos: Bytes.fromUint8Array(new Uint8Array(await blob.arrayBuffer())), por: yo.nombre || yo.email || "" };
+  const nota = $("a-nota").value.trim(); if (nota) cuerpo.nota = nota.slice(0, 200);
+  await setDoc(doc(db, "consultas", actual.id, "adjuntos", "a-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5)), cuerpo);
+}
+
+for (const [input, tipo] of [["a-camara", "imagen"], ["a-archivo", "imagen"], ["a-audio", "audio"]]) {
+  $(input).addEventListener("change", async (ev) => {
+    const archivos = [...ev.target.files]; ev.target.value = "";
+    if (!archivos.length) return;
+    if (!actual || !actual.id) { $("a-dice").textContent = "Guardá la ficha primero."; return; }
+    let bien = 0;
+    for (const a of archivos) {
+      $("a-dice").textContent = `Guardando ${a.name}…`;
+      try { await adjuntar(a, tipo); bien++; }
+      catch (e) { $("a-dice").textContent = e.code ? CY.explicar(e) : e.message; await cargarAdjuntos(); return; }
+    }
+    $("a-dice").textContent = bien === 1 ? "Guardado." : `Guardados ${bien}.`;
+    $("a-nota").value = "";
+    cargarAdjuntos();
+  });
+}
+
+$("volver").onclick = () => { actual = null; urls.forEach((u) => URL.revokeObjectURL(u)); urls = []; $("v-una").classList.add("hide"); $("v-lista").classList.remove("hide"); cargar(); };
 $("btnNueva").onclick = () => abrir({ cliente: {}, estado: "nueva", mensajes: [] });
 
-cargar();
+await cargar();
+// consultas.html?c=<id> abre esa consulta directo (lo usa el chat al avisar).
+const pedida = new URLSearchParams(location.search).get("c");
+if (pedida) abrir(consultas.find((c) => c.id === pedida));
 </script>
 </body>
 </html>
