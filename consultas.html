@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
 <link rel="icon" href="./icono-192.png">
 <!--
-  consultas.html — Las consultas de clientes y cómo sigue cada una. Sello: consultas-2
+  consultas.html — Las consultas de clientes y cómo sigue cada una. Sello: consultas-3
 
   27-oct-2026, Mauro: «guarda un registro de la comunicación que estamos
   estableciendo con esta persona dentro del sitio de CasaYourte, en la parte
@@ -39,7 +39,9 @@
   direcciones son públicas y no se borran sin el secreto—. La foto se achica en
   el teléfono antes (hasta 2000 px, JPEG) y nada pasa de 900 KB, que es lo que
   exige la regla. Elegir guarda en el acto: es privado y se borra con 🗑.
-  `consultas.html?c=<id>` abre una consulta directo. Desde el chat se adjunta
+  `consultas.html?c=<id>` abre una consulta directo.
+  consultas-3: lo mismo vale para cualquier FOTO (terreno, referencia), no sólo
+  capturas: los botones lo dicen. Desde el chat se adjunta
   con `firestore.mjs casayourte adjuntar consultas <id> <archivo>`.
 -->
 <style>
@@ -124,9 +126,10 @@
       <button class="btn" id="agregar"><span class="material-icons">add_comment</span> Agregar a la conversación</button>
     </div>
 
-    <h2 style="margin-top:1.4rem">Capturas y audios</h2>
-    <p class="gris">Capturas de la conversación de WhatsApp y los audios que mandó o se le
-    mandaron. Quedan acá, privados; la foto se achica antes de guardarla.</p>
+    <h2 style="margin-top:1.4rem">Fotos, capturas y audios</h2>
+    <p class="gris">Fotos (del terreno, de referencia, las que se le mandaron), capturas de la
+    conversación de WhatsApp y los audios. Quedan acá, privados; la foto se achica antes de
+    guardarla.</p>
     <div id="adjuntos"></div>
     <div class="card" style="margin-top:.6rem">
       <label><span class="k">Nota (opcional, antes de elegir)</span><input id="a-nota" maxlength="200" placeholder="p. ej. «primer audio, pregunta por el piso»"></label>
@@ -136,7 +139,7 @@
       <input type="file" accept="audio/*,.opus,.ogg,.m4a,.aac,.amr" id="a-audio" class="elegir" multiple>
       <div class="row" style="flex-wrap:wrap;gap:.5rem">
         <button class="btn" data-elegir="a-camara"><span class="material-icons">photo_camera</span> Cámara</button>
-        <button class="btn" data-elegir="a-archivo"><span class="material-icons">image</span> Captura</button>
+        <button class="btn" data-elegir="a-archivo"><span class="material-icons">image</span> Foto o captura</button>
         <button class="btn" data-elegir="a-audio"><span class="material-icons">mic</span> Audio</button>
       </div>
       <span class="gris" id="a-dice"></span>
@@ -150,7 +153,7 @@ import { cargarFirebase,
          collection, Bytes, onAuthStateChanged, signOut } from "./firebase-init.js";
 import { CY } from "./nucleo.js";
 
-CY.PANEL = "consultas-2";
+CY.PANEL = "consultas-3";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 // El SDK entra diferido (init-2): se espera antes de armar lo que recibe CY.arrancar.

@@ -616,7 +616,7 @@ verdad después del cambio.
   **Desde `consultas-2` (27-oct, Mauro: «agregamos también el teléfono…
   sacar fotos de las conversaciones de WhatsApp… copiar también los
   audios»)** la ficha lleva el teléfono aparte (`cliente.telefono`, con
-  «Abrir en WhatsApp») y cada consulta sus **capturas y audios** en
+  «Abrir en WhatsApp») y cada consulta sus **fotos, capturas y audios** en
   `consultas/{id}/adjuntos/`, como BYTES en la base —una dirección de
   Cloudinary es pública y acá no hay secreto para borrarla—, con forma fija y
   techo de 900 KB que la regla, la página y la herramienta dicen igual (la foto

@@ -762,12 +762,12 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-29` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `cy-shell-v65` |
+| `sw.js` | `VERSION` | `cy-shell-v66` |
 | `admin.html` | `PANEL` | `admin-19` |
 | `editar.html` | `EDITOR` | `editar-23` |
 | `taller.html` | `SELLO` | `andamio-3` |
 | `calculo.html` | `CY.PANEL` | `calculo-9` |
-| `consultas.html` | `CY.PANEL` | `consultas-2` |
+| `consultas.html` | `CY.PANEL` | `consultas-3` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-4` |
 | `diagnostico.html` | `CY.PANEL` | `diagnostico-8` |
 | `idiomas.js` | `SELLO` | `idiomas-5` |
