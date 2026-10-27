@@ -626,6 +626,12 @@ verdad después del cambio.
   (`init-3`). Cupo: una captura son 300–600 KB del GiB gratis de Spark —miles
   antes de notarse— y una lectura por adjunto al abrir la consulta. Hay que
   **publicar REGLAS.txt** otra vez.
+  **Desde el chat el hilo entero se registra y se corrige con
+  `datos/herramientas/consultas.mjs`** (`ver`, `agregar`, `editar <n>`,
+  `quitar <n>`, `ficha`; 27-oct, Mauro: «que el chat pueda escribir lo que le
+  voy a dar… y hacer las modificaciones»): escribe la misma forma que esta
+  página. Si cambia la forma de una consulta acá, cambia allá en la misma
+  tanda (su banco compara los estados).
 - **La autoridad del contenido es Firestore** (`sitio/publicado`). `contenido.json` en
   el repo es respaldo, y los textos de `index.html` el último respaldo.
 - **No subir acá:** cálculos, costos, márgenes, tarifas, proveedores, documentación
