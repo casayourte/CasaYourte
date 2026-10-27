@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>CasaYourte · Consultas</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..700,0..100,0..1&family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link rel="stylesheet" href="./estilos.css">
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#181614">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="icon" href="./icono-192.png">
+<!--
+  consultas.html — Las consultas de clientes y cómo sigue cada una. Sello: consultas-1
+
+  27-oct-2026, Mauro: «guarda un registro de la comunicación que estamos
+  estableciendo con esta persona dentro del sitio de CasaYourte, en la parte
+  privada, que vaya a poder ser accesible para la continuación y el respaldo de
+  este tipo de conversaciones».
+
+  Una consulta por persona (`consultas/{id}`): quién es, por dónde escribió, qué
+  pide, en qué estado está, y la CONVERSACIÓN entera en `mensajes` (lo que dijo,
+  lo que se le contestó y las notas internas), cada renglón con su fecha y, si
+  está en otro idioma, la traducción al lado.
+
+  Es PRIVADA: la ve y la escribe sólo quien tiene el permiso `consultas` (el
+  administrador, por definición). Lleva datos de una persona —su contacto— y por
+  eso no va nunca a un repositorio ni a un documento público. El agente la lee y
+  la escribe para preparar las respuestas, con la copia de antes en `_historial/`
+  (REGLAS.txt y `datos/herramientas/firestore.mjs`), y no la borra.
+-->
+<style>
+  .chip{display:inline-block;font-family:var(--mono);font-size:.6rem;letter-spacing:.08em;
+    text-transform:uppercase;padding:.15rem .45rem;border-radius:999px;border:1px solid var(--line);color:var(--dim)}
+  .chip.nueva{color:var(--wip);border-color:var(--wip)}
+  .chip.respondida,.chip.conversacion{color:var(--blond);border-color:var(--blond)}
+  .chip.presupuesto{color:var(--ok, #8fc48a);border-color:var(--ok, #8fc48a)}
+  .ficha{display:grid;grid-template-columns:1fr 1fr;gap:.45rem .6rem}
+  @media(min-width:680px){.ficha{grid-template-columns:repeat(3,1fr)}}
+  .ficha .ancho{grid-column:1/-1}
+  .msj{border:1px solid var(--line);border-radius:var(--r);padding:.6rem .7rem;margin:.5rem 0;background:var(--ink2)}
+  .msj.nosotros{border-color:var(--blond)}
+  .msj.nota{border-style:dashed}
+  .msj .q{font-family:var(--mono);font-size:.62rem;color:var(--dim2);display:flex;gap:.5rem;align-items:center}
+  .msj .q .grow{flex:1}
+  .msj .t{white-space:pre-wrap;font-size:.9rem;margin-top:.3rem}
+  .msj .tr{white-space:pre-wrap;font-size:.8rem;color:var(--dim);margin-top:.35rem;border-top:1px solid var(--line);padding-top:.35rem}
+  .msj button{background:none;border:0;color:var(--dim);padding:.1rem}
+</style>
+</head>
+<body>
+
+<div id="nav"></div>
+
+<div class="contenedor">
+
+  <section id="v-lista">
+    <div style="display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;margin-bottom:.3rem">
+      <h1 style="margin-right:auto">Consultas</h1>
+      <button class="btn p" id="btnNueva"><span class="material-icons">add</span> Nueva</button>
+    </div>
+    <p class="gris">Cada persona que pregunta por una yurta, con lo que pidió, lo que se le
+    contestó y en qué quedó. Privado: sólo con el permiso de consultas.</p>
+    <div id="lista"><div class="empty">Cargando…</div></div>
+  </section>
+
+  <section id="v-una" class="hide">
+    <button class="btn" id="volver" style="margin-bottom:.8rem">
+      <span class="material-icons">arrow_back</span> Todas las consultas</button>
+    <h1 id="u-titulo">—</h1>
+    <p class="gris" id="u-sub"></p>
+
+    <div class="ficha">
+      <label><span class="k">Nombre</span><input id="f-nombre" maxlength="80"></label>
+      <label><span class="k">Contacto (teléfono o mail)</span><input id="f-contacto" maxlength="120"></label>
+      <label><span class="k">País</span><input id="f-pais" maxlength="40"></label>
+      <label><span class="k">Idioma</span><input id="f-idioma" maxlength="20" placeholder="en, es, fr, pt…"></label>
+      <label><span class="k">Por dónde escribió</span><input id="f-canal" maxlength="40" placeholder="WhatsApp, mail, sitio…"></label>
+      <label><span class="k">Estado</span><select id="f-estado"></select></label>
+      <label class="ancho"><span class="k">Qué pide</span><input id="f-pedido" maxlength="200"></label>
+    </div>
+    <div class="row" style="margin-top:.6rem">
+      <button class="btn p" id="guardar">Guardar la ficha</button>
+      <span class="gris" id="dice"></span>
+    </div>
+
+    <h2 style="margin-top:1.4rem">La conversación</h2>
+    <div id="mensajes"></div>
+
+    <div class="card" style="margin-top:.8rem">
+      <label><span class="k">Agregar</span>
+        <select id="n-quien">
+          <option value="cliente">Lo que escribió</option>
+          <option value="nosotros">Lo que le contestamos</option>
+          <option value="nota">Nota interna</option>
+        </select></label>
+      <label><span class="k">Texto (como se mandó)</span><textarea id="n-texto" rows="4"></textarea></label>
+      <label><span class="k">Traducción (si está en otro idioma)</span><textarea id="n-trad" rows="3"></textarea></label>
+      <button class="btn" id="agregar"><span class="material-icons">add_comment</span> Agregar a la conversación</button>
+    </div>
+  </section>
+</div>
+
+<script type="module">
+import { cargarFirebase,
+         db, auth, doc, getDoc, getDocs, setDoc, updateDoc,
+         collection, onAuthStateChanged, signOut } from "./firebase-init.js";
+import { CY } from "./nucleo.js";
+
+CY.PANEL = "consultas-1";
+CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
+
+// El SDK entra diferido (init-2): se espera antes de armar lo que recibe CY.arrancar.
+if (!await CY.conFirebase(cargarFirebase)) throw new Error("sin SDK");
+
+const yo = await CY.arrancar({ db, auth, doc, getDoc, onAuthStateChanged }, "consultas", "consultas");
+
+const $ = (id) => document.getElementById(id);
+const esc = CY.esc;
+const ESTADOS = [
+  ["nueva", "Nueva: falta contestar"],
+  ["respondida", "Respondida: esperamos que conteste"],
+  ["conversacion", "En conversación"],
+  ["presupuesto", "Presupuesto enviado"],
+  ["cerrada", "Cerrada"],
+];
+const QUIEN = { cliente: "Escribió", nosotros: "Le contestamos", nota: "Nota" };
+$("f-estado").innerHTML = ESTADOS.map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join("");
+
+let consultas = [];
+let actual = null;
+
+const fecha = (iso) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return isNaN(d) ? String(iso) : d.toLocaleString("es-UY", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" });
+};
+const ultimo = (c) => (c.mensajes || []).reduce((m, x) => (String(x.en || "") > m ? String(x.en) : m), String(c.actualizadoISO || c.creadoISO || ""));
+
+async function cargar() {
+  try {
+    const s = await getDocs(collection(db, "consultas"));
+    consultas = s.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => ultimo(b).localeCompare(ultimo(a)));
+    $("lista").innerHTML = consultas.length ? consultas.map((c) => `
+      <div class="tarj card pulsa" data-abrir="${esc(c.id)}">
+        <div class="grow"><h3>${esc((c.cliente && (c.cliente.nombre || c.cliente.contacto)) || "(sin nombre)")}</h3>
+          <div class="sub">${esc(c.pedido || "")}</div>
+          <div class="sub">${esc([c.canal, c.cliente && c.cliente.pais, fecha(ultimo(c))].filter(Boolean).join(" · "))}</div></div>
+        <span class="chip ${esc(c.estado || "nueva")}">${esc(c.estado || "nueva")}</span>
+        <span class="material-icons" style="color:var(--dim)">chevron_right</span>
+      </div>`).join("")
+      : '<div class="empty">Todavía no hay consultas.<br>Cargá la primera con «Nueva».</div>';
+  } catch (e) {
+    $("lista").innerHTML = `<div class="empty">${esc(CY.explicar(e))}</div>`;
+  }
+}
+
+function abrir(c) {
+  if (!c) return;
+  actual = c;
+  const cl = c.cliente || {};
+  $("u-titulo").textContent = cl.nombre || cl.contacto || "(sin nombre)";
+  $("u-sub").textContent = [c.canal, c.origen, c.creadoISO ? "desde " + fecha(c.creadoISO) : ""].filter(Boolean).join(" · ");
+  $("f-nombre").value = cl.nombre || ""; $("f-contacto").value = cl.contacto || "";
+  $("f-pais").value = cl.pais || ""; $("f-idioma").value = cl.idioma || "";
+  $("f-canal").value = c.canal || ""; $("f-pedido").value = c.pedido || "";
+  $("f-estado").value = c.estado || "nueva";
+  pintarMensajes();
+  $("v-lista").classList.add("hide"); $("v-una").classList.remove("hide");
+  window.scrollTo(0, 0);
+}
+
+function pintarMensajes() {
+  const ms = [...(actual.mensajes || [])].sort((a, b) => String(a.en || "").localeCompare(String(b.en || "")));
+  $("mensajes").innerHTML = ms.length ? ms.map((m, i) => `
+    <div class="msj ${esc(m.quien)}">
+      <div class="q"><span class="grow">${esc(QUIEN[m.quien] || m.quien)} · ${esc(fecha(m.en))}${m.por ? " · " + esc(m.por) : ""}${m.estado === "borrador" ? " · BORRADOR, sin mandar" : ""}</span>
+        ${m.quien === "nosotros" ? `<button data-copiar="${i}" title="Copiar para mandar"><span class="material-icons">content_copy</span></button>` : ""}
+        ${m.estado === "borrador" ? `<button data-mandado="${i}" title="Ya lo mandé"><span class="material-icons">done</span></button>` : ""}
+      </div>
+      <div class="t">${esc(m.texto)}</div>
+      ${m.traduccion ? `<div class="tr">${esc(m.traduccion)}</div>` : ""}
+    </div>`).join("") : '<div class="empty">Sin mensajes todavía.</div>';
+  $("mensajes").dataset.orden = JSON.stringify(ms.map((m) => m.en + "|" + m.quien));
+}
+
+async function guardar(cambios) {
+  const ahora = new Date().toISOString();
+  const cuerpo = { ...cambios, actualizadoISO: ahora, actualizadoPor: yo.nombre || yo.email || yo.uid };
+  try {
+    if (actual.id) await updateDoc(doc(db, "consultas", actual.id), cuerpo);
+    else {
+      actual.id = "c-" + ahora.slice(0, 10) + "-" + Math.random().toString(36).slice(2, 7);
+      const { id, ...resto } = actual;   // Firestore no acepta un campo `undefined`: el id es el nombre del documento
+      await setDoc(doc(db, "consultas", id), { ...resto, ...cuerpo, creadoISO: ahora });
+    }
+    Object.assign(actual, cuerpo);
+    $("dice").textContent = "Guardado.";
+    return true;
+  } catch (e) { $("dice").textContent = CY.explicar(e); return false; }
+}
+
+$("guardar").onclick = () => guardar({
+  cliente: { nombre: $("f-nombre").value.trim(), contacto: $("f-contacto").value.trim(),
+             pais: $("f-pais").value.trim(), idioma: $("f-idioma").value.trim() },
+  canal: $("f-canal").value.trim(), pedido: $("f-pedido").value.trim(), estado: $("f-estado").value,
+});
+
+$("agregar").onclick = async () => {
+  const texto = $("n-texto").value.trim();
+  if (!texto) { $("dice").textContent = "Falta el texto."; return; }
+  const m = { en: new Date().toISOString(), quien: $("n-quien").value, texto, por: yo.nombre || yo.email || "" };
+  const tr = $("n-trad").value.trim(); if (tr) m.traduccion = tr;
+  const mensajes = [...(actual.mensajes || []), m];
+  const estado = m.quien === "nosotros" && (actual.estado || "nueva") === "nueva" ? "respondida"
+    : m.quien === "cliente" && actual.estado === "respondida" ? "conversacion" : (actual.estado || "nueva");
+  if (await guardar({ mensajes, estado })) {
+    $("n-texto").value = ""; $("n-trad").value = ""; $("f-estado").value = estado; pintarMensajes();
+  }
+};
+
+document.addEventListener("click", async (ev) => {
+  const a = ev.target.closest("[data-abrir]");
+  if (a) return abrir(consultas.find((c) => c.id === a.dataset.abrir));
+  const ord = JSON.parse($("mensajes").dataset.orden || "[]");
+  const busca = (i) => (actual.mensajes || []).findIndex((m) => m.en + "|" + m.quien === ord[i]);
+  const cp = ev.target.closest("[data-copiar]");
+  if (cp) {
+    const m = actual.mensajes[busca(+cp.dataset.copiar)];
+    try { await navigator.clipboard.writeText(m.texto); $("dice").textContent = "Copiado: pegalo en la conversación."; }
+    catch (e) { $("dice").textContent = "No se pudo copiar: seleccionalo a mano."; }
+  }
+  const md = ev.target.closest("[data-mandado]");
+  if (md) {
+    const k = busca(+md.dataset.mandado);
+    const mensajes = actual.mensajes.map((m, i) => (i === k ? { ...m, estado: "mandado", en: new Date().toISOString() } : m));
+    const estado = (actual.estado || "nueva") === "nueva" ? "respondida" : actual.estado;
+    if (await guardar({ mensajes, estado })) { $("f-estado").value = estado; pintarMensajes(); }
+  }
+});
+
+$("volver").onclick = () => { actual = null; $("v-una").classList.add("hide"); $("v-lista").classList.remove("hide"); cargar(); };
+$("btnNueva").onclick = () => abrir({ cliente: {}, estado: "nueva", mensajes: [] });
+
+cargar();
+</script>
+</body>
+</html>

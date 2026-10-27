@@ -109,7 +109,10 @@
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v63';
+const VERSION = 'cy-shell-v64';
+
+// v64 · 27-oct-2026 · entra `consultas.html` (las consultas de clientes y su
+//   conversación) y `nucleo.js` (nucleo-29) suma su permiso y su lugar en «Más».
 
 // v39 (14-sep-2026) — entra el TALLER: index.html lee sitio/taller con
 //   ?taller=1 y sabe mover y apagar secciones (contrato CY_SITIO v2);
@@ -222,6 +225,7 @@ const SHELL = [
   './traducir.html',
   './usuarios.html',
   './calculo.html',
+  './consultas.html',
   './diagnostico.html',
   './assets/lamina-muro.jpg',
   './assets/lamina-triangulo.jpg',

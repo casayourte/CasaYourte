@@ -74,7 +74,7 @@ ok("y sigue existiendo el camino que esa puerta bloqueaba",
    /if \(!puedePublicar\(\)\) destino = "taller"/.test(editor));
 
 titulo("4 · las pantallas que SÍ pasan por el núcleo no cambiaron");
-for (const [f, permiso] of [["calculo.html", "calculo"], ["traducir.html", "contenido"]]) {
+for (const [f, permiso] of [["calculo.html", "calculo"], ["traducir.html", "contenido"], ["consultas.html", "consultas"]]) {
   ok(`${f} entra por CY.arrancar con su permiso`,
      new RegExp(`CY\\.arrancar\\([^)]*["']${permiso}["']`).test(leer(f)));
 }

@@ -68,8 +68,9 @@ confunda con secretos y los "proteja" rompiendo el sitio.
 | Rol y permisos de cada persona | **Firestore**, colección `usuarios/{uid}` (`rol`, `activo`, `permisos`), protegida por `REGLAS.txt`. Son datos, no reglas: se cambian desde `usuarios.html` sin republicar nada |
 | Número y clave de CallMeBot de cada persona (desde el 30-sep-2026) | **Firestore**, `avisos_contacto/{uid}`, lo carga cada uno en Más → Mis avisos por WhatsApp. Lo lee su dueño, y el agente de a uno para mandarle un aviso si lo encendió (`REGLAS.txt`). Una clave de CallMeBot sólo sirve para escribirle a ese número |
 | Invitaciones pendientes | **Firestore**, colección `invitaciones/{mail}`, protegida por `REGLAS.txt` |
+| Consultas de clientes y su conversación (desde el 27-oct-2026) | **Firestore**, `consultas/{id}`, con el permiso `consultas` (`consultas.html`). Llevan el contacto de la persona: **nunca** a un repositorio ni a un chat más allá de lo justo. El agente las lee y las crea o completa (con copia en `_historial/`), y no las borra |
 | Cálculos de taller (datos de clientes, medidas de obra) | **Firestore**, colección `calculos/{id}`. **No son públicos**: sólo con el permiso `calculo`. Costos, márgenes, tarifas y proveedores no van a este repositorio |
-| Contraseña del usuario del agente de Claude Code | **variables de entorno de Claude Code**, cargadas por Mauro en la web. El usuario vive en Firebase Authentication de `casayourte-mauro`, **sin ficha en `usuarios/`**: su acceso sale del bloque `esAgente()` de `REGLAS.txt`, que le da lectura de todo menos `calculos` e `invitaciones`, y escritura en `sitio/taller`, `sitio/publicado` (desde el 19-oct-2026, con copia previa en `_historial/`) y `avisos/`. Lo usa `datos/herramientas/firestore.mjs` |
+| Contraseña del usuario del agente de Claude Code | **variables de entorno de Claude Code**, cargadas por Mauro en la web. El usuario vive en Firebase Authentication de `casayourte-mauro`, **sin ficha en `usuarios/`**: su acceso sale del bloque `esAgente()` de `REGLAS.txt`, que le da lectura de todo menos `calculos` e `invitaciones`, y escritura en `sitio/taller`, `sitio/publicado` (desde el 19-oct-2026, con copia previa en `_historial/`), `consultas/` (crear y completar, desde el 27-oct-2026) y `avisos/`. Lo usa `datos/herramientas/firestore.mjs` |
 | Login de las consolas: GitHub, Firebase, Cloudinary | **gestor de contraseñas personal de Mauro.** En ningún repositorio ni documento. *De quién es cada cuenta* se documenta en las **fichas del panel** (`fichas/`), no acá |
 
 **De quién son las cuentas** (titular de la consola de Firebase, de Cloudinary,
@@ -598,6 +599,20 @@ verdad después del cambio.
   apuntaba a `/` también desde `?lang=fr` y le decía a Google que la francesa era
   una copia. Si cambia lo que el sitio ofrece o dónde, cambia `CABEZA` en la misma
   tanda: un título que promete otra cosa que la página es peor que ninguno.
+- **Las CONSULTAS de clientes viven en el panel, en «Más → Clientes»**
+  (`consultas.html`, `consultas-1`, 27-oct-2026, Mauro: «guarda un registro
+  de la comunicación que estamos estableciendo con esta persona… en la parte
+  privada, para la continuación y el respaldo de este tipo de
+  conversaciones»). Una por persona en `consultas/{id}`: quién es, por dónde
+  escribió, qué pide, el estado (nueva, respondida, en conversación,
+  presupuesto, cerrada) y la conversación entera en `mensajes` —lo que
+  escribió, lo que se le contestó (con «copiar» y «ya lo mandé» para un
+  borrador) y notas internas—, cada renglón con su traducción si está en otro
+  idioma. Permiso nuevo `consultas` (el administrador lo tiene). **El agente
+  las lee y las CREA o COMPLETA** para preparar las respuestas, con la copia
+  previa en `_historial/`, y nunca las borra: lo dice la regla. **Los precios
+  que se dan acá son de una conversación**, no del sitio: el sitio público
+  sigue sin precios. Hay que **publicar REGLAS.txt**.
 - **La autoridad del contenido es Firestore** (`sitio/publicado`). `contenido.json` en
   el repo es respaldo, y los textos de `index.html` el último respaldo.
 - **No subir acá:** cálculos, costos, márgenes, tarifas, proveedores, documentación

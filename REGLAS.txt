@@ -2,6 +2,11 @@
 // CasaYourte — Reglas de Firestore
 // Se pegan COMPLETAS en la consola. Nunca por fragmentos.
 //
+// 27-oct-2026 · ENTRA `consultas/`: las consultas de clientes y su
+//   conversación (consultas.html, pedido de Mauro: «un registro de la
+//   comunicación… en la parte privada… para la continuación y el respaldo»).
+//   Con el permiso 'consultas'; el agente lee, crea y completa, nunca borra.
+//
 // 19-oct-2026 · EL AGENTE ESCRIBE TAMBIÉN `sitio/publicado`, con copia antes.
 //   Lo decidió Mauro, que es quien pone estas reglas: «yo soy el que pone la
 //   regla y da permiso… quiero que desde el chat puedas modificar el sitio
@@ -193,6 +198,17 @@ service cloud.firestore {
     // obra. Sólo quien tenga el permiso 'calculo' los ve y los escribe.
     match /calculos/{id} {
       allow read, create, update, delete: if con('calculo');
+    }
+
+    // ---------- consultas de clientes (27-oct-2026) ----------
+    // Una por persona que pregunta por una yurta, con la conversación entera
+    // (consultas.html). Llevan su contacto: privadas, con el permiso
+    // 'consultas'. El agente las lee (comodín de arriba) y las crea o
+    // completa para preparar las respuestas, con la copia de antes en
+    // `_historial/` (datos/herramientas/firestore.mjs); borrar, no.
+    match /consultas/{id} {
+      allow read, create, update, delete: if con('consultas');
+      allow create, update: if esAgente();
     }
 
     // ---------- el sitio ----------

@@ -12,7 +12,7 @@
 
 export const CY = {};
 
-CY.VERSION = 'nucleo-28';
+CY.VERSION = 'nucleo-29';
 
 // ═════════════════════════════════════════════════════════════
 //  BOTÓN ATRÁS DE ANDROID
@@ -543,6 +543,10 @@ CY.PERMISOS = [
     detalle:'Marcar un álbum de obra para que aparezca en el sitio.' },
   { id:'calculo',   label:'Cálculo de taller', icono:'straighten',
     detalle:'Ver y usar la calculadora de piezas.' },
+  // nucleo-29 (27-oct-2026): las consultas de clientes y su conversación
+  // (consultas.html). Llevan el contacto de una persona: privado.
+  { id:'consultas', label:'Consultas de clientes', icono:'forum',
+    detalle:'Ver y seguir lo que pregunta la gente: qué pidió, qué se le contestó y en qué quedó.' },
 ];
 
 // Navegación. grupo 'directo' va en la barra de abajo; el resto en la hoja «Más».
@@ -569,6 +573,10 @@ CY.NAV = [
     href:'./traducir.html',    grupo:'contenido', permiso:'contenido',
     detalle:'Auditar lo escrito en español y traer el francés traducido.' },
 
+  { id:'consultas', label:'Consultas de clientes', icono:'forum',
+    href:'./consultas.html',   grupo:'clientes', permiso:'consultas',
+    detalle:'Quién preguntó, qué se le contestó y en qué quedó.' },
+
   { id:'sitio',    label:'Ver el sitio', icono:'public',
     href:'./index.html',       grupo:'ver' },
   { id:'albpub',   label:'Ver los álbumes públicos', icono:'collections',
@@ -582,6 +590,7 @@ CY.NAV = [
 ];
 
 CY.GRUPOS = [
+  { id:'clientes',  label:'Clientes' },
   { id:'contenido', label:'El sitio público' },
   { id:'ver',       label:'Ver como visitante' },
   { id:'ajustes',   label:'Ajustes' },
