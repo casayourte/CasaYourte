@@ -263,6 +263,9 @@ verdad después del cambio.
   diferido y con catch, nunca estático: si no baja, la contraseña anda igual,
   sin ojo—. Cambiarlo es cambiar ese archivo (banco `node pruebas/ojos.mjs` de
   `datos`), y cambia en todos a la vez. En la Pizarra va en Kotlin.
+  **Y lo mismo, ese día, con las causas de los errores** (`errores.js` de
+  `datos`, PROTOCOLO-INTERFAZ § 7.2): se pide al cargar, este sitio le suma
+  sólo sus causas propias, y si no bajó se ve el código como antes.
 - **Una puerta se decide por PERMISO, nunca por rol.** `admin.html` y
   `editar.html` son las dos únicas pantallas que no pasan por `CY.arrancar`
   —son las que tienen el login— y fueron las dos que quedaron con la lógica

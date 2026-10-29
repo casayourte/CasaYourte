@@ -12,7 +12,7 @@
 
 export const CY = {};
 
-CY.VERSION = 'nucleo-31';
+CY.VERSION = 'nucleo-32';
 
 // ═════════════════════════════════════════════════════════════
 //  BOTÓN ATRÁS DE ANDROID
@@ -82,31 +82,23 @@ CY.aviso = function (texto, malo) {
 //  Desde el celular no hay consola del navegador: un código suelto
 //  es un problema de dos minutos convertido en tres días.
 // ═════════════════════════════════════════════════════════════
+/* Desde nucleo-32 (29-oct-2026, `general:C7`) la tabla común vive en
+   `errores.js` del panel (`maurogasta-crypto/datos`), la ÚNICA del ecosistema;
+   acá quedan sólo las causas que nombran a CasaYourte. Se pide al cargar,
+   diferida y con catch: si no bajó, se ve lo de antes (la causa propia, el
+   código o el mensaje), nunca peor. */
+const ERRORES_PROPIOS = {
+  'permission-denied':
+    'Permiso denegado. Revisá que tu documento en usuarios tenga activo en true (boolean, no texto) y el rol correcto, y que las reglas estén publicadas.',
+  'auth/unauthorized-domain':
+    'Falta agregar casayourte.github.io en Firebase → Authentication → Settings → Authorized domains.'
+};
+let _errores = null;
+import('https://maurogasta-crypto.github.io/datos/errores.js').then((m) => { _errores = m; }).catch(() => {});
 CY.explicar = function (e) {
+  if (_errores) return _errores.explicar(e, ERRORES_PROPIOS);
   const c = (e && e.code) || '';
-  const t = {
-    'permission-denied':
-      'Permiso denegado. Revisá que tu documento en usuarios tenga activo en true (boolean, no texto) y el rol correcto, y que las reglas estén publicadas.',
-    'failed-precondition':
-      'La consulta pedía un índice. Con esta versión no debería pasar: si lo ves, avisá.',
-    'unavailable': 'Sin conexión con Firestore. Probá con mejor señal.',
-    'unauthenticated': 'La sesión caducó. Salí y volvé a entrar.',
-    'not-found': 'No se encontró el documento.',
-    'invalid-argument': 'Algún dato tiene un formato que Firestore no acepta.',
-    'resource-exhausted': 'Se agotó la cuota gratuita de Firestore por hoy.',
-    'auth/invalid-credential': 'Mail o contraseña incorrectos.',
-    'auth/email-already-in-use': 'Ese mail ya tiene cuenta.',
-    'auth/weak-password': 'La contraseña necesita al menos 6 caracteres.',
-    'auth/invalid-email': 'El mail no es válido.',
-    'auth/network-request-failed': 'Sin conexión. Probá con mejor señal.',
-    'auth/unauthorized-domain':
-      'Falta agregar casayourte.github.io en Firebase → Authentication → Settings → Authorized domains.'
-  }[c];
-  if (t) return t;
-  const m = (e && e.message) || '';
-  if (/Cloud Firestore API|not.*enabled/i.test(m))
-    return 'La base de Firestore no está creada. Creala en la consola de Firebase.';
-  return c || m || 'Error desconocido';
+  return ERRORES_PROPIOS[c] || c || (e && e.message) || 'Error desconocido';
 };
 
 // ═════════════════════════════════════════════════════════════

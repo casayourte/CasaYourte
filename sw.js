@@ -109,7 +109,10 @@
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v68';
+const VERSION = 'cy-shell-v69';
+
+// v69 · 29-oct-2026 · `nucleo.js` (nucleo-32, general:C7): CY.explicar usa la tabla
+//   común de `errores.js` del panel (datos) y le suma sus dos causas propias.
 
 // v68 · 29-oct-2026 · `nucleo.js` (nucleo-31, general:C7): leer la respuesta de
 //   CallMeBot deja de ser una copia: pide `callmebot.js` del panel (datos).
