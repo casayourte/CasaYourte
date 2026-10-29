@@ -760,9 +760,9 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 
 | Archivo | Constante | Valor de esta versión |
 |---|---|---|
-| `nucleo.js` | `CY.VERSION` | `nucleo-30` |
+| `nucleo.js` | `CY.VERSION` | `nucleo-31` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `cy-shell-v67` |
+| `sw.js` | `VERSION` | `cy-shell-v68` |
 | `admin.html` | `PANEL` | `admin-19` |
 | `editar.html` | `EDITOR` | `editar-23` |
 | `taller.html` | `SELLO` | `andamio-3` |
