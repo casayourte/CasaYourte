@@ -109,7 +109,10 @@
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v66';
+const VERSION = 'cy-shell-v67';
+
+// v67 · 29-oct-2026 · `nucleo.js` (nucleo-30, general:C7): el ojo 👁 deja de ser una
+//   copia: lo pide de `ojos.js` del panel (datos), la única copia de los cinco sitios.
 
 // v64 · 27-oct-2026 · entra `consultas.html` (las consultas de clientes y su
 //   conversación) y `nucleo.js` (nucleo-29) suma su permiso y su lugar en «Más».

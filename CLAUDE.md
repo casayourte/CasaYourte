@@ -255,11 +255,14 @@ verdad después del cambio.
   el cupo; lo que exige facturación no se hace. `PROTOCOLO-DESARROLLO.md` § 13
   de `datos`.
 - **Toda contraseña tiene su ojo 👁 para verla mientras se tipea** (`nucleo-28`,
-  11-oct-2026, Mauro: «en todos los sitios»): `ojosEnClaves()` al final de
-  `nucleo.js`, que corre solo en `admin.html` y `editar.html` y también en los
-  campos que aparecen después. Es el mismo código en Tiempos, Casa Verde,
-  remate y el panel, y en la Pizarra va en Kotlin: si cambia en uno, cambia en
-  todos en la misma tanda.
+  11-oct-2026, Mauro: «en todos los sitios»), en `admin.html` y `editar.html`
+  y también en los campos que aparecen después, por `nucleo.js`.
+  **Desde el 29-oct-2026 (`general:C7`) es UNA copia para los cinco sitios**:
+  `ojos.js` del panel (`maurogasta-crypto/datos`), que este sitio pide con
+  `import("https://maurogasta-crypto.github.io/datos/ojos.js").catch(…)` —
+  diferido y con catch, nunca estático: si no baja, la contraseña anda igual,
+  sin ojo—. Cambiarlo es cambiar ese archivo (banco `node pruebas/ojos.mjs` de
+  `datos`), y cambia en todos a la vez. En la Pizarra va en Kotlin.
 - **Una puerta se decide por PERMISO, nunca por rol.** `admin.html` y
   `editar.html` son las dos únicas pantallas que no pasan por `CY.arrancar`
   —son las que tienen el login— y fueron las dos que quedaron con la lógica
