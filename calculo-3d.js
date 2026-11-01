@@ -19,7 +19,7 @@
 // de abajo (donde apoyan los tirantes). Todo sale de calc(P): si cambia una
 // medida, cambia el modelo.
 
-export const SELLO_3D = "3d-2";
+export const SELLO_3D = "3d-3";
 export const THREE_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/+esm";
 export const ORBIT_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js/+esm";
 // Las dos con «/+esm»: jsDelivr reescribe el «import from \"three\"» de OrbitControls a
@@ -76,8 +76,10 @@ export const CAMPO_PARTES = {
 // base B y la mediana M para que otro triángulo lo herede con la misma forma:
 //   paralelas a 0,30 B de la mediana, de la base hasta los lados (0,40 M);
 //   tres Λ con los pies sobre las paralelas cada 0,189 M, que suben 0,116 M;
-//   una V con el vértice a 0,567 M y los brazos a los lados a 0,700 M;
-//   seis travesaños cada M/7.
+//   una V con el vértice a 0,567 M y los brazos a los lados a 0,700 M.
+// SIN travesaños paralelos a la base (3d-3, Mauro, 1-nov: «no van las líneas
+// paralelas a la base, sólo la altura, las dos paralelas a la altura y las
+// diagonales»).
 export function arriostramiento(B, M) {
   const hb = B / 2, ancho = (t) => hb * (1 - t / M);
   const seg = [];
@@ -90,7 +92,6 @@ export function arriostramiento(B, M) {
   for (let i = 0; i < 3; i++) for (const g of [-1, 1]) add(g * sp, i * paso, 0, i * paso + sube, "lambda");
   const tv = 3 * paso, tb = 0.69992 * M;
   for (const g of [-1, 1]) add(0, tv, g * ancho(tb), tb, "v");
-  for (let k = 1; k <= 6; k++) { const t = k * M / 7; add(-ancho(t), t, ancho(t), t, "travesano"); }
   return seg;
 }
 
