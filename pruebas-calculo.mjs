@@ -8,6 +8,7 @@
 import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { calc, corte, cuerdas, pilares } from "./calculo-geo.js";
+import { piezas3d, arriostramiento, GRUPOS } from "./calculo-3d.js";
 
 let bien = 0, mal = 0;
 function ok(nombre, cond, extra = "") {
@@ -113,6 +114,33 @@ ok("el módulo de calculo.html parsea", !!mod && parsea(mod[1]));
 ok("calculo.html importa calculo-geo.js", /from "\.\/calculo-geo\.js"/.test(html));
 const sw = readFileSync(new URL("./sw.js", import.meta.url), "utf8");
 ok("calculo-geo.js está en el SHELL", /'\.\/calculo-geo\.js'/.test(sw));
+
+// ── el 3D (calculo-3d.js): la geometría sin navegador ──
+const ar = arriostramiento(1.817, 2.586);
+const de = (t) => ar.filter(x => x.tipo === t);
+ok("3D: 20 barras por triángulo", ar.length === 20, ar.length);
+ok("3D: paralelas a 0,545 hasta 1,035", de("paralela").every(x => cerca(Math.abs(x.s1), 0.545, 0.002) && cerca(x.t2, 1.035, 0.003)));
+ok("3D: Λ con los pies a 0 · 0,489 · 0,977, suben 0,30", [0, 0.489, 0.977].every((t, i) =>
+  cerca(de("lambda")[2 * i].t1, t, 0.003) && cerca(de("lambda")[2 * i].t2 - t, 0.30, 0.003)));
+ok("3D: V a 1,465 con los brazos a 1,810", de("v").every(x => cerca(x.t1, 1.465, 0.005) && cerca(x.t2, 1.810, 0.003)));
+ok("3D: 6 travesaños cada 0,369", de("travesano").length === 6 && cerca(de("travesano")[0].t1, 0.369, 0.002));
+const T3 = piezas3d(P, C);
+const cuenta = (g, tipo) => T3.piezas.filter(p => p.g === g && p.tipo === tipo).length;
+ok("3D: plancher = 17 tirantes + 5 vigas + 23 pilares", cuenta("piso", "barra") === 45, cuenta("piso", "barra"));
+ok("3D: trei de 63 × 2 listones", cuenta("muro", "barra") === 63 * 2 * 8);
+ok("3D: 8 triángulos y 8 perchas radiales", cuenta("capa1", "barra") === 8 * 21);
+ok("3D: 36 perchas y 36 calces", cuenta("capa2", "barra") === 36 && cuenta("cal", "calce") === 36);
+ok("3D: el toono lleva 5 coronas de relleno (0,187)", T3.nCor === 5 && cerca(T3.relleno, 0.187, 0.002), T3.relleno);
+ok("3D: con el toono de 0,502 no hay perchas radiales", piezas3d({ ...P, r_toono: 0.502 }, calc({ ...P, r_toono: 0.502 })).piezas.filter(p => p.g === "capa1").length === 160);
+ok("3D: cada grupo de piezas tiene su casilla", [...new Set(T3.piezas.map(p => p.g))].every(g => GRUPOS.some(([k]) => k === g)));
+for (const [nom, Q] of [["Christine", P], ["4 m", { ...P, D: 4 }], ["12 m", { ...P, D: 12 }], ["10 triángulos", { ...P, n_tri: 10 }], ["6 triángulos", { ...P, n_tri: 6 }]]) {
+  const K = piezas3d(Q, calc(Q));
+  ok(`3D ${nom}: sin NaN`, !/null|NaN|Infinity/.test(JSON.stringify(K)));
+}
+ok("calculo-3d.js parsea como módulo", parsea(readFileSync(new URL("./calculo-3d.js", import.meta.url), "utf8")));
+ok("calculo.html importa calculo-3d.js", /from "\.\/calculo-3d\.js"/.test(html));
+ok("three.js se pide diferido, nunca con un import estático", !/^import[^\n]*three/m.test(readFileSync(new URL("./calculo-3d.js", import.meta.url), "utf8")) && /await import\(THREE_URL\)/.test(readFileSync(new URL("./calculo-3d.js", import.meta.url), "utf8")));
+ok("calculo-3d.js está en el SHELL", /'\.\/calculo-3d\.js'/.test(sw));
 
 console.log(`\n${bien} bien, ${mal} mal`);
 process.exit(mal ? 1 : 0);

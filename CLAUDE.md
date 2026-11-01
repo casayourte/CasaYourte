@@ -225,7 +225,7 @@ incluidos los módulos que viven adentro de un `.html`; que **los seis bancos
 corran** —`node pruebas-secciones.mjs` (16 casos), `node pruebas-reportes.mjs`
 (64 casos), `node pruebas-andamio.mjs` (89 casos), `node
 pruebas-puertas.mjs` (131 casos), `node pruebas-modelos.mjs` (119 casos) y
-`node pruebas-calculo.mjs` (64 casos, la geometría de Cálculos), los
+`node pruebas-calculo.mjs` (85 casos, la geometría de Cálculos y el 3D), los
 seis sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
 sellos hayan subido, con la `VERSION` del `sw.js` si el archivo está en `SHELL`
 y los `?v=` con los que se lo pide; y que la documentación del repo diga la
@@ -674,8 +674,16 @@ verdad después del cambio.
   del manual (3,320 al trei, 17 tirantes, 5 vigas, 23 pilares, 63 escuadras,
   15 placas por capa). Desde `geo-2`, con el toono de Christine (Ø 2,00) el canal
   entre triángulos pasa de 0,40 y va una percha radial en el medio de cada uno, de la madera de los triángulos y en su misma capa (`calculo-12`).
-  Falta: la fabricación del trei, los refuerzos de los triángulos, el
-  toono —con ellos, el modelo en 3D—.
+  **Desde `calculo-13` / `3d-1` la pestaña «3D»** dibuja la estructura entera
+  con las medidas cargadas (`calculo-3d.js`, Mauro: «un primer render 3d de la
+  estructura total»): plancher, trei, anillos, cal y cinta, los triángulos con
+  el arriostramiento de Christine llevado a proporción, las perchas radiales,
+  el toono con sus coronas y la segunda capa, cada grupo con su casilla. Las
+  piezas salen de `piezas3d(P, C)`, sin navegador, y el banco las cuenta;
+  **three.js baja de jsDelivr recién al abrir la pestaña**, con `import()` en un
+  `try` y las dos direcciones con `/+esm` (sin importmap, una sola three): si no
+  baja, la pestaña lo dice y el resto anda. Cupo: ninguno, el CDN es público.
+  Falta: la fabricación del trei, la ventilación del toono, herrajes y lona.
 - **La autoridad del contenido es Firestore** (`sitio/publicado`). `contenido.json` en
   el repo es respaldo, y los textos de `index.html` el último respaldo.
 - **No subir acá:** cálculos, costos, márgenes, tarifas, proveedores, documentación

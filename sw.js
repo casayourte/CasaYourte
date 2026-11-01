@@ -104,13 +104,14 @@
 //   dentro de arrays, y la tabla de referencias es exactamente eso); la
 //   portada ordena las fotos del álbum igual que el panel.
 // v72 (1-nov-2026) — calculo-12: la percha radial es de la madera de los triángulos.
+// v73 (1-nov-2026) — calculo-13 + calculo-3d.js (3d-1): la estructura en 3D.
 //
 // Dos cosas de este registro, para que no confundan a quien lo lea:
 //   · faltan v15 a v18. Esas versiones se publicaron y no se anotaron acá.
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v72';
+const VERSION = 'cy-shell-v73';
 
 // v69 · 29-oct-2026 · `nucleo.js` (nucleo-32, general:C7): CY.explicar usa la tabla
 //   común de `errores.js` del panel (datos) y le suma sus dos causas propias.
@@ -240,6 +241,7 @@ const SHELL = [
   './usuarios.html',
   './calculo.html',
   './calculo-geo.js',
+  './calculo-3d.js',
   './consultas.html',
   './diagnostico.html',
   './assets/lamina-muro.jpg',

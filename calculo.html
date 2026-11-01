@@ -55,6 +55,8 @@
     line-height:1.35;min-width:0}
   .barra-p .btn{flex:none;padding:.55rem .7rem}
   .corte-t{margin:1rem 0 .4rem;font-size:.95rem}
+  .vista3d{width:100%;min-height:320px;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;touch-action:none}
+  .vista3d canvas{display:block}
   svg.corte{display:block;width:100%;height:auto;background:var(--ink2);border:1px solid var(--line);
     border-radius:var(--r)}
   svg.corte .pz rect,svg.corte .pz polygon{stroke:var(--dim2);stroke-width:.75;fill-opacity:.35}
@@ -120,6 +122,17 @@
       y los tornillos van esquemáticos. Los triángulos no se dibujan: se marca su apoyo.</p>
     </div>
 
+    <div id="t-3d" class="hide">
+      <p class="gris">La estructura entera con las medidas de este cálculo. Girala con un dedo,
+      acercala con dos. Cambiá una medida en «Medidas» y el modelo cambia.</p>
+      <div class="row" id="capas3d" style="flex-wrap:wrap;gap:.35rem .8rem;margin:.4rem 0 .6rem"></div>
+      <div id="vista3d" class="vista3d"><p class="gris">Cargando el 3D…</p></div>
+      <div class="row" style="margin-top:.5rem"><button class="btn" id="encuadrar3d">Volver a encuadrar</button></div>
+      <p class="ayuda">Esquema: las piezas van con su sección y su lugar; los herrajes, la lona y el
+      aislante no se dibujan. El arriostramiento de los triángulos es el de Christine, llevado a la
+      proporción de cada triángulo.</p>
+    </div>
+
     <div id="t-croquis" class="hide">
       <p class="gris">Las letras de los resultados son las de estas dos láminas.</p>
       <div class="lam"><img id="lam1" src="./assets/lamina-muro.jpg" loading="lazy" alt="Corte del borde superior del muro">
@@ -155,8 +168,9 @@ import { cargarFirebase,
          collection, serverTimestamp, onAuthStateChanged, signOut } from "./firebase-init.js";
 import { CY } from "./nucleo.js";
 import { calc as calcGeo, corte } from "./calculo-geo.js";
+import { montar as montar3d, GRUPOS as GRUPOS3D } from "./calculo-3d.js";
 
-CY.PANEL = "calculo-12";
+CY.PANEL = "calculo-13";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 // ── El SDK se baja acá, y recién después arranca la pantalla ────────────────
@@ -246,6 +260,7 @@ const CASOS = {
 
 let P = { ...PORDEF };
 let proy = null, proyectos = [], sucio = false, pest = "datos", cerrarProy = null;
+let vista3d = null, reloj3d = null, cargando3d = false;   // el 3D (calculo-3d.js)
 
 /* ═══ el cálculo ═══════════════════════════════════════════
    Vive en calculo-geo.js (geo-1), sin navegador, para que el banco
@@ -488,6 +503,7 @@ function pintarPiezas() {
   </div>`;
 
   $("salida").innerHTML = h;
+  if (vista3d) { clearTimeout(reloj3d); reloj3d = setTimeout(() => vista3d && vista3d.actualizar(P, calc()), 250); }
   const k = corte(P, C);
   $("corte1").innerHTML = k.svg1;
   $("corte2").innerHTML = k.svg2;
@@ -587,8 +603,31 @@ $("volver").addEventListener("click", () => {
   else cerrarProyecto();
 });
 
+/* ═══ el 3D ════════════════════════════════════════════════
+   three.js baja del CDN recién al abrir la pestaña (calculo-3d.js). Si no
+   baja, se dice acá y el resto de la página sigue igual. */
+const visibles3d = {};
+$("capas3d").innerHTML = GRUPOS3D.map(([k, t]) =>
+  `<label style="display:flex;gap:.3rem;align-items:center;font-size:.85rem"><input type="checkbox" data-capa="${k}" checked> ${t}</label>`).join("");
+$("capas3d").addEventListener("change", (e) => {
+  const k = e.target.dataset.capa; if (!k) return;
+  visibles3d[k] = e.target.checked; if (vista3d) vista3d.ver(k, e.target.checked);
+});
+$("encuadrar3d").addEventListener("click", () => vista3d && vista3d.encuadrar());
+async function abrir3d() {
+  if (vista3d) { vista3d.actualizar(P, calc()); return; }
+  if (cargando3d) return;
+  cargando3d = true;
+  try { vista3d = await montar3d($("vista3d"), P, calc(), visibles3d); }
+  catch (e) {
+    console.error(e);
+    $("vista3d").innerHTML = `<p class="gris">No se pudo cargar el 3D: la biblioteca three.js viene de
+      cdn.jsdelivr.net y no contestó (sin conexión, o el teléfono no tiene WebGL). El resto del cálculo anda igual.</p>`;
+  } finally { cargando3d = false; }
+}
+
 /* ═══ pestañas ═════════════════════════════════════════════ */
-const PEST = [["datos","Medidas"],["piezas","Piezas"],["corte","Corte"],["croquis","Croquis"],["ficha","Ficha"]];
+const PEST = [["datos","Medidas"],["piezas","Piezas"],["corte","Corte"],["3d","3D"],["croquis","Croquis"],["ficha","Ficha"]];
 $("pest").innerHTML = PEST.map(([k,t],i) =>
   `<button data-p="${k}" class="${i===0?"on":""}">${t}</button>`).join("");
 function verPestaña(k) {
@@ -597,6 +636,7 @@ function verPestaña(k) {
   PEST.forEach(([x]) => $("t-" + x).classList.toggle("hide", x !== k));
   document.querySelectorAll("#pest button").forEach(b => b.classList.toggle("on", b.dataset.p === k));
   if (k === "piezas" || k === "corte") pintarPiezas();
+  if (k === "3d") abrir3d();
   restituir("pest:" + k);
 }
 $("pest").addEventListener("click", (ev) => {
