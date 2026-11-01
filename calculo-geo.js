@@ -1,5 +1,5 @@
 // calculo-geo.js — la geometría de la yurta, sin navegador y sin Firebase.
-// Sello: geo-1 (1-nov-2026).
+// Sello: geo-2 (1-nov-2026): la percha radial entre triángulos.
 //
 // Sale de calculo.html para que el banco (`node pruebas-calculo.mjs`) pueda
 // correr las mismas cuentas que la página, sin DOM. La página la importa y
@@ -20,7 +20,7 @@
 // TODO lo que se elige por diseño es un campo de la página: si cambia una
 // medida, cambian los números y el dibujo.
 
-export const SELLO_GEO = "geo-1";
+export const SELLO_GEO = "geo-2";
 
 // El tirante, la viga: cuerdas paralelas del círculo de radio R, con una en el
 // centro y cada `paso` a los dos lados. Devuelve [{x, L, n}] con n = 1 para la
@@ -81,7 +81,13 @@ export function calc(P) {
   const h_vert = plan_lado * tan;
   const lado_tri = plan_lado / cos;
   const sep_tri = 2 * P.r_toono * Math.sin(delta);
-  const n_nec = Math.ceil(Math.PI / Math.asin(Math.min(1, 0.35 / (2 * P.r_toono))));
+  const n_nec = Math.ceil(Math.PI / Math.asin(Math.min(1, P.sep_max / (2 * P.r_toono))));
+  // Si el canal entre dos triángulos pasa del límite para el aislante, va una
+  // percha radial en el medio (Mauro, 1-nov): el canal es simétrico respecto
+  // del radio que pasa entre los dos, así que su línea media ES radial.
+  const con_radial = sep_tri > P.sep_max;
+  const largo_radial = (Rint - P.r_toono) / cos;
+  const hueco_radial = (sep_tri - P.tri_esp) / 2;
   const sep_capas = H / cos;
   const slant = (Rp - P.r_toono) / cos;
 
@@ -122,7 +128,7 @@ export function calc(P) {
     Rp, p_largo: slant, paso_p: 2 * Math.PI * R / P.n_per_r,
     nt, beta: beta * 180 / Math.PI, delta: delta * 180 / Math.PI,
     r_med: bx, cuerda: 2 * Rint * Math.sin(beta), flecha: Rint - bx,
-    h_vert, lado_tri, sep_tri, n_nec, sep_capas,
+    h_vert, lado_tri, sep_tri, n_nec, sep_capas, con_radial, largo_radial, hueco_radial,
     mediana: Math.hypot(bx - P.r_toono, h_vert),
     dip: Math.atan(h_vert / (bx - P.r_toono)) * 180 / Math.PI,
     vol_tri: nt * (2 * lado_tri + 2 * Rint * Math.sin(beta)) * P.tri_anc * P.tri_esp,

@@ -225,7 +225,7 @@ incluidos los módulos que viven adentro de un `.html`; que **los seis bancos
 corran** —`node pruebas-secciones.mjs` (16 casos), `node pruebas-reportes.mjs`
 (64 casos), `node pruebas-andamio.mjs` (89 casos), `node
 pruebas-puertas.mjs` (131 casos), `node pruebas-modelos.mjs` (119 casos) y
-`node pruebas-calculo.mjs` (56 casos, la geometría de Cálculos), los
+`node pruebas-calculo.mjs` (63 casos, la geometría de Cálculos), los
 seis sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
 sellos hayan subido, con la `VERSION` del `sw.js` si el archivo está en `SHELL`
 y los `?v=` con los que se lo pide; y que la documentación del repo diga la
@@ -672,7 +672,9 @@ verdad después del cambio.
   la cabeza y el pie del muro con los valores cargados, cada dibujo a una sola
   escala que se ajusta sola. `pruebas-calculo.mjs` compara contra los números
   del manual (3,320 al trei, 17 tirantes, 5 vigas, 23 pilares, 63 escuadras,
-  15 placas por capa). Falta: la fabricación del trei, los triángulos y el
+  15 placas por capa). Desde `geo-2`, con el toono de Christine (Ø 2,00) el canal
+  entre triángulos pasa de 0,40 y va una percha radial en el medio de cada uno.
+  Falta: la fabricación del trei, los refuerzos de los triángulos, el
   toono —con ellos, el modelo en 3D—.
 - **La autoridad del contenido es Firestore** (`sitio/publicado`). `contenido.json` en
   el repo es respaldo, y los textos de `index.html` el último respaldo.

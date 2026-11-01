@@ -156,7 +156,7 @@ import { cargarFirebase,
 import { CY } from "./nucleo.js";
 import { calc as calcGeo, corte } from "./calculo-geo.js";
 
-CY.PANEL = "calculo-10";
+CY.PANEL = "calculo-11";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 // ── El SDK se baja acá, y recién después arranca la pantalla ────────────────
@@ -224,7 +224,8 @@ const CAMPOS = [
   ["desb",     "Desborde de la percha",           0.500, "m"],
   ["p_anc",    "Alto de la percha",               0.080, "m"],
   ["p_alt",    "Ancho de la percha",              0.040, "m"],
-  ["r_toono",  "Radio exterior del toono",        1.000, "m"],
+  ["r_toono",  "Radio exterior del toono",        1.000, "m · Ø 2,00 en Christine"],
+  ["sep_max",  "Hueco máximo para el aislante",   0.400, "m · entre triángulos"],
   ["·","LAS ABERTURAS"],
   ["n_ab",     "Aberturas",                       5,     "unidades"],
   ["n_gr",     "Grupos contiguos",                3,     "las juntas comparten montante"],
@@ -238,7 +239,7 @@ const CASOS = {
   m7:        {D:7, ais_nom:.120, ais_techo:.120, E:.050, e_mad:.040, e_trei:.016, T:.042, anc_per:.040, tri_anc:.080, tri_esp:.040,
               alto:2.280, n_per_r:36, desb:.474, r_toono:1.000},
   // Christine: los valores por defecto (manual del plancher, 1-nov-2026); el toono, el de la obra.
-  christine: { ...PORDEF, r_toono: .502 },
+  christine: { ...PORDEF },
   g6:        {D:6, ais_nom:.120, ais_techo:.120, E:.050, e_mad:.040, e_trei:.016, T:.042, anc_per:.040, tri_anc:.080, tri_esp:.040,
               alto:2.280, n_per_r:30, desb:.450, r_toono:.900},
 };
@@ -381,11 +382,12 @@ function pintarPiezas() {
     ["", "Separación B → A del siguiente", "constante · 2 r toono · sen δ", mm1(C.sep_tri), "d"],
     ["", "Media separación angular", "δ = 180/n", gr(C.delta), ""],
   ], [
-    C.sep_tri > 0.35
-      ? ["ojo", `La separación son <b>${mm1(C.sep_tri)}</b>, por encima de los 350 mm.
-         <b>Conviene evaluar más triángulos:</b> con ${C.n_nec} bajaría a
-         ${mm1(2 * P.r_toono * Math.sin(Math.PI / C.n_nec))}.`]
-      : ["ok", `La separación son ${mm1(C.sep_tri)}, por debajo de los 350 mm.`],
+    C.sep_tri > P.sep_max
+      ? ["ojo", `El canal mide <b>${mm1(C.sep_tri)}</b>, más que el hueco máximo de
+         ${mm(P.sep_max)}. Va <b>una percha radial en el medio de cada canal</b>: ${un(C.nt)} de
+         ${m(C.largo_radial)}, del anillo al toono, y el hueco queda en ${mm1(C.hueco_radial)} a
+         cada lado. (Sin ellas harían falta ${C.n_nec} triángulos.)`]
+      : ["ok", `El canal mide ${mm1(C.sep_tri)}, dentro del hueco máximo de ${mm(P.sep_max)}.`],
     ["", `Por la condición de paralelismo, esa distancia es <b>la misma</b> en el anillo y en
       el toono: es la cuerda entre dos vértices consecutivos del toono. Las dos distancias que
       hay que vigilar son una sola, y <b>no depende del diámetro de la yurta</b>, sólo del

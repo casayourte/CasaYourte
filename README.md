@@ -767,8 +767,8 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 | `admin.html` | `PANEL` | `admin-19` |
 | `editar.html` | `EDITOR` | `editar-23` |
 | `taller.html` | `SELLO` | `andamio-3` |
-| `calculo.html` | `CY.PANEL` | `calculo-10` |
-| `calculo-geo.js` | `SELLO_GEO` | `geo-1` |
+| `calculo.html` | `CY.PANEL` | `calculo-11` |
+| `calculo-geo.js` | `SELLO_GEO` | `geo-2` |
 | `consultas.html` | `CY.PANEL` | `consultas-3` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-4` |
 | `diagnostico.html` | `CY.PANEL` | `diagnostico-8` |

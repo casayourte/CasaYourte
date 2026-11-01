@@ -52,6 +52,15 @@ ok("zócalo de unos 20,6 m", cerca(C.zocalo, 20.6, 0.06), C.zocalo);
 ok("circunferencia a trazar 20,86", cerca(C.circ_trazo, 20.86, 0.01), C.circ_trazo);
 ok("bulón de cruce 0,04, el de abajo 0,05", cerca(C.grip_cruce, 0.04) && cerca(C.grip_abajo, 0.05));
 
+// ── el toono de Christine: Ø 2,00 (Mauro, 1-nov) y la percha radial ──
+ok("toono por defecto de 1,00 de radio", P.r_toono === 1);
+ok("canal entre 8 triángulos 0,765", cerca(C.sep_tri, 0.765, 0.001), C.sep_tri);
+ok("pasa de 0,40: va una percha radial por canal", C.con_radial === true);
+ok("percha radial de 2,679", cerca(C.largo_radial, 2.679, 0.002), C.largo_radial);
+ok("hueco a cada lado 0,367", cerca(C.hueco_radial, 0.3677, 0.001), C.hueco_radial);
+ok("con el toono de 0,502 no hace falta", calc({ ...P, r_toono: 0.502 }).con_radial === false);
+ok("calculo.html avisa la percha radial", /percha radial en el medio de cada canal/.test(html));
+
 // ── las piezas sueltas ──
 const cv = cuerdas(3.5, 1.2);
 ok("vigas: 0, 1,2 y 2,4", cv.length === 3 && cerca(cv[2].x, 2.4));
