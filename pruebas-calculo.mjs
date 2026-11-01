@@ -59,6 +59,7 @@ ok("pasa de 0,40: va una percha radial por canal", C.con_radial === true);
 ok("percha radial de 2,679", cerca(C.largo_radial, 2.679, 0.002), C.largo_radial);
 ok("hueco a cada lado 0,367", cerca(C.hueco_radial, 0.3677, 0.001), C.hueco_radial);
 ok("con el toono de 0,502 no hace falta", calc({ ...P, r_toono: 0.502 }).con_radial === false);
+ok("la percha radial es de la madera de los triángulos", /de la misma madera que los triángulos/.test(html));
 ok("calculo.html avisa la percha radial", /percha radial en el medio de cada canal/.test(html));
 
 // ── las piezas sueltas ──

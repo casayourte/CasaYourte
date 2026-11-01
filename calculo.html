@@ -156,7 +156,7 @@ import { cargarFirebase,
 import { CY } from "./nucleo.js";
 import { calc as calcGeo, corte } from "./calculo-geo.js";
 
-CY.PANEL = "calculo-11";
+CY.PANEL = "calculo-12";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 // ── El SDK se baja acá, y recién después arranca la pantalla ────────────────
@@ -385,7 +385,9 @@ function pintarPiezas() {
     C.sep_tri > P.sep_max
       ? ["ojo", `El canal mide <b>${mm1(C.sep_tri)}</b>, más que el hueco máximo de
          ${mm(P.sep_max)}. Va <b>una percha radial en el medio de cada canal</b>: ${un(C.nt)} de
-         ${m(C.largo_radial)}, del anillo al toono, y el hueco queda en ${mm1(C.hueco_radial)} a
+         ${m(C.largo_radial)}, del anillo al toono, <b>de la misma madera que los triángulos</b>
+         (${mm(P.tri_anc)} × ${mm(P.tri_esp)}) y en su misma capa, cortada y fijada como ellos
+         (Mauro, 1-nov), y el hueco queda en ${mm1(C.hueco_radial)} a
          cada lado. (Sin ellas harían falta ${C.n_nec} triángulos.)`]
       : ["ok", `El canal mide ${mm1(C.sep_tri)}, dentro del hueco máximo de ${mm(P.sep_max)}.`],
     ["", `Por la condición de paralelismo, esa distancia es <b>la misma</b> en el anillo y en
