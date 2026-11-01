@@ -109,7 +109,7 @@
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v69';
+const VERSION = 'cy-shell-v70';
 
 // v69 · 29-oct-2026 · `nucleo.js` (nucleo-32, general:C7): CY.explicar usa la tabla
 //   común de `errores.js` del panel (datos) y le suma sus dos causas propias.
@@ -228,12 +228,16 @@ const VERSION = 'cy-shell-v69';
 //   nunca: una mezcla de páginas nuevas con un `firebase-init.js` viejo
 //   llamaría a `cargarFirebase()`, que ahí no existe.
 
+//   v70 · 1-nov-2026 · calculo-10: el plancher y los muros de la versión
+//   Christine, el corte a escala, y la geometría sale a calculo-geo.js (SHELL).
+
 const SHELL = [
   './admin.html',
   './editar.html',
   './traducir.html',
   './usuarios.html',
   './calculo.html',
+  './calculo-geo.js',
   './consultas.html',
   './diagnostico.html',
   './assets/lamina-muro.jpg',

@@ -54,6 +54,22 @@
   .barra-p .res{flex:1;font-family:var(--mono);font-size:.56rem;color:var(--blond);
     line-height:1.35;min-width:0}
   .barra-p .btn{flex:none;padding:.55rem .7rem}
+  .corte-t{margin:1rem 0 .4rem;font-size:.95rem}
+  svg.corte{display:block;width:100%;height:auto;background:var(--ink2);border:1px solid var(--line);
+    border-radius:var(--r)}
+  svg.corte .pz rect,svg.corte .pz polygon{stroke:var(--dim2);stroke-width:.75;fill-opacity:.35}
+  svg.corte .percha,svg.corte .trei,svg.corte .tirante{fill:var(--dim)}
+  svg.corte .anillo,svg.corte .zocalo{fill:var(--blond)}
+  svg.corte .osb{fill:var(--wip)}
+  svg.corte .cal{fill:none;stroke:var(--dim)!important}
+  svg.corte .cinta{fill:#6fa8dc;fill-opacity:.6}
+  svg.corte .tornillo{stroke:#e8a33d;stroke-width:3}
+  svg.corte .escuadra{fill:none;stroke:var(--wool);stroke-width:3}
+  svg.corte .lona{stroke:#6fa8dc;stroke-width:1.25;stroke-dasharray:4 3}
+  svg.corte .apoyo{stroke:#e8a33d;stroke-width:1.25}
+  svg.corte .apoyo-p{fill:#e8a33d}
+  svg.corte text{fill:var(--wool);font-family:var(--mono);font-size:16px}
+  svg.corte .barra line{stroke:var(--dim);stroke-width:2}
   body{padding-bottom:calc(var(--barra) + 4.2rem + var(--safe))}
 </style>
 </head>
@@ -94,6 +110,16 @@
 
     <div id="t-piezas" class="hide"><div id="salida"></div></div>
 
+    <div id="t-corte" class="hide">
+      <p class="gris">El borde dibujado con las medidas de este cálculo. Cada dibujo tiene todas
+      sus piezas a la misma escala, y la escala se ajusta sola para que entre: cambiá una medida
+      y el dibujo cambia de forma.</p>
+      <h3 class="corte-t">La cabeza del muro</h3><div id="corte1"></div>
+      <h3 class="corte-t">El pie del muro y el piso</h3><div id="corte2"></div>
+      <p class="ayuda">La altura del muro se toma del piso terminado a la cabeza del trei. La escuadra
+      y los tornillos van esquemáticos. Los triángulos no se dibujan: se marca su apoyo.</p>
+    </div>
+
     <div id="t-croquis" class="hide">
       <p class="gris">Las letras de los resultados son las de estas dos láminas.</p>
       <div class="lam"><img id="lam1" src="./assets/lamina-muro.jpg" loading="lazy" alt="Corte del borde superior del muro">
@@ -128,8 +154,9 @@ import { cargarFirebase,
          db, auth, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, addDoc,
          collection, serverTimestamp, onAuthStateChanged, signOut } from "./firebase-init.js";
 import { CY } from "./nucleo.js";
+import { calc as calcGeo, corte } from "./calculo-geo.js";
 
-CY.PANEL = "calculo-9";
+CY.PANEL = "calculo-10";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 // ── El SDK se baja acá, y recién después arranca la pantalla ────────────────
@@ -152,36 +179,51 @@ const esc = CY.esc;
    ═══════════════════════════════════════════════════════════════ */
 const CAMPOS = [
   ["·","LA YURTA"],
-  ["D",        "Diámetro",                        7.000, "m"],
+  ["D",        "Diámetro final del piso",         7.000, "m · el dato de partida"],
   ["ang",      "Ángulo del techo",                30,    "grados"],
-  ["alto",     "Altura del muro",                 2.280, "m"],
-  ["ais_nom",  "Aislación del muro · nominal",    0.120, "m · de acá sale A"],
-  ["ais_techo","Aislación del techo · nominal",   0.120, "m · de acá sale H"],
-  ["rel",      "Compresión",                      0.75,  "3/4"],
-  ["·","EL ANILLO PERIFÉRICO"],
-  ["E",        "<b>E</b> ancho del anillo",       0.050, "m · se decide"],
-  ["e_mad",    "Espesor de una capa",             0.040, "m"],
+  ["alto",     "Altura del muro",                 2.400, "m · del piso a la cabeza del trei"],
+  ["ais_nom",  "Aislación del muro · nominal",    0.240, "m · de acá sale A"],
+  ["ais_techo","Aislación del techo · nominal",   0.240, "m · ⊥ a la pendiente"],
+  ["rel",      "Compresión (1 − k)",              0.75,  "de 24 a 18 = 0,75"],
+  ["·","EL ANILLO PERIFÉRICO · ARRIBA Y EN EL PISO"],
+  ["E",        "<b>E</b> ancho del anillo",       0.100, "m"],
+  ["e_mad",    "Espesor de una capa colada",      0.040, "m · el mismo del toono"],
   ["n_cap",    "Capas del anillo",                2,     "unidades"],
   ["n_partes", "Partes para el transporte",       6,     "en 7 m son 6"],
-  ["T",        "<b>T</b> al zócalo del trei",     0.042, "m"],
-  ["·","LOS LISTONES DEL BORDE"],
-  ["e_per",    "<b>S</b> espesor de uno",         0.010, "m · van dos"],
-  ["anc_per",  "<b>P</b> ancho del listón",       0.040, "m"],
-  ["e_int",    "Espesor del listón interior",     0.010, "m · una capa"],
-  ["anc_int",  "Ancho del listón interior",       0.040, "m"],
+  ["T",        "<b>T</b> del anillo al trei",     0.000, "m · 0 en Christine"],
+  ["·","LA DOBLE CINTA"],
+  ["e_per",    "<b>S</b> espesor de un listón",   0.010, "m · van dos: c = 2 × S"],
+  ["anc_per",  "<b>P</b> alto de la cinta",       0.020, "m"],
   ["·","EL TREI"],
-  ["e_trei",   "Espesor de un listón",            0.016, "m"],
+  ["e_trei",   "Espesor de un listón",            0.020, "m"],
   ["anc_trei", "Ancho de un listón",              0.040, "m"],
   ["bul",      "Distancia entre bulones",         0.330, "m"],
+  ["b_borde",  "Del bulón al borde del listón",   0.020, "m"],
+  ["e_int",    "Espesor del zócalo interior",     0.010, "m · abajo y arriba"],
+  ["anc_int",  "Ancho del zócalo interior",       0.040, "m"],
+  ["·","EL PLANCHER"],
+  ["paso_t",   "Entreeje de los tirantes",        0.400, "m · con uno central"],
+  ["tir_alt",  "Alto del tirante",                0.140, "m"],
+  ["tir_anc",  "Ancho del tirante",               0.040, "m"],
+  ["paso_v",   "Entreeje de las vigas",           1.200, "m · con una central"],
+  ["viga_alt", "Alto de la viga",                 0.190, "m"],
+  ["viga_anc", "Ancho de la viga",                0.040, "m"],
+  ["pil_max",  "Entre pilares, como mucho",       1.600, "m"],
+  ["pil_borde","Pilar desde la punta de la viga", 0.500, "m"],
+  ["placa_a",  "Placa de OSB · ancho",            1.200, "m"],
+  ["placa_l",  "Placa de OSB · largo",            2.400, "m"],
+  ["osb_inf",  "OSB de abajo",                    0.012, "m"],
+  ["osb_sup",  "OSB de arriba",                   0.018, "m"],
+  ["desp",     "Desperdicio de placa",            1.10,  "× 1,10"],
   ["·","EL TECHO · PRIMERA CAPA"],
   ["n_tri",    "Triángulos de la primera capa",    8,     "8 en general"],
-  ["tri_anc",  "Ancho de la madera del triángulo", 0.080, "m"],
-  ["tri_esp",  "Espesor de la madera del triángulo",0.040,"m"],
+  ["tri_anc",  "Ancho de la madera del triángulo", 0.070, "m"],
+  ["tri_esp",  "Espesor de la madera del triángulo",0.030,"m"],
   ["·","EL TECHO · SEGUNDA CAPA"],
   ["n_per_r",  "Perchas radiales",                36,    "unidades"],
-  ["desb",     "Desborde de la percha",           0.474, "m"],
-  ["p_anc",    "Ancho de la percha",              0.080, "m"],
-  ["p_alt",    "Alto de la percha",               0.040, "m"],
+  ["desb",     "Desborde de la percha",           0.500, "m"],
+  ["p_anc",    "Alto de la percha",               0.080, "m"],
+  ["p_alt",    "Ancho de la percha",              0.040, "m"],
   ["r_toono",  "Radio exterior del toono",        1.000, "m"],
   ["·","LAS ABERTURAS"],
   ["n_ab",     "Aberturas",                       5,     "unidades"],
@@ -193,93 +235,22 @@ const CLAVES = CAMPOS.filter(c => c[0] !== "·").map(c => c[0]);
 const PORDEF = {}; CAMPOS.forEach(c => { if (c[0] !== "·") PORDEF[c[0]] = c[2]; });
 
 const CASOS = {
-  m7:        {D:7, ais_nom:.120, ais_techo:.120, E:.050, e_mad:.040, e_trei:.016, T:.042,
+  m7:        {D:7, ais_nom:.120, ais_techo:.120, E:.050, e_mad:.040, e_trei:.016, T:.042, anc_per:.040, tri_anc:.080, tri_esp:.040,
               alto:2.280, n_per_r:36, desb:.474, r_toono:1.000},
-  christine: {D:7, ais_nom:.240, ais_techo:.240, E:.100, e_mad:.045, e_trei:.019, T:.042,
-              alto:2.350, n_per_r:36, desb:.500, r_toono:.502},
-  g6:        {D:6, ais_nom:.120, ais_techo:.120, E:.050, e_mad:.040, e_trei:.016, T:.042,
+  // Christine: los valores por defecto (manual del plancher, 1-nov-2026); el toono, el de la obra.
+  christine: { ...PORDEF, r_toono: .502 },
+  g6:        {D:6, ais_nom:.120, ais_techo:.120, E:.050, e_mad:.040, e_trei:.016, T:.042, anc_per:.040, tri_anc:.080, tri_esp:.040,
               alto:2.280, n_per_r:30, desb:.450, r_toono:.900},
 };
 
 let P = { ...PORDEF };
 let proy = null, proyectos = [], sucio = false, pest = "datos", cerrarProy = null;
 
-/* ═══ el cálculo ═══════════════════════════════════════════ */
-function calc() {
-  const rad = P.ang * Math.PI / 180;
-  const cos = Math.cos(rad), sen = Math.sin(rad), tan = Math.tan(rad);
-  const R = P.D / 2;
-  const A = P.ais_nom * P.rel;
-  const H = P.ais_techo * P.rel;
-  const Rint = R - A, Rext = Rint + P.E;
-  const r_trei = Rint - P.T, r_trei_int = r_trei - 2 * P.e_trei;
-  const r_int_lito = r_trei_int - P.e_int;
-  const tri_ap = H / cos, tri_tr = A * (1 - sen) / cos;
-  const per_med = 2 * Math.PI * (Rint + P.E / 2);
-  const alto_an = P.e_mad * P.n_cap;
-  const r_trei_med = r_trei - P.e_trei;
-  const alfa = 2 * Math.asin(Math.min(1, P.bul / (2 * r_trei_med)));
-  const Rp = R + P.desb;
-  // ── PRIMERA capa · los triángulos. Su cantidad NO tiene que ver con las
-  //    perchas: son dos capas con cálculos separados, que sólo comparten el
-  //    anillo periférico y el diámetro exterior del toono como referencia.
-  //
-  //    Cada triángulo apoya en el anillo en dos puntos, A y B, y su vértice C
-  //    toca la cara exterior del toono. Los triángulos NO se tocan: el lado CB
-  //    de uno y el CA del siguiente son PARALELOS, equidistantes en toda su
-  //    extensión. Esa condición fija la apertura de la base:
-  //
-  //        β = δ − asen( (r toono / R int) · sen δ )      con δ = π/n
-  //
-  //    y de ella sale algo que unifica el criterio: la distancia lineal de B
-  //    a la A del siguiente es 2·r toono·sen δ, o sea la misma cuerda que
-  //    separa dos vértices consecutivos en el toono. Las dos distancias que
-  //    hay que vigilar son UNA.
-  const nt = P.n_tri;
-  const delta = Math.PI / nt;
-  const beta = delta - Math.asin(Math.min(1, (P.r_toono / Rint) * Math.sin(delta)));
-  const bx = Rint * Math.cos(beta), by = Rint * Math.sin(beta);
-  const r_med = bx;                                   // el medio de la base
-  const plan_lado = Math.hypot(bx - P.r_toono, by);   // en planta
-  // Los extremos se cortan a 2×ángulo para que la cara del corte quede
-  // vertical y encuentre a plomo la cara exterior del toono. Eso pone cada
-  // LADO a la inclinación del techo.
-  const h_vert = plan_lado * tan;
-  const lado_tri = plan_lado / cos;
-  const sep_tri = 2 * P.r_toono * Math.sin(delta);     // igual en los dos apoyos
-  const n_nec = Math.ceil(Math.PI / Math.asin(Math.min(1, 0.35 / (2 * P.r_toono))));
-  // ── las dos capas están separadas por H, medida ⊥ a la percha ──
-  const sep_capas = H / cos;          // vertical
-  // ── SEGUNDA capa · las perchas ──
-  const slant = (Rp - P.r_toono) / cos;
-  return { R, A, H, Rint, Rext, r_trei, r_trei_int, r_int_lito,
-    tri_base: A, tri_ap, tri_tr, tri_hip: Math.hypot(A, tri_ap - tri_tr),
-    vuelo: R - Rext, per_med, alto_an, vol_an: per_med * P.E * alto_an,
-    largo_parte: per_med / P.n_partes,
-    alfa: alfa * 180 / Math.PI, n_lados: 2 * Math.PI / alfa,
-    largo_lito_trei: Math.hypot(P.alto, P.alto / Math.tan(Math.PI / 3)),
-    n_lito_trei: Math.round(2 * Math.PI / alfa) * 2,
-    vol_trei: Math.round(2 * Math.PI / alfa) * 2
-      * Math.hypot(P.alto, P.alto / Math.tan(Math.PI / 3)) * P.anc_trei * P.e_trei,
-    Rp, p_largo: slant, paso_p: 2 * Math.PI * R / P.n_per_r,
-    nt, beta: beta * 180 / Math.PI, delta: delta * 180 / Math.PI,
-    r_med, cuerda: 2 * Rint * Math.sin(beta), flecha: Rint - r_med,
-    h_vert, lado_tri, sep_tri, n_nec, sep_capas,
-    mediana: Math.hypot(bx - P.r_toono, h_vert),
-    dip: Math.atan(h_vert / (bx - P.r_toono)) * 180 / Math.PI,
-    vol_tri: nt * (2 * lado_tri + 2 * Rint * Math.sin(beta)) * P.tri_anc * P.tri_esp,
-    slant, area_techo: Math.PI * (Rp + P.r_toono) * slant,
-    area_muro: 2 * Math.PI * R * P.alto,
-    n_mon: P.n_ab + P.n_gr,
-    // El ANCHO del montante no se elige: tiene que cubrir la aislación
-    // comprimida más los DOS listones del trei. Dos palos de 2,2 no son lo
-    // mismo que dos de 1,6.
-    mon_ancho: A + 2 * P.e_trei,
-    vol_perchas: P.n_per_r * slant * P.p_anc * P.p_alt,
-    per_lito_ext: 2 * Math.PI * R * 2,
-    per_lito_int: 2 * Math.PI * r_int_lito,
-  };
-}
+/* ═══ el cálculo ═══════════════════════════════════════════
+   Vive en calculo-geo.js (geo-1), sin navegador, para que el banco
+   (`node pruebas-calculo.mjs`) corra las mismas cuentas que esta página.
+   ═══════════════════════════════════════════════════════════════ */
+const calc = () => calcGeo(P);
 
 const mm = v => (v*1000).toFixed(0) + " mm";
 const mm1 = v => (v*1000).toFixed(1) + " mm";
@@ -323,29 +294,41 @@ function pintarPiezas() {
       de más.`]]);
 
   h += tarjeta("La cal · triángulo separador",
-    "Una por percha. Es lo que separa las dos capas del techo. La geometría la cierra: " +
-    "no hay nada que elegir.", [
+    "Una por percha. Separa las dos capas del techo: va del trei hasta la doble cinta, " +
+    "y la geometría la cierra.", [
     ["", "Cantidad", "una por percha", un(P.n_per_r), "d"],
-    ["A", "Base", "= A", mm(C.tri_base), "d"],
-    ["H", "Altura del vértice", "H ÷ cos(ángulo)", mm1(C.tri_ap), "d"],
-    ["", "Cara truncada", "A (1 − sen) ÷ cos", mm1(C.tri_tr), "d"],
+    ["A", "Espacio del aislante del muro", "nominal × (1 − k)", mm(C.A), "d"],
+    ["", "Base de la cal", "A − c (la cinta va adentro de A)", mm(C.tri_base), "d"],
+    ["H", "Alto contra el trei", "H ÷ cos(ángulo), a plomo", mm1(C.tri_ap), "d"],
+    ["", "Punta truncada", "alto − (A − c) · tan", mm1(C.tri_tr), "d"],
     ["", "Hipotenusa", "", mm1(C.tri_hip), ""],
     ["", "Paso sobre el anillo", "", mm(2 * Math.PI * C.Rint / P.n_per_r), ""],
   ], [
     C.vuelo > 0.001
-      ? ["", `El triángulo sobresale <b>${mm(C.vuelo)}</b> del anillo: esa parte queda en el
-         aire y necesita <b>distanciador</b>.`]
-      : ["ok", `El anillo llega hasta el borde. <b>Sin distanciador.</b>`],
-    C.tri_tr < P.anc_per
-      ? ["ojo", `La cara truncada son ${mm1(C.tri_tr)} y el listón del borde mide
-         ${mm(P.anc_per)}: no entra. Con esta aislación es el borde del anillo el que da la
-         línea final.`] : null,
+      ? ["", `La cal y la cinta sobresalen <b>${mm(C.vuelo)}</b> del anillo: ese vuelo necesita
+         apoyo, y el piso sobresale lo mismo debajo.`]
+      : ["ok", `El anillo llega hasta el borde. <b>Sin vuelo.</b>`],
+  ]);
+
+  h += tarjeta("La doble cinta",
+    "Dos listones arriba, en la parte de arriba de la cal y debajo de la percha. Ahí se " +
+    "fija la lona del muro, que baja a plomo hasta el borde del piso.", [
+    ["c", "Ancho de las dos", "2 × S", mm(C.c), "d"],
+    ["P", "Alto", "", mm(P.anc_per), "d"],
+    ["", "Alto máximo bajo la percha", "alto de la cal − A · tan", mm1(C.cinta_max), ""],
+    ["", "Barrido de la percha", "c · tan", mm1(C.barrido), ""],
+    ["", "Metros lineales", "2 × perímetro", m(C.per_lito_ext), "d"],
+  ], [
+    P.anc_per > C.cinta_max + 1e-9
+      ? ["ojo", `La cinta mide ${mm(P.anc_per)} y bajo la percha entran ${mm1(C.cinta_max)}:
+         <b>la percha apoyaría en la cinta y no en la cal.</b>`]
+      : ["ok", `La cinta entra bajo la percha (${mm(P.anc_per)} de ${mm1(C.cinta_max)}).`],
   ]);
 
   h += `<h2 style="margin:1.2rem 0 .5rem">El trei</h2>`;
   h += tarjeta("Celosía", "Rombo a 60°, abulonado.", [
-    ["T", "Del anillo al zócalo", "", mm(P.T), "d"],
-    ["", "Radio exterior del trei", "R int − T", m(C.r_trei), "d"],
+    ["T", "Del anillo al trei", "0 en Christine", mm(P.T), "d"],
+    ["", "Radio exterior del trei", "D/2 − A − T", m(C.r_trei), "d"],
     ["", "Radio interior", "− 2 listones", m(C.r_trei_int), ""],
     ["", "Altura del muro", "", m(P.alto), "d"],
     ["", "Ángulo por lado", "2 · asen(bulón ÷ 2r)", gr(C.alfa), ""],
@@ -357,6 +340,21 @@ function pintarPiezas() {
   ], [["ojo", `El largo del listón sale de la altura y del ángulo. <b>Verificar contra la hoja
       Trei</b>, que usaba un «largo ideal» de 2,70 m como dato de entrada, no como
       resultado.`]]);
+
+  h += tarjeta("El trei en el piso y en el anillo",
+    "Abajo, una escuadra por punto: el bulón TRCC aprieta escuadra, trei y zócalo, y un " +
+    "tornillo la fija al anillo del piso. Arriba no hay bulón: un tornillo aprieta zócalo y " +
+    "trei contra la capa de abajo del anillo.", [
+    ["", "Puntos abajo · puntos arriba", "perímetro ÷ distancia entre bulones", un(C.n_pts), "d"],
+    ["", "Escuadras", "una por punto de abajo", un(C.n_pts), "d"],
+    ["", "Tornillos 6 × 40 al piso", "uno por escuadra", un(C.n_pts), "d"],
+    ["", "Tornillos 6 × 90 al anillo", "uno por punto de arriba", un(C.n_pts), "d"],
+    ["", "Bulón de cruce aprieta", "2 listones", mm(C.grip_cruce), ""],
+    ["", "Bulón de abajo aprieta", "2 listones + zócalo", mm(C.grip_abajo), ""],
+    ["", "Zócalos interiores", "dos, de " + mm(P.anc_int) + " × " + mm(P.e_int), "2 × " + m(C.zocalo), "d"],
+    ["", "Circunferencia a trazar en el OSB", "cara exterior del trei", m(C.circ_trazo), "d"],
+  ], [["", `A los bulones se les suma lo que piden la tuerca y la arandela. La fabricación y el
+      ensamblado del trei todavía no están escritos: esto es su lugar en la estructura.`]]);
 
   h += `<h2 style="margin:1.2rem 0 .5rem">El techo · primera capa</h2>`;
   h += tarjeta("Los triángulos",
@@ -417,18 +415,6 @@ function pintarPiezas() {
   ], [["", `Los dos planos son <b>paralelos</b>, a ${P.ang}°. La primera capa arranca en la
       cara alta del anillo; la segunda, en el vértice de la cal.`]]);
 
-  h += `<h2 style="margin:1.2rem 0 .5rem">Listones del perímetro</h2>`;
-  h += tarjeta("Borde exterior del muro", "Dos capas, atornilladas a la cara truncada.", [
-    ["S", "Espesor de cada uno", "van dos", mm(P.e_per), "d"],
-    ["P", "Ancho del listón", "", mm(P.anc_per), "d"],
-    ["", "Metros lineales", "2 × perímetro", m(C.per_lito_ext), "d"],
-  ]);
-  h += tarjeta("Perímetro interior", "Una capa. Sobre este listón apoyan los triángulos.", [
-    ["", "Radio", "", m(C.r_int_lito), ""],
-    ["", "Sección", "", `${mm(P.anc_int)} × ${mm(P.e_int)}`, ""],
-    ["", "Metros lineales", "perímetro", m(C.per_lito_int), "d"],
-  ]);
-
   h += `<h2 style="margin:1.2rem 0 .5rem">Aberturas</h2>`;
   h += tarjeta("Montantes", "Del borde exterior del plancher a la cara interior del trei.", [
     ["", "Aberturas · grupos", "", `${un(P.n_ab)} · ${un(P.n_gr)}`, ""],
@@ -454,18 +440,53 @@ function pintarPiezas() {
     ["H", "Aislación del techo, ⊥ a la percha", "", mm(C.H), "d"],
   ]);
 
+  h += `<h2 style="margin:1.2rem 0 .5rem">El plancher</h2>`;
+  h += tarjeta("Tirantes",
+    `Cada ${m(P.paso_t)}, con uno en el centro, de borde a borde. Cada uno es una cuerda
+    del círculo: 2·√(R² − x²).`,
+    C.tirantes.map(t => ["", `x = ${m(t.x)}`, t.n === 1 ? "el central" : "uno a cada lado", m(t.L) + (t.n === 2 ? " × 2" : ""), ""])
+      .concat([["", "Tirantes", "", un(C.n_tir), "d"], ["", "Metros", "", m(C.m_tir), "d"],
+        ["", "Sección", "", `${mm(P.tir_alt)} × ${mm(P.tir_anc)}`, ""], ["", "Volumen", "", m3(C.vol_tir), ""]]),
+    [C.placa_ok ? ["ok", `El ancho de la placa son ${un(C.por_placa)} entreejes: cada junta cae sobre un tirante.`]
+      : ["ojo", `El ancho de la placa (${m(P.placa_a)}) no es un número entero de entreejes
+        (${C.por_placa.toFixed(2)}): <b>las juntas no caen sobre un tirante.</b> Cambiá el entreeje.`]]);
+  h += tarjeta("Vigas y pilares",
+    `Vigas cada ${m(P.paso_v)}, con una en el centro, cruzadas a los tirantes. Los pilares
+    entran ${m(P.pil_borde)} desde cada punta, y entre ellos tramos iguales de no más de ${m(P.pil_max)}.`,
+    C.vigas.map(v => ["", `x = ${m(v.x)}` + (v.n === 2 ? " (dos)" : ""), `${un(v.tramos)} tramos de ${m(v.largo)}`, `${m(v.L)} · ${un(v.pilares)} pil.`, ""])
+      .concat([["", "Vigas", "", un(C.n_vig), "d"], ["", "Metros", "", m(C.m_vig), "d"],
+        ["", "Pilares", "", un(C.n_pil), "d"], ["", "Sección", "", `${mm(P.viga_alt)} × ${mm(P.viga_anc)}`, ""],
+        ["", "Volumen", "", m3(C.vol_vig), ""]]));
+  h += tarjeta("Placas, anillo del piso y celulosa",
+    "Dos capas de OSB; el anillo del piso, igual al de arriba, encastrado en los tirantes " +
+    "al ras de su borde de arriba; la celulosa entre las dos capas.", [
+    ["", "Superficie", "π R²", m2(C.area), ""],
+    ["", "Placas por capa", `× ${P.desp} ÷ ${m(P.placa_a)} × ${m(P.placa_l)}`, un(C.placas_capa), "d"],
+    ["", "Placas en total", `OSB ${mm(P.osb_inf)} + OSB ${mm(P.osb_sup)}`, un(2 * C.placas_capa), "d"],
+    ["", "Alto del piso", "OSB + tirante + OSB", mm(C.alto_piso), ""],
+    ["", "Encastre del anillo", "su alto entero", mm(C.encastre), "d"],
+    ["", "Queda de tirante debajo", "", mm(C.bajo_encastre), ""],
+    ["", "Anillo del piso · volumen", "como el de arriba", m3(C.vol_anillo_piso), ""],
+    ["", "Celulosa · bruta", "π R² × alto del tirante", m3(C.cel_bruto), ""],
+    ["", "Celulosa · neta", "− tirantes − anillo del piso", m3(C.cel_neto), "d"],
+  ], [["", `Los kilos de celulosa salen de la densidad de colocación del fabricante, que todavía
+      no está cargada.`]]);
+
   h += `<div class="tarj"><h3>Lo que todavía no calcula</h3>
     <p class="sub" style="margin-bottom:.55rem">Está en la planilla, pero su regla general no
     está confirmada. No lo pongo inventado.</p>
-    <div class="fil"><span class="l"></span><span class="n">El plancher completo<em>despiece pieza por pieza y pedido al aserradero</em></span><span class="v q">pendiente</span></div>
+    <div class="fil"><span class="l"></span><span class="n">El trei<em>fabricación y ensamblado</em></span><span class="v q">pendiente</span></div>
     <div class="fil"><span class="l"></span><span class="n">El toono<em>espesores, coronas, m³ en dos especies</em></span><span class="v q">pendiente</span></div>
     <div class="fil"><span class="l"></span><span class="n">Los travesaños del triángulo<em>se ven en la lámina, no están calculados</em></span><span class="v q">pendiente</span></div>
     <div class="fil"><span class="l"></span><span class="n">El Tyvek<em>no aparece en ninguna hoja</em></span><span class="v q">pendiente</span></div>
-    <div class="fil"><span class="l"></span><span class="n">Herrajes<em>bulones, escuadras, tornillos, cable</em></span><span class="v q">pendiente</span></div>
+    <div class="fil"><span class="l"></span><span class="n">Herrajes del techo<em>los del trei ya están; faltan los del techo y el cable</em></span><span class="v q">pendiente</span></div>
     <div class="fil"><span class="l"></span><span class="n">Cotización y horas<em>materiales, precios y control por etapa</em></span><span class="v q">pendiente</span></div>
   </div>`;
 
   $("salida").innerHTML = h;
+  const k = corte(P, C);
+  $("corte1").innerHTML = k.svg1;
+  $("corte2").innerHTML = k.svg2;
   $("resumen").innerHTML =
     `Ø ${P.D} m · A ${mm(C.A)} · anillo ${m(C.Rint)} → ${m(C.Rext)}<br>` +
     `${P.n_per_r} perchas · ${un(C.n_mon)} montantes · techo ${m2(C.area_techo)}` +
@@ -563,7 +584,7 @@ $("volver").addEventListener("click", () => {
 });
 
 /* ═══ pestañas ═════════════════════════════════════════════ */
-const PEST = [["datos","Medidas"],["piezas","Piezas"],["croquis","Croquis"],["ficha","Ficha"]];
+const PEST = [["datos","Medidas"],["piezas","Piezas"],["corte","Corte"],["croquis","Croquis"],["ficha","Ficha"]];
 $("pest").innerHTML = PEST.map(([k,t],i) =>
   `<button data-p="${k}" class="${i===0?"on":""}">${t}</button>`).join("");
 function verPestaña(k) {
@@ -571,7 +592,7 @@ function verPestaña(k) {
   pest = k;
   PEST.forEach(([x]) => $("t-" + x).classList.toggle("hide", x !== k));
   document.querySelectorAll("#pest button").forEach(b => b.classList.toggle("on", b.dataset.p === k));
-  if (k === "piezas") pintarPiezas();
+  if (k === "piezas" || k === "corte") pintarPiezas();
   restituir("pest:" + k);
 }
 $("pest").addEventListener("click", (ev) => {

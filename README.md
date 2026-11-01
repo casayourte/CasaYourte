@@ -30,7 +30,7 @@ menú ⋮ → *Agregar a la pantalla principal*.
 |---|---|
 | `admin.html` | los álbumes de obra |
 | `editar.html` | el editor: la página real, tocás un texto o una foto y la cambiás |
-| `calculo.html` | los cálculos de taller, uno por cliente |
+| `calculo.html` | los cálculos de taller, uno por cliente, con el corte del borde a escala |
 | `usuarios.html` | quién entra y qué puede hacer |
 | `diagnostico.html` | las pruebas de conexión |
 
@@ -38,6 +38,7 @@ menú ⋮ → *Agregar a la pantalla principal*.
 
 | Archivo | Qué es |
 |---|---|
+| `calculo-geo.js` | la geometría de Cálculos, sin navegador; su banco es `pruebas-calculo.mjs` |
 | `firebase-init.js` | único archivo que toca el SDK de Firebase. La versión vive acá, y **desde el sello `init-2` el SDK se baja diferido**: ver «El SDK no viene puesto» |
 | `estilos.css` | una sola hoja para todas las pantallas del panel |
 | `nucleo.js` | navegación, permisos, Atrás de Android, avisos, imágenes, Cloudinary |
@@ -762,11 +763,12 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-32` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `cy-shell-v69` |
+| `sw.js` | `VERSION` | `cy-shell-v70` |
 | `admin.html` | `PANEL` | `admin-19` |
 | `editar.html` | `EDITOR` | `editar-23` |
 | `taller.html` | `SELLO` | `andamio-3` |
-| `calculo.html` | `CY.PANEL` | `calculo-9` |
+| `calculo.html` | `CY.PANEL` | `calculo-10` |
+| `calculo-geo.js` | `SELLO_GEO` | `geo-1` |
 | `consultas.html` | `CY.PANEL` | `consultas-3` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-4` |
 | `diagnostico.html` | `CY.PANEL` | `diagnostico-8` |

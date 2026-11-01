@@ -221,11 +221,12 @@ previene nada y sí pierde trabajo: ya pasó cuatro veces en dos días.
 Lo que reemplaza a ese momento de revisión es la verificación previa, que corre
 el agente y **no es opcional**: que el JavaScript parsee **como MÓDULO**
 —`node --input-type=module --check < archivo.js`, y no `node --check`—,
-incluidos los módulos que viven adentro de un `.html`; que **los cinco bancos
+incluidos los módulos que viven adentro de un `.html`; que **los seis bancos
 corran** —`node pruebas-secciones.mjs` (16 casos), `node pruebas-reportes.mjs`
 (64 casos), `node pruebas-andamio.mjs` (89 casos), `node
-pruebas-puertas.mjs` (131 casos) y `node pruebas-modelos.mjs` (119 casos), los
-cinco sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
+pruebas-puertas.mjs` (131 casos), `node pruebas-modelos.mjs` (119 casos) y
+`node pruebas-calculo.mjs` (56 casos, la geometría de Cálculos), los
+seis sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
 sellos hayan subido, con la `VERSION` del `sw.js` si el archivo está en `SHELL`
 y los `?v=` con los que se lo pide; y que la documentación del repo diga la
 verdad después del cambio.
@@ -659,6 +660,20 @@ verdad después del cambio.
   voy a dar… y hacer las modificaciones»): escribe la misma forma que esta
   página. Si cambia la forma de una consulta acá, cambia allá en la misma
   tanda (su banco compara los estados).
+- **La geometría de Cálculos vive en `calculo-geo.js`, sin navegador**
+  (`geo-1`, `calculo-10`, 1-nov-2026, Mauro: «pasá el plancher y muros a
+  cálculos»). La autoridad de las reglas es el manual técnico del plancher
+  (documento de Claude «CasaYourte · Manual técnico · 1. El plancher», versión
+  Christine): el diámetro final del piso es el dato de partida y todo se
+  calcula hacia adentro; la cal y la doble cinta llenan el espacio del aislante
+  (la cinta va ADENTRO de A); el anillo del piso es igual al de arriba y va
+  encastrado al ras de los tirantes; tirantes y vigas con uno central. Todo lo
+  que se elige por diseño es un campo de la página. La pestaña **Corte** dibuja
+  la cabeza y el pie del muro con los valores cargados, cada dibujo a una sola
+  escala que se ajusta sola. `pruebas-calculo.mjs` compara contra los números
+  del manual (3,320 al trei, 17 tirantes, 5 vigas, 23 pilares, 63 escuadras,
+  15 placas por capa). Falta: la fabricación del trei, los triángulos y el
+  toono —con ellos, el modelo en 3D—.
 - **La autoridad del contenido es Firestore** (`sitio/publicado`). `contenido.json` en
   el repo es respaldo, y los textos de `index.html` el último respaldo.
 - **No subir acá:** cálculos, costos, márgenes, tarifas, proveedores, documentación
