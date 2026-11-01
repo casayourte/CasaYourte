@@ -55,8 +55,19 @@
     line-height:1.35;min-width:0}
   .barra-p .btn{flex:none;padding:.55rem .7rem}
   .corte-t{margin:1rem 0 .4rem;font-size:.95rem}
-  .vista3d{width:100%;min-height:320px;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;touch-action:none}
+  .v3{position:sticky;top:2.9rem;z-index:20;background:var(--ink);padding:.3rem 0 .4rem;margin-bottom:.6rem}
+  .vista3d{width:100%;height:clamp(220px,42vh,520px);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;touch-action:none}
   .vista3d canvas{display:block}
+  .v3-barra{display:flex;gap:.4rem;align-items:center;margin-top:.35rem;flex-wrap:wrap}
+  .v3-barra .btn{padding:.35rem .6rem;font-size:.78rem}
+  .v3-nota{flex:1;min-width:8rem;font-size:.72rem;color:var(--dim)}
+  .v3-partes{display:flex;flex-wrap:wrap;gap:.3rem .9rem;margin-top:.4rem;padding:.5rem .6rem;
+    background:var(--ink2);border:1px solid var(--line);border-radius:var(--r);max-height:30vh;overflow:auto}
+  .v3-partes label{display:flex;gap:.3rem;align-items:center;font-size:.82rem}
+  .v3-todas{display:flex;gap:.3rem;width:100%}
+  .v3-todas .btn{padding:.25rem .55rem;font-size:.74rem}
+  .v3-chico .vista3d,.v3-chico .v3-partes,.v3-chico #partes3d-b,.v3-chico #encuadrar3d,.v3-chico .v3-nota{display:none}
+  .v3-chico{position:static}
   svg.corte{display:block;width:100%;height:auto;background:var(--ink2);border:1px solid var(--line);
     border-radius:var(--r)}
   svg.corte .pz rect,svg.corte .pz polygon{stroke:var(--dim2);stroke-width:.75;fill-opacity:.35}
@@ -101,7 +112,18 @@
     <nav class="pest" id="pest"></nav>
 
     <div id="t-datos">
-      <p class="gris">Las medidas que se deciden. Todo en metros, salvo los ángulos.</p>
+      <div class="v3" id="v3">
+        <div id="vista3d" class="vista3d"><p class="gris" style="padding:1rem">Cargando el 3D…</p></div>
+        <div class="v3-barra">
+          <button class="btn" id="partes3d-b">Partes ▾</button>
+          <button class="btn" id="encuadrar3d">Encuadrar</button>
+          <span class="v3-nota" id="nota3d">a escala real · cuadrícula de 1 m</span>
+          <button class="btn" id="ocultar3d">Ocultar 3D</button>
+        </div>
+        <div id="partes3d" class="v3-partes hide"></div>
+      </div>
+      <p class="gris">Las medidas que se deciden. Todo en metros, salvo los ángulos. Al tocar una
+      medida, en el 3D se resalta lo que cambia con ella.</p>
       <div class="campos" id="campos"></div>
       <div class="row" style="margin-top:.9rem">
         <button class="btn" data-caso="m7">Modelo 7 m</button>
@@ -120,17 +142,6 @@
       <h3 class="corte-t">El pie del muro y el piso</h3><div id="corte2"></div>
       <p class="ayuda">La altura del muro se toma del piso terminado a la cabeza del trei. La escuadra
       y los tornillos van esquemáticos. Los triángulos no se dibujan: se marca su apoyo.</p>
-    </div>
-
-    <div id="t-3d" class="hide">
-      <p class="gris">La estructura entera con las medidas de este cálculo. Girala con un dedo,
-      acercala con dos. Cambiá una medida en «Medidas» y el modelo cambia.</p>
-      <div class="row" id="capas3d" style="flex-wrap:wrap;gap:.35rem .8rem;margin:.4rem 0 .6rem"></div>
-      <div id="vista3d" class="vista3d"><p class="gris">Cargando el 3D…</p></div>
-      <div class="row" style="margin-top:.5rem"><button class="btn" id="encuadrar3d">Volver a encuadrar</button></div>
-      <p class="ayuda">Esquema: las piezas van con su sección y su lugar; los herrajes, la lona y el
-      aislante no se dibujan. El arriostramiento de los triángulos es el de Christine, llevado a la
-      proporción de cada triángulo.</p>
     </div>
 
     <div id="t-croquis" class="hide">
@@ -168,9 +179,9 @@ import { cargarFirebase,
          collection, serverTimestamp, onAuthStateChanged, signOut } from "./firebase-init.js";
 import { CY } from "./nucleo.js";
 import { calc as calcGeo, corte } from "./calculo-geo.js";
-import { montar as montar3d, GRUPOS as GRUPOS3D } from "./calculo-3d.js";
+import { montar as montar3d, PARTES as PARTES3D, CAMPO_PARTES } from "./calculo-3d.js";
 
-CY.PANEL = "calculo-13";
+CY.PANEL = "calculo-14";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 // ── El SDK se baja acá, y recién después arranca la pantalla ────────────────
@@ -603,31 +614,67 @@ $("volver").addEventListener("click", () => {
   else cerrarProyecto();
 });
 
-/* ═══ el 3D ════════════════════════════════════════════════
-   three.js baja del CDN recién al abrir la pestaña (calculo-3d.js). Si no
-   baja, se dice acá y el resto de la página sigue igual. */
+/* ═══ el 3D, en la pestaña de las medidas ════════════════════
+   three.js baja del CDN recién acá (calculo-3d.js). Si no baja, se dice y el
+   resto de la página sigue igual. Cada parte se prende y apaga, y al tocar un
+   campo se resalta lo que cambia con él (CAMPO_PARTES). */
 const visibles3d = {};
-$("capas3d").innerHTML = GRUPOS3D.map(([k, t]) =>
-  `<label style="display:flex;gap:.3rem;align-items:center;font-size:.85rem"><input type="checkbox" data-capa="${k}" checked> ${t}</label>`).join("");
-$("capas3d").addEventListener("change", (e) => {
-  const k = e.target.dataset.capa; if (!k) return;
-  visibles3d[k] = e.target.checked; if (vista3d) vista3d.ver(k, e.target.checked);
+const leer3d = (k, d) => { try { const v = localStorage.getItem("cy-calc3d:" + k); return v === null ? d : v === "1"; } catch { return d; } };
+const guardar3d = (k, v) => { try { localStorage.setItem("cy-calc3d:" + k, v ? "1" : "0"); } catch {} };
+for (const [k] of PARTES3D) visibles3d[k] = leer3d("parte:" + k, true);
+$("partes3d").innerHTML = PARTES3D.map(([k, t]) =>
+  `<label><input type="checkbox" data-parte="${k}" ${visibles3d[k] ? "checked" : ""}> ${t}</label>`).join("") +
+  `<span class="v3-todas"><button class="btn" data-todas="1">Todas</button><button class="btn" data-todas="0">Ninguna</button></span>`;
+$("partes3d").addEventListener("change", (e) => {
+  const k = e.target.dataset.parte; if (!k) return;
+  visibles3d[k] = e.target.checked; guardar3d("parte:" + k, e.target.checked);
+  if (vista3d) vista3d.ver(k, e.target.checked);
 });
+$("partes3d").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-todas]"); if (!b) return;
+  const on = b.dataset.todas === "1";
+  document.querySelectorAll("#partes3d [data-parte]").forEach(c => {
+    c.checked = on; visibles3d[c.dataset.parte] = on; guardar3d("parte:" + c.dataset.parte, on);
+    if (vista3d) vista3d.ver(c.dataset.parte, on);
+  });
+});
+$("partes3d-b").addEventListener("click", () => $("partes3d").classList.toggle("hide"));
 $("encuadrar3d").addEventListener("click", () => vista3d && vista3d.encuadrar());
+function oculto3d(si) {
+  $("v3").classList.toggle("v3-chico", si);
+  $("ocultar3d").textContent = si ? "Ver 3D" : "Ocultar 3D";
+  guardar3d("oculto", si);
+}
+$("ocultar3d").addEventListener("click", () => { oculto3d(!$("v3").classList.contains("v3-chico")); if (!$("v3").classList.contains("v3-chico")) abrir3d(); });
+oculto3d(leer3d("oculto", false));
+// Tocar un campo resalta sus partes; salir de los campos las vuelve a mostrar todas.
+$("campos").addEventListener("focusin", (e) => {
+  const k = e.target.dataset && e.target.dataset.k; if (!k || !vista3d) return;
+  const partes = CAMPO_PARTES[k] || [];
+  vista3d.resaltar(partes);
+  $("nota3d").textContent = partes.length
+    ? "resaltado: " + partes.map(p => (PARTES3D.find(x => x[0] === p) || [p, p])[1].toLowerCase()).join(", ")
+    : "a escala real · cuadrícula de 1 m";
+});
+$("campos").addEventListener("focusout", () => setTimeout(() => {
+  if (vista3d && !$("campos").contains(document.activeElement)) { vista3d.resaltar([]); $("nota3d").textContent = "a escala real · cuadrícula de 1 m"; }
+}, 0));
 async function abrir3d() {
+  if ($("v3").classList.contains("v3-chico")) return;
   if (vista3d) { vista3d.actualizar(P, calc()); return; }
   if (cargando3d) return;
   cargando3d = true;
   try { vista3d = await montar3d($("vista3d"), P, calc(), visibles3d); }
   catch (e) {
     console.error(e);
-    $("vista3d").innerHTML = `<p class="gris">No se pudo cargar el 3D: la biblioteca three.js viene de
-      cdn.jsdelivr.net y no contestó (sin conexión, o el teléfono no tiene WebGL). El resto del cálculo anda igual.</p>`;
+    $("vista3d").innerHTML = `<p class="gris" style="padding:1rem">No se pudo cargar el 3D: la biblioteca three.js viene de
+      cdn.jsdelivr.net y no contestó (sin conexión, o el teléfono no tiene WebGL). Las medidas andan igual.</p>`;
   } finally { cargando3d = false; }
 }
+abrir3d();
 
 /* ═══ pestañas ═════════════════════════════════════════════ */
-const PEST = [["datos","Medidas"],["piezas","Piezas"],["corte","Corte"],["3d","3D"],["croquis","Croquis"],["ficha","Ficha"]];
+const PEST = [["datos","Medidas"],["piezas","Piezas"],["corte","Corte"],["croquis","Croquis"],["ficha","Ficha"]];
 $("pest").innerHTML = PEST.map(([k,t],i) =>
   `<button data-p="${k}" class="${i===0?"on":""}">${t}</button>`).join("");
 function verPestaña(k) {
@@ -636,7 +683,7 @@ function verPestaña(k) {
   PEST.forEach(([x]) => $("t-" + x).classList.toggle("hide", x !== k));
   document.querySelectorAll("#pest button").forEach(b => b.classList.toggle("on", b.dataset.p === k));
   if (k === "piezas" || k === "corte") pintarPiezas();
-  if (k === "3d") abrir3d();
+  if (k === "datos") abrir3d();
   restituir("pest:" + k);
 }
 $("pest").addEventListener("click", (ev) => {

@@ -8,7 +8,7 @@
 import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { calc, corte, cuerdas, pilares } from "./calculo-geo.js";
-import { piezas3d, arriostramiento, GRUPOS } from "./calculo-3d.js";
+import { piezas3d, arriostramiento, PARTES, CAMPO_PARTES } from "./calculo-3d.js";
 
 let bien = 0, mal = 0;
 function ok(nombre, cond, extra = "") {
@@ -126,13 +126,22 @@ ok("3D: V a 1,465 con los brazos a 1,810", de("v").every(x => cerca(x.t1, 1.465,
 ok("3D: 6 travesaños cada 0,369", de("travesano").length === 6 && cerca(de("travesano")[0].t1, 0.369, 0.002));
 const T3 = piezas3d(P, C);
 const cuenta = (g, tipo) => T3.piezas.filter(p => p.g === g && p.tipo === tipo).length;
-ok("3D: plancher = 17 tirantes + 5 vigas + 23 pilares", cuenta("piso", "barra") === 45, cuenta("piso", "barra"));
-ok("3D: trei de 63 × 2 listones", cuenta("muro", "barra") === 63 * 2 * 8);
-ok("3D: 8 triángulos y 8 perchas radiales", cuenta("capa1", "barra") === 8 * 21);
-ok("3D: 36 perchas y 36 calces", cuenta("capa2", "barra") === 36 && cuenta("cal", "calce") === 36);
+ok("3D: 17 tirantes, 5 vigas y 23 pilares", cuenta("tirantes", "barra") === 17 && cuenta("vigas", "barra") === 5 && cuenta("pilares", "barra") === 23);
+ok("3D: trei de 63 × 2 listones", cuenta("trei", "barra") === 63 * 2 * 8);
+ok("3D: 8 triángulos y 8 perchas radiales", cuenta("triangulos", "barra") === 8 * 20 && cuenta("radiales", "barra") === 8);
+ok("3D: 36 perchas y 36 calces", cuenta("perchas", "barra") === 36 && cuenta("cal", "calce") === 36);
+ok("3D: cada barra tiene su sección real", T3.piezas.filter(p => p.g === "tirantes")[0].ancho === P.tir_anc && T3.piezas.filter(p => p.g === "tirantes")[0].alto === P.tir_alt
+  && T3.piezas.filter(p => p.g === "trei")[0].ancho === P.anc_trei && T3.piezas.filter(p => p.g === "perchas")[0].alto === P.p_anc);
+ok("3D: una percha mide del toono al desborde", (() => { const q = T3.piezas.find(p => p.g === "perchas");
+  const L = Math.hypot(q.b[0] - q.a[0], q.b[1] - q.a[1], q.b[2] - q.a[2]); return cerca(L, (C.Rp - (P.r_toono - 0.02)) / Math.cos(P.ang * Math.PI / 180), 0.002); })());
 ok("3D: el toono lleva 5 coronas de relleno (0,187)", T3.nCor === 5 && cerca(T3.relleno, 0.187, 0.002), T3.relleno);
-ok("3D: con el toono de 0,502 no hay perchas radiales", piezas3d({ ...P, r_toono: 0.502 }, calc({ ...P, r_toono: 0.502 })).piezas.filter(p => p.g === "capa1").length === 160);
-ok("3D: cada grupo de piezas tiene su casilla", [...new Set(T3.piezas.map(p => p.g))].every(g => GRUPOS.some(([k]) => k === g)));
+ok("3D: con el toono de 0,502 no hay perchas radiales", piezas3d({ ...P, r_toono: 0.502 }, calc({ ...P, r_toono: 0.502 })).piezas.filter(p => p.g === "radiales").length === 0);
+ok("3D: cada parte tiene su casilla, y cada casilla su parte", (() => { const g = new Set(T3.piezas.map(p => p.g));
+  return [...g].every(x => PARTES.some(([k]) => k === x)) && PARTES.every(([k]) => g.has(k)); })());
+ok("3D: lo que resalta cada medida son partes que existen", Object.values(CAMPO_PARTES).flat().every(x => PARTES.some(([k]) => k === x)));
+ok("3D: cada medida que resalta es un campo de la página", Object.keys(CAMPO_PARTES).every(k => k in PORDEF));
+ok("3D: toda medida de la estructura resalta algo", ["D","ang","alto","E","e_trei","tir_alt","viga_alt","n_tri","p_anc","r_toono","osb_sup"].every(k => (CAMPO_PARTES[k] || []).length > 0));
+ok("calculo.html: el 3D está en la pestaña de las medidas", /<div id="t-datos">[\s\S]*?id="vista3d"[\s\S]*?id="campos"/.test(html) && !/\["3d","3D"\]/.test(html));
 for (const [nom, Q] of [["Christine", P], ["4 m", { ...P, D: 4 }], ["12 m", { ...P, D: 12 }], ["10 triángulos", { ...P, n_tri: 10 }], ["6 triángulos", { ...P, n_tri: 6 }]]) {
   const K = piezas3d(Q, calc(Q));
   ok(`3D ${nom}: sin NaN`, !/null|NaN|Infinity/.test(JSON.stringify(K)));

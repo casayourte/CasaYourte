@@ -1,6 +1,10 @@
 // calculo-3d.js — el modelo en 3D de la estructura, con las medidas del cálculo.
-// Sello: 3d-1 (1-nov-2026), pedido de Mauro: «un primer render 3d de la
-// estructura total» después del plancher, los triángulos y el toono.
+// Sello: 3d-2 (1-nov-2026). 3d-1: «un primer render 3d de la estructura total».
+// 3d-2: el 3D pasa a la pestaña de las MEDIDAS, con cada parte por separado
+// (prender y apagar), y la parte que se está midiendo se resalta (Mauro: «para
+// tener noción clara de qué se está modificando»). Todo a escala real: cada
+// barra tiene su sección y su largo en metros, y el piso lleva una cuadrícula
+// de 1 m para tener la medida a la vista.
 //
 // Dos mitades, y la separación es a propósito:
 //   · piezas3d(P, C) — la geometría: una lista de piezas (barras, anillos,
@@ -15,22 +19,56 @@
 // de abajo (donde apoyan los tirantes). Todo sale de calc(P): si cambia una
 // medida, cambia el modelo.
 
-export const SELLO_3D = "3d-1";
+export const SELLO_3D = "3d-2";
 export const THREE_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/+esm";
 export const ORBIT_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js/+esm";
 // Las dos con «/+esm»: jsDelivr reescribe el «import from \"three\"» de OrbitControls a
 // la MISMA dirección de THREE_URL, así que no hace falta un importmap y hay una sola three.
 
-// Los grupos que se prenden y apagan, en el orden de la obra.
-export const GRUPOS = [
-  ["piso",    "Plancher"],
-  ["osb",     "OSB de arriba"],
-  ["muro",    "Trei y anillos"],
-  ["cal",     "Cal y cinta"],
-  ["capa1",   "Triángulos"],
-  ["toono",   "Toono"],
-  ["capa2",   "Segunda capa"],
+// Las partes que se prenden y apagan, en el orden de la obra. La clave es el
+// campo `g` de cada pieza de piezas3d.
+export const PARTES = [
+  ["pilares",     "Pilares"],
+  ["vigas",       "Vigas"],
+  ["osb_inf",     "OSB de abajo"],
+  ["tirantes",    "Tirantes"],
+  ["anillo_piso", "Anillo del piso"],
+  ["osb_sup",     "OSB de arriba"],
+  ["trei",        "Trei"],
+  ["zocalos",     "Zócalos"],
+  ["anillo",      "Anillo periférico"],
+  ["cal",         "Cal"],
+  ["cinta",       "Doble cinta"],
+  ["triangulos",  "Triángulos"],
+  ["radiales",    "Perchas radiales"],
+  ["toono",       "Toono"],
+  ["perchas",     "Perchas · 2.ª capa"],
 ];
+export const GRUPOS = PARTES;   // el nombre de 3d-1
+
+// Qué partes cambian con cada medida de la pestaña «Medidas»: al tocar un
+// campo, esas se resaltan y el resto queda en transparencia.
+export const CAMPO_PARTES = {
+  D: ["anillo_piso", "anillo", "tirantes", "vigas", "osb_sup", "cal", "cinta"],
+  ang: ["triangulos", "radiales", "perchas", "cal"],
+  alto: ["trei"],
+  ais_nom: ["cal", "cinta", "anillo", "anillo_piso", "trei"],
+  ais_techo: ["cal", "perchas", "toono"],
+  rel: ["cal", "cinta", "anillo", "perchas"],
+  E: ["anillo", "anillo_piso"], e_mad: ["anillo", "anillo_piso", "toono"],
+  n_cap: ["anillo", "anillo_piso"], n_partes: ["anillo"], T: ["trei"],
+  e_per: ["cinta"], anc_per: ["cinta"],
+  e_trei: ["trei"], anc_trei: ["trei"], bul: ["trei"], b_borde: ["trei"],
+  e_int: ["zocalos"], anc_int: ["zocalos"],
+  paso_t: ["tirantes"], tir_alt: ["tirantes", "anillo_piso"], tir_anc: ["tirantes"],
+  paso_v: ["vigas", "pilares"], viga_alt: ["vigas"], viga_anc: ["vigas"],
+  pil_max: ["pilares"], pil_borde: ["pilares"],
+  placa_a: ["osb_inf", "osb_sup"], placa_l: ["osb_inf", "osb_sup"],
+  osb_inf: ["osb_inf"], osb_sup: ["osb_sup"], desp: ["osb_inf", "osb_sup"],
+  n_tri: ["triangulos", "radiales"], tri_anc: ["triangulos", "radiales"], tri_esp: ["triangulos", "radiales"],
+  n_per_r: ["perchas", "cal"], desb: ["perchas"], p_anc: ["perchas"], p_alt: ["perchas", "cal"],
+  r_toono: ["toono", "triangulos", "radiales"], sep_max: ["radiales"],
+};
 
 // El arriostramiento de un triángulo, en su plano: s = lateral desde la
 // mediana, t = a lo largo de la mediana desde la base. Es el de Christine
@@ -77,18 +115,18 @@ export function piezas3d(P, C) {
   const yViga = -P.osb_inf;
   for (const v of (C.vigas || [])) for (const sx of (v.n === 1 ? [0] : [-1, 1])) {
     const x = sx * v.x;
-    barra("piso", v3(x, yViga - P.viga_alt / 2, -v.L / 2), v3(x, yViga - P.viga_alt / 2, v.L / 2), P.viga_anc, P.viga_alt, [0, 1, 0], "madera2");
+    barra("vigas", v3(x, yViga - P.viga_alt / 2, -v.L / 2), v3(x, yViga - P.viga_alt / 2, v.L / 2), P.viga_anc, P.viga_alt, [0, 1, 0], "madera2");
     const z0 = -v.L / 2 + (v.pilares > 1 ? P.pil_borde : v.L / 2);
     for (let i = 0; i < v.pilares; i++) {
       const z = z0 + i * v.largo;
-      barra("piso", v3(x, yViga - P.viga_alt - 0.6, z), v3(x, yViga - P.viga_alt, z), 0.14, 0.14, [1, 0, 0], "pilar");
+      barra("pilares", v3(x, yViga - P.viga_alt - 0.6, z), v3(x, yViga - P.viga_alt, z), 0.14, 0.14, [1, 0, 0], "pilar");
     }
   }
-  disco("piso", C.R, -P.osb_inf, 0, "osb");
+  disco("osb_inf", C.R, -P.osb_inf, 0, "osb");
   for (const t of (C.tirantes || [])) for (const sz of (t.n === 1 ? [0] : [-1, 1]))
-    barra("piso", v3(-t.L / 2, yTir / 2, sz * t.x), v3(t.L / 2, yTir / 2, sz * t.x), P.tir_anc, P.tir_alt, [0, 1, 0], "madera");
-  anillo("piso", C.Rint, C.Rext, yTir - C.alto_an, yTir, "anillo");
-  disco("osb", C.R, yTir, yPiso, "osb");
+    barra("tirantes", v3(-t.L / 2, yTir / 2, sz * t.x), v3(t.L / 2, yTir / 2, sz * t.x), P.tir_anc, P.tir_alt, [0, 1, 0], "madera");
+  anillo("anillo_piso", C.Rint, C.Rext, yTir - C.alto_an, yTir, "anillo");
+  disco("osb_sup", C.R, yTir, yPiso, "osb");
 
   // ── el trei: dos familias de listones a 60°, sobre su radio medio ──
   const yt = yPiso + P.alto;                     // cabeza del trei
@@ -102,13 +140,13 @@ export function piezas3d(P, C) {
       const r = rT + fam * P.e_trei / 2;
       const p = (f) => v3(r * Math.cos(th0 + f * dth), yPiso + f * P.alto, r * Math.sin(th0 + f * dth));
       const m = (th0 + (f1 + f2) / 2 * dth);
-      barra("muro", p(f1), p(f2), P.anc_trei, P.e_trei, [Math.cos(m), 0, Math.sin(m)], "trei");
+      barra("trei", p(f1), p(f2), P.anc_trei, P.e_trei, [Math.cos(m), 0, Math.sin(m)], "trei");
     }
   }
-  anillo("muro", C.r_trei_int - P.e_int, C.r_trei_int, yPiso, yPiso + P.anc_int, "madera");
-  anillo("muro", C.r_trei_int - P.e_int, C.r_trei_int, yt - P.anc_int, yt, "madera");
+  anillo("zocalos", C.r_trei_int - P.e_int, C.r_trei_int, yPiso, yPiso + P.anc_int, "madera");
+  anillo("zocalos", C.r_trei_int - P.e_int, C.r_trei_int, yt - P.anc_int, yt, "madera");
   const yA0 = yt - P.e_mad, yA = yA0 + C.alto_an;  // el anillo periférico: el trei cubre su primera capa
-  anillo("muro", C.Rint, C.Rext, yA0, yA, "anillo");
+  anillo("anillo", C.Rint, C.Rext, yA0, yA, "anillo");
 
   // ── la cal (un calce por percha) y la doble cinta ──
   const rCinta = C.R - C.c;
@@ -117,7 +155,7 @@ export function piezas3d(P, C) {
     out.push({ g: "cal", tipo: "calce", th, ancho: P.p_alt, mat: "cal",
       perfil: [[C.Rint, yA], [rCinta, yA], [rCinta, yA + C.tri_tr], [C.Rint, yA + C.h0]] });
   }
-  anillo("cal", rCinta, C.R, yA + C.cinta_max - P.anc_per, yA + C.cinta_max, "cinta");
+  anillo("cinta", rCinta, C.R, yA + C.cinta_max - P.anc_per, yA + C.cinta_max, "cinta");
 
   // ── la primera capa: los triángulos, y la percha radial si hace falta ──
   const yB = yt + P.tri_anc / 2;                  // centro de la madera en la base
@@ -133,13 +171,13 @@ export function piezas3d(P, C) {
     const u = nor(sub(Bp, A)), w = nor(sub(Cv, mid));
     const nrm = nor(cross(w, u));
     const pt = (s, t) => addv(mid, addv(mul(u, s), mul(w, t)));
-    for (const s of segs) barra("capa1", pt(s.s1, s.t1), pt(s.s2, s.t2), P.tri_esp, P.tri_anc, nrm, "triangulo");
+    for (const s of segs) barra("triangulos", pt(s.s1, s.t1), pt(s.s2, s.t2), P.tri_esp, P.tri_anc, nrm, "triangulo");
     if (C.con_radial) {
       const a = th + delta, yv = yB + (C.Rint - P.r_toono) * tan;
       const p1 = v3(C.Rint * Math.cos(a), yB, -C.Rint * Math.sin(a));
       const p2 = v3(P.r_toono * Math.cos(a), yv, -P.r_toono * Math.sin(a));
       const arriba = [Math.sin(rad) * Math.cos(a), Math.cos(rad), -Math.sin(rad) * Math.sin(a)];
-      barra("capa1", p1, p2, P.tri_esp, P.tri_anc, arriba, "radial");
+      barra("radiales", p1, p2, P.tri_esp, P.tri_anc, arriba, "radial");
     }
   }
 
@@ -165,10 +203,10 @@ export function piezas3d(P, C) {
     const p1 = v3(rIn * d[0], yAbajo(rIn) + off, rIn * d[2]);
     const p2 = v3(rOut * d[0], yAbajo(rOut) + off, rOut * d[2]);
     const arriba = nor([Math.sin(rad) * d[0], Math.cos(rad), Math.sin(rad) * d[2]]);
-    barra("capa2", p1, p2, P.p_alt, P.p_anc, arriba, "percha");
+    barra("perchas", p1, p2, P.p_alt, P.p_anc, arriba, "percha");
   }
 
-  return { piezas: out, alto: yPerchaToono + 0.1, yt, yA, yC, nCor, relleno };
+  return { piezas: out, alto: yPerchaToono + 0.1, suelo: yViga - P.viga_alt - 0.6, yt, yA, yC, nCor, relleno };
 }
 
 const COLORES = {
@@ -177,12 +215,13 @@ const COLORES = {
   toono: 0xa86a3a, toono2: 0xc08050, percha: 0x9c6b3c,
 };
 
-// El dibujo. Devuelve { actualizar(P, C), destruir() } o tira si three.js no
-// bajó: quien llama lo ataja y lo dice en la pestaña.
+// El dibujo. Devuelve { actualizar, ver, resaltar, encuadrar, destruir } o
+// tira si three.js no bajó: quien llama lo ataja y lo dice en la página.
 export async function montar(caja, P, C, visibles) {
   const THREE = await import(THREE_URL);
   const { OrbitControls } = await import(ORBIT_URL);
-  const ancho = () => Math.max(280, caja.clientWidth), alto = () => Math.round(Math.min(560, Math.max(320, ancho() * 0.8)));
+  const ancho = () => Math.max(260, caja.clientWidth);
+  const alto = () => Math.max(220, caja.clientHeight || Math.round(ancho() * 0.75));
   const ren = new THREE.WebGLRenderer({ antialias: true });
   ren.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
   ren.setSize(ancho(), alto());
@@ -194,20 +233,35 @@ export async function montar(caja, P, C, visibles) {
   const sol = new THREE.DirectionalLight(0xffffff, 1.4); sol.position.set(6, 10, 4); esc.add(sol);
   const ctl = new OrbitControls(cam, ren.domElement);
   ctl.enableDamping = true;
+  // Un material por parte y por color: resaltar una parte no puede tocar a otra.
   const mats = {};
-  const mat = (k) => mats[k] || (mats[k] = new THREE.MeshLambertMaterial({ color: COLORES[k] || 0xcccccc,
-    transparent: k === "osb", opacity: k === "osb" ? 0.55 : 1, side: THREE.DoubleSide }));
-  let grupos = {};
+  const opacidadBase = (k) => k === "osb" ? 0.55 : 1;
+  const mat = (parte, k) => mats[parte + "|" + k] || (mats[parte + "|" + k] =
+    Object.assign(new THREE.MeshLambertMaterial({ color: COLORES[k] || 0xcccccc,
+      transparent: k === "osb", opacity: opacidadBase(k), side: THREE.DoubleSide }), { userData: { k, parte } }));
+  let grupos = {}, rejilla = null, resaltadas = [];
   const caja1 = new THREE.BoxGeometry(1, 1, 1);
+
+  function aplicarResalte() {
+    const hay = resaltadas.length > 0;
+    for (const m of Object.values(mats)) {
+      const { k, parte } = m.userData, si = resaltadas.includes(parte);
+      m.transparent = (hay && !si) || k === "osb";
+      m.opacity = hay && !si ? 0.1 : opacidadBase(k);
+      m.depthWrite = !(hay && !si);
+      m.emissive.setHex(hay && si ? 0x3a2408 : 0x000000);
+      m.needsUpdate = true;
+    }
+  }
 
   function construir(P, C) {
     for (const g of Object.values(grupos)) { esc.remove(g); g.traverse(o => { if (o.geometry && o.geometry !== caja1) o.geometry.dispose(); }); }
     grupos = {};
-    const { piezas, alto: H } = piezas3d(P, C);
-    const porGrupoMat = {};
+    const { piezas, alto: H, suelo } = piezas3d(P, C);
+    const porParteMat = {};
     for (const p of piezas) {
       const g = grupos[p.g] || (grupos[p.g] = new THREE.Group());
-      if (p.tipo === "barra") { (porGrupoMat[p.g + "|" + p.mat] ||= []).push(p); continue; }
+      if (p.tipo === "barra") { (porParteMat[p.g + "|" + p.mat] ||= []).push(p); continue; }
       let geo;
       if (p.tipo === "anillo" || p.tipo === "disco") {
         const sh = new THREE.Shape(); sh.absarc(0, 0, p.tipo === "disco" ? p.r : p.r2, 0, Math.PI * 2, false);
@@ -219,17 +273,18 @@ export async function montar(caja, P, C, visibles) {
         geo = new THREE.ExtrudeGeometry(sh, { depth: p.ancho, bevelEnabled: false });
         geo.translate(0, 0, -p.ancho / 2); geo.rotateY(-p.th);
       }
-      if (geo) g.add(new THREE.Mesh(geo, mat(p.mat)));
+      if (geo) g.add(new THREE.Mesh(geo, mat(p.g, p.mat)));
     }
-    // Las barras van en InstancedMesh: el trei solo son más de mil piezas.
+    // Las barras van en InstancedMesh (el trei solo son más de mil piezas),
+    // cada una con su sección real: largo × alto × ancho en metros.
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Matrix4();
-    for (const [clave, lista] of Object.entries(porGrupoMat)) {
+    for (const [clave, lista] of Object.entries(porParteMat)) {
       const [g, mk] = clave.split("|");
-      const im = new THREE.InstancedMesh(caja1, mat(mk), lista.length);
+      const im = new THREE.InstancedMesh(caja1, mat(g, mk), lista.length);
       lista.forEach((p, i) => {
         const a = new THREE.Vector3(...p.a), b = new THREE.Vector3(...p.b);
         const x = b.clone().sub(a); const L = x.length(); x.normalize();
-        let y = new THREE.Vector3(...p.arriba); y.sub(x.clone().multiplyScalar(y.dot(x))).normalize();
+        const y = new THREE.Vector3(...p.arriba); y.sub(x.clone().multiplyScalar(y.dot(x))).normalize();
         const z = new THREE.Vector3().crossVectors(x, y);
         e.makeBasis(x, y, z); q.setFromRotationMatrix(e);
         m4.compose(a.clone().add(b).multiplyScalar(0.5), q, new THREE.Vector3(L, p.alto, p.ancho));
@@ -238,14 +293,20 @@ export async function montar(caja, P, C, visibles) {
       grupos[g].add(im);
     }
     for (const [k, g] of Object.entries(grupos)) { g.visible = visibles[k] !== false; esc.add(g); }
-    return H;
+    // La cuadrícula de 1 m, en el suelo: la escala a la vista.
+    if (rejilla) { esc.remove(rejilla); rejilla.geometry.dispose(); }
+    const lado = 2 * Math.ceil((C.Rp || C.R || 4) + 1);
+    rejilla = new THREE.GridHelper(lado, lado, 0x6a5a48, 0x3a3229);
+    rejilla.position.y = suelo; esc.add(rejilla);
+    aplicarResalte();
+    return { H, suelo };
   }
 
-  let H = construir(P, C);
+  let medida = construir(P, C);
   const encuadrar = () => {
-    const R = C.Rp || 4;
+    const R = C.Rp || 4, H = medida.H;
     cam.position.set(R * 1.9, H * 1.3 + 1, R * 1.9);
-    ctl.target.set(0, H * 0.45, 0); ctl.update();
+    ctl.target.set(0, (H + medida.suelo) * 0.45, 0); ctl.update();
   };
   encuadrar();
   let vivo = true, pide = true;
@@ -260,8 +321,9 @@ export async function montar(caja, P, C, visibles) {
   });
   ro.observe(caja);
   return {
-    actualizar(P2, C2) { C = C2; H = construir(P2, C2); pide = true; },
+    actualizar(P2, C2) { C = C2; medida = construir(P2, C2); pide = true; },
     ver(k, on) { visibles[k] = on; if (grupos[k]) grupos[k].visible = on; pide = true; },
+    resaltar(partes) { resaltadas = partes || []; aplicarResalte(); pide = true; },
     encuadrar() { encuadrar(); pide = true; },
     destruir() { vivo = false; ro.disconnect(); ren.dispose(); },
   };

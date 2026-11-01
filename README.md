@@ -39,7 +39,7 @@ menú ⋮ → *Agregar a la pantalla principal*.
 | Archivo | Qué es |
 |---|---|
 | `calculo-geo.js` | la geometría de Cálculos, sin navegador; su banco es `pruebas-calculo.mjs` |
-| `calculo-3d.js` | el modelo 3D de la pestaña «3D» de Cálculos: las piezas salen sin navegador (`piezas3d`) y three.js baja del CDN recién al abrir la pestaña |
+| `calculo-3d.js` | el modelo 3D de Cálculos, arriba de la pestaña «Medidas», con cada parte por separado y la que se mide resaltada: las piezas salen sin navegador (`piezas3d`) y three.js baja del CDN recién al abrir la pestaña |
 | `firebase-init.js` | único archivo que toca el SDK de Firebase. La versión vive acá, y **desde el sello `init-2` el SDK se baja diferido**: ver «El SDK no viene puesto» |
 | `estilos.css` | una sola hoja para todas las pantallas del panel |
 | `nucleo.js` | navegación, permisos, Atrás de Android, avisos, imágenes, Cloudinary |
@@ -764,13 +764,13 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-32` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `cy-shell-v73` |
+| `sw.js` | `VERSION` | `cy-shell-v74` |
 | `admin.html` | `PANEL` | `admin-19` |
 | `editar.html` | `EDITOR` | `editar-23` |
 | `taller.html` | `SELLO` | `andamio-3` |
-| `calculo.html` | `CY.PANEL` | `calculo-13` |
+| `calculo.html` | `CY.PANEL` | `calculo-14` |
 | `calculo-geo.js` | `SELLO_GEO` | `geo-2` |
-| `calculo-3d.js` | `SELLO_3D` | `3d-1` |
+| `calculo-3d.js` | `SELLO_3D` | `3d-2` |
 | `consultas.html` | `CY.PANEL` | `consultas-3` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-4` |
 | `diagnostico.html` | `CY.PANEL` | `diagnostico-8` |

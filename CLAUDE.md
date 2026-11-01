@@ -225,7 +225,7 @@ incluidos los módulos que viven adentro de un `.html`; que **los seis bancos
 corran** —`node pruebas-secciones.mjs` (16 casos), `node pruebas-reportes.mjs`
 (64 casos), `node pruebas-andamio.mjs` (89 casos), `node
 pruebas-puertas.mjs` (131 casos), `node pruebas-modelos.mjs` (119 casos) y
-`node pruebas-calculo.mjs` (85 casos, la geometría de Cálculos y el 3D), los
+`node pruebas-calculo.mjs` (91 casos, la geometría de Cálculos y el 3D), los
 seis sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
 sellos hayan subido, con la `VERSION` del `sw.js` si el archivo está en `SHELL`
 y los `?v=` con los que se lo pide; y que la documentación del repo diga la
@@ -680,9 +680,20 @@ verdad después del cambio.
   el arriostramiento de Christine llevado a proporción, las perchas radiales,
   el toono con sus coronas y la segunda capa, cada grupo con su casilla. Las
   piezas salen de `piezas3d(P, C)`, sin navegador, y el banco las cuenta;
-  **three.js baja de jsDelivr recién al abrir la pestaña**, con `import()` en un
+  **three.js baja de jsDelivr recién cuando se muestra el 3D**, con `import()` en un
   `try` y las dos direcciones con `/+esm` (sin importmap, una sola three): si no
   baja, la pestaña lo dice y el resto anda. Cupo: ninguno, el CDN es público.
+  **Desde `calculo-14` / `3d-2` el 3D vive arriba de la pestaña «Medidas»**,
+  pegado bajo las pestañas mientras se recorren los campos (Mauro: «que la
+  parte donde van a definirse los tamaños muestre un render 3D en el que se
+  pueda activar y desactivar cada una de las partes»). Quince partes
+  (`PARTES`), cada una con su casilla (se recuerda en el teléfono), y al tocar
+  un campo se resaltan las que cambian con él y el resto queda transparente
+  (`CAMPO_PARTES`: si se agrega un campo que cambia la estructura, se suma ahí;
+  el banco falla si nombra una parte o un campo que no existe). **Todo a escala
+  real**: cada barra con su sección y su largo en metros, y una cuadrícula de
+  1 m en el suelo. Los pilares son esquemáticos (0,14 × 0,14, 0,6 m de alto):
+  no tienen campo todavía.
   Falta: la fabricación del trei, la ventilación del toono, herrajes y lona.
 - **La autoridad del contenido es Firestore** (`sitio/publicado`). `contenido.json` en
   el repo es respaldo, y los textos de `index.html` el último respaldo.
