@@ -19,7 +19,7 @@
 // de abajo (donde apoyan los tirantes). Todo sale de calc(P): si cambia una
 // medida, cambia el modelo.
 
-export const SELLO_3D = "3d-3";
+export const SELLO_3D = "3d-4";
 export const THREE_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/+esm";
 export const ORBIT_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js/+esm";
 // Las dos con «/+esm»: jsDelivr reescribe el «import from \"three\"» de OrbitControls a
@@ -75,8 +75,11 @@ export const CAMPO_PARTES = {
 // (1-nov-2026, n = 8: base 1,817, mediana 2,586), llevado a proporción de la
 // base B y la mediana M para que otro triángulo lo herede con la misma forma:
 //   paralelas a 0,30 B de la mediana, de la base hasta los lados (0,40 M);
-//   tres Λ con los pies sobre las paralelas cada 0,189 M, que suben 0,116 M;
-//   una V con el vértice a 0,567 M y los brazos a los lados a 0,700 M.
+//   CUATRO Λ equidistantes con la V (3d-4, Mauro, 1-nov: «cuatro Λ
+//   equidistantes»): los pies cada 0,1416 M (0,366 en Christine), sobre las
+//   paralelas o, si ya terminaron, sobre los lados, y suben 0,116 M;
+//   la V con el vértice a 0,567 M (cuatro pasos) y los brazos a 0,700 M.
+//   El hueco mayor, entre dos Λ, queda en 0,32 (con tres eran 0,43).
 // SIN travesaños paralelos a la base (3d-3, Mauro, 1-nov: «no van las líneas
 // paralelas a la base, sólo la altura, las dos paralelas a la altura y las
 // diagonales»).
@@ -88,9 +91,10 @@ export function arriostramiento(B, M) {
   add(0, 0, 0, M, "mediana");
   const sp = 0.30 * B, tp = M * (1 - sp / hb);
   for (const g of [-1, 1]) add(g * sp, 0, g * sp, tp, "paralela");
-  const paso = 0.18917 * M, sube = 0.11601 * M;
-  for (let i = 0; i < 3; i++) for (const g of [-1, 1]) add(g * sp, i * paso, 0, i * paso + sube, "lambda");
-  const tv = 3 * paso, tb = 0.69992 * M;
+  const paso = 0.14163 * M, sube = 0.11601 * M;
+  for (let i = 0; i < 4; i++) { const t = i * paso, x = Math.min(sp, ancho(t));
+    for (const g of [-1, 1]) add(g * x, t, 0, t + sube, "lambda"); }
+  const tv = 4 * paso, tb = 0.69992 * M;
   for (const g of [-1, 1]) add(0, tv, g * ancho(tb), tb, "v");
   return seg;
 }

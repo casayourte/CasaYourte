@@ -118,17 +118,19 @@ ok("calculo-geo.js está en el SHELL", /'\.\/calculo-geo\.js'/.test(sw));
 // ── el 3D (calculo-3d.js): la geometría sin navegador ──
 const ar = arriostramiento(1.817, 2.586);
 const de = (t) => ar.filter(x => x.tipo === t);
-ok("3D: 14 barras por triángulo", ar.length === 14, ar.length);
+ok("3D: 16 barras por triángulo", ar.length === 16, ar.length);
 ok("3D: paralelas a 0,545 hasta 1,035", de("paralela").every(x => cerca(Math.abs(x.s1), 0.545, 0.002) && cerca(x.t2, 1.035, 0.003)));
-ok("3D: Λ con los pies a 0 · 0,489 · 0,977, suben 0,30", [0, 0.489, 0.977].every((t, i) =>
+ok("3D: cuatro Λ con los pies cada 0,366, suben 0,30", [0, 0.366, 0.733, 1.099].every((t, i) =>
   cerca(de("lambda")[2 * i].t1, t, 0.003) && cerca(de("lambda")[2 * i].t2 - t, 0.30, 0.003)));
+ok("3D: el cuarto Λ apoya en el lado (las paralelas ya terminaron)", cerca(Math.abs(de("lambda")[6].s1), 0.9085 * (1 - 1.099 / 2.586), 0.003));
+ok("3D: el hueco entre dos Λ queda en 0,32", cerca(0.366 * Math.cos(Math.atan(0.30 / 0.545)), 0.32, 0.005));
 ok("3D: V a 1,465 con los brazos a 1,810", de("v").every(x => cerca(x.t1, 1.465, 0.005) && cerca(x.t2, 1.810, 0.003)));
 ok("3D: sin travesaños paralelos a la base (sólo la base)", de("travesano").length === 0 && ar.filter(x => x.t1 === x.t2).length === 1);
 const T3 = piezas3d(P, C);
 const cuenta = (g, tipo) => T3.piezas.filter(p => p.g === g && p.tipo === tipo).length;
 ok("3D: 17 tirantes, 5 vigas y 23 pilares", cuenta("tirantes", "barra") === 17 && cuenta("vigas", "barra") === 5 && cuenta("pilares", "barra") === 23);
 ok("3D: trei de 63 × 2 listones", cuenta("trei", "barra") === 63 * 2 * 8);
-ok("3D: 8 triángulos y 8 perchas radiales", cuenta("triangulos", "barra") === 8 * 14 && cuenta("radiales", "barra") === 8);
+ok("3D: 8 triángulos y 8 perchas radiales", cuenta("triangulos", "barra") === 8 * 16 && cuenta("radiales", "barra") === 8);
 ok("3D: 36 perchas y 36 calces", cuenta("perchas", "barra") === 36 && cuenta("cal", "calce") === 36);
 ok("3D: cada barra tiene su sección real", T3.piezas.filter(p => p.g === "tirantes")[0].ancho === P.tir_anc && T3.piezas.filter(p => p.g === "tirantes")[0].alto === P.tir_alt
   && T3.piezas.filter(p => p.g === "trei")[0].ancho === P.anc_trei && T3.piezas.filter(p => p.g === "perchas")[0].alto === P.p_anc);

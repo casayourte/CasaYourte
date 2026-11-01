@@ -225,7 +225,7 @@ incluidos los módulos que viven adentro de un `.html`; que **los seis bancos
 corran** —`node pruebas-secciones.mjs` (16 casos), `node pruebas-reportes.mjs`
 (64 casos), `node pruebas-andamio.mjs` (89 casos), `node
 pruebas-puertas.mjs` (131 casos), `node pruebas-modelos.mjs` (119 casos) y
-`node pruebas-calculo.mjs` (91 casos, la geometría de Cálculos y el 3D), los
+`node pruebas-calculo.mjs` (93 casos, la geometría de Cálculos y el 3D), los
 seis sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
 sellos hayan subido, con la `VERSION` del `sw.js` si el archivo está en `SHELL`
 y los `?v=` con los que se lo pide; y que la documentación del repo diga la
@@ -696,7 +696,9 @@ verdad después del cambio.
   no tienen campo todavía.
   **Desde `3d-3` los triángulos no llevan travesaños** paralelos a la base
   (Mauro, 1-nov: «sólo la altura, las dos paralelas a la altura y las
-  diagonales»): 14 barras por triángulo, unos 16,6 m de madera en Christine.
+  diagonales»), y desde `3d-4` con CUATRO Λ equidistantes con la V (cada
+  0,366 en Christine; el hueco mayor baja de 0,43 a 0,32): 16 barras por
+  triángulo, unos 17,8 m de madera.
   Falta: la fabricación del trei, la ventilación del toono, herrajes y lona.
 - **La autoridad del contenido es Firestore** (`sitio/publicado`). `contenido.json` en
   el repo es respaldo, y los textos de `index.html` el último respaldo.
