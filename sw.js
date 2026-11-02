@@ -111,13 +111,14 @@
 // v77 (2-nov-2026) — calculo-17 + 3d-5 + geo-3: las capas, los montantes, las aberturas.
 // v78 (2-nov-2026) — calculo-18 + 3d-6 + geo-4: el toono por anillos y el domo; la lona entera.
 // v79 (2-nov-2026) — calculo-19 + 3d-7: el domo, un tercio y hasta el borde del anillo tapa; la ranura.
+// v80 (2-nov-2026) — calculo-20 + 3d-8: la tapa aislante del toono, con bisagra y manivela.
 //
 // Dos cosas de este registro, para que no confundan a quien lo lea:
 //   · faltan v15 a v18. Esas versiones se publicaron y no se anotaron acá.
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v79';
+const VERSION = 'cy-shell-v80';
 
 // v69 · 29-oct-2026 · `nucleo.js` (nucleo-32, general:C7): CY.explicar usa la tabla
 //   común de `errores.js` del panel (datos) y le suma sus dos causas propias.

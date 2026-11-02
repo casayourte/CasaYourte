@@ -1,5 +1,6 @@
 // calculo-3d.js — el modelo en 3D de la estructura, con las medidas del cálculo.
-// Sello: 3d-7 (2-nov-2026). 3d-7: el domo es un tercio de la circunferencia y
+// Sello: 3d-8 (2-nov-2026). 3d-8: la tapa aislante del toono, que gira sobre
+// una bisagra y se cierra con manivela y roldanas. 3d-7: 3d-7: el domo es un tercio de la circunferencia y
 // llega al borde exterior del anillo tapa; el faldón deja una ranura sobre la
 // lona. 3d-6: 3d-6: el toono por anillos —el diente y las
 // cámaras, el anillo tapa hermanado y el domo geodésico—, la aislación llenando
@@ -37,7 +38,7 @@
 // de abajo (donde apoyan los tirantes). Todo sale de calc(P): si cambia una
 // medida, cambia el modelo.
 
-export const SELLO_3D = "3d-7";
+export const SELLO_3D = "3d-8";
 export const THREE_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/+esm";
 export const ORBIT_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js/+esm";
 // Las dos con «/+esm»: jsDelivr reescribe el «import from \"three\"» de OrbitControls a
@@ -64,6 +65,7 @@ export const PARTES = [
   ["cinta_alero", "Cinta del alero"],
   ["tapa",        "Toono · anillo tapa"],
   ["domo",        "Toono · domo geodésico"],
+  ["tapa_sol",    "Toono · tapa aislante"],
   ["montantes",   "Montantes"],
   ["suelo_ab",    "Piso de las aberturas"],
   // Las capas: el tercer dato las marca, y arrancan apagadas.
@@ -106,6 +108,7 @@ export const CAMPO_PARTES = {
   sep_mon: ["montantes"], umb_esp: ["suelo_ab", "montantes"], umb_vuelo: ["suelo_ab"], umb_caida: ["suelo_ab"],
   lona_baja: ["lona_techo"],
   diente: ["toono"], tapa_cam: ["tapa"], tapa_vuelo: ["tapa", "domo"], tapa_ranura: ["tapa"], dom_ang: ["domo"], dom_frec: ["domo"],
+  ts_giro: ["tapa_sol"], ts_esp: ["tapa_sol"], ts_rendija: ["tapa_sol"],
 };
 for (const k of ["ais_techo", "rel", "ang"]) CAMPO_PARTES[k].push("aislacion_techo", "tyvek", "lona_techo");
 for (const k of ["ais_nom", "rel", "alto"]) CAMPO_PARTES[k].push("aislacion_muro", "lona_muro");
@@ -513,6 +516,60 @@ export function piezas3d(P, C) {
     ? [[rM + 0.009, a], [C.R - 0.002, a], [C.R - 0.002, yA], [C.Rext + 0.002, yA], [C.Rext + 0.002, b], [rM + 0.009, b], [rM + 0.009, a]]
     : [[rM + 0.009, a], [C.R - 0.002, a], [C.R - 0.002, b], [rM + 0.009, b], [rM + 0.009, a]], yPiso, yA0, true);
   capaMuro("lona_muro", "lona_muro", (a, b) => [[C.R + 0.003, a], [C.R + 0.003, b]], -P.osb_inf - 0.02, yA + C.cinta_max);
+
+  // ── LA TAPA AISLANTE del toono (3d-8, Mauro, 2-nov: «para bloquear el calor
+  //    del sol… impedir la acumulación de rayos ultravioletas que pasan por una
+  //    gran abertura»): un disco con material aislante y una cara vista. Gira
+  //    sobre una bisagra en la parte inferior del toono: abierta, queda plegada
+  //    contra el techo con la cara vista hacia abajo; para cerrarla se baja, se
+  //    gira, se engancha a la cuerda que pasa por roldanas del lado opuesto
+  //    hasta una manivela en el trei, y al girar la manivela sube y cierra
+  //    como una tapa, dejando una rendija de ventilación. `ts_giro`: 0 cerrada,
+  //    1 abierta contra el techo. ──
+  {
+    const rI = P.r_toono - 0.03, gap = P.ts_rendija ?? 0.02, e = P.ts_esp ?? 0.06;
+    const Rt = rI - 0.01, thH = Math.PI;                       // la bisagra, del lado de atrás
+    const yH = ySuj0 - gap;                                    // cara de arriba de la tapa, cerrada
+    const H = pol(rI, thH, yH - e);                             // la bisagra, en el canto de abajo
+    const eje = [-Math.sin(thH), 0, Math.cos(thH)];            // tangente en la bisagra
+    // Abierta queda paralela a la cara del triángulo que tiene encima, que
+    // baja con su propia pendiente (`dip`), un poco más que el techo.
+    const giro = Math.max(0, Math.min(1, P.ts_giro ?? 1)) * (Math.PI - (C.dip || P.ang) * Math.PI / 180);
+    const rodar = (p) => {                                      // Rodrigues alrededor del eje por H
+      const v = sub(p, H), c = Math.cos(giro), s = Math.sin(giro), k = eje;
+      const kv = cross(k, v), kd = k[0] * v[0] + k[1] * v[1] + k[2] * v[2];
+      return addv(H, addv(addv(mul(v, c), mul(kv, s)), mul(k, kd * (1 - c))));
+    };
+    // Cerrada: centrada en el eje del toono, la cara de arriba a la rendija.
+    const n = 48, v = [], cx = 0, cz = 0, ya = yH, yb = yH - e;
+    const P0 = (a, y) => rodar([cx + Rt * Math.cos(a), y, cz + Rt * Math.sin(a)]);
+    const cen = (y) => rodar([cx, y, cz]);
+    for (let i = 0; i < n; i++) {
+      const a1 = 2 * Math.PI * i / n, a2 = 2 * Math.PI * (i + 1) / n;
+      tri(v, cen(ya), P0(a1, ya), P0(a2, ya)); tri(v, cen(yb), P0(a2, yb), P0(a1, yb));
+      quad(v, P0(a1, ya), P0(a2, ya), P0(a2, yb), P0(a1, yb));
+    }
+    malla("tapa_sol", "aislacion", v);
+    // La cara vista: el bastidor de madera (un aro y listones). Cerrada mira al
+    // toono; abierta, plegada contra el techo, mira hacia adentro (la foto).
+    for (let i = 0; i < n; i++) {
+      const a1 = 2 * Math.PI * i / n, a2 = 2 * Math.PI * (i + 1) / n;
+      barra("tapa_sol", P0(a1, ya + 0.01), P0(a2, ya + 0.01), 0.03, 0.02, sub(cen(ya), cen(yb)), "madera");
+    }
+    for (const f of [-0.5, 0, 0.5]) {
+      const z = f * Rt, x = Math.sqrt(Rt * Rt - z * z);
+      barra("tapa_sol", rodar([-x, ya + 0.01, z]), rodar([x, ya + 0.01, z]), 0.03, 0.02, sub(cen(ya), cen(yb)), "madera");
+    }
+    // La bisagra, y la cuerda: del borde libre de la tapa a la roldana del lado
+    // opuesto del toono, y de ahí a la manivela en el trei.
+    barra("tapa_sol", pol(rI + 0.02, thH, ySuj0), pol(rI + 0.02, thH, yH - e), 0.05, 0.03, [Math.cos(thH), 0, Math.sin(thH)], "tapa");
+    const libre = P0(0, yb), rold = pol(rI, 0, ySuj0 - 0.02);
+    const man = pol(C.r_trei_int - 0.03, 0.15, yPiso + 1.4);
+    barra("tapa_sol", rold, libre, 0.006, 0.006, [0, 1, 0], "cordon");
+    barra("tapa_sol", rold, man, 0.006, 0.006, [0, 1, 0], "cordon");
+    barra("tapa_sol", pol(rI + 0.01, 0, ySuj0 - 0.02), pol(rI - 0.02, 0, ySuj0 - 0.02), 0.08, 0.08, [0, 1, 0], "tapa");    // la roldana
+    barra("tapa_sol", pol(C.r_trei_int, 0.15, yPiso + 1.4), pol(C.r_trei_int - 0.05, 0.15, yPiso + 1.4), 0.18, 0.18, [0, 1, 0], "tapa"); // la manivela
+  }
 
   return { piezas: out, alto: yPerchaToono + 0.1, suelo: yViga - P.viga_alt - 0.6, yt, yA, yC, nCor, relleno, yAbre, conDintel };
 }

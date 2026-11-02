@@ -225,7 +225,7 @@ incluidos los módulos que viven adentro de un `.html`; que **los seis bancos
 corran** —`node pruebas-secciones.mjs` (16 casos), `node pruebas-reportes.mjs`
 (64 casos), `node pruebas-andamio.mjs` (89 casos), `node
 pruebas-puertas.mjs` (131 casos), `node pruebas-modelos.mjs` (119 casos) y
-`node pruebas-calculo.mjs` (135 casos, la geometría de Cálculos y el 3D), los
+`node pruebas-calculo.mjs` (139 casos, la geometría de Cálculos y el 3D), los
 seis sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
 sellos hayan subido, con la `VERSION` del `sw.js` si el archivo está en `SHELL`
 y los `?v=` con los que se lo pide; y que la documentación del repo diga la
@@ -734,6 +734,14 @@ verdad después del cambio.
   exterior del anillo») el domo es un casquete de 120° (`dom_ang` 60) que
   apoya hasta el borde EXTERIOR del anillo tapa, y el faldón deja una ranura
   sobre la lona (`tapa_ranura`, 0,03) para que el aire salga.
+  **Desde `calculo-20` / `3d-8`, la TAPA AISLANTE del toono** (Mauro, 2-nov:
+  «impedir la acumulación de rayos ultravioletas que pasan por una gran
+  abertura»; fotos de agosto de 2024): un disco con aislante y una cara vista
+  que gira sobre una bisagra en la parte inferior del toono; abierta queda
+  plegada contra el techo, y para cerrarla se engancha a una cuerda que pasa
+  por roldanas del lado opuesto hasta una manivela en el trei, dejando una
+  rendija de ventilación. Campos `ts_giro` (1 abierta, 0 cerrada), `ts_esp`,
+  `ts_rendija`.
   Falta: la fabricación del trei, los m² de cada tela con solapes, herrajes.
 - **La autoridad del contenido es Firestore** (`sitio/publicado`). `contenido.json` en
   el repo es respaldo, y los textos de `index.html` el último respaldo.

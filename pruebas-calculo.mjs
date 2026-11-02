@@ -147,7 +147,7 @@ ok("3D: cada medida que resalta es un campo de la página", Object.keys(CAMPO_PA
 ok("3D: toda medida de la estructura resalta algo", ["D","ang","alto","E","e_trei","tir_alt","viga_alt","n_tri","p_anc","r_toono","osb_sup"].every(k => (CAMPO_PARTES[k] || []).length > 0));
 ok("calculo.html: el 3D está en la pestaña de las medidas", /<div id="t-datos">[\s\S]*?id="vista3d"[\s\S]*?id="campos"/.test(html) && !/\["3d","3D"\]/.test(html));
 for (const [nom, Q] of [["Christine", P], ["4 m", { ...P, D: 4 }], ["12 m", { ...P, D: 12 }], ["10 triángulos", { ...P, n_tri: 10 }], ["6 triángulos", { ...P, n_tri: 6 }],
-  ["sin aberturas", { ...P, n_ab: 0 }], ["domo media esfera, 5V", { ...P, dom_ang: 90, dom_frec: 5 }], ["domo bajo", { ...P, dom_ang: 30, dom_frec: 1 }], ["una abertura", { ...P, n_ab: 1, n_gr: 1 }], ["aberturas bajas", { ...P, alt_ab: 1.9 }], ["sin campos nuevos", Object.fromEntries(Object.entries(P).filter(([k]) => !["anc_ab","sep_mon","umb_esp","umb_vuelo","umb_caida","lona_baja","diente","tapa_cam","tapa_vuelo","dom_ang","dom_frec","tapa_ranura"].includes(k)))]]) {
+  ["sin aberturas", { ...P, n_ab: 0 }], ["domo media esfera, 5V", { ...P, dom_ang: 90, dom_frec: 5 }], ["domo bajo", { ...P, dom_ang: 30, dom_frec: 1 }], ["tapa a medio camino", { ...P, ts_giro: 0.5 }], ["una abertura", { ...P, n_ab: 1, n_gr: 1 }], ["aberturas bajas", { ...P, alt_ab: 1.9 }], ["sin campos nuevos", Object.fromEntries(Object.entries(P).filter(([k]) => !["anc_ab","sep_mon","umb_esp","umb_vuelo","umb_caida","lona_baja","diente","tapa_cam","tapa_vuelo","dom_ang","dom_frec","tapa_ranura","ts_giro","ts_esp","ts_rendija"].includes(k)))]]) {
   const K = piezas3d(Q, calc(Q));
   ok(`3D ${nom}: sin NaN`, !/null|NaN|Infinity/.test(JSON.stringify(K)));
 }
@@ -217,6 +217,22 @@ ok("3D: el anillo tapa va sobre la lona, con un tabique por percha y el faldón 
 ok("3D: el domo es un tercio de la circunferencia: su alto es (1 − cos 60°) del radio de la esfera", (() => {
   const d = T3.piezas.filter(p => p.g === "domo" && p.tipo === "barra"), ys = d.flatMap(p => [p.a[1], p.b[1]]);
   const rb = P.r_toono + P.tapa_vuelo, Rd = rb / Math.sin(Math.PI / 3); return cerca(Math.max(...ys) - Math.min(...ys), Rd * 0.5, 0.01); })());
+ok("3D: la tapa aislante cerrada queda debajo del toono con su rendija, y abierta apoya contra el techo", (() => {
+  const yB = (Q) => { const K = piezas3d(Q, calc(Q)); const m = K.piezas.find(p => p.g === "tapa_sol" && p.tipo === "malla"); const ys = [];
+    for (let i = 1; i < m.v.length; i += 3) ys.push(m.v[i]); return { max: Math.max(...ys), min: Math.min(...ys), K }; };
+  const c = yB({ ...P, ts_giro: 0 }), a = yB({ ...P, ts_giro: 1 });
+  const ySuj0 = T3.yC - P.tri_anc / 2 - 0.02;
+  return cerca(c.max, ySuj0 - P.ts_rendija, 1e-6) && cerca(c.max - c.min, P.ts_esp, 1e-6) && a.min < c.min - 0.5; })());
+ok("3D: abierta, la tapa queda debajo del techo (no se mete en la primera capa)", (() => {
+  const m = T3.piezas.find(p => p.g === "tapa_sol" && p.tipo === "malla").v, tan = Math.tan(C.dip * Math.PI / 180);
+  // la cara de abajo del triángulo que tiene encima (en θ = π), medida sobre su mediana
+  for (let i = 0; i < m.length; i += 3) { const s = -m[i]; if (s > P.r_toono + 0.05 && m[i + 1] > T3.yC - P.tri_anc / 2 / Math.cos(C.dip * Math.PI / 180) - (s - P.r_toono) * tan) return false; } return true; })());
+ok("3D: abierta, la tapa queda paralela a la cara del triángulo (gira 180° − su pendiente)", (() => {
+  const m = T3.piezas.find(p => p.g === "tapa_sol" && p.tipo === "malla").v;
+  const p0 = m.slice(0, 3), p1 = m.slice(3, 6), p2 = m.slice(6, 9);
+  const u = p1.map((x, i) => x - p0[i]), w = p2.map((x, i) => x - p0[i]);
+  const nrm = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]];
+  const inc = Math.acos(Math.abs(nrm[1]) / Math.hypot(...nrm)) * 180 / Math.PI; return cerca(inc, C.dip, 0.01); })());
 ok("3D: la aislación del muro sube al costado del anillo", (() => { const p = T3.piezas.find(q => q.g === "aislacion_muro"); let m = -9;
   for (let i = 0; i < p.v.length; i += 3) if (Math.hypot(p.v[i], p.v[i + 2]) > C.Rext) m = Math.max(m, p.v[i + 1]); return cerca(m, T3.yA, 1e-6); })());
 ok("calculo.html ya no pide el cable (el doble techo no lo lleva)", !/faltan los del techo y el cable/.test(html) && /no hace falta el cable/.test(html));
