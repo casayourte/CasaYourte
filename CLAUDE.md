@@ -748,7 +748,13 @@ verdad después del cambio.
   siguiendo las dos aristas de un triángulo para disimularse; guardada, cada
   soga queda tendida de ida y vuelta con la punta enganchada en el muro; en
   uso, se engancha a la tapa en dos puntos que triangulan con la bisagra y
-  baja a la manivela, que tiene traba.
+  baja a la manivela, que tiene traba. **Y desde `calculo-22` / `3d-10`
+  (Mauro, el mismo día, «un último cambio») las sogas van ESCONDIDAS** por
+  detrás de la tela de terminación, por encima del freno de vapor, de la
+  manivela del muro hasta un orificio de salida en cada punto que triangula
+  con la bisagra; sólo desde ahí se ven, hasta la tapa (en uso, o plegada
+  contra el techo para guardarla). Ya no hay roldanas en el muro ni soga
+  tendida a la vista.
   Falta: la fabricación del trei, los m² de cada tela con solapes, herrajes.
 - **La autoridad del contenido es Firestore** (`sitio/publicado`). `contenido.json` en
   el repo es respaldo, y los textos de `index.html` el último respaldo.

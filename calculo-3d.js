@@ -1,5 +1,6 @@
 // calculo-3d.js — el modelo en 3D de la estructura, con las medidas del cálculo.
-// Sello: 3d-9 (2-nov-2026). 3d-9: las sogas de la tapa aislante por las
+// Sello: 3d-10 (2-nov-2026). 3d-10: las sogas escondidas detrás de la tela,
+// con un orificio de salida por enganche. 3d-9: 3d-9: las sogas de la tapa aislante por las
 // aristas de un triángulo, y la cara vista siempre hacia adentro. 3d-8: 3d-8: la tapa aislante del toono, que gira sobre
 // una bisagra y se cierra con manivela y roldanas. 3d-7: 3d-7: el domo es un tercio de la circunferencia y
 // llega al borde exterior del anillo tapa; el faldón deja una ranura sobre la
@@ -39,7 +40,7 @@
 // de abajo (donde apoyan los tirantes). Todo sale de calc(P): si cambia una
 // medida, cambia el modelo.
 
-export const SELLO_3D = "3d-9";
+export const SELLO_3D = "3d-10";
 export const THREE_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/+esm";
 export const ORBIT_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js/+esm";
 // Las dos con «/+esm»: jsDelivr reescribe el «import from \"three\"» de OrbitControls a
@@ -565,32 +566,32 @@ export function piezas3d(P, C) {
       const z = f * Rt, x = Math.sqrt(Rt * Rt - z * z);
       barra("tapa_sol", rodar([-x, yv, z]), rodar([x, yv, z]), 0.03, 0.02, sub(cen(ya), cen(yb)), "madera");
     }
-    // La bisagra (fija para siempre), y las SOGAS (3d-9, Mauro, 2-nov): dos
-    // roldanas en el borde del toono, del lado opuesto a la bisagra, y dos en
-    // el borde de arriba del muro; entre ellas la soga sigue las dos aristas
-    // del triángulo de ese lado, para que se disimule. Guardada (la tapa
-    // enganchada al muro, plegada contra el techo), cada soga queda tendida de
-    // ida y vuelta entre las dos roldanas, con la punta enganchada en el muro.
-    // En uso, las dos puntas se enganchan a la tapa en dos puntos que
-    // triangulan con la bisagra, y bajan a la manivela del trei, que tiene
-    // traba: se la deja bloqueada en la posición que se quiera.
+    // La bisagra (fija para siempre), y las SOGAS (3d-10, Mauro, 2-nov): van
+    // ESCONDIDAS por detrás de la tela de terminación, por encima del freno de
+    // vapor, de la manivela del muro hasta dos ORIFICIOS de salida en el techo,
+    // en los puntos que triangulan con la bisagra. Sólo desde ahí salen a la
+    // vista: hasta la tapa, en uso, o hasta la tapa plegada contra el techo,
+    // para guardarla. Menos recorrido de soga, y nada tendido a la vista.
     barra("tapa_sol", pol(rI + 0.02, thH, ySuj0), pol(rI + 0.02, thH, yH - e), 0.05, 0.03, [Math.cos(thH), 0, Math.sin(thH)], "tapa");
-    const beta = C.beta * Math.PI / 180, yMuro = yt - 0.06;
     const man = pol(C.r_trei_int - 0.03, 0, yPiso + 1.4);
-    const enUso = (P.ts_giro ?? 1) < 0.99;
+    // La altura sobre el triángulo del lado de las sogas (θ = 0): arriba del
+    // freno de vapor (que está a dzTri + 0,006), debajo de la aislación.
+    const t0 = esq[0], dzS = dzTri + 0.009;
+    const enTela = (x, z) => {
+      const a = sube(t0.A, dzS), b = sube(t0.Bp, dzS), c = sube(t0.Cv, dzS);
+      const nn = cross(sub(b, a), sub(c, a));
+      return a[1] - (nn[0] * (x - a[0]) + nn[2] * (z - a[2])) / nn[1];
+    };
     for (const g of [-1, 1]) {
-      const rT = pol(P.r_toono - 0.01, g * 0.05, ySuj0 - 0.03);          // roldana del toono
-      const rM = pol(C.Rint - 0.05, g * beta * 0.95, yMuro);              // roldana del borde del muro
-      barra("tapa_sol", sub(rT, [0, 0.03, 0]), addv(rT, [0, 0.03, 0]), 0.02, 0.06, [Math.cos(g * 0.05), 0, Math.sin(g * 0.05)], "tapa");
-      barra("tapa_sol", sub(rM, [0, 0.03, 0]), addv(rM, [0, 0.03, 0]), 0.02, 0.06, [Math.cos(g * beta), 0, Math.sin(g * beta)], "tapa");
-      barra("tapa_sol", rT, rM, 0.006, 0.006, [0, 1, 0], "cordon");                       // ida
-      if (enUso) barra("tapa_sol", rT, P0(g * 0.6, (ya + yb) / 2), 0.006, 0.006, [0, 1, 0], "cordon");  // a la tapa
-      else barra("tapa_sol", addv(rT, [0, -0.015, 0]), addv(rM, [0, -0.015, 0]), 0.006, 0.006, [0, 1, 0], "cordon"); // y vuelta, enganchada en el muro
-      barra("tapa_sol", rM, man, 0.006, 0.006, [0, 1, 0], "cordon");                      // a la manivela
-    }
-    if (!enUso) {                                                                          // guardada: enganchada al muro del lado de la bisagra
-      const gancho = pol(C.Rint - 0.05, thH, yMuro);
-      barra("tapa_sol", P0(0, (ya + yb) / 2), gancho, 0.006, 0.006, [0, 1, 0], "cordon");
+      const rO = P.r_toono + 0.25, aO = g * 0.2;                           // el orificio de salida
+      const O = [rO * Math.cos(aO), 0, rO * Math.sin(aO)]; O[1] = enTela(O[0], O[2]);
+      const rB = C.Rint * Math.cos(C.beta * Math.PI / 180) - 0.05, aB = g * 0.12;   // al pie del techo
+      const Bq = [rB * Math.cos(aB), 0, rB * Math.sin(aB)]; Bq[1] = enTela(Bq[0], Bq[2]);
+      const Mu = pol(C.r_trei + 0.008, g * 0.03, yA0 - 0.02);             // baja por el muro, detrás del algodón
+      const Mb = pol(C.r_trei + 0.008, g * 0.03, yPiso + 1.45);
+      for (const [a, b] of [[O, Bq], [Bq, Mu], [Mu, Mb], [Mb, man]]) barra("tapa_sol", a, b, 0.006, 0.006, [0, 1, 0], "oculto");
+      barra("tapa_sol", sub(O, [0, 0.004, 0]), addv(O, [0, 0.004, 0]), 0.03, 0.03, [1, 0, 0], "tapa");      // el orificio, con su ojal
+      barra("tapa_sol", O, P0(g * 0.6, (ya + yb) / 2), 0.006, 0.006, [0, 1, 0], "cordon");                   // lo único a la vista
     }
     barra("tapa_sol", pol(C.r_trei_int, 0, yPiso + 1.4), pol(C.r_trei_int - 0.05, 0, yPiso + 1.4), 0.18, 0.18, [0, 1, 0], "tapa"); // la manivela
     barra("tapa_sol", pol(C.r_trei_int - 0.05, 0.02, yPiso + 1.4), pol(C.r_trei_int - 0.05, 0.02, yPiso + 1.52), 0.02, 0.02, [1, 0, 0], "cordon"); // la traba
@@ -605,7 +606,7 @@ const COLORES = {
   toono: 0xa86a3a, toono2: 0xc08050, percha: 0x9c6b3c,
   montante: 0xb07a44, umbral: 0x8f5a2e, tapa: 0x7a4a2a, domo: 0xeadfcf, vidrio: 0xbfe3f2,
   algodon: 0xf1e9d8, freno: 0x7f9fb8, aislacion: 0xf0cf73, tyvek: 0xf6f6f2,
-  lona: 0x5f6b5a, lona2: 0x4b5547, cordon: 0x1e1e1e, lona_muro: 0x8f8a72,
+  lona: 0x5f6b5a, lona2: 0x4b5547, cordon: 0x1e1e1e, oculto: 0x9a3a2a, lona_muro: 0x8f8a72,
 };
 // Las membranas finas se ven a través: el freno y el Tyvek dejan ver lo de abajo.
 const OPACIDAD = { osb: 0.55, freno: 0.6, tyvek: 0.75, vidrio: 0.3 };

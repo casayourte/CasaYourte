@@ -233,9 +233,11 @@ ok("3D: abierta, la tapa queda paralela a la cara del triángulo (gira 180° −
   const u = p1.map((x, i) => x - p0[i]), w = p2.map((x, i) => x - p0[i]);
   const nrm = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]];
   const inc = Math.acos(Math.abs(nrm[1]) / Math.hypot(...nrm)) * 180 / Math.PI; return cerca(inc, C.dip, 0.01); })());
-ok("3D: las sogas: dos roldanas en el toono y dos en el muro, ida y vuelta guardada, a la tapa en uso", (() => {
-  const cuerdas = (Q) => piezas3d(Q, calc(Q)).piezas.filter(p => p.g === "tapa_sol" && p.mat === "cordon" && p.alto < 0.01).length;
-  return cuerdas({ ...P, ts_giro: 1 }) === 7 && cuerdas({ ...P, ts_giro: 0 }) === 6; })());
+ok("3D: las sogas escondidas: por encima del freno, debajo de la aislación, y a la vista sólo del orificio a la tapa", (() => {
+  for (const g of [0, 1]) { const K = piezas3d({ ...P, ts_giro: g }, calc({ ...P, ts_giro: g })), s = K.piezas.filter(p => p.g === "tapa_sol");
+    if (s.filter(p => p.mat === "cordon" && p.alto < 0.01).length !== 2 || s.filter(p => p.mat === "oculto").length !== 8) return false; }
+  const o = T3.piezas.find(p => p.g === "tapa_sol" && p.mat === "oculto"), r = Math.hypot(o.a[0], o.a[2]), th = Math.atan2(o.a[2], o.a[0]);
+  return o.a[1] > alturaEn("freno_techo", r, th) && o.a[1] < alturaEn("tyvek", r, th); })());
 ok("3D: la cara vista de la tapa mira hacia adentro abierta y cerrada", (() => {
   for (const g of [0, 1]) { const K = piezas3d({ ...P, ts_giro: g }, calc({ ...P, ts_giro: g }));
     const m = K.piezas.find(p => p.g === "tapa_sol" && p.tipo === "malla").v, aro = K.piezas.find(p => p.g === "tapa_sol" && p.mat === "madera");
