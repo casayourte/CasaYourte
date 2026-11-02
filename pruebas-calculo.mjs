@@ -233,6 +233,14 @@ ok("3D: abierta, la tapa queda paralela a la cara del triángulo (gira 180° −
   const u = p1.map((x, i) => x - p0[i]), w = p2.map((x, i) => x - p0[i]);
   const nrm = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]];
   const inc = Math.acos(Math.abs(nrm[1]) / Math.hypot(...nrm)) * 180 / Math.PI; return cerca(inc, C.dip, 0.01); })());
+ok("3D: las sogas: dos roldanas en el toono y dos en el muro, ida y vuelta guardada, a la tapa en uso", (() => {
+  const cuerdas = (Q) => piezas3d(Q, calc(Q)).piezas.filter(p => p.g === "tapa_sol" && p.mat === "cordon" && p.alto < 0.01).length;
+  return cuerdas({ ...P, ts_giro: 1 }) === 7 && cuerdas({ ...P, ts_giro: 0 }) === 6; })());
+ok("3D: la cara vista de la tapa mira hacia adentro abierta y cerrada", (() => {
+  for (const g of [0, 1]) { const K = piezas3d({ ...P, ts_giro: g }, calc({ ...P, ts_giro: g }));
+    const m = K.piezas.find(p => p.g === "tapa_sol" && p.tipo === "malla").v, aro = K.piezas.find(p => p.g === "tapa_sol" && p.mat === "madera");
+    let ym = 0; for (let i = 1; i < m.length; i += 3) ym += m[i] / (m.length / 3);
+    if (!((aro.a[1] + aro.b[1]) / 2 < ym)) return false; } return true; })());
 ok("3D: la aislación del muro sube al costado del anillo", (() => { const p = T3.piezas.find(q => q.g === "aislacion_muro"); let m = -9;
   for (let i = 0; i < p.v.length; i += 3) if (Math.hypot(p.v[i], p.v[i + 2]) > C.Rext) m = Math.max(m, p.v[i + 1]); return cerca(m, T3.yA, 1e-6); })());
 ok("calculo.html ya no pide el cable (el doble techo no lo lleva)", !/faltan los del techo y el cable/.test(html) && /no hace falta el cable/.test(html));

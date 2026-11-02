@@ -1,5 +1,6 @@
 // calculo-3d.js — el modelo en 3D de la estructura, con las medidas del cálculo.
-// Sello: 3d-8 (2-nov-2026). 3d-8: la tapa aislante del toono, que gira sobre
+// Sello: 3d-9 (2-nov-2026). 3d-9: las sogas de la tapa aislante por las
+// aristas de un triángulo, y la cara vista siempre hacia adentro. 3d-8: 3d-8: la tapa aislante del toono, que gira sobre
 // una bisagra y se cierra con manivela y roldanas. 3d-7: 3d-7: el domo es un tercio de la circunferencia y
 // llega al borde exterior del anillo tapa; el faldón deja una ranura sobre la
 // lona. 3d-6: 3d-6: el toono por anillos —el diente y las
@@ -38,7 +39,7 @@
 // de abajo (donde apoyan los tirantes). Todo sale de calc(P): si cambia una
 // medida, cambia el modelo.
 
-export const SELLO_3D = "3d-8";
+export const SELLO_3D = "3d-9";
 export const THREE_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/+esm";
 export const ORBIT_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js/+esm";
 // Las dos con «/+esm»: jsDelivr reescribe el «import from \"three\"» de OrbitControls a
@@ -550,25 +551,49 @@ export function piezas3d(P, C) {
       quad(v, P0(a1, ya), P0(a2, ya), P0(a2, yb), P0(a1, yb));
     }
     malla("tapa_sol", "aislacion", v);
-    // La cara vista: el bastidor de madera (un aro y listones). Cerrada mira al
-    // toono; abierta, plegada contra el techo, mira hacia adentro (la foto).
+    // La cara vista: el bastidor de madera (un aro y listones). Mira SIEMPRE
+    // hacia adentro (Mauro: «se gira para que la cara expuesta siempre siga
+    // siendo la misma»): al bajarla se gira, y la cara refractaria, con la
+    // aislación y la luz, queda del lado que no se ve. Por eso el bastidor va
+    // de un lado o del otro según de qué lado del giro quedó.
+    const yv = (P.ts_giro ?? 1) >= 0.5 ? ya + 0.01 : yb - 0.01;
     for (let i = 0; i < n; i++) {
       const a1 = 2 * Math.PI * i / n, a2 = 2 * Math.PI * (i + 1) / n;
-      barra("tapa_sol", P0(a1, ya + 0.01), P0(a2, ya + 0.01), 0.03, 0.02, sub(cen(ya), cen(yb)), "madera");
+      barra("tapa_sol", P0(a1, yv), P0(a2, yv), 0.03, 0.02, sub(cen(ya), cen(yb)), "madera");
     }
     for (const f of [-0.5, 0, 0.5]) {
       const z = f * Rt, x = Math.sqrt(Rt * Rt - z * z);
-      barra("tapa_sol", rodar([-x, ya + 0.01, z]), rodar([x, ya + 0.01, z]), 0.03, 0.02, sub(cen(ya), cen(yb)), "madera");
+      barra("tapa_sol", rodar([-x, yv, z]), rodar([x, yv, z]), 0.03, 0.02, sub(cen(ya), cen(yb)), "madera");
     }
-    // La bisagra, y la cuerda: del borde libre de la tapa a la roldana del lado
-    // opuesto del toono, y de ahí a la manivela en el trei.
+    // La bisagra (fija para siempre), y las SOGAS (3d-9, Mauro, 2-nov): dos
+    // roldanas en el borde del toono, del lado opuesto a la bisagra, y dos en
+    // el borde de arriba del muro; entre ellas la soga sigue las dos aristas
+    // del triángulo de ese lado, para que se disimule. Guardada (la tapa
+    // enganchada al muro, plegada contra el techo), cada soga queda tendida de
+    // ida y vuelta entre las dos roldanas, con la punta enganchada en el muro.
+    // En uso, las dos puntas se enganchan a la tapa en dos puntos que
+    // triangulan con la bisagra, y bajan a la manivela del trei, que tiene
+    // traba: se la deja bloqueada en la posición que se quiera.
     barra("tapa_sol", pol(rI + 0.02, thH, ySuj0), pol(rI + 0.02, thH, yH - e), 0.05, 0.03, [Math.cos(thH), 0, Math.sin(thH)], "tapa");
-    const libre = P0(0, yb), rold = pol(rI, 0, ySuj0 - 0.02);
-    const man = pol(C.r_trei_int - 0.03, 0.15, yPiso + 1.4);
-    barra("tapa_sol", rold, libre, 0.006, 0.006, [0, 1, 0], "cordon");
-    barra("tapa_sol", rold, man, 0.006, 0.006, [0, 1, 0], "cordon");
-    barra("tapa_sol", pol(rI + 0.01, 0, ySuj0 - 0.02), pol(rI - 0.02, 0, ySuj0 - 0.02), 0.08, 0.08, [0, 1, 0], "tapa");    // la roldana
-    barra("tapa_sol", pol(C.r_trei_int, 0.15, yPiso + 1.4), pol(C.r_trei_int - 0.05, 0.15, yPiso + 1.4), 0.18, 0.18, [0, 1, 0], "tapa"); // la manivela
+    const beta = C.beta * Math.PI / 180, yMuro = yt - 0.06;
+    const man = pol(C.r_trei_int - 0.03, 0, yPiso + 1.4);
+    const enUso = (P.ts_giro ?? 1) < 0.99;
+    for (const g of [-1, 1]) {
+      const rT = pol(P.r_toono - 0.01, g * 0.05, ySuj0 - 0.03);          // roldana del toono
+      const rM = pol(C.Rint - 0.05, g * beta * 0.95, yMuro);              // roldana del borde del muro
+      barra("tapa_sol", sub(rT, [0, 0.03, 0]), addv(rT, [0, 0.03, 0]), 0.02, 0.06, [Math.cos(g * 0.05), 0, Math.sin(g * 0.05)], "tapa");
+      barra("tapa_sol", sub(rM, [0, 0.03, 0]), addv(rM, [0, 0.03, 0]), 0.02, 0.06, [Math.cos(g * beta), 0, Math.sin(g * beta)], "tapa");
+      barra("tapa_sol", rT, rM, 0.006, 0.006, [0, 1, 0], "cordon");                       // ida
+      if (enUso) barra("tapa_sol", rT, P0(g * 0.6, (ya + yb) / 2), 0.006, 0.006, [0, 1, 0], "cordon");  // a la tapa
+      else barra("tapa_sol", addv(rT, [0, -0.015, 0]), addv(rM, [0, -0.015, 0]), 0.006, 0.006, [0, 1, 0], "cordon"); // y vuelta, enganchada en el muro
+      barra("tapa_sol", rM, man, 0.006, 0.006, [0, 1, 0], "cordon");                      // a la manivela
+    }
+    if (!enUso) {                                                                          // guardada: enganchada al muro del lado de la bisagra
+      const gancho = pol(C.Rint - 0.05, thH, yMuro);
+      barra("tapa_sol", P0(0, (ya + yb) / 2), gancho, 0.006, 0.006, [0, 1, 0], "cordon");
+    }
+    barra("tapa_sol", pol(C.r_trei_int, 0, yPiso + 1.4), pol(C.r_trei_int - 0.05, 0, yPiso + 1.4), 0.18, 0.18, [0, 1, 0], "tapa"); // la manivela
+    barra("tapa_sol", pol(C.r_trei_int - 0.05, 0.02, yPiso + 1.4), pol(C.r_trei_int - 0.05, 0.02, yPiso + 1.52), 0.02, 0.02, [1, 0, 0], "cordon"); // la traba
   }
 
   return { piezas: out, alto: yPerchaToono + 0.1, suelo: yViga - P.viga_alt - 0.6, yt, yA, yC, nCor, relleno, yAbre, conDintel };

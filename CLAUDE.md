@@ -225,7 +225,7 @@ incluidos los módulos que viven adentro de un `.html`; que **los seis bancos
 corran** —`node pruebas-secciones.mjs` (16 casos), `node pruebas-reportes.mjs`
 (64 casos), `node pruebas-andamio.mjs` (89 casos), `node
 pruebas-puertas.mjs` (131 casos), `node pruebas-modelos.mjs` (119 casos) y
-`node pruebas-calculo.mjs` (139 casos, la geometría de Cálculos y el 3D), los
+`node pruebas-calculo.mjs` (141 casos, la geometría de Cálculos y el 3D), los
 seis sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
 sellos hayan subido, con la `VERSION` del `sw.js` si el archivo está en `SHELL`
 y los `?v=` con los que se lo pide; y que la documentación del repo diga la
@@ -741,7 +741,14 @@ verdad después del cambio.
   plegada contra el techo, y para cerrarla se engancha a una cuerda que pasa
   por roldanas del lado opuesto hasta una manivela en el trei, dejando una
   rendija de ventilación. Campos `ts_giro` (1 abierta, 0 cerrada), `ts_esp`,
-  `ts_rendija`.
+  `ts_rendija`. **Desde `calculo-21` / `3d-9`** (Mauro, 2-nov): la cara vista
+  mira SIEMPRE hacia adentro (al bajarla se gira, y la cara refractaria con la
+  aislación y la luz queda del lado que no se ve); las sogas pasan por dos
+  roldanas en el borde del toono y dos en el borde de arriba del muro,
+  siguiendo las dos aristas de un triángulo para disimularse; guardada, cada
+  soga queda tendida de ida y vuelta con la punta enganchada en el muro; en
+  uso, se engancha a la tapa en dos puntos que triangulan con la bisagra y
+  baja a la manivela, que tiene traba.
   Falta: la fabricación del trei, los m² de cada tela con solapes, herrajes.
 - **La autoridad del contenido es Firestore** (`sitio/publicado`). `contenido.json` en
   el repo es respaldo, y los textos de `index.html` el último respaldo.

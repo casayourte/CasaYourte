@@ -764,13 +764,13 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-32` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `cy-shell-v80` |
+| `sw.js` | `VERSION` | `cy-shell-v81` |
 | `admin.html` | `PANEL` | `admin-19` |
 | `editar.html` | `EDITOR` | `editar-23` |
 | `taller.html` | `SELLO` | `andamio-3` |
-| `calculo.html` | `CY.PANEL` | `calculo-20` |
+| `calculo.html` | `CY.PANEL` | `calculo-21` |
 | `calculo-geo.js` | `SELLO_GEO` | `geo-4` |
-| `calculo-3d.js` | `SELLO_3D` | `3d-8` |
+| `calculo-3d.js` | `SELLO_3D` | `3d-9` |
 | `consultas.html` | `CY.PANEL` | `consultas-3` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-4` |
 | `diagnostico.html` | `CY.PANEL` | `diagnostico-8` |
