@@ -756,6 +756,18 @@ verdad después del cambio.
   contra el techo para guardarla). Ya no hay roldanas en el muro ni soga
   tendida a la vista.
   Falta: la fabricación del trei, los m² de cada tela con solapes, herrajes.
+- **El doble techo está publicado como DIVULGACIÓN TÉCNICA de libre uso**
+  (2-nov-2026, Mauro: «que no haya alguien que vaya a hacer la patente… y que
+  vaya a dejarme restringido»). Autor Mauro Gastaldello, licencia CC BY-SA 4.0,
+  en Zenodo: **DOI de todas las versiones `10.5281/zenodo.23888715`** (el que se
+  cita, lleva siempre a la última); versión 1 `10.5281/zenodo.23888716` (fotos y
+  vistas 3D) y versión 2 `10.5281/zenodo.23889895` (el PDF de 22 páginas). Es
+  estado de la técnica con fecha: nadie puede patentarlo, y CasaYourte tampoco.
+  El sitio lo cita en los siete textos del doble techo (`d3.b`, `d4.b`, `d8.b`,
+  `m3.b`, `s5.b` y las dos `alb.obra.*`), en los cuatro idiomas y en
+  `sitio/publicado` y `sitio/taller` a la vez: si se reescribe uno de esos
+  textos, la frase con el DOI se conserva. Una mejora nueva del sistema es una
+  versión nueva en Zenodo, no un registro aparte.
 - **La autoridad del contenido es Firestore** (`sitio/publicado`). `contenido.json` en
   el repo es respaldo, y los textos de `index.html` el último respaldo.
 - **No subir acá:** cálculos, costos, márgenes, tarifas, proveedores, documentación
