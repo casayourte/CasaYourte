@@ -8,7 +8,7 @@
 import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { calc, corte, cuerdas, pilares, montaje } from "./calculo-geo.js";
-import { piezas3d, arriostramiento, PARTES, CAMPO_PARTES } from "./calculo-3d.js";
+import { piezas3d, arriostramiento, geodesica, PARTES, CAMPO_PARTES } from "./calculo-3d.js";
 
 let bien = 0, mal = 0;
 function ok(nombre, cond, extra = "") {
@@ -147,7 +147,7 @@ ok("3D: cada medida que resalta es un campo de la página", Object.keys(CAMPO_PA
 ok("3D: toda medida de la estructura resalta algo", ["D","ang","alto","E","e_trei","tir_alt","viga_alt","n_tri","p_anc","r_toono","osb_sup"].every(k => (CAMPO_PARTES[k] || []).length > 0));
 ok("calculo.html: el 3D está en la pestaña de las medidas", /<div id="t-datos">[\s\S]*?id="vista3d"[\s\S]*?id="campos"/.test(html) && !/\["3d","3D"\]/.test(html));
 for (const [nom, Q] of [["Christine", P], ["4 m", { ...P, D: 4 }], ["12 m", { ...P, D: 12 }], ["10 triángulos", { ...P, n_tri: 10 }], ["6 triángulos", { ...P, n_tri: 6 }],
-  ["sin aberturas", { ...P, n_ab: 0 }], ["una abertura", { ...P, n_ab: 1, n_gr: 1 }], ["aberturas bajas", { ...P, alt_ab: 1.9 }], ["sin campos nuevos", Object.fromEntries(Object.entries(P).filter(([k]) => !["anc_ab","sep_mon","umb_esp","umb_vuelo","umb_caida","lona_baja","solape"].includes(k)))]]) {
+  ["sin aberturas", { ...P, n_ab: 0 }], ["domo media esfera, 5V", { ...P, dom_ang: 90, dom_frec: 5 }], ["domo bajo", { ...P, dom_ang: 30, dom_frec: 1 }], ["una abertura", { ...P, n_ab: 1, n_gr: 1 }], ["aberturas bajas", { ...P, alt_ab: 1.9 }], ["sin campos nuevos", Object.fromEntries(Object.entries(P).filter(([k]) => !["anc_ab","sep_mon","umb_esp","umb_vuelo","umb_caida","lona_baja","diente","tapa_cam","tapa_vuelo","dom_ang","dom_frec"].includes(k)))]]) {
   const K = piezas3d(Q, calc(Q));
   ok(`3D ${nom}: sin NaN`, !/null|NaN|Infinity/.test(JSON.stringify(K)));
 }
@@ -201,7 +201,21 @@ ok("3D: las capas arrancan apagadas en la página", /visibles3d\[k\] = leer3d\("
 // ── la lona plana ──
 ok("lona plana: el cono cerrado ocupa 360° × cos 30° = 311,8°", cerca(C.lona_ang_cono, 311.77, 0.01));
 ok("lona plana: radio exterior (Rp + c)/cos + bajada = 4,742", cerca(C.lona_r_ext, (4.0 + 0.02) / Math.cos(Math.PI / 6) + 0.1, 1e-6), C.lona_r_ext);
-ok("lona plana: la lengüeta suma 1,5 m en el borde", cerca((C.lona_ang - C.lona_ang_cono) * Math.PI / 180 * C.lona_r_ext, 1.5, 1e-6));
+ok("lona plana: la pieza es el círculo entero, la lengüeta lleva todo el sobrante", C.lona_ang === 360 && cerca(C.lengueta_ang, 48.23, 0.01) && cerca(C.sobrante_cono, 2 * Math.PI * C.lona_r_ext * (1 - Math.cos(Math.PI / 6)), 1e-9));
+ok("lona plana: la superficie es la del anillo plano entero", cerca(C.lona_area, Math.PI * (C.lona_r_ext ** 2 - C.lona_r_int ** 2), 1e-9));
+// ── el toono por anillos (3d-6) ──
+ok("geodésica 3V: 30·9 + 2 caras... 20 × 9 = 180 caras y 270 aristas", (() => { const g = geodesica(3); return g.caras.length === 180 && g.aristas.length === 270; })());
+ok("geodésica: todos los puntos en la esfera de radio 1", geodesica(4).aristas.flat().every(p => cerca(Math.hypot(...p), 1, 1e-9)));
+ok("3D: el domo no baja de la tapa y no pasa el radio del toono", (() => { const d = T3.piezas.filter(p => p.g === "domo" && p.tipo === "barra");
+  const ys = d.flatMap(p => [p.a[1], p.b[1]]), rs = d.flatMap(p => [Math.hypot(p.a[0], p.a[2]), Math.hypot(p.b[0], p.b[2])]);
+  return d.length > 50 && Math.max(...rs) <= P.r_toono - 0.05 + 1e-6 && Math.min(...ys) > alturaEn("lona_techo", P.r_toono - 0.04, 0.05); })());
+ok("3D: el diente sube del anillo de las perchas hasta debajo de la lona", (() => { const t = T3.piezas.filter(p => p.g === "toono" && p.tipo === "anillo");
+  const d = t[t.length - 1]; return cerca(d.r2 - d.r1, P.diente, 1e-9) && d.y2 > d.y1 && d.y2 < alturaEn("lona_techo", d.r1 + 0.001, 0.05) + 1e-6; })());
+ok("3D: el anillo tapa va sobre la lona, con un tabique por percha y el faldón abierto abajo", (() => {
+  const t = T3.piezas.filter(p => p.g === "tapa"); const fal = t.filter(p => p.tipo === "anillo").find(p => cerca(p.r2, P.r_toono + P.tapa_vuelo, 1e-9) && p.r2 - p.r1 < 0.02);
+  return t.filter(p => p.tipo === "barra").length === P.n_per_r && fal && fal.y1 > alturaEn("lona_techo", fal.r2 + 0.002, 0.05); })());
+ok("3D: la aislación del muro sube al costado del anillo", (() => { const p = T3.piezas.find(q => q.g === "aislacion_muro"); let m = -9;
+  for (let i = 0; i < p.v.length; i += 3) if (Math.hypot(p.v[i], p.v[i + 2]) > C.Rext) m = Math.max(m, p.v[i + 1]); return cerca(m, T3.yA, 1e-6); })());
 ok("calculo.html ya no pide el cable (el doble techo no lo lleva)", !/faltan los del techo y el cable/.test(html) && /no hace falta el cable/.test(html));
 
 ok("calculo-3d.js parsea como módulo", parsea(readFileSync(new URL("./calculo-3d.js", import.meta.url), "utf8")));

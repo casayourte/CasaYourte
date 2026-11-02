@@ -225,7 +225,7 @@ incluidos los módulos que viven adentro de un `.html`; que **los seis bancos
 corran** —`node pruebas-secciones.mjs` (16 casos), `node pruebas-reportes.mjs`
 (64 casos), `node pruebas-andamio.mjs` (89 casos), `node
 pruebas-puertas.mjs` (131 casos), `node pruebas-modelos.mjs` (119 casos) y
-`node pruebas-calculo.mjs` (125 casos, la geometría de Cálculos y el 3D), los
+`node pruebas-calculo.mjs` (134 casos, la geometría de Cálculos y el 3D), los
 seis sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
 sellos hayan subido, con la `VERSION` del `sw.js` si el archivo está en `SHELL`
 y los `?v=` con los que se lo pide; y que la documentación del repo diga la
@@ -714,9 +714,22 @@ verdad después del cambio.
   en ellos, el **piso de la abertura** de una pieza con caída y punta
   redondeada, la **cinta del alero** en dos capas en la punta de las perchas y
   la **tapa del toono**. Y la **lona del techo cortada plana** (radio, ángulo,
-  lengüeta `solape`). **El doble techo NO lleva cable** (Mauro: es herencia de
+  lengüeta). **El doble techo NO lleva cable** (Mauro: es herencia de
   las yurtas comunes, una eslinga de 6 mm en el borde de las perchas). El ancho
   libre de la abertura (`anc_ab`, 0,90) está puesto, no confirmado.
+  **Desde `calculo-18` / `3d-6` / `geo-4` (2-nov-2026)**: la lona plana es el
+  CÍRCULO ENTERO —la lengüeta lleva todo el sobrante (Mauro: «deja el total del
+  material para la lengüeta»)—; la aislación llena todo, también al costado del
+  anillo y debajo de la doble cinta; y el toono va por anillos (Mauro): el de
+  sujeción de los triángulos, los de separación que dan el alto según la
+  aislación, el de sujeción de las perchas, que termina en las CÁMARAS de
+  ventilación entre percha y percha, afuera de un DIENTE cerrado hacia adentro
+  (`diente`); sobre la lona trenzada y agujereada, el ANILLO TAPA hermanado con
+  las cámaras (`tapa_cam`, `tapa_vuelo`), con un tabique por percha y el faldón
+  que deja el canal mirando hacia abajo; y la pieza de cierre, una fracción de
+  DOMO GEODÉSICO (`geodesica(n)`, `dom_ang`, `dom_frec`), como el de las fotos
+  de marzo de 2023. El diente y el anillo tapa tienen medidas puestas, no
+  confirmadas.
   Falta: la fabricación del trei, los m² de cada tela con solapes, herrajes.
 - **La autoridad del contenido es Firestore** (`sitio/publicado`). `contenido.json` en
   el repo es respaldo, y los textos de `index.html` el último respaldo.

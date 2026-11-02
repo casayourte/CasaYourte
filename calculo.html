@@ -182,7 +182,7 @@ import { CY } from "./nucleo.js";
 import { calc as calcGeo, corte } from "./calculo-geo.js";
 import { montar as montar3d, PARTES as PARTES3D, CAMPO_PARTES } from "./calculo-3d.js";
 
-CY.PANEL = "calculo-17";
+CY.PANEL = "calculo-18";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 // ── El SDK se baja acá, y recién después arranca la pantalla ────────────────
@@ -264,7 +264,12 @@ const CAMPOS = [
   ["umb_caida","Piso de la abertura · caída",     0.010, "m · pendiente hacia afuera"],
   ["·","LAS CAPAS"],
   ["lona_baja","Lona del techo · bajada",         0.100, "m · pasa la cinta del alero, urlete"],
-  ["solape",   "Lona del techo · lengüeta",       1.500, "m · solape en el borde"],
+  ["·","EL TOONO · VENTILACIÓN Y CIERRE"],
+  ["diente",   "Diente de las cámaras",           0.015, "m · cerrado hacia adentro, a confirmar"],
+  ["tapa_cam", "Anillo tapa · alto de las cámaras",0.030,"m · hermanado con las del toono"],
+  ["tapa_vuelo","Anillo tapa · vuelo afuera",     0.050, "m · el canal mira hacia abajo"],
+  ["dom_ang",  "Domo · fracción de esfera",       70,    "grados desde arriba · 90 = media"],
+  ["dom_frec", "Domo · frecuencia geodésica",     3,     "2 a 5"],
 ];
 const CLAVES = CAMPOS.filter(c => c[0] !== "·").map(c => c[0]);
 const PORDEF = {}; CAMPOS.forEach(c => { if (c[0] !== "·") PORDEF[c[0]] = c[2]; });
@@ -507,12 +512,13 @@ function pintarPiezas() {
   h += tarjeta("La lona del techo, cortada plana",
     `Una pieza plana con el agujero del toono, cortada en un radio. Se cierra en cono acordonando
     en zigzag —como una zapatilla— las anillas de una banda termosoldada que baja sobre la línea
-    de una percha con las del borde cortado; la lengüeta que queda lleva todo el sobrante.`, [
+    de una percha con las del borde cortado. <b>La pieza es el círculo entero</b>: la lengüeta que
+    queda lleva todo el sobrante del cono, sin recortar.`, [
     ["", "Radio exterior de la pieza", "(Rp + c) ÷ cos + bajada", m(C.lona_r_ext), "d"],
     ["", "Radio del agujero", "(r toono − 0,05) ÷ cos", m(C.lona_r_int), "d"],
     ["", "Ángulo del cono cerrado", "360° × cos(ángulo)", C.lona_ang_cono.toFixed(1).replace(".", ",") + "°", "d"],
-    ["", "Con la lengüeta", `+ ${m(P.solape)} en el borde`, C.lona_ang.toFixed(1).replace(".", ",") + "°", "d"],
-    ["", "Lo que sobra del círculo entero", "en el borde", m(C.sobrante_cono), "d"],
+    ["", "La lengüeta", "360° − el cono", C.lengueta_ang.toFixed(1).replace(".", ",") + "°", "d"],
+    ["", "La lengüeta, medida en el borde", "2π × radio × (1 − cos)", m(C.sobrante_cono), "d"],
     ["", "Superficie de la pieza", "", m2(C.lona_area), "d"],
   ]);
 

@@ -1,6 +1,7 @@
 // calculo-geo.js — la geometría de la yurta, sin navegador y sin Firebase.
-// Sello: geo-3 (2-nov-2026): los montantes y las aberturas en el perímetro, y
-// la lona del techo cortada plana. geo-2 (1-nov-2026): la percha radial.
+// Sello: geo-4 (2-nov-2026): la lona plana es el círculo entero (la lengüeta
+// lleva todo el sobrante). geo-3: los montantes y las aberturas en el
+// perímetro, y la lona del techo cortada plana. geo-2 (1-nov-2026): la percha radial.
 //
 // Sale de calculo.html para que el banco (`node pruebas-calculo.mjs`) pueda
 // correr las mismas cuentas que la página, sin DOM. La página la importa y
@@ -21,7 +22,7 @@
 // TODO lo que se elige por diseño es un campo de la página: si cambia una
 // medida, cambian los números y el dibujo.
 
-export const SELLO_GEO = "geo-3";
+export const SELLO_GEO = "geo-4";
 
 // El tirante, la viga: cuerdas paralelas del círculo de radio R, con una en el
 // centro y cada `paso` a los dos lados. Devuelve [{x, L, n}] con n = 1 para la
@@ -164,14 +165,15 @@ export function calc(P) {
   //    agujero del toono, cortado en un radio y acordonado en zigzag como una
   //    zapatilla; la lengüeta que queda lleva todo el sobrante del cono. Cada
   //    punto del techo a r del centro queda, en la pieza plana, a r ÷ cos del
-  //    centro; el cono cerrado ocupa 360° × cos, y la lengüeta suma `solape`
-  //    en el borde. Pasa la cinta del alero (c) y baja `lona_baja` para el
+  //    centro; el cono cerrado ocupa 360° × cos, y la lengüeta se queda con
+  //    TODO el resto del círculo (geo-4, Mauro: «deja el total del material para
+  //    la lengüeta»): la pieza es el círculo entero, sin recorte. Pasa la cinta del alero (c) y baja `lona_baja` para el
   //    urlete con el cordón que la cierra debajo del alero y la tensa.
   const lona_r_ext = (Rp + c) / cos + (P.lona_baja || 0);
   const lona_r_int = Math.max(0, P.r_toono - 0.05) / cos;
   const lona_ang_cono = 360 * cos;
-  const lona_ang = Math.min(360, lona_ang_cono + (P.solape || 0) / lona_r_ext * 180 / Math.PI);
-  const lona_area = Math.PI * (lona_r_ext ** 2 - lona_r_int ** 2) * lona_ang / 360;
+  const lona_ang = 360;
+  const lona_area = Math.PI * (lona_r_ext ** 2 - lona_r_int ** 2);
 
   return { R, A, H, c, Rint, Rext, r_trei, r_trei_int, r_int_lito,
     h0, tri_base: A - c, tri_ap, tri_tr, cinta_max, barrido,
@@ -193,7 +195,8 @@ export function calc(P) {
     area_muro: 2 * Math.PI * R * P.alto,
     mon, n_mon: mon.n_mon, n_mon_ab: mon.de_ab, n_mon_sueltos: mon.sueltos.length, mon_max_sep: mon.max_sep,
     lona_r_ext, lona_r_int, lona_ang_cono, lona_ang, lona_area,
-    sobrante_cono: 2 * Math.PI * lona_r_ext * (1 - cos),
+    sobrante_cono: 2 * Math.PI * lona_r_ext * (1 - cos),       // la lengüeta, medida en el borde
+    lengueta_ang: 360 - lona_ang_cono,
     mon_ancho: A + 2 * P.e_trei,
     vol_perchas: P.n_per_r * slant * P.p_anc * P.p_alt,
     per_lito_ext: 2 * Math.PI * R * 2,

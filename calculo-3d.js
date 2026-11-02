@@ -1,5 +1,7 @@
 // calculo-3d.js — el modelo en 3D de la estructura, con las medidas del cálculo.
-// Sello: 3d-5 (2-nov-2026). 3d-1: «un primer render 3d de la estructura total».
+// Sello: 3d-6 (2-nov-2026). 3d-6: el toono por anillos —el diente y las
+// cámaras, el anillo tapa hermanado y el domo geodésico—, la aislación llenando
+// todo y la lona entera. 3d-5: 3d-1: «un primer render 3d de la estructura total».
 // 3d-2: el 3D pasa a la pestaña de las MEDIDAS, con cada parte por separado
 // (prender y apagar), y la parte que se está midiendo se resalta (Mauro: «para
 // tener noción clara de qué se está modificando»). Todo a escala real: cada
@@ -33,7 +35,7 @@
 // de abajo (donde apoyan los tirantes). Todo sale de calc(P): si cambia una
 // medida, cambia el modelo.
 
-export const SELLO_3D = "3d-5";
+export const SELLO_3D = "3d-6";
 export const THREE_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/+esm";
 export const ORBIT_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js/+esm";
 // Las dos con «/+esm»: jsDelivr reescribe el «import from \"three\"» de OrbitControls a
@@ -58,7 +60,8 @@ export const PARTES = [
   ["toono",       "Toono"],
   ["perchas",     "Perchas · 2.ª capa"],
   ["cinta_alero", "Cinta del alero"],
-  ["tapa",        "Tapa del toono"],
+  ["tapa",        "Toono · anillo tapa"],
+  ["domo",        "Toono · domo geodésico"],
   ["montantes",   "Montantes"],
   ["suelo_ab",    "Piso de las aberturas"],
   // Las capas: el tercer dato las marca, y arrancan apagadas.
@@ -99,7 +102,8 @@ export const CAMPO_PARTES = {
   n_ab: ["montantes", "suelo_ab", "trei"], n_gr: ["montantes", "suelo_ab", "trei"],
   alt_ab: ["montantes", "trei"], esp_mon: ["montantes", "suelo_ab"], anc_ab: ["montantes", "suelo_ab", "trei", "zocalos"],
   sep_mon: ["montantes"], umb_esp: ["suelo_ab", "montantes"], umb_vuelo: ["suelo_ab"], umb_caida: ["suelo_ab"],
-  lona_baja: ["lona_techo"], solape: ["lona_techo"],
+  lona_baja: ["lona_techo"],
+  diente: ["toono"], tapa_cam: ["tapa"], tapa_vuelo: ["tapa"], dom_ang: ["domo"], dom_frec: ["domo"],
 };
 for (const k of ["ais_techo", "rel", "ang"]) CAMPO_PARTES[k].push("aislacion_techo", "tyvek", "lona_techo");
 for (const k of ["ais_nom", "rel", "alto"]) CAMPO_PARTES[k].push("aislacion_muro", "lona_muro");
@@ -144,6 +148,36 @@ const mul = (a, k) => [a[0] * k, a[1] * k, a[2] * k];
 const len = (a) => Math.hypot(a[0], a[1], a[2]);
 const nor = (a) => mul(a, 1 / (len(a) || 1));
 const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+
+// La esfera geodésica de frecuencia n, desde un icosaedro con un vértice
+// arriba: cada cara se parte en n × n triángulos y los puntos se llevan a la
+// esfera de radio 1. Devuelve las aristas y las caras (puntos [x, y, z]).
+export function geodesica(n) {
+  const t = Math.atan(0.5), V = [[0, 1, 0]], up = [], lo = [];
+  for (let i = 0; i < 5; i++) {
+    const a = 2 * Math.PI * i / 5, b = a + Math.PI / 5;
+    up.push([Math.cos(t) * Math.cos(a), Math.sin(t), Math.cos(t) * Math.sin(a)]);
+    lo.push([Math.cos(t) * Math.cos(b), -Math.sin(t), Math.cos(t) * Math.sin(b)]);
+  }
+  const B = [0, -1, 0], F = [];
+  for (let i = 0; i < 5; i++) {
+    const j = (i + 1) % 5;
+    F.push([V[0], up[i], up[j]], [up[i], lo[i], up[j]], [up[j], lo[i], lo[j]], [B, lo[j], lo[i]]);
+  }
+  const unit = (p) => { const l = Math.hypot(...p); return p.map(x => x / l); };
+  const clave = (p) => p.map(x => x.toFixed(6)).join(",");
+  const aristas = new Map(), caras = [];
+  for (const [A, Bv, Cv] of F) {
+    const P = (i, j) => unit(A.map((x, k) => (x * (n - i - j) + Bv[k] * i + Cv[k] * j) / n));
+    const arista = (p, q) => { const k = [clave(p), clave(q)].sort().join("|"); if (!aristas.has(k)) aristas.set(k, [p, q]); };
+    for (let i = 0; i < n; i++) for (let j = 0; i + j < n; j++) {
+      const a = P(i, j), b = P(i + 1, j), c = P(i, j + 1);
+      caras.push([a, b, c]); arista(a, b); arista(a, c); arista(b, c);
+      if (i + j + 1 < n) caras.push([b, P(i + 1, j + 1), c]);
+    }
+  }
+  return { aristas: [...aristas.values()], caras };
+}
 
 export function piezas3d(P, C) {
   const out = [];
@@ -380,7 +414,10 @@ export function piezas3d(P, C) {
   {
     const v = [], dz = dzTri + 0.010, rC = C.R - C.c, yI = (r) => yTy(r) - 0.003;
     if (nt) { cascara(v, dz); faldon(v, bordeBase, dz, C.Rint, yA + 0.004); faldon(v, bordeToono, dz, P.r_toono, yI(P.r_toono)); }
-    revolver(v, [[C.Rint, yA + 0.004], [rC, yA + 0.004], [rC, yI(rC)], [P.r_toono, yI(P.r_toono)]]);
+    // Llena TODO (Mauro, 2-nov: «el aislante debe llenar todos los espacios»):
+    // sobre el anillo, entre calces, hasta el borde y debajo de la doble cinta.
+    const yCb = yA + C.cinta_max - P.anc_per - 0.002;
+    revolver(v, [[C.Rint, yA + 0.004], [C.R - 0.002, yA + 0.004], [C.R - 0.002, yCb], [rC, yCb], [rC, yI(rC)], [P.r_toono, yI(P.r_toono)]]);
     malla("aislacion_techo", "aislacion", v);
   }
   // El Tyvek: cierra el primer techo. Del toono al borde, pasando sobre la
@@ -412,9 +449,42 @@ export function piezas3d(P, C) {
       barra("lona_techo", pa, pb, 0.006, 0.006, arriba, "cordon");
     }
   }
-  // La tapa del toono: sella arriba; el aire de la cámara sale por las
-  // ranuras de abajo, aunque el toono esté cerrado.
-  disco("tapa", P.r_toono + 0.05, yLona(P.r_toono) + 0.015, yLona(P.r_toono) + 0.045, "tapa");
+  // ── EL TOONO, arriba (3d-6, Mauro, 2-nov): el anillo de sujeción de las
+  //    perchas termina en las CÁMARAS de ventilación: entre percha y percha,
+  //    afuera de un DIENTE cerrado hacia adentro que sube hasta la lona y marca
+  //    su límite. Trenzada la lona, se le hacen los orificios sobre las cámaras
+  //    y se sella con el ANILLO TAPA, hermanado con las cámaras del toono: hace
+  //    los huecos al exterior de la lona con el canal mirando hacia abajo.
+  //    Encima, la pieza de cierre: una fracción de DOMO GEODÉSICO. ──
+  const rD = P.r_toono - 0.05, eD = P.diente ?? 0.015;
+  anillo("toono", rD, rD + eD, ySup1, yLona(rD) - 0.003, "toono2");
+  {
+    const yT0 = yLona(rD) + 0.003, yT1 = yT0 + (P.tapa_cam ?? 0.03), rT1 = P.r_toono + (P.tapa_vuelo ?? 0.05);
+    anillo("tapa", rD, rD + eD, yT0, yT1, "tapa");                      // cerrado hacia adentro
+    anillo("tapa", rD, rT1, yT1, yT1 + 0.02, "tapa");                   // la tapa
+    anillo("tapa", rT1 - 0.012, rT1, yLona(rT1) + 0.015, yT1, "tapa");  // el faldón: el canal sale por debajo
+    for (let i = 0; i < P.n_per_r; i++) {                               // los tabiques, sobre las perchas
+      const th = 2 * Math.PI * i / P.n_per_r, r1 = rD + eD, r2 = rT1 - 0.012;
+      barra("tapa", pol(r1, th, (yLona(r1) + yT1) / 2), pol(r2, th, (yLona(r2) + yT1) / 2 + 0), P.p_alt, 0.001 + yT1 - yLona(r1), [0, 1, 0], "tapa");
+    }
+    // El domo: un casquete de esfera geodésica sobre la tapa.
+    const phi = Math.min(Math.PI / 2, Math.max(0.2, (P.dom_ang ?? 70) * Math.PI / 180));
+    const Rd = rD / Math.sin(phi), yc = yT1 + 0.02 + 0.03 - Rd * Math.cos(phi);
+    anillo("domo", rD - 0.04, rD, yT1 + 0.02, yT1 + 0.05, "domo");
+    const { aristas, caras } = geodesica(Math.max(1, Math.min(6, Math.round(P.dom_frec ?? 3))));
+    const cosC = Math.cos(phi), dentroC = (p) => p[1] >= cosC - 1e-9;
+    const aMundo = (p) => [p[0] * Rd, yc + p[1] * Rd, p[2] * Rd];
+    for (let [a, b] of aristas) {
+      if (!dentroC(a) && !dentroC(b)) continue;
+      if (!dentroC(a)) [a, b] = [b, a];
+      if (!dentroC(b)) { const t = (a[1] - cosC) / (a[1] - b[1]); b = a.map((x, j) => x + (b[j] - x) * t); }
+      const m = a.map((x, j) => (x + b[j]) / 2);
+      barra("domo", aMundo(a), aMundo(b), 0.03, 0.04, m, "domo");
+    }
+    const vd = [];
+    for (const [a, b, c] of caras) if (dentroC(a) && dentroC(b) && dentroC(c)) tri(vd, aMundo(a), aMundo(b), aMundo(c));
+    malla("domo", "vidrio", vd);
+  }
 
   // El muro: del trei hacia afuera, cortado en las aberturas (arriba de una
   // abertura más baja que el anillo, las capas siguen).
@@ -432,7 +502,10 @@ export function piezas3d(P, C) {
   const rM = C.r_trei;
   capaMuro("algodon_muro", "algodon", (a, b) => [[rM + 0.003, a], [rM + 0.003, b]], yPiso, yA0);
   capaMuro("freno_muro", "freno", (a, b) => [[rM + 0.006, a], [rM + 0.006, b]], yPiso, yA0);
-  capaMuro("aislacion_muro", "aislacion", (a, b) => [[rM + 0.009, a], [C.R - 0.002, a], [C.R - 0.002, b], [rM + 0.009, b], [rM + 0.009, a]], yPiso, yA0, true);
+  // La aislación del muro sube también al costado del anillo, hasta su cara de arriba.
+  capaMuro("aislacion_muro", "aislacion", (a, b) => b >= yA0 - 1e-9
+    ? [[rM + 0.009, a], [C.R - 0.002, a], [C.R - 0.002, yA], [C.Rext + 0.002, yA], [C.Rext + 0.002, b], [rM + 0.009, b], [rM + 0.009, a]]
+    : [[rM + 0.009, a], [C.R - 0.002, a], [C.R - 0.002, b], [rM + 0.009, b], [rM + 0.009, a]], yPiso, yA0, true);
   capaMuro("lona_muro", "lona_muro", (a, b) => [[C.R + 0.003, a], [C.R + 0.003, b]], -P.osb_inf - 0.02, yA + C.cinta_max);
 
   return { piezas: out, alto: yPerchaToono + 0.1, suelo: yViga - P.viga_alt - 0.6, yt, yA, yC, nCor, relleno, yAbre, conDintel };
@@ -442,12 +515,12 @@ const COLORES = {
   madera: 0xd9b27c, madera2: 0xc49a62, pilar: 0x8a6a4a, osb: 0xd8bf8a, anillo: 0xc8874a,
   trei: 0xe0b98a, cal: 0xb98a4f, cinta: 0x6fa8dc, triangulo: 0xe2a95c, radial: 0xb5481c,
   toono: 0xa86a3a, toono2: 0xc08050, percha: 0x9c6b3c,
-  montante: 0xb07a44, umbral: 0x8f5a2e, tapa: 0x7a4a2a,
+  montante: 0xb07a44, umbral: 0x8f5a2e, tapa: 0x7a4a2a, domo: 0xeadfcf, vidrio: 0xbfe3f2,
   algodon: 0xf1e9d8, freno: 0x7f9fb8, aislacion: 0xf0cf73, tyvek: 0xf6f6f2,
   lona: 0x5f6b5a, lona2: 0x4b5547, cordon: 0x1e1e1e, lona_muro: 0x8f8a72,
 };
 // Las membranas finas se ven a través: el freno y el Tyvek dejan ver lo de abajo.
-const OPACIDAD = { osb: 0.55, freno: 0.6, tyvek: 0.75 };
+const OPACIDAD = { osb: 0.55, freno: 0.6, tyvek: 0.75, vidrio: 0.3 };
 
 // El dibujo. Devuelve { actualizar, ver, resaltar, encuadrar, destruir } o
 // tira si three.js no bajó: quien llama lo ataja y lo dice en la página.
