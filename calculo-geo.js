@@ -1,5 +1,6 @@
 // calculo-geo.js — la geometría de la yurta, sin navegador y sin Firebase.
-// Sello: geo-2 (1-nov-2026): la percha radial entre triángulos.
+// Sello: geo-3 (2-nov-2026): los montantes y las aberturas en el perímetro, y
+// la lona del techo cortada plana. geo-2 (1-nov-2026): la percha radial.
 //
 // Sale de calculo.html para que el banco (`node pruebas-calculo.mjs`) pueda
 // correr las mismas cuentas que la página, sin DOM. La página la importa y
@@ -20,7 +21,7 @@
 // TODO lo que se elige por diseño es un campo de la página: si cambia una
 // medida, cambian los números y el dibujo.
 
-export const SELLO_GEO = "geo-2";
+export const SELLO_GEO = "geo-3";
 
 // El tirante, la viga: cuerdas paralelas del círculo de radio R, con una en el
 // centro y cada `paso` a los dos lados. Devuelve [{x, L, n}] con n = 1 para la
@@ -44,6 +45,46 @@ export function pilares(L, borde, max) {
   if (!(interior > 1e-9) || !(max > 0)) return { tramos: 0, largo: 0, pilares: 1 };
   const tramos = Math.max(1, Math.ceil(interior / max - 1e-9));
   return { tramos, largo: interior / tramos, pilares: tramos + 1 };
+}
+
+// LOS MONTANTES Y LAS ABERTURAS, en el perímetro (geo-3, Mauro, 2-nov-2026:
+// «uno cada 3 m de perímetro si no hay aberturas; si hay, son parte de las
+// aberturas»). Las aberturas van en `n_gr` grupos repartidos parejo, y en un
+// grupo dos aberturas seguidas comparten el montante del medio: un grupo de k
+// aberturas lleva k + 1 montantes. El ancho libre se mide en la cara interior
+// del trei (por donde se pasa). En el arco libre entre dos grupos van los
+// montantes sueltos que hagan falta para que ninguno quede a más de `sep_mon`.
+// Ángulos en radianes, con el punto en (r cos θ, r sen θ); el primer grupo,
+// centrado en θ = 0.
+export function montaje(P, R, rIn) {
+  const da = (P.anc_ab || 0) / rIn, dm = (P.esp_mon || 0) / rIn;
+  const nab = Math.max(0, Math.round(P.n_ab || 0));
+  const ngr = nab ? Math.max(1, Math.min(nab, Math.round(P.n_gr || 1))) : 0;
+  const grupos = [];
+  for (let g = 0; g < ngr; g++) {
+    const k = Math.floor(nab / ngr) + (g < nab % ngr ? 1 : 0);
+    const c = 2 * Math.PI * g / ngr, paso = da + dm, ini = c - k * paso / 2;
+    const montantes = [], aberturas = [];
+    for (let i = 0; i <= k; i++) montantes.push(ini + i * paso);
+    for (let i = 0; i < k; i++) aberturas.push([ini + i * paso + dm / 2, ini + (i + 1) * paso - dm / 2]);
+    grupos.push({ k, c, montantes, aberturas });
+  }
+  const sueltos = [];
+  const sep = P.sep_mon > 0 ? P.sep_mon : Infinity;
+  if (!ngr) {
+    const n = Math.max(3, Math.ceil(2 * Math.PI * R / sep - 1e-9));
+    for (let i = 0; i < n; i++) sueltos.push(2 * Math.PI * i / n);
+  } else for (let g = 0; g < ngr; g++) {
+    const a = grupos[g].montantes[grupos[g].montantes.length - 1];
+    const b = grupos[(g + 1) % ngr].montantes[0] + (g + 1 === ngr ? 2 * Math.PI : 0);
+    const n = Math.max(0, Math.ceil((b - a) * R / sep - 1e-9) - 1);
+    for (let j = 1; j <= n; j++) sueltos.push(a + (b - a) * j / (n + 1));
+  }
+  const de_ab = grupos.reduce((s, g) => s + g.k + 1, 0);
+  return { grupos, sueltos, de_ab, n_mon: de_ab + sueltos.length, dm,
+    aberturas: grupos.flatMap(g => g.aberturas), montantes: grupos.flatMap(g => g.montantes).concat(sueltos),
+    max_sep: (() => { const t = grupos.flatMap(g => g.montantes).concat(sueltos).map(x => ((x % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI)).sort((x, y) => x - y);
+      let m = 0; for (let i = 0; i < t.length; i++) m = Math.max(m, ((i + 1 < t.length ? t[i + 1] : t[0] + 2 * Math.PI) - t[i]) * R); return m; })() };
 }
 
 export function calc(P) {
@@ -116,6 +157,22 @@ export function calc(P) {
   const grip_cruce = 2 * P.e_trei;
   const grip_abajo = 2 * P.e_trei + P.e_int;   // la escuadra (< 2 mm) no se cuenta
 
+  // ── LOS MONTANTES y las aberturas ──
+  const mon = montaje(P, R, r_trei_int);
+
+  // ── LA LONA DEL TECHO, cortada plana (Mauro, 2-nov-2026): un círculo con el
+  //    agujero del toono, cortado en un radio y acordonado en zigzag como una
+  //    zapatilla; la lengüeta que queda lleva todo el sobrante del cono. Cada
+  //    punto del techo a r del centro queda, en la pieza plana, a r ÷ cos del
+  //    centro; el cono cerrado ocupa 360° × cos, y la lengüeta suma `solape`
+  //    en el borde. Pasa la cinta del alero (c) y baja `lona_baja` para el
+  //    urlete con el cordón que la cierra debajo del alero y la tensa.
+  const lona_r_ext = (Rp + c) / cos + (P.lona_baja || 0);
+  const lona_r_int = Math.max(0, P.r_toono - 0.05) / cos;
+  const lona_ang_cono = 360 * cos;
+  const lona_ang = Math.min(360, lona_ang_cono + (P.solape || 0) / lona_r_ext * 180 / Math.PI);
+  const lona_area = Math.PI * (lona_r_ext ** 2 - lona_r_int ** 2) * lona_ang / 360;
+
   return { R, A, H, c, Rint, Rext, r_trei, r_trei_int, r_int_lito,
     h0, tri_base: A - c, tri_ap, tri_tr, cinta_max, barrido,
     tri_hip: Math.hypot(A - c, tri_ap - tri_tr),
@@ -134,7 +191,9 @@ export function calc(P) {
     vol_tri: nt * (2 * lado_tri + 2 * Rint * Math.sin(beta)) * P.tri_anc * P.tri_esp,
     slant, area_techo: Math.PI * (Rp + P.r_toono) * slant,
     area_muro: 2 * Math.PI * R * P.alto,
-    n_mon: P.n_ab + P.n_gr,
+    mon, n_mon: mon.n_mon, n_mon_ab: mon.de_ab, n_mon_sueltos: mon.sueltos.length, mon_max_sep: mon.max_sep,
+    lona_r_ext, lona_r_int, lona_ang_cono, lona_ang, lona_area,
+    sobrante_cono: 2 * Math.PI * lona_r_ext * (1 - cos),
     mon_ancho: A + 2 * P.e_trei,
     vol_perchas: P.n_per_r * slant * P.p_anc * P.p_alt,
     per_lito_ext: 2 * Math.PI * R * 2,

@@ -65,6 +65,7 @@
     background:var(--ink2);border:1px solid var(--line);border-radius:var(--r);max-height:30vh;overflow:auto}
   .v3-partes label{display:flex;gap:.3rem;align-items:center;font-size:.82rem}
   .v3-todas{display:flex;gap:.3rem;width:100%}
+  .v3-tit{width:100%;font-size:.74rem;text-transform:uppercase;letter-spacing:.04em;opacity:.7;margin-top:.2rem}
   .v3-todas .btn{padding:.25rem .55rem;font-size:.74rem}
   .v3-chico .vista3d,.v3-chico .v3-partes,.v3-chico #partes3d-b,.v3-chico #encuadrar3d,.v3-chico .v3-nota{display:none}
   .v3-chico{position:static}
@@ -181,7 +182,7 @@ import { CY } from "./nucleo.js";
 import { calc as calcGeo, corte } from "./calculo-geo.js";
 import { montar as montar3d, PARTES as PARTES3D, CAMPO_PARTES } from "./calculo-3d.js";
 
-CY.PANEL = "calculo-16";
+CY.PANEL = "calculo-17";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 // ── El SDK se baja acá, y recién después arranca la pantalla ────────────────
@@ -256,6 +257,14 @@ const CAMPOS = [
   ["n_gr",     "Grupos contiguos",                3,     "las juntas comparten montante"],
   ["alt_ab",   "Alto de la abertura",             2.280, "m"],
   ["esp_mon",  "Espesor del montante",            0.080, "m · el ancho se deriva"],
+  ["anc_ab",   "Ancho libre de la abertura",      0.900, "m · entre montantes"],
+  ["sep_mon",  "Montante suelto cada",            3.000, "m de perímetro, como mucho"],
+  ["umb_esp",  "Piso de la abertura · espesor",   0.045, "m · una sola pieza"],
+  ["umb_vuelo","Piso de la abertura · vuelo",     0.050, "m · pasa el borde, redondeado"],
+  ["umb_caida","Piso de la abertura · caída",     0.010, "m · pendiente hacia afuera"],
+  ["·","LAS CAPAS"],
+  ["lona_baja","Lona del techo · bajada",         0.100, "m · pasa la cinta del alero, urlete"],
+  ["solape",   "Lona del techo · lengüeta",       1.500, "m · solape en el borde"],
 ];
 const CLAVES = CAMPOS.filter(c => c[0] !== "·").map(c => c[0]);
 const PORDEF = {}; CAMPOS.forEach(c => { if (c[0] !== "·") PORDEF[c[0]] = c[2]; });
@@ -446,12 +455,18 @@ function pintarPiezas() {
       cara alta del anillo; la segunda, en el vértice de la cal.`]]);
 
   h += `<h2 style="margin:1.2rem 0 .5rem">Aberturas</h2>`;
-  h += tarjeta("Montantes", "Del borde exterior del plancher a la cara interior del trei.", [
-    ["", "Aberturas · grupos", "", `${un(P.n_ab)} · ${un(P.n_gr)}`, ""],
-    ["", "Montantes", "aberturas + grupos", un(C.n_mon), "d"],
+  h += tarjeta("Montantes", "Del borde exterior del plancher a la cara interior del trei. Las aberturas van " +
+    "en grupos repartidos parejo; en un grupo, dos aberturas seguidas comparten el montante del medio. " +
+    `Donde no hay abertura va un montante suelto, de modo que ninguno quede a más de ${m(P.sep_mon)}.`, [
+    ["", "Aberturas · grupos", "", `${un(P.n_ab)} · ${un(C.mon.grupos.length)}`, ""],
+    ["", "Montantes de las aberturas", "aberturas + grupos", un(C.n_mon_ab), "d"],
+    ["", "Montantes sueltos", `cada ${m(P.sep_mon)} como mucho`, un(C.n_mon_sueltos), "d"],
+    ["", "Montantes en total", "", un(C.n_mon), "d"],
+    ["", "Mayor distancia entre dos", "medida en el borde", m(C.mon_max_sep), "d"],
     ["A", "Ancho del montante", "A + 2 listones de trei", mm(C.mon_ancho), "d"],
     ["", "Espesor", "se decide", mm(P.esp_mon), ""],
-    ["", "Alto", "", m(P.alt_ab), ""],
+    ["", "Ancho libre de la abertura", "entre montantes, en el trei", m(P.anc_ab), ""],
+    ["", "Alto libre de la abertura", "del piso de la abertura", m(P.alt_ab), ""],
     ["", "Volumen", "", m3(C.n_mon * C.mon_ancho * P.alt_ab * P.esp_mon), ""],
   ], [
     ["", `El ancho <b>no se elige</b>: tiene que cubrir la aislación comprimida más los dos
@@ -459,6 +474,46 @@ function pintarPiezas() {
       aserradero trae de 22 mm serían ${mm(C.A + 0.044)}.`],
     ["", `Y <b>no depende del diámetro</b>: son los mismos ${mm(C.mon_ancho)} en 4, 7 o 12
       metros. Sólo cambia dónde empieza.`],
+    ["", `<b>El piso de la abertura es de una sola pieza</b> por grupo, de ${mm(P.umb_esp)}: los
+      montantes se paran sobre él y escurren sobre él. Va del zócalo hasta pasar el borde de la
+      yurta ${mm(P.umb_vuelo)}, con ${mm(P.umb_caida)} de caída hacia afuera y la punta
+      redondeada, para que el agua gotee lejos del muro.`],
+  ]);
+
+  h += `<h2 style="margin:1.2rem 0 .5rem">Las capas</h2>`;
+  h += tarjeta("De adentro hacia afuera", "Se prenden y apagan en el 3D, cada una por separado.", [
+    ["", "Techo · 1 · algodón", "terminación: se ve detrás de los triángulos", "", ""],
+    ["", "Techo · 2 · freno de vapor", "frena la humedad del ambiente", "", ""],
+    ["H", "Techo · 3 · aislación", "guata de poliéster de PET reciclado, cosida en cono", mm(C.H), "d"],
+    ["", "Techo · 4 · Tyvek", "cierra el primer techo; cono pegado con cinta", "", ""],
+    ["", "Techo · cámara ventilada", "entre el Tyvek y la lona, del alto de la percha", mm(P.p_anc), "d"],
+    ["", "Techo · 5 · lona de PVC", "termosoldada, con urlete y cordón", "", ""],
+    ["", "Muro · 1 · algodón", "", "", ""],
+    ["", "Muro · 2 · freno de vapor", "optativo", "", ""],
+    ["A", "Muro · 3 · aislación", "comprimida", mm(C.A), "d"],
+    ["", "Muro · 4 · tela náutica de entramado", "respira", "", ""],
+  ], [
+    ["", `El <b>Tyvek</b> se fija y se sella sobre la doble cinta del borde, encima de la lona
+      del muro (que conviene poner antes que la aislación del muro), y pasa sobre la cal
+      dejando el asiento de las perchas: <b>las perchas se atornillan haciendo sándwich con
+      la tela</b>.`],
+    ["", `En la punta de las perchas, en su canto de arriba, va la <b>cinta del alero</b>: dos
+      capas como la del muro (${mm(C.c)}), que remata el borde y que la lona tiene que pasar.`],
+    ["", `<b>La cámara</b>: el aire entra por el borde del alero, sube entre las perchas, entre
+      el Tyvek y la lona, y sale por el toono aunque esté cerrado. Por eso en el doble techo
+      <b>no hace falta el cable</b> de las yurtas comunes (una eslinga de acero de 6 mm que
+      pasa por una perforación cerca del borde de las perchas).`],
+  ]);
+  h += tarjeta("La lona del techo, cortada plana",
+    `Una pieza plana con el agujero del toono, cortada en un radio. Se cierra en cono acordonando
+    en zigzag —como una zapatilla— las anillas de una banda termosoldada que baja sobre la línea
+    de una percha con las del borde cortado; la lengüeta que queda lleva todo el sobrante.`, [
+    ["", "Radio exterior de la pieza", "(Rp + c) ÷ cos + bajada", m(C.lona_r_ext), "d"],
+    ["", "Radio del agujero", "(r toono − 0,05) ÷ cos", m(C.lona_r_int), "d"],
+    ["", "Ángulo del cono cerrado", "360° × cos(ángulo)", C.lona_ang_cono.toFixed(1).replace(".", ",") + "°", "d"],
+    ["", "Con la lengüeta", `+ ${m(P.solape)} en el borde`, C.lona_ang.toFixed(1).replace(".", ",") + "°", "d"],
+    ["", "Lo que sobra del círculo entero", "en el borde", m(C.sobrante_cono), "d"],
+    ["", "Superficie de la pieza", "", m2(C.lona_area), "d"],
   ]);
 
   h += `<h2 style="margin:1.2rem 0 .5rem">Superficies</h2>`;
@@ -508,8 +563,8 @@ function pintarPiezas() {
     <div class="fil"><span class="l"></span><span class="n">El trei<em>fabricación y ensamblado</em></span><span class="v q">pendiente</span></div>
     <div class="fil"><span class="l"></span><span class="n">El toono<em>espesores, coronas, m³ en dos especies</em></span><span class="v q">pendiente</span></div>
     <div class="fil"><span class="l"></span><span class="n">El arriostramiento del triángulo<em>la altura, las dos paralelas y las diagonales se ven en el 3D; sus largos todavía no salen acá</em></span><span class="v q">pendiente</span></div>
-    <div class="fil"><span class="l"></span><span class="n">El Tyvek<em>no aparece en ninguna hoja</em></span><span class="v q">pendiente</span></div>
-    <div class="fil"><span class="l"></span><span class="n">Herrajes del techo<em>los del trei ya están; faltan los del techo y el cable</em></span><span class="v q">pendiente</span></div>
+    <div class="fil"><span class="l"></span><span class="n">Las capas en metros<em>el orden y la lona plana ya están; faltan los m² de cada tela con sus solapes y costuras</em></span><span class="v q">pendiente</span></div>
+    <div class="fil"><span class="l"></span><span class="n">Herrajes del techo<em>los del trei ya están; faltan los del techo (el doble techo no lleva cable)</em></span><span class="v q">pendiente</span></div>
     <div class="fil"><span class="l"></span><span class="n">Cotización y horas<em>materiales, precios y control por etapa</em></span><span class="v q">pendiente</span></div>
   </div>`;
 
@@ -621,10 +676,12 @@ $("volver").addEventListener("click", () => {
 const visibles3d = {};
 const leer3d = (k, d) => { try { const v = localStorage.getItem("cy-calc3d:" + k); return v === null ? d : v === "1"; } catch { return d; } };
 const guardar3d = (k, v) => { try { localStorage.setItem("cy-calc3d:" + k, v ? "1" : "0"); } catch {} };
-for (const [k] of PARTES3D) visibles3d[k] = leer3d("parte:" + k, true);
-$("partes3d").innerHTML = PARTES3D.map(([k, t]) =>
-  `<label><input type="checkbox" data-parte="${k}" ${visibles3d[k] ? "checked" : ""}> ${t}</label>`).join("") +
-  `<span class="v3-todas"><button class="btn" data-todas="1">Todas</button><button class="btn" data-todas="0">Ninguna</button></span>`;
+// Las capas arrancan apagadas: prendidas tapan la estructura.
+for (const [k, , capa] of PARTES3D) visibles3d[k] = leer3d("parte:" + k, !capa);
+const casilla3d = ([k, t]) => `<label><input type="checkbox" data-parte="${k}" ${visibles3d[k] ? "checked" : ""}> ${t}</label>`;
+$("partes3d").innerHTML = `<b class="v3-tit">Estructura</b>` + PARTES3D.filter(p => !p[2]).map(casilla3d).join("") +
+  `<b class="v3-tit">Las capas · de adentro hacia afuera</b>` + PARTES3D.filter(p => p[2]).map(casilla3d).join("") +
+  `<span class="v3-todas"><button class="btn" data-todas="1">Todas</button><button class="btn" data-todas="e">Sólo estructura</button><button class="btn" data-todas="0">Ninguna</button></span>`;
 $("partes3d").addEventListener("change", (e) => {
   const k = e.target.dataset.parte; if (!k) return;
   visibles3d[k] = e.target.checked; guardar3d("parte:" + k, e.target.checked);
@@ -632,8 +689,10 @@ $("partes3d").addEventListener("change", (e) => {
 });
 $("partes3d").addEventListener("click", (e) => {
   const b = e.target.closest("[data-todas]"); if (!b) return;
-  const on = b.dataset.todas === "1";
+  const soloEstr = b.dataset.todas === "e";
   document.querySelectorAll("#partes3d [data-parte]").forEach(c => {
+    const capa = !!(PARTES3D.find(p => p[0] === c.dataset.parte) || [])[2];
+    const on = soloEstr ? !capa : b.dataset.todas === "1";
     c.checked = on; visibles3d[c.dataset.parte] = on; guardar3d("parte:" + c.dataset.parte, on);
     if (vista3d) vista3d.ver(c.dataset.parte, on);
   });

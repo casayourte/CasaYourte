@@ -7,7 +7,7 @@
 
 import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
-import { calc, corte, cuerdas, pilares } from "./calculo-geo.js";
+import { calc, corte, cuerdas, pilares, montaje } from "./calculo-geo.js";
 import { piezas3d, arriostramiento, PARTES, CAMPO_PARTES } from "./calculo-3d.js";
 
 let bien = 0, mal = 0;
@@ -129,7 +129,9 @@ ok("3D: sin travesaños paralelos a la base (sólo la base)", de("travesano").le
 const T3 = piezas3d(P, C);
 const cuenta = (g, tipo) => T3.piezas.filter(p => p.g === g && p.tipo === tipo).length;
 ok("3D: 17 tirantes, 5 vigas y 23 pilares", cuenta("tirantes", "barra") === 17 && cuenta("vigas", "barra") === 5 && cuenta("pilares", "barra") === 23);
-ok("3D: trei de 63 × 2 listones", cuenta("trei", "barra") === 63 * 2 * 8);
+ok("3D: el trei de 63 × 2 listones, cortado en montantes y aberturas", cuenta("trei", "barra") < 63 * 2 * 8 && cuenta("trei", "barra") > 63 * 2 * 8 * 0.6, cuenta("trei", "barra"));
+ok("3D: sin aberturas ni montantes el trei va entero", (() => { const Q = { ...P, n_ab: 0, sep_mon: 1000 }; const Cq = calc(Q);
+  return Cq.n_mon === 3 && piezas3d(Q, Cq).piezas.filter(p => p.g === "trei").length < 63 * 2 * 8; })());
 ok("3D: 8 triángulos y 8 perchas radiales", cuenta("triangulos", "barra") === 8 * 16 && cuenta("radiales", "barra") === 8);
 ok("3D: 36 perchas y 36 calces", cuenta("perchas", "barra") === 36 && cuenta("cal", "calce") === 36);
 ok("3D: cada barra tiene su sección real", T3.piezas.filter(p => p.g === "tirantes")[0].ancho === P.tir_anc && T3.piezas.filter(p => p.g === "tirantes")[0].alto === P.tir_alt
@@ -144,10 +146,64 @@ ok("3D: lo que resalta cada medida son partes que existen", Object.values(CAMPO_
 ok("3D: cada medida que resalta es un campo de la página", Object.keys(CAMPO_PARTES).every(k => k in PORDEF));
 ok("3D: toda medida de la estructura resalta algo", ["D","ang","alto","E","e_trei","tir_alt","viga_alt","n_tri","p_anc","r_toono","osb_sup"].every(k => (CAMPO_PARTES[k] || []).length > 0));
 ok("calculo.html: el 3D está en la pestaña de las medidas", /<div id="t-datos">[\s\S]*?id="vista3d"[\s\S]*?id="campos"/.test(html) && !/\["3d","3D"\]/.test(html));
-for (const [nom, Q] of [["Christine", P], ["4 m", { ...P, D: 4 }], ["12 m", { ...P, D: 12 }], ["10 triángulos", { ...P, n_tri: 10 }], ["6 triángulos", { ...P, n_tri: 6 }]]) {
+for (const [nom, Q] of [["Christine", P], ["4 m", { ...P, D: 4 }], ["12 m", { ...P, D: 12 }], ["10 triángulos", { ...P, n_tri: 10 }], ["6 triángulos", { ...P, n_tri: 6 }],
+  ["sin aberturas", { ...P, n_ab: 0 }], ["una abertura", { ...P, n_ab: 1, n_gr: 1 }], ["aberturas bajas", { ...P, alt_ab: 1.9 }], ["sin campos nuevos", Object.fromEntries(Object.entries(P).filter(([k]) => !["anc_ab","sep_mon","umb_esp","umb_vuelo","umb_caida","lona_baja","solape"].includes(k)))]]) {
   const K = piezas3d(Q, calc(Q));
   ok(`3D ${nom}: sin NaN`, !/null|NaN|Infinity/.test(JSON.stringify(K)));
 }
+// ── los montantes y las aberturas (geo-3) ──
+const MO = C.mon;
+ok("5 aberturas en 3 grupos: 2, 2 y 1", MO.grupos.map(g => g.k).join() === "2,2,1");
+ok("montantes de las aberturas = aberturas + grupos = 8", C.n_mon_ab === 8);
+ok("y 3 sueltos, uno en cada arco libre: 11 en total", C.n_mon_sueltos === 3 && C.n_mon === 11, C.n_mon);
+ok("ninguno a más de 3 m", C.mon_max_sep <= 3 + 1e-9, C.mon_max_sep);
+ok("el ancho libre entre montantes es el pedido, en el trei", MO.aberturas.every(([a, b]) => cerca((b - a) * C.r_trei_int, P.anc_ab, 1e-9)));
+ok("sin aberturas: uno cada 3 m, 8 en un perímetro de 22", montaje({ ...P, n_ab: 0 }, 3.5, 3.3).n_mon === 8);
+ok("más grupos que aberturas no inventa grupos", montaje({ ...P, n_ab: 2, n_gr: 5 }, 3.5, 3.3).grupos.length === 2);
+ok("sin sep_mon no cuelga", montaje({ ...P, sep_mon: 0 }, 3.5, 3.3).sueltos.length === 0);
+ok("3D: 11 montantes (y los dinteles si la abertura es más baja que el anillo)", cuenta("montantes", "barra") === 11 + (T3.conDintel ? 5 : 0));
+ok("3D: una abertura del alto del muro no lleva dintel", (() => { const Q = { ...P, alt_ab: 3 }; const K = piezas3d(Q, calc(Q));
+  return !K.conDintel && K.piezas.filter(p => p.g === "montantes").length === 11; })());
+ok("3D: un piso de abertura por grupo, con su caída hacia afuera", (() => { const v = T3.piezas.filter(p => p.g === "suelo_ab");
+  if (v.length !== 1) return false; const ys = []; for (let i = 1; i < v[0].v.length; i += 3) ys.push(v[0].v[i]);
+  const yP = P.tir_alt + P.osb_sup; return cerca(Math.max(...ys), yP + P.umb_esp, 1e-6) && cerca(Math.min(...ys), yP, 1e-6); })());
+ok("3D: el piso de la abertura pasa el borde", (() => { const v = T3.piezas.find(p => p.g === "suelo_ab").v; let r = 0;
+  for (let i = 0; i < v.length; i += 3) r = Math.max(r, Math.hypot(v[i], v[i + 2])); return cerca(r, C.R + P.umb_vuelo, 0.002); })());
+// ── las capas ──
+const capas = PARTES.filter(p => p[2] === "capa").map(p => p[0]);
+ok("3D: nueve capas, techo y muro", capas.length === 9 && capas.filter(k => /techo|tyvek/.test(k)).length === 5);
+ok("3D: las capas son mallas sin NaN", capas.every(k => T3.piezas.filter(p => p.g === k).every(p => p.tipo === "malla" || p.tipo === "barra") && T3.piezas.some(p => p.g === k && p.tipo === "malla")));
+const radios = (k) => { const r = []; for (const p of T3.piezas.filter(q => q.g === k && q.tipo === "malla")) for (let i = 0; i < p.v.length; i += 3) r.push(Math.hypot(p.v[i], p.v[i + 2])); return r; };
+// La altura de una malla sobre el punto (r, θ) del piso: el triángulo que lo cubre, por baricéntricas.
+const alturaEn = (k, r0, th = 0.1) => { const x = r0 * Math.cos(th), z = r0 * Math.sin(th); let y = null;
+  for (const p of T3.piezas.filter(q => q.g === k && q.tipo === "malla")) for (let i = 0; i < p.v.length; i += 9) {
+    const [ax, ay, az, bx, by, bz, cx, cy, cz] = p.v.slice(i, i + 9);
+    const d = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz); if (Math.abs(d) < 1e-12) continue;
+    const l1 = ((bz - cz) * (x - cx) + (cx - bx) * (z - cz)) / d, l2 = ((cz - az) * (x - cx) + (ax - cx) * (z - cz)) / d, l3 = 1 - l1 - l2;
+    if (l1 >= -1e-9 && l2 >= -1e-9 && l3 >= -1e-9) { const h = l1 * ay + l2 * by + l3 * cy; if (y === null || h > y) y = h; } }
+  return y; };
+ok("3D: el Tyvek va debajo de las perchas y la lona encima (la cámara)", (() => {
+  const r = 2.5, tan = Math.tan(P.ang * Math.PI / 180), yPer = T3.yA + C.h0 + (C.Rint - r) * tan;
+  return alturaEn("tyvek", r) < yPer && alturaEn("lona_techo", r) > yPer + P.p_anc / Math.cos(P.ang * Math.PI / 180); })());
+ok("3D: de adentro hacia afuera en el techo: algodón < freno < aislación < Tyvek < lona", [1.5, 2.0, 2.5, 3.0].every(r => {
+  const a = ["algodon_techo", "freno_techo", "aislacion_techo", "tyvek", "lona_techo"].map(k => alturaEn(k, r));
+  return a.every((y, i) => y !== null && (i === 0 || y > a[i - 1])); }));
+ok("3D: el algodón va sobre los triángulos", (() => { const r = 2.0, tan = Math.tan(P.ang * Math.PI / 180);
+  return alturaEn("algodon_techo", r, 0) > T3.yt + P.tri_anc / 2 + (C.r_med - r) * tan; })());
+ok("3D: el Tyvek baja sobre la cinta del borde", Math.max(...radios("tyvek")) > C.R && Math.max(...radios("tyvek")) < C.R + 0.01);
+ok("3D: la lona del techo pasa la cinta del alero", Math.max(...radios("lona_techo")) > C.Rp + C.c);
+ok("3D: el muro de adentro hacia afuera, y la tela en el borde", Math.min(...radios("algodon_muro")) < Math.min(...radios("freno_muro")) && Math.max(...radios("lona_muro")) > C.R);
+ok("3D: el muro se corta en las aberturas", (() => { const ab = C.mon.aberturas[0], m = (ab[0] + ab[1]) / 2;
+  const p = T3.piezas.find(q => q.g === "lona_muro"); for (let i = 0; i < p.v.length; i += 3) {
+    const a = Math.atan2(p.v[i + 2], p.v[i]); if (Math.abs(Math.atan2(Math.sin(a - m), Math.cos(a - m))) < 0.05 && p.v[i + 1] < 1.5) return false; } return true; })());
+ok("3D: la cinta del alero, dos capas en la punta de las perchas", cuenta("cinta_alero", "anillo") === 2 && T3.piezas.filter(p => p.g === "cinta_alero").every(p => p.r1 >= C.Rp - 1e-9));
+ok("3D: las capas arrancan apagadas en la página", /visibles3d\[k\] = leer3d\("parte:" \+ k, !capa\)/.test(html));
+// ── la lona plana ──
+ok("lona plana: el cono cerrado ocupa 360° × cos 30° = 311,8°", cerca(C.lona_ang_cono, 311.77, 0.01));
+ok("lona plana: radio exterior (Rp + c)/cos + bajada = 4,742", cerca(C.lona_r_ext, (4.0 + 0.02) / Math.cos(Math.PI / 6) + 0.1, 1e-6), C.lona_r_ext);
+ok("lona plana: la lengüeta suma 1,5 m en el borde", cerca((C.lona_ang - C.lona_ang_cono) * Math.PI / 180 * C.lona_r_ext, 1.5, 1e-6));
+ok("calculo.html ya no pide el cable (el doble techo no lo lleva)", !/faltan los del techo y el cable/.test(html) && /no hace falta el cable/.test(html));
+
 ok("calculo-3d.js parsea como módulo", parsea(readFileSync(new URL("./calculo-3d.js", import.meta.url), "utf8")));
 ok("calculo.html importa calculo-3d.js", /from "\.\/calculo-3d\.js"/.test(html));
 ok("three.js se pide diferido, nunca con un import estático", !/^import[^\n]*three/m.test(readFileSync(new URL("./calculo-3d.js", import.meta.url), "utf8")) && /await import\(THREE_URL\)/.test(readFileSync(new URL("./calculo-3d.js", import.meta.url), "utf8")));

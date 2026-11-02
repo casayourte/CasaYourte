@@ -225,7 +225,7 @@ incluidos los módulos que viven adentro de un `.html`; que **los seis bancos
 corran** —`node pruebas-secciones.mjs` (16 casos), `node pruebas-reportes.mjs`
 (64 casos), `node pruebas-andamio.mjs` (89 casos), `node
 pruebas-puertas.mjs` (131 casos), `node pruebas-modelos.mjs` (119 casos) y
-`node pruebas-calculo.mjs` (93 casos, la geometría de Cálculos y el 3D), los
+`node pruebas-calculo.mjs` (125 casos, la geometría de Cálculos y el 3D), los
 seis sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
 sellos hayan subido, con la `VERSION` del `sw.js` si el archivo está en `SHELL`
 y los `?v=` con los que se lo pide; y que la documentación del repo diga la
@@ -699,7 +699,25 @@ verdad después del cambio.
   diagonales»), y desde `3d-4` con CUATRO Λ equidistantes con la V (cada
   0,366 en Christine; el hueco mayor baja de 0,43 a 0,32): 16 barras por
   triángulo, unos 17,8 m de madera.
-  Falta: la fabricación del trei, la ventilación del toono, herrajes y lona.
+  **Desde `calculo-17` / `3d-5` / `geo-3` (2-nov-2026) el 3D lleva las CAPAS y
+  la carpintería que faltaba** (Mauro: «agregar al esquema 3d las capas de la
+  yurta, con la opción de activar para la visualización, y los elementos de
+  carpintería que faltan»). Las capas, de adentro hacia afuera —techo: algodón,
+  freno de vapor, aislación, Tyvek, (perchas), lona de PVC con su cierre en
+  zigzag; muro: algodón, freno, aislación, tela náutica— son partes con
+  casilla que **arrancan apagadas** (el tercer dato de `PARTES`), y se dibujan
+  como mallas (`tipo: "malla"`): el algodón y el freno del techo siguen la
+  cáscara de los triángulos. La carpintería: los **montantes** (`montaje()` de
+  `calculo-geo.js`: las aberturas en `n_gr` grupos parejos, k + 1 montantes por
+  grupo, y sueltos para que ninguno quede a más de `sep_mon`, 3 m —Mauro: «uno
+  cada 3 m de perímetro si no hay aberturas»—), el trei y los zócalos cortados
+  en ellos, el **piso de la abertura** de una pieza con caída y punta
+  redondeada, la **cinta del alero** en dos capas en la punta de las perchas y
+  la **tapa del toono**. Y la **lona del techo cortada plana** (radio, ángulo,
+  lengüeta `solape`). **El doble techo NO lleva cable** (Mauro: es herencia de
+  las yurtas comunes, una eslinga de 6 mm en el borde de las perchas). El ancho
+  libre de la abertura (`anc_ab`, 0,90) está puesto, no confirmado.
+  Falta: la fabricación del trei, los m² de cada tela con solapes, herrajes.
 - **La autoridad del contenido es Firestore** (`sitio/publicado`). `contenido.json` en
   el repo es respaldo, y los textos de `index.html` el último respaldo.
 - **No subir acá:** cálculos, costos, márgenes, tarifas, proveedores, documentación

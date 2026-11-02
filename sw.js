@@ -108,13 +108,14 @@
 // v74 (1-nov-2026) — calculo-14 + 3d-2: el 3D en la pestaña de las medidas, por partes.
 // v75 (1-nov-2026) — calculo-15 + 3d-3: los triángulos sin travesaños.
 // v76 (1-nov-2026) — calculo-16 + 3d-4: cuatro Λ equidistantes en cada triángulo.
+// v77 (2-nov-2026) — calculo-17 + 3d-5 + geo-3: las capas, los montantes, las aberturas.
 //
 // Dos cosas de este registro, para que no confundan a quien lo lea:
 //   · faltan v15 a v18. Esas versiones se publicaron y no se anotaron acá.
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v76';
+const VERSION = 'cy-shell-v77';
 
 // v69 · 29-oct-2026 · `nucleo.js` (nucleo-32, general:C7): CY.explicar usa la tabla
 //   común de `errores.js` del panel (datos) y le suma sus dos causas propias.
