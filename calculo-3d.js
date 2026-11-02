@@ -1,5 +1,7 @@
 // calculo-3d.js — el modelo en 3D de la estructura, con las medidas del cálculo.
-// Sello: 3d-6 (2-nov-2026). 3d-6: el toono por anillos —el diente y las
+// Sello: 3d-7 (2-nov-2026). 3d-7: el domo es un tercio de la circunferencia y
+// llega al borde exterior del anillo tapa; el faldón deja una ranura sobre la
+// lona. 3d-6: 3d-6: el toono por anillos —el diente y las
 // cámaras, el anillo tapa hermanado y el domo geodésico—, la aislación llenando
 // todo y la lona entera. 3d-5: 3d-1: «un primer render 3d de la estructura total».
 // 3d-2: el 3D pasa a la pestaña de las MEDIDAS, con cada parte por separado
@@ -35,7 +37,7 @@
 // de abajo (donde apoyan los tirantes). Todo sale de calc(P): si cambia una
 // medida, cambia el modelo.
 
-export const SELLO_3D = "3d-6";
+export const SELLO_3D = "3d-7";
 export const THREE_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/+esm";
 export const ORBIT_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js/+esm";
 // Las dos con «/+esm»: jsDelivr reescribe el «import from \"three\"» de OrbitControls a
@@ -103,7 +105,7 @@ export const CAMPO_PARTES = {
   alt_ab: ["montantes", "trei"], esp_mon: ["montantes", "suelo_ab"], anc_ab: ["montantes", "suelo_ab", "trei", "zocalos"],
   sep_mon: ["montantes"], umb_esp: ["suelo_ab", "montantes"], umb_vuelo: ["suelo_ab"], umb_caida: ["suelo_ab"],
   lona_baja: ["lona_techo"],
-  diente: ["toono"], tapa_cam: ["tapa"], tapa_vuelo: ["tapa"], dom_ang: ["domo"], dom_frec: ["domo"],
+  diente: ["toono"], tapa_cam: ["tapa"], tapa_vuelo: ["tapa", "domo"], tapa_ranura: ["tapa"], dom_ang: ["domo"], dom_frec: ["domo"],
 };
 for (const k of ["ais_techo", "rel", "ang"]) CAMPO_PARTES[k].push("aislacion_techo", "tyvek", "lona_techo");
 for (const k of ["ais_nom", "rel", "alto"]) CAMPO_PARTES[k].push("aislacion_muro", "lona_muro");
@@ -462,15 +464,19 @@ export function piezas3d(P, C) {
     const yT0 = yLona(rD) + 0.003, yT1 = yT0 + (P.tapa_cam ?? 0.03), rT1 = P.r_toono + (P.tapa_vuelo ?? 0.05);
     anillo("tapa", rD, rD + eD, yT0, yT1, "tapa");                      // cerrado hacia adentro
     anillo("tapa", rD, rT1, yT1, yT1 + 0.02, "tapa");                   // la tapa
-    anillo("tapa", rT1 - 0.012, rT1, yLona(rT1) + 0.015, yT1, "tapa");  // el faldón: el canal sale por debajo
+    // El faldón NO toca la lona: deja una ranura por donde sale el aire, hacia abajo.
+    anillo("tapa", rT1 - 0.012, rT1, yLona(rT1) + (P.tapa_ranura ?? 0.03), yT1, "tapa");
     for (let i = 0; i < P.n_per_r; i++) {                               // los tabiques, sobre las perchas
       const th = 2 * Math.PI * i / P.n_per_r, r1 = rD + eD, r2 = rT1 - 0.012;
       barra("tapa", pol(r1, th, (yLona(r1) + yT1) / 2), pol(r2, th, (yLona(r2) + yT1) / 2 + 0), P.p_alt, 0.001 + yT1 - yLona(r1), [0, 1, 0], "tapa");
     }
-    // El domo: un casquete de esfera geodésica sobre la tapa.
-    const phi = Math.min(Math.PI / 2, Math.max(0.2, (P.dom_ang ?? 70) * Math.PI / 180));
-    const Rd = rD / Math.sin(phi), yc = yT1 + 0.02 + 0.03 - Rd * Math.cos(phi);
-    anillo("domo", rD - 0.04, rD, yT1 + 0.02, yT1 + 0.05, "domo");
+    // El domo: un casquete de esfera geodésica sobre la tapa, hasta el borde
+    // EXTERIOR del anillo tapa (3d-7, Mauro: «al borde exterior del anillo que
+    // va a cerrar la cámara»), y bajo: un tercio de la circunferencia, la parte
+    // de arriba, la de menos pendiente (dom_ang 60 = un arco de 120°).
+    const phi = Math.min(Math.PI / 2, Math.max(0.2, (P.dom_ang ?? 60) * Math.PI / 180));
+    const Rd = rT1 / Math.sin(phi), yc = yT1 + 0.02 + 0.03 - Rd * Math.cos(phi);
+    anillo("domo", rT1 - 0.04, rT1, yT1 + 0.02, yT1 + 0.05, "domo");
     const { aristas, caras } = geodesica(Math.max(1, Math.min(6, Math.round(P.dom_frec ?? 3))));
     const cosC = Math.cos(phi), dentroC = (p) => p[1] >= cosC - 1e-9;
     const aMundo = (p) => [p[0] * Rd, yc + p[1] * Rd, p[2] * Rd];

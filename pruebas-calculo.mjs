@@ -147,7 +147,7 @@ ok("3D: cada medida que resalta es un campo de la página", Object.keys(CAMPO_PA
 ok("3D: toda medida de la estructura resalta algo", ["D","ang","alto","E","e_trei","tir_alt","viga_alt","n_tri","p_anc","r_toono","osb_sup"].every(k => (CAMPO_PARTES[k] || []).length > 0));
 ok("calculo.html: el 3D está en la pestaña de las medidas", /<div id="t-datos">[\s\S]*?id="vista3d"[\s\S]*?id="campos"/.test(html) && !/\["3d","3D"\]/.test(html));
 for (const [nom, Q] of [["Christine", P], ["4 m", { ...P, D: 4 }], ["12 m", { ...P, D: 12 }], ["10 triángulos", { ...P, n_tri: 10 }], ["6 triángulos", { ...P, n_tri: 6 }],
-  ["sin aberturas", { ...P, n_ab: 0 }], ["domo media esfera, 5V", { ...P, dom_ang: 90, dom_frec: 5 }], ["domo bajo", { ...P, dom_ang: 30, dom_frec: 1 }], ["una abertura", { ...P, n_ab: 1, n_gr: 1 }], ["aberturas bajas", { ...P, alt_ab: 1.9 }], ["sin campos nuevos", Object.fromEntries(Object.entries(P).filter(([k]) => !["anc_ab","sep_mon","umb_esp","umb_vuelo","umb_caida","lona_baja","diente","tapa_cam","tapa_vuelo","dom_ang","dom_frec"].includes(k)))]]) {
+  ["sin aberturas", { ...P, n_ab: 0 }], ["domo media esfera, 5V", { ...P, dom_ang: 90, dom_frec: 5 }], ["domo bajo", { ...P, dom_ang: 30, dom_frec: 1 }], ["una abertura", { ...P, n_ab: 1, n_gr: 1 }], ["aberturas bajas", { ...P, alt_ab: 1.9 }], ["sin campos nuevos", Object.fromEntries(Object.entries(P).filter(([k]) => !["anc_ab","sep_mon","umb_esp","umb_vuelo","umb_caida","lona_baja","diente","tapa_cam","tapa_vuelo","dom_ang","dom_frec","tapa_ranura"].includes(k)))]]) {
   const K = piezas3d(Q, calc(Q));
   ok(`3D ${nom}: sin NaN`, !/null|NaN|Infinity/.test(JSON.stringify(K)));
 }
@@ -208,12 +208,15 @@ ok("geodésica 3V: 30·9 + 2 caras... 20 × 9 = 180 caras y 270 aristas", (() =>
 ok("geodésica: todos los puntos en la esfera de radio 1", geodesica(4).aristas.flat().every(p => cerca(Math.hypot(...p), 1, 1e-9)));
 ok("3D: el domo no baja de la tapa y no pasa el radio del toono", (() => { const d = T3.piezas.filter(p => p.g === "domo" && p.tipo === "barra");
   const ys = d.flatMap(p => [p.a[1], p.b[1]]), rs = d.flatMap(p => [Math.hypot(p.a[0], p.a[2]), Math.hypot(p.b[0], p.b[2])]);
-  return d.length > 50 && Math.max(...rs) <= P.r_toono - 0.05 + 1e-6 && Math.min(...ys) > alturaEn("lona_techo", P.r_toono - 0.04, 0.05); })());
+  return d.length > 50 && Math.max(...rs) <= P.r_toono + P.tapa_vuelo + 1e-6 && Math.max(...rs) > P.r_toono + P.tapa_vuelo - 0.01 && Math.min(...ys) > alturaEn("lona_techo", P.r_toono - 0.04, 0.05); })());
 ok("3D: el diente sube del anillo de las perchas hasta debajo de la lona", (() => { const t = T3.piezas.filter(p => p.g === "toono" && p.tipo === "anillo");
   const d = t[t.length - 1]; return cerca(d.r2 - d.r1, P.diente, 1e-9) && d.y2 > d.y1 && d.y2 < alturaEn("lona_techo", d.r1 + 0.001, 0.05) + 1e-6; })());
 ok("3D: el anillo tapa va sobre la lona, con un tabique por percha y el faldón abierto abajo", (() => {
   const t = T3.piezas.filter(p => p.g === "tapa"); const fal = t.filter(p => p.tipo === "anillo").find(p => cerca(p.r2, P.r_toono + P.tapa_vuelo, 1e-9) && p.r2 - p.r1 < 0.02);
-  return t.filter(p => p.tipo === "barra").length === P.n_per_r && fal && fal.y1 > alturaEn("lona_techo", fal.r2 + 0.002, 0.05); })());
+  return t.filter(p => p.tipo === "barra").length === P.n_per_r && fal && fal.y1 >= alturaEn("lona_techo", fal.r2 + 0.002, 0.05) + P.tapa_ranura - 0.005; })());
+ok("3D: el domo es un tercio de la circunferencia: su alto es (1 − cos 60°) del radio de la esfera", (() => {
+  const d = T3.piezas.filter(p => p.g === "domo" && p.tipo === "barra"), ys = d.flatMap(p => [p.a[1], p.b[1]]);
+  const rb = P.r_toono + P.tapa_vuelo, Rd = rb / Math.sin(Math.PI / 3); return cerca(Math.max(...ys) - Math.min(...ys), Rd * 0.5, 0.01); })());
 ok("3D: la aislación del muro sube al costado del anillo", (() => { const p = T3.piezas.find(q => q.g === "aislacion_muro"); let m = -9;
   for (let i = 0; i < p.v.length; i += 3) if (Math.hypot(p.v[i], p.v[i + 2]) > C.Rext) m = Math.max(m, p.v[i + 1]); return cerca(m, T3.yA, 1e-6); })());
 ok("calculo.html ya no pide el cable (el doble techo no lo lleva)", !/faltan los del techo y el cable/.test(html) && /no hace falta el cable/.test(html));

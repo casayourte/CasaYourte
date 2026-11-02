@@ -182,7 +182,7 @@ import { CY } from "./nucleo.js";
 import { calc as calcGeo, corte } from "./calculo-geo.js";
 import { montar as montar3d, PARTES as PARTES3D, CAMPO_PARTES } from "./calculo-3d.js";
 
-CY.PANEL = "calculo-18";
+CY.PANEL = "calculo-19";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 // ── El SDK se baja acá, y recién después arranca la pantalla ────────────────
@@ -268,7 +268,8 @@ const CAMPOS = [
   ["diente",   "Diente de las cámaras",           0.015, "m · cerrado hacia adentro, a confirmar"],
   ["tapa_cam", "Anillo tapa · alto de las cámaras",0.030,"m · hermanado con las del toono"],
   ["tapa_vuelo","Anillo tapa · vuelo afuera",     0.050, "m · el canal mira hacia abajo"],
-  ["dom_ang",  "Domo · fracción de esfera",       70,    "grados desde arriba · 90 = media"],
+  ["tapa_ranura","Anillo tapa · ranura sobre la lona",0.030,"m · por donde sale el aire"],
+  ["dom_ang",  "Domo · fracción de esfera",       60,    "grados desde arriba · 60 = un tercio, 90 = media"],
   ["dom_frec", "Domo · frecuencia geodésica",     3,     "2 a 5"],
 ];
 const CLAVES = CAMPOS.filter(c => c[0] !== "·").map(c => c[0]);
