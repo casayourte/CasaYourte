@@ -221,12 +221,13 @@ previene nada y sí pierde trabajo: ya pasó cuatro veces en dos días.
 Lo que reemplaza a ese momento de revisión es la verificación previa, que corre
 el agente y **no es opcional**: que el JavaScript parsee **como MÓDULO**
 —`node --input-type=module --check < archivo.js`, y no `node --check`—,
-incluidos los módulos que viven adentro de un `.html`; que **los seis bancos
+incluidos los módulos que viven adentro de un `.html`; que **los siete bancos
 corran** —`node pruebas-secciones.mjs` (16 casos), `node pruebas-reportes.mjs`
 (64 casos), `node pruebas-andamio.mjs` (89 casos), `node
-pruebas-puertas.mjs` (131 casos), `node pruebas-modelos.mjs` (119 casos) y
-`node pruebas-calculo.mjs` (141 casos, la geometría de Cálculos y el 3D), los
-seis sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
+pruebas-puertas.mjs` (131 casos), `node pruebas-modelos.mjs` (119 casos),
+`node pruebas-calculo.mjs` (141 casos, la geometría de Cálculos y el 3D) y
+`node pruebas-consultas.mjs` (14 casos, la consulta desde una captura), los
+siete sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
 sellos hayan subido, con la `VERSION` del `sw.js` si el archivo está en `SHELL`
 y los `?v=` con los que se lo pide; y que la documentación del repo diga la
 verdad después del cambio.
@@ -660,6 +661,26 @@ verdad después del cambio.
   voy a dar… y hacer las modificaciones»): escribe la misma forma que esta
   página. Si cambia la forma de una consulta acá, cambia allá en la misma
   tanda (su banco compara los estados).
+  **Desde `consultas-4` (2-nov-2026) una consulta se carga desde una CAPTURA**
+  (Mauro: «a partir de una imagen… una captura de pantalla del chat de
+  WhatsApp… así como trabaja Remate Taller… automáticamente debería generarse la
+  transcripción del texto, y la sugerencia pase a ser respondida por Claude… al
+  momento de hacer la ronda»). «Desde una captura» (en la lista) y «Sumar desde
+  una captura» (adentro de una consulta) mandan hasta 6 imágenes a Gemini por
+  `claude-proxy` de Casa Verde, como el inventario de remate (`consultas-ia.js`,
+  banco `pruebas-consultas.mjs`); lo leído se MUESTRA antes de guardar, se suma
+  sólo lo que no estaba (una captura que se superpone no repite), la ficha sólo
+  se completa, las capturas quedan como adjuntos y un borrador de Claude que
+  aparece en la captura queda «mandado». **La respuesta no la escribe Gemini**:
+  la prepara Claude en la ronda (`consultas.mjs pendientes` y `aprender`,
+  TRASPASO § 4, paso 5 bis ⅞ ⅞ de `datos`) con el criterio de
+  `casayourte/CRITERIO-CONSULTAS.md` de la bodega —privado, porque lleva precios
+  de referencia—, que se corrige con lo que Mauro cambia antes de mandar. La
+  manda una persona. **Ojo con lo que se le da a Gemini**: es la cuenta sin
+  facturación, y en ese plan Google puede usar lo que recibe para mejorar sus
+  productos; una captura lleva el nombre y lo que escribió un cliente. Cupo: una
+  llamada a Gemini por carga, dentro del gratuito; ninguna lectura nueva de
+  Firestore.
 - **La geometría de Cálculos vive en `calculo-geo.js`, sin navegador**
   (`geo-1`, `calculo-10`, 1-nov-2026, Mauro: «pasá el plancher y muros a
   cálculos»). La autoridad de las reglas es el manual técnico del plancher

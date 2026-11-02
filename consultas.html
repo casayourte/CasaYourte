@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
 <link rel="icon" href="./icono-192.png">
 <!--
-  consultas.html — Las consultas de clientes y cómo sigue cada una. Sello: consultas-3
+  consultas.html — Las consultas de clientes y cómo sigue cada una. Sello: consultas-4
 
   27-oct-2026, Mauro: «guarda un registro de la comunicación que estamos
   estableciendo con esta persona dentro del sitio de CasaYourte, en la parte
@@ -43,6 +43,14 @@
   consultas-3: lo mismo vale para cualquier FOTO (terreno, referencia), no sólo
   capturas: los botones lo dicen. Desde el chat se adjunta
   con `firestore.mjs casayourte adjuntar consultas <id> <archivo>`.
+  consultas-4 (2-nov-2026, Mauro: «la consulta debería cargarse a partir de una
+  imagen… una captura de pantalla del chat de WhatsApp… así como trabaja Remate
+  Taller… automáticamente debería generarse la transcripción del texto»):
+  «📷 Desde una captura» lee la conversación con Gemini (consultas-ia.js, por
+  claude-proxy de Casa Verde, como el inventario de remate), muestra lo leído
+  ANTES de guardar, suma sólo lo que no estaba y guarda las capturas como
+  adjuntos. La respuesta NO la escribe la IA: la prepara Claude en la ronda, como
+  borrador, y la manda una persona.
 -->
 <style>
   .chip{display:inline-block;font-family:var(--mono);font-size:.6rem;letter-spacing:.08em;
@@ -71,6 +79,10 @@
   .adj .q button{background:none;border:0;color:var(--dim);padding:0}
   .adj .n{font-size:.78rem;color:var(--dim)}
   .elegir{display:none}
+  .ia-caja{border:1px solid var(--blond);border-radius:var(--r);padding:.8rem .9rem;margin:.8rem 0;background:var(--ink2)}
+  .ia-m{border-left:3px solid var(--line);padding:.25rem .55rem;margin:.35rem 0;font-size:.85rem;white-space:pre-wrap}
+  .ia-m.nosotros{border-color:var(--blond)}
+  .ia-m small{display:block;color:var(--dim);font-size:.75rem}
 </style>
 </head>
 <body>
@@ -82,12 +94,27 @@
   <section id="v-lista">
     <div style="display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;margin-bottom:.3rem">
       <h1 style="margin-right:auto">Consultas</h1>
+      <button class="btn" data-elegir="ia-archivo"><span class="material-icons">document_scanner</span> Desde una captura</button>
       <button class="btn p" id="btnNueva"><span class="material-icons">add</span> Nueva</button>
     </div>
     <p class="gris">Cada persona que pregunta por una yurta, con lo que pidió, lo que se le
     contestó y en qué quedó. Privado: sólo con el permiso de consultas.</p>
     <div id="lista"><div class="empty">Cargando…</div></div>
   </section>
+
+  <!-- Lo que leyó la IA, para mirar ANTES de guardar (consultas-4). -->
+  <section id="ia-previa" class="ia-caja hide">
+    <h2 style="margin-top:0">Lo que se leyó en la captura</h2>
+    <p class="gris" id="ia-dice"></p>
+    <div id="ia-cuerpo"></div>
+    <div class="row" style="margin-top:.6rem;flex-wrap:wrap;gap:.5rem">
+      <button class="btn p" id="ia-guardar"><span class="material-icons">save</span> Guardar en la consulta</button>
+      <button class="btn" id="ia-cancelar">Descartar</button>
+    </div>
+  </section>
+  <!-- DOS inputs para la imagen, cámara y archivos (regla de CasaYourte). -->
+  <input type="file" accept="image/*" capture="environment" id="ia-camara" class="elegir">
+  <input type="file" accept="image/*" id="ia-archivo" class="elegir" multiple>
 
   <section id="v-una" class="hide">
     <button class="btn" id="volver" style="margin-bottom:.8rem">
@@ -123,7 +150,13 @@
         </select></label>
       <label><span class="k">Texto (como se mandó)</span><textarea id="n-texto" rows="4"></textarea></label>
       <label><span class="k">Traducción (si está en otro idioma)</span><textarea id="n-trad" rows="3"></textarea></label>
-      <button class="btn" id="agregar"><span class="material-icons">add_comment</span> Agregar a la conversación</button>
+      <div class="row" style="flex-wrap:wrap;gap:.5rem">
+        <button class="btn" id="agregar"><span class="material-icons">add_comment</span> Agregar a la conversación</button>
+        <button class="btn" data-elegir="ia-archivo"><span class="material-icons">document_scanner</span> Sumar desde una captura</button>
+        <button class="btn" data-elegir="ia-camara"><span class="material-icons">photo_camera</span> Foto de la pantalla</button>
+      </div>
+      <p class="gris" style="font-size:.78rem;margin:.4rem 0 0">La captura la lee una IA (Gemini) y se ve antes
+      de guardar. La respuesta la prepara Claude en la ronda, como borrador: la mandás vos.</p>
     </div>
 
     <h2 style="margin-top:1.4rem">Fotos, capturas y audios</h2>
@@ -152,8 +185,9 @@ import { cargarFirebase,
          db, auth, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc,
          collection, Bytes, onAuthStateChanged, signOut } from "./firebase-init.js";
 import { CY } from "./nucleo.js";
+import { pedirTranscripcion, unirConversacion, completarCliente, MAX_IMAGENES } from "./consultas-ia.js";
 
-CY.PANEL = "consultas-3";
+CY.PANEL = "consultas-4";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 // El SDK entra diferido (init-2): se espera antes de armar lo que recibe CY.arrancar.
@@ -387,7 +421,79 @@ for (const [input, tipo] of [["a-camara", "imagen"], ["a-archivo", "imagen"], ["
   });
 }
 
-$("volver").onclick = () => { actual = null; urls.forEach((u) => URL.revokeObjectURL(u)); urls = []; $("v-una").classList.add("hide"); $("v-lista").classList.remove("hide"); cargar(); };
+/* ── Desde una captura, con IA (consultas-4) ─────────────────────────────── */
+/* Para la IA la imagen va más chica que el adjunto (1600 px): se lee igual y
+   seis capturas no pasan del techo de Netlify. */
+async function aBase64(archivo, lado = 1600, q = 0.75) {
+  const img = await createImageBitmap(archivo);
+  const k = Math.min(1, lado / Math.max(img.width, img.height));
+  const c = document.createElement("canvas");
+  c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+  c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+  const b = await new Promise((r) => c.toBlob(r, "image/jpeg", q));
+  const url = await new Promise((r, f) => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.onerror = f; fr.readAsDataURL(b); });
+  return { datos: String(url).split(",")[1], mime: "image/jpeg" };
+}
+
+let previa = null;   // {leido, archivos, union}
+const ROTULO = { cliente: "Escribió", nosotros: "Le contestamos" };
+
+async function leerCapturas(archivos) {
+  const sobran = archivos.length > MAX_IMAGENES;
+  if (sobran) archivos = archivos.slice(0, MAX_IMAGENES);
+  $("ia-previa").classList.remove("hide"); $("ia-cuerpo").innerHTML = ""; $("ia-guardar").disabled = true;
+  $("ia-dice").textContent = `Leyendo ${archivos.length === 1 ? "la captura" : archivos.length + " capturas"}… (unos segundos)`;
+  $("ia-previa").scrollIntoView({ behavior: "smooth", block: "start" });
+  let imagenes;
+  try { imagenes = await Promise.all(archivos.map((a) => aBase64(a))); }
+  catch (e) { $("ia-dice").textContent = "No se pudo abrir la imagen: " + e.message; return; }
+  const r = await pedirTranscripcion({ imagenes });
+  if (!r.ok) { $("ia-dice").textContent = r.motivo; return; }
+  const union = unirConversacion(actual ? actual.mensajes : [], r.leido.mensajes, { por: "captura · " + (yo.nombre || yo.email || "") });
+  previa = { leido: r.leido, archivos, union };
+  const l = r.leido;
+  $("ia-dice").textContent = (sobran ? `Se leyeron las primeras ${MAX_IMAGENES} (van hasta ${MAX_IMAGENES} por vez). ` : "")
+    + (actual && actual.id ? "Se suma a esta consulta. " : "Es una consulta nueva. ")
+    + `${union.nuevos} mensaje(s) nuevo(s)` + (union.repetidos ? `, ${union.repetidos} que ya estaban (no se repiten)` : "")
+    + (union.confirmados ? `, ${union.confirmados} borrador(es) de Claude que ya se mandaron` : "") + "."
+    + (l.dudas.length ? " La IA dudó en: " + l.dudas.join(", ") + "." : "");
+  const ficha = [l.contacto.nombre && "Nombre: " + l.contacto.nombre, l.contacto.telefono && "Teléfono: " + l.contacto.telefono,
+    l.idioma && "Idioma: " + l.idioma, l.pais && "País: " + l.pais, l.pedido && "Qué pide: " + l.pedido].filter(Boolean);
+  $("ia-cuerpo").innerHTML = (ficha.length ? `<p class="gris">${ficha.map(esc).join(" · ")}<br><small>Lo de la ficha sólo completa lo que esté vacío.</small></p>` : "")
+    + union.agregados.map((m) =>
+      `<div class="ia-m ${esc(m.quien)}"><small>${esc(ROTULO[m.quien] || m.quien)}${m.horaVista ? " · " + esc(m.horaVista) : ""}</small>${esc(m.texto)}${m.traduccion ? `<small>${esc(m.traduccion)}</small>` : ""}</div>`).join("")
+    + (union.nuevos || union.confirmados ? "" : '<div class="empty">No hay nada nuevo: todo lo de la captura ya estaba.</div>');
+  $("ia-guardar").disabled = false;
+}
+
+$("ia-cancelar").onclick = () => { previa = null; $("ia-previa").classList.add("hide"); };
+$("ia-guardar").onclick = async () => {
+  if (!previa) return;
+  $("ia-guardar").disabled = true;
+  const { leido, archivos, union } = previa;
+  if (!actual) actual = { cliente: {}, estado: "nueva", mensajes: [], canal: "WhatsApp", origen: "captura" };
+  const cambios = { mensajes: union.mensajes, estado: union.estado, cliente: completarCliente(actual.cliente, leido) };
+  if (!actual.pedido && leido.pedido) cambios.pedido = leido.pedido;
+  if (!actual.canal) cambios.canal = "WhatsApp";
+  if (!await guardar(cambios)) { $("ia-dice").textContent = $("dice").textContent; $("ia-guardar").disabled = false; return; }
+  // Las capturas quedan como adjuntos: lo que leyó la IA se puede comparar con la imagen.
+  $("a-nota").value = "captura leída con IA";
+  let fallo = "";
+  for (const a of archivos) { try { await adjuntar(a, "imagen"); } catch (e) { fallo = e.code ? CY.explicar(e) : e.message; } }
+  $("a-nota").value = "";
+  previa = null; $("ia-previa").classList.add("hide");
+  abrir(actual);
+  $("dice").textContent = `Guardado: ${union.nuevos} mensaje(s) de la captura.` + (fallo ? " La imagen no se adjuntó: " + fallo : "")
+    + (union.estado === "respondida" ? "" : " Claude prepara la respuesta en la próxima ronda.");
+};
+for (const id of ["ia-camara", "ia-archivo"]) {
+  $(id).addEventListener("change", (ev) => {
+    const archivos = [...ev.target.files]; ev.target.value = "";
+    if (archivos.length) leerCapturas(archivos);
+  });
+}
+
+$("volver").onclick = () => { actual = null; previa = null; $("ia-previa").classList.add("hide"); urls.forEach((u) => URL.revokeObjectURL(u)); urls = []; $("v-una").classList.add("hide"); $("v-lista").classList.remove("hide"); cargar(); };
 $("btnNueva").onclick = () => abrir({ cliente: {}, estado: "nueva", mensajes: [] });
 
 await cargar();
