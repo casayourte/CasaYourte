@@ -12,7 +12,7 @@
 
 export const CY = {};
 
-CY.VERSION = 'nucleo-32';
+CY.VERSION = 'nucleo-33';
 
 // ═════════════════════════════════════════════════════════════
 //  BOTÓN ATRÁS DE ANDROID
@@ -539,6 +539,10 @@ CY.PERMISOS = [
   // (consultas.html). Llevan el contacto de una persona: privado.
   { id:'consultas', label:'Consultas de clientes', icono:'forum',
     detalle:'Ver y seguir lo que pregunta la gente: qué pidió, qué se le contestó y en qué quedó.' },
+  // nucleo-33 (3-nov-2026): presupuestos y proveedores (presupuestos.html).
+  // Llevan precios y proveedores: privado, nunca al repositorio.
+  { id:'presupuestos', label:'Presupuestos y proveedores', icono:'request_quote',
+    detalle:'Pedir precio de materiales, seguir lo que contesta cada proveedor y comparar.' },
 ];
 
 // Navegación. grupo 'directo' va en la barra de abajo; el resto en la hoja «Más».
@@ -568,6 +572,9 @@ CY.NAV = [
   { id:'consultas', label:'Consultas de clientes', icono:'forum',
     href:'./consultas.html',   grupo:'clientes', permiso:'consultas',
     detalle:'Quién preguntó, qué se le contestó y en qué quedó.' },
+  { id:'presupuestos', label:'Presupuestos y proveedores', icono:'request_quote',
+    href:'./presupuestos.html', grupo:'clientes', permiso:'presupuestos',
+    detalle:'A quién se le pidió precio de cada material, qué contestó y en qué quedó.' },
 
   { id:'sitio',    label:'Ver el sitio', icono:'public',
     href:'./index.html',       grupo:'ver' },

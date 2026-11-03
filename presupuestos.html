@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>CasaYourte · Presupuestos</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..700,0..100,0..1&family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link rel="stylesheet" href="./estilos.css">
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#181614">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="icon" href="./icono-192.png">
+<!--
+  presupuestos.html — Presupuestos y proveedores. Sello: presupuestos-1
+
+  3-nov-2026, Mauro: «una lista que sea presupuestos y proveedores contando el
+  estado del pedido, lo que fue solicitado y esperando, seguir ahí la línea de
+  la respuesta para establecer un precio de cada material por proveedor».
+
+  Una obra a cotizar (`presupuestos/{id}`) con sus materiales; los proveedores
+  (`proveedores/{id}`); y un PEDIDO por proveedor (`presupuesto_pedidos/{id}`):
+  qué se le pidió, en qué estado está, el hilo de lo que se mandó y contestó, y
+  el precio que dio para cada material. «Comparar» pone los precios lado a
+  lado, por moneda y sin sumar UYU con USD (presupuestos.js).
+
+  PRIVADO: precios y proveedores no van nunca al repositorio. Lo ve y lo escribe
+  quien tiene el permiso `presupuestos`. El agente lo lee y lo crea o completa
+  —arma los pedidos, anota lo que contestó cada proveedor— con la copia de
+  antes en `_historial/`; borrar es de una persona. Los mails los manda Mauro,
+  o Claude desde el chat cuando Mauro aprueba el texto.
+-->
+<style>
+  .chip{display:inline-block;font-family:var(--mono);font-size:.6rem;letter-spacing:.08em;
+    text-transform:uppercase;padding:.15rem .45rem;border-radius:999px;border:1px solid var(--line);color:var(--dim)}
+  .chip.por_pedir{color:var(--wip);border-color:var(--wip)}
+  .chip.pedido,.chip.respondido{color:var(--blond);border-color:var(--blond)}
+  .chip.cotizado{color:var(--ok, #8fc48a);border-color:var(--ok, #8fc48a)}
+  .tabs{display:flex;gap:.4rem;flex-wrap:wrap;margin:.8rem 0}
+  .tabs button{background:none;border:1px solid var(--line);color:var(--dim);border-radius:999px;padding:.35rem .8rem;font:inherit}
+  .tabs button.on{border-color:var(--blond);color:var(--text, inherit)}
+  table.t{width:100%;border-collapse:collapse;font-size:.85rem}
+  table.t th,table.t td{border-bottom:1px solid var(--line);padding:.35rem .3rem;text-align:left;vertical-align:top}
+  table.t td.n{text-align:right;font-family:var(--mono);white-space:nowrap}
+  .rubro{font-family:var(--mono);font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:var(--dim2);padding-top:.8rem}
+  .msj{border:1px solid var(--line);border-radius:var(--r);padding:.55rem .7rem;margin:.45rem 0;background:var(--ink2)}
+  .msj.nosotros{border-color:var(--blond)}
+  .msj.nota{border-style:dashed}
+  .msj .q{font-family:var(--mono);font-size:.62rem;color:var(--dim2)}
+  .msj .tx{white-space:pre-wrap;font-size:.88rem;margin-top:.3rem}
+  .mejor{color:var(--ok, #8fc48a);font-weight:600}
+  .precio{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:.3rem;align-items:end;margin:.3rem 0}
+  .precio .nom{grid-column:1/-1;font-size:.82rem;color:var(--dim)}
+  @media(min-width:680px){.precio{grid-template-columns:3fr 1fr 1fr 1fr 1fr}.precio .nom{grid-column:auto}}
+  .desliza{overflow-x:auto}
+</style>
+</head>
+<body>
+
+<div id="nav"></div>
+
+<div class="contenedor">
+
+  <section id="v-lista">
+    <h1>Presupuestos</h1>
+    <p class="gris">Las obras a cotizar, a quién se le pidió precio de cada material, qué
+    contestó y en qué quedó. Privado: sólo con el permiso de presupuestos.</p>
+    <div class="tabs" id="tabsLista">
+      <button data-lista="obras" class="on">Obras</button>
+      <button data-lista="proveedores">Proveedores</button>
+    </div>
+    <div id="lista"><div class="empty">Cargando…</div></div>
+  </section>
+
+  <section id="v-prov" class="hide">
+    <button class="btn" data-volver style="margin-bottom:.8rem"><span class="material-icons">arrow_back</span> Volver</button>
+    <h1 id="pv-titulo">Proveedor</h1>
+    <div class="ficha" style="display:grid;grid-template-columns:1fr 1fr;gap:.45rem .6rem">
+      <label style="grid-column:1/-1"><span class="k">Nombre</span><input id="pv-nombre" maxlength="80"></label>
+      <label><span class="k">Mail</span><input id="pv-mail" maxlength="120" inputmode="email"></label>
+      <label><span class="k">Teléfono / WhatsApp</span><input id="pv-tel" maxlength="60" inputmode="tel"></label>
+      <label style="grid-column:1/-1"><span class="k">Dirección</span><input id="pv-dir" maxlength="160"></label>
+      <label style="grid-column:1/-1"><span class="k">Web</span><input id="pv-web" maxlength="160"></label>
+      <label style="grid-column:1/-1"><span class="k">Rubros</span><span id="pv-rubros" class="row" style="flex-wrap:wrap;gap:.5rem"></span></label>
+      <label style="grid-column:1/-1"><span class="k">Nota</span><textarea id="pv-nota" rows="2"></textarea></label>
+    </div>
+    <div class="row" style="margin-top:.6rem"><button class="btn p" id="pv-guardar">Guardar</button><span class="gris" id="pv-dice"></span></div>
+  </section>
+
+  <section id="v-obra" class="hide">
+    <button class="btn" data-volver style="margin-bottom:.8rem"><span class="material-icons">arrow_back</span> Todas las obras</button>
+    <h1 id="o-titulo">—</h1>
+    <p class="gris" id="o-sub"></p>
+    <div class="tabs" id="tabsObra">
+      <button data-tab="materiales" class="on">Materiales</button>
+      <button data-tab="pedidos">Pedidos</button>
+      <button data-tab="comparar">Comparar</button>
+    </div>
+    <div id="t-materiales"></div>
+    <div id="t-pedidos" class="hide"></div>
+    <div id="t-comparar" class="hide"></div>
+  </section>
+
+  <section id="v-pedido" class="hide">
+    <button class="btn" id="pd-volver" style="margin-bottom:.8rem"><span class="material-icons">arrow_back</span> Los pedidos de la obra</button>
+    <h1 id="pd-titulo">—</h1>
+    <p class="gris" id="pd-sub"></p>
+    <div class="row" style="flex-wrap:wrap;gap:.5rem;align-items:end">
+      <label><span class="k">Estado</span><select id="pd-estado"></select></label>
+      <button class="btn" id="pd-copiar"><span class="material-icons">content_copy</span> Copiar el mail</button>
+      <a class="btn hide" id="pd-mailto"><span class="material-icons">mail</span> Abrir en el correo</a>
+      <span class="gris" id="pd-dice"></span>
+    </div>
+
+    <h2 style="margin-top:1.2rem">Lo que se le pidió</h2>
+    <div id="pd-items"></div>
+
+    <h2 style="margin-top:1.2rem">El hilo</h2>
+    <div id="pd-hilo"></div>
+    <div class="card" style="margin-top:.6rem">
+      <label><span class="k">Agregar</span>
+        <select id="h-quien">
+          <option value="proveedor">Lo que contestó</option>
+          <option value="nosotros">Lo que le mandamos</option>
+          <option value="nota">Nota interna</option>
+        </select></label>
+      <label><span class="k">Texto</span><textarea id="h-texto" rows="4"></textarea></label>
+      <button class="btn" id="h-agregar"><span class="material-icons">add_comment</span> Agregar al hilo</button>
+    </div>
+
+    <h2 style="margin-top:1.2rem">Precios que dio</h2>
+    <p class="gris">Precio por la unidad del material. Si cotiza en otra unidad, se anota igual y
+    no entra en el total. UYU y USD van aparte.</p>
+    <div id="pd-precios"></div>
+    <div class="row" style="margin-top:.6rem"><button class="btn p" id="pd-guardar-precios">Guardar los precios</button></div>
+  </section>
+</div>
+
+<script type="module">
+import { cargarFirebase,
+         db, auth, doc, getDoc, getDocs, setDoc, updateDoc,
+         collection, onAuthStateChanged, signOut } from "./firebase-init.js";
+import { CY } from "./nucleo.js";
+import { ESTADOS, RUBROS, MONEDAS, materialesDe, comparativa, totalesPorProveedor, sinCotizar,
+         estadoTrasHilo, estadoTrasPrecios, leerPrecio, mailDePedido } from "./presupuestos.js";
+
+CY.PANEL = "presupuestos-1";
+CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
+
+if (!await CY.conFirebase(cargarFirebase)) throw new Error("sin SDK");
+const yo = await CY.arrancar({ db, auth, doc, getDoc, onAuthStateChanged }, "presupuestos", "presupuestos");
+
+const $ = (id) => document.getElementById(id);
+const esc = CY.esc;
+const RUBRO = Object.fromEntries(RUBROS);
+const ESTADO = Object.fromEntries(ESTADOS);
+const QUIEN = { nosotros: "Le mandamos", proveedor: "Contestó", nota: "Nota" };
+const quien = () => yo.nombre || yo.email || yo.uid;
+const fecha = (iso) => { const d = new Date(iso); return isNaN(d) ? (iso || "") : d.toLocaleString("es-UY", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" }); };
+const plata = (n, m) => (m === "USD" ? "US$ " : "$ ") + (Math.round(n * 100) / 100).toLocaleString("es-UY");
+
+let obras = [], proveedores = [], pedidos = [], obra = null, pedido = null, prov = null, listaVista = "obras";
+
+const VISTAS = ["v-lista", "v-prov", "v-obra", "v-pedido"];
+const mostrar = (v) => { VISTAS.forEach((x) => $(x).classList.toggle("hide", x !== v)); window.scrollTo(0, 0); };
+
+async function cargar() {
+  try {
+    const [a, b, c] = await Promise.all(["presupuestos", "proveedores", "presupuesto_pedidos"].map((n) => getDocs(collection(db, n))));
+    obras = a.docs.map((d) => ({ id: d.id, ...d.data() }));
+    proveedores = b.docs.map((d) => ({ id: d.id, ...d.data() })).sort((x, y) => String(x.nombre).localeCompare(String(y.nombre)));
+    pedidos = c.docs.map((d) => ({ id: d.id, ...d.data() }));
+  } catch (e) { $("lista").innerHTML = `<div class="empty">${esc(CY.explicar(e))}</div>`; return false; }
+  return true;
+}
+
+function pintarLista() {
+  document.querySelectorAll("#tabsLista button").forEach((b) => b.classList.toggle("on", b.dataset.lista === listaVista));
+  if (listaVista === "obras") {
+    $("lista").innerHTML = obras.length ? obras.map((o) => {
+      const ps = pedidos.filter((p) => p.presupuesto === o.id);
+      const cuenta = (e) => ps.filter((p) => p.estado === e).length;
+      return `<div class="tarj card pulsa" data-obra="${esc(o.id)}">
+        <div class="grow"><h3>${esc(o.titulo || o.id)}</h3>
+          <div class="sub">${materialesDe(o).length} materiales · ${ps.length} pedidos: ${cuenta("por_pedir")} por pedir, ${cuenta("pedido")} esperando, ${cuenta("respondido") + cuenta("cotizado")} con respuesta</div></div>
+        <span class="material-icons" style="color:var(--dim)">chevron_right</span></div>`;
+    }).join("") : '<div class="empty">Todavía no hay obras para cotizar.<br>Las carga Claude desde el chat.</div>';
+  } else {
+    $("lista").innerHTML = (proveedores.length ? proveedores.map((p) => `
+      <div class="tarj card pulsa" data-prov="${esc(p.id)}">
+        <div class="grow"><h3>${esc(p.nombre || p.id)}</h3>
+          <div class="sub">${esc((p.rubros || []).map((r) => RUBRO[r] || r).join(" · "))}</div>
+          <div class="sub">${esc([p.mail, p.telefono].filter(Boolean).join(" · ") || "sin contacto")}</div></div>
+        <span class="material-icons" style="color:var(--dim)">chevron_right</span></div>`).join("")
+      : '<div class="empty">Todavía no hay proveedores.</div>')
+      + `<button class="btn" data-prov="" style="margin-top:.6rem"><span class="material-icons">add</span> Proveedor nuevo</button>`;
+  }
+}
+
+/* ── proveedor ── */
+function abrirProv(p) {
+  prov = p || { id: "", rubros: [] };
+  $("pv-titulo").textContent = prov.nombre || "Proveedor nuevo";
+  $("pv-nombre").value = prov.nombre || ""; $("pv-mail").value = prov.mail || ""; $("pv-tel").value = prov.telefono || "";
+  $("pv-dir").value = prov.direccion || ""; $("pv-web").value = prov.web || ""; $("pv-nota").value = prov.nota || "";
+  $("pv-rubros").innerHTML = RUBROS.map(([id, t]) => `<label class="row" style="gap:.25rem;font-size:.85rem"><input type="checkbox" value="${id}" ${(prov.rubros || []).includes(id) ? "checked" : ""}> ${esc(t)}</label>`).join("");
+  $("pv-dice").textContent = "";
+  mostrar("v-prov");
+}
+$("pv-guardar").onclick = async () => {
+  const nombre = $("pv-nombre").value.trim();
+  if (!nombre) { $("pv-dice").textContent = "Falta el nombre."; return; }
+  const ahora = new Date().toISOString();
+  const cuerpo = { nombre, mail: $("pv-mail").value.trim(), telefono: $("pv-tel").value.trim(), direccion: $("pv-dir").value.trim(),
+    web: $("pv-web").value.trim(), nota: $("pv-nota").value.trim(),
+    rubros: [...$("pv-rubros").querySelectorAll("input:checked")].map((x) => x.value), actualizadoISO: ahora, actualizadoPor: quien() };
+  try {
+    if (prov.id) await updateDoc(doc(db, "proveedores", prov.id), cuerpo);
+    else {
+      prov.id = "pv-" + nombre.toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
+      await setDoc(doc(db, "proveedores", prov.id), { ...cuerpo, creadoISO: ahora });
+    }
+    $("pv-dice").textContent = "Guardado.";
+    await cargar();
+  } catch (e) { $("pv-dice").textContent = CY.explicar(e); }
+};
+
+/* ── obra ── */
+let tab = "materiales";
+function abrirObra(o) {
+  obra = o; if (!o) return;
+  $("o-titulo").textContent = o.titulo || o.id;
+  $("o-sub").textContent = o.nota || "";
+  pintarObra();
+  mostrar("v-obra");
+}
+function pintarObra() {
+  document.querySelectorAll("#tabsObra button").forEach((b) => b.classList.toggle("on", b.dataset.tab === tab));
+  ["materiales", "pedidos", "comparar"].forEach((t) => $("t-" + t).classList.toggle("hide", t !== tab));
+  const mats = materialesDe(obra);
+  let r = "";
+  $("t-materiales").innerHTML = `<div class="desliza"><table class="t"><tr><th>Material</th><th>Cantidad</th></tr>` +
+    mats.map((m) => { const h = m.rubro !== r ? `<tr><td colspan="2" class="rubro">${esc(RUBRO[m.rubro] || m.rubro)}</td></tr>` : ""; r = m.rubro;
+      return h + `<tr><td>${esc(m.nombre)}${m.especificacion ? `<div class="gris" style="font-size:.78rem">${esc(m.especificacion)}</div>` : ""}</td>
+        <td class="n">${esc(String(m.cantidad))} ${esc(m.unidad || "")}</td></tr>`; }).join("") + "</table></div>";
+
+  const ps = pedidos.filter((p) => p.presupuesto === obra.id);
+  const nom = (id) => (proveedores.find((p) => p.id === id) || {}).nombre || id;
+  $("t-pedidos").innerHTML = ps.length ? ps.sort((a, b) => ESTADOS.findIndex((e) => e[0] === a.estado) - ESTADOS.findIndex((e) => e[0] === b.estado)).map((p) => `
+    <div class="tarj card pulsa" data-pedido="${esc(p.id)}">
+      <div class="grow"><h3>${esc(nom(p.proveedor))}</h3>
+        <div class="sub">${(p.items || []).length} materiales pedidos${p.enviadoISO ? " · enviado " + esc(fecha(p.enviadoISO)) : ""}${(p.hilo || []).length ? " · " + p.hilo.length + " en el hilo" : ""}</div></div>
+      <span class="chip ${esc(p.estado || "por_pedir")}">${esc((p.estado || "por_pedir").replace("_", " "))}</span>
+      <span class="material-icons" style="color:var(--dim)">chevron_right</span></div>`).join("")
+    : '<div class="empty">Todavía no hay pedidos para esta obra.</div>';
+
+  const filas = comparativa(obra, pedidos, proveedores);
+  const tot = totalesPorProveedor(obra, pedidos, proveedores);
+  const falta = sinCotizar(obra, pedidos, proveedores);
+  $("t-comparar").innerHTML = `<p class="gris">${falta.length ? `Faltan precios para ${falta.length} de ${mats.length} materiales.` : "Todos los materiales tienen al menos un precio."}</p>
+    <div class="desliza"><table class="t"><tr><th>Material</th><th>Ofertas (por unidad)</th></tr>` +
+    filas.map((f) => `<tr><td>${esc(f.material.nombre)}<div class="gris" style="font-size:.75rem">${esc(String(f.material.cantidad))} ${esc(f.material.unidad || "")}</div></td><td>${
+      f.ofertas.length ? f.ofertas.map((o) => `<div class="${f.mejor[o.moneda] === o ? "mejor" : ""}">${esc(o.nombre)}: ${esc(plata(o.precio, o.moneda))}${o.unidad ? " / " + esc(o.unidad) : ""}${o.iva === "mas_iva" ? " + IVA" : ""}${o.comparable ? "" : " · otra unidad"}</div>`).join("")
+      : '<span class="gris">sin precio</span>'}</td></tr>`).join("") + "</table></div>" +
+    (Object.keys(tot).length ? `<h2 style="margin-top:1rem">Lo cotizado por cada proveedor</h2><div class="desliza"><table class="t"><tr><th>Proveedor</th><th>Materiales</th><th>Total</th></tr>` +
+      Object.values(tot).map((x) => `<tr><td>${esc(x.nombre)}</td><td class="n">${x.materiales}</td><td class="n">${Object.entries(x.porMoneda).map(([m, n]) => esc(plata(n, m))).join("<br>")}</td></tr>`).join("") + "</table></div>" : "");
+}
+
+/* ── pedido ── */
+function abrirPedido(p) {
+  pedido = p; if (!p) return;
+  const pv = proveedores.find((x) => x.id === p.proveedor) || { nombre: p.proveedor };
+  $("pd-titulo").textContent = pv.nombre;
+  $("pd-sub").textContent = [pv.mail, pv.telefono, obra.titulo].filter(Boolean).join(" · ");
+  $("pd-estado").innerHTML = ESTADOS.map(([v, t]) => `<option value="${v}" ${v === (p.estado || "por_pedir") ? "selected" : ""}>${esc(t)}</option>`).join("");
+  const m = p.asunto ? { asunto: p.asunto, cuerpo: p.cuerpo || "" } : mailDePedido(obra, pv, p.items || []);
+  pedido._mail = m;
+  const a = $("pd-mailto");
+  if (pv.mail) { a.href = `mailto:${encodeURIComponent(pv.mail)}?subject=${encodeURIComponent(m.asunto)}&body=${encodeURIComponent(m.cuerpo)}`; a.classList.remove("hide"); }
+  else a.classList.add("hide");
+  const mats = materialesDe(obra).filter((x) => (p.items || []).includes(x.id));
+  $("pd-items").innerHTML = `<table class="t">${mats.map((x) => `<tr><td>${esc(x.nombre)}</td><td class="n">${esc(String(x.cantidad))} ${esc(x.unidad || "")}</td></tr>`).join("")}</table>`;
+  pintarHilo();
+  $("pd-precios").innerHTML = mats.map((x) => { const pr = (p.precios || {})[x.id] || {};
+    return `<div class="precio" data-mid="${esc(x.id)}">
+      <span class="nom">${esc(x.nombre)} · ${esc(String(x.cantidad))} ${esc(x.unidad || "")}</span>
+      <label><span class="k">Precio</span><input data-c="precio" inputmode="decimal" value="${esc(pr.precio ?? "")}"></label>
+      <label><span class="k">Moneda</span><select data-c="moneda">${MONEDAS.map((mo) => `<option ${mo === (pr.moneda || "UYU") ? "selected" : ""}>${mo}</option>`).join("")}</select></label>
+      <label><span class="k">Por</span><input data-c="unidad" placeholder="${esc(x.unidad || "")}" value="${esc(pr.unidad || "")}"></label>
+      <label><span class="k">IVA</span><select data-c="iva">${[["no_dice", "no dice"], ["incluido", "incluido"], ["mas_iva", "+ IVA"]].map(([v, t]) => `<option value="${v}" ${v === (pr.iva || "no_dice") ? "selected" : ""}>${t}</option>`).join("")}</select></label>
+    </div>`; }).join("");
+  $("pd-dice").textContent = "";
+  mostrar("v-pedido");
+}
+function pintarHilo() {
+  const h = [...(pedido.hilo || [])].sort((a, b) => String(a.en).localeCompare(String(b.en)));
+  $("pd-hilo").innerHTML = h.length ? h.map((x) => `<div class="msj ${esc(x.quien)}"><div class="q">${esc(QUIEN[x.quien] || x.quien)} · ${esc(fecha(x.en))}${x.por ? " · " + esc(x.por) : ""}</div><div class="tx">${esc(x.texto)}</div></div>`).join("")
+    : '<div class="empty">Sin nada todavía. El mail de arriba es el que se va a mandar.</div>';
+}
+async function guardarPedido(cambios) {
+  const cuerpo = { ...cambios, actualizadoISO: new Date().toISOString(), actualizadoPor: quien() };
+  try { await updateDoc(doc(db, "presupuesto_pedidos", pedido.id), cuerpo); Object.assign(pedido, cuerpo); $("pd-dice").textContent = "Guardado."; return true; }
+  catch (e) { $("pd-dice").textContent = CY.explicar(e); return false; }
+}
+$("pd-estado").onchange = () => guardarPedido({ estado: $("pd-estado").value });
+$("pd-copiar").onclick = async () => {
+  const m = pedido._mail; try { await navigator.clipboard.writeText(m.asunto + "\n\n" + m.cuerpo); $("pd-dice").textContent = "Copiado."; }
+  catch { $("pd-dice").textContent = "No se pudo copiar."; }
+};
+$("h-agregar").onclick = async () => {
+  const texto = $("h-texto").value.trim(); if (!texto) return;
+  const q = $("h-quien").value;
+  const x = { en: new Date().toISOString(), quien: q, texto, por: quien() };
+  const estado = estadoTrasHilo(pedido.estado, q);
+  const c = { hilo: [...(pedido.hilo || []), x], estado };
+  if (q === "nosotros" && !pedido.enviadoISO) c.enviadoISO = x.en;
+  if (await guardarPedido(c)) { $("h-texto").value = ""; $("pd-estado").value = estado; pintarHilo(); }
+};
+$("pd-guardar-precios").onclick = async () => {
+  const precios = { ...(pedido.precios || {}) };
+  for (const f of $("pd-precios").querySelectorAll("[data-mid]")) {
+    const v = (c) => f.querySelector(`[data-c="${c}"]`).value;
+    const p = leerPrecio({ precio: v("precio"), moneda: v("moneda"), unidad: v("unidad"), iva: v("iva"), en: new Date().toISOString() });
+    if (p) precios[f.dataset.mid] = p; else if (!v("precio").trim()) delete precios[f.dataset.mid];
+  }
+  const estado = estadoTrasPrecios(pedido.estado, precios);
+  if (await guardarPedido({ precios, estado })) $("pd-estado").value = estado;
+};
+
+$("pd-volver").onclick = async () => { await cargar(); obra = obras.find((o) => o.id === obra.id) || obra; tab = "pedidos"; abrirObra(obra); };
+
+document.addEventListener("click", async (ev) => {
+  const t = ev.target.closest("[data-lista]"); if (t) { listaVista = t.dataset.lista; return pintarLista(); }
+  const o = ev.target.closest("[data-obra]"); if (o) { tab = "materiales"; return abrirObra(obras.find((x) => x.id === o.dataset.obra)); }
+  const pv = ev.target.closest("[data-prov]"); if (pv) return abrirProv(proveedores.find((x) => x.id === pv.dataset.prov));
+  const tb = ev.target.closest("[data-tab]"); if (tb) { tab = tb.dataset.tab; return pintarObra(); }
+  const pd = ev.target.closest("[data-pedido]"); if (pd) return abrirPedido(pedidos.find((x) => x.id === pd.dataset.pedido));
+  if (ev.target.closest("[data-volver]")) { await cargar(); pintarLista(); mostrar("v-lista"); }
+});
+
+if (await cargar()) {
+  pintarLista();
+  const q = new URLSearchParams(location.search);
+  if (q.get("o")) { const x = obras.find((o) => o.id === q.get("o")); if (x) abrirObra(x); }
+}
+</script>
+</body>
+</html>

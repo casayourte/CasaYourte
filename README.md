@@ -39,6 +39,8 @@ menú ⋮ → *Agregar a la pantalla principal*.
 | Archivo | Qué es |
 |---|---|
 | `calculo-geo.js` | la geometría de Cálculos, sin navegador; su banco es `pruebas-calculo.mjs` |
+| `presupuestos.html` | presupuestos y proveedores: los materiales de una obra, un pedido de precio por proveedor con su hilo y sus precios, y la comparación por moneda. Privado (permiso `presupuestos`) |
+| `presupuestos.js` | la lógica de presupuestos, sin Firebase ni DOM: leer un precio, comparar, totales por moneda, el mail del pedido; su banco es `pruebas-presupuestos.mjs` |
 | `consultas-ia.js` | leer con IA (Gemini, por `claude-proxy`) la captura de una conversación y sumarla a la consulta sin repetir; su banco es `pruebas-consultas.mjs` |
 | `calculo-3d.js` | el modelo 3D de Cálculos, arriba de la pestaña «Medidas», con cada parte por separado y la que se mide resaltada: las piezas salen sin navegador (`piezas3d`) y three.js baja del CDN recién al abrir la pestaña |
 | `firebase-init.js` | único archivo que toca el SDK de Firebase. La versión vive acá, y **desde el sello `init-2` el SDK se baja diferido**: ver «El SDK no viene puesto» |
@@ -763,9 +765,9 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 
 | Archivo | Constante | Valor de esta versión |
 |---|---|---|
-| `nucleo.js` | `CY.VERSION` | `nucleo-32` |
+| `nucleo.js` | `CY.VERSION` | `nucleo-33` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `cy-shell-v83` |
+| `sw.js` | `VERSION` | `cy-shell-v84` |
 | `admin.html` | `PANEL` | `admin-19` |
 | `editar.html` | `EDITOR` | `editar-23` |
 | `taller.html` | `SELLO` | `andamio-3` |
@@ -774,6 +776,8 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 | `calculo-3d.js` | `SELLO_3D` | `3d-10` |
 | `consultas.html` | `CY.PANEL` | `consultas-4` |
 | `consultas-ia.js` | `VERSION_CONSULTAS_IA` | `consultas-ia-1` |
+| `presupuestos.html` | `CY.PANEL` | `presupuestos-1` |
+| `presupuestos.js` | `VERSION_PRESUPUESTOS` | `presupuestos-js-1` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-4` |
 | `diagnostico.html` | `CY.PANEL` | `diagnostico-8` |
 | `idiomas.js` | `SELLO` | `idiomas-5` |
@@ -838,6 +842,7 @@ node pruebas-puertas.mjs
 node pruebas-modelos.mjs
 node pruebas-calculo.mjs
 node pruebas-consultas.mjs
+node pruebas-presupuestos.mjs
 ```
 
 Sin npm, sin navegador, sin dependencias: `node` a secas. Son 16 casos sobre el orden y el

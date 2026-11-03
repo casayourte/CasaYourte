@@ -2,6 +2,12 @@
 // CasaYourte — Reglas de Firestore
 // Se pegan COMPLETAS en la consola. Nunca por fragmentos.
 //
+// 3-nov-2026 · ENTRAN `presupuestos/`, `proveedores/` y `presupuesto_pedidos/`:
+//   pedir precio de materiales y comparar (presupuestos.html, pedido de Mauro:
+//   «una lista que sea presupuestos y proveedores contando el estado del
+//   pedido… para establecer un precio de cada material por proveedor»). Con el
+//   permiso 'presupuestos'; el agente lee, crea y completa, nunca borra.
+//
 // 27-oct-2026 (tarde) · ENTRA `consultas/{id}/adjuntos/`: capturas y audios
 //   de WhatsApp de cada consulta, como bytes y con techo de 900 KB.
 //   El agente sólo los crea; leerlos y borrarlos, con el permiso 'consultas'.
@@ -230,6 +236,26 @@ service cloud.firestore {
           && request.resource.data.datos is bytes
           && request.resource.data.datos.size() <= 900000;
       }
+    }
+
+    // ---------- presupuestos y proveedores (3-nov-2026) ----------
+    // Una obra a cotizar con sus materiales, los proveedores y un pedido de
+    // precio por proveedor con su hilo y los precios que dio
+    // (presupuestos.html). Llevan precios y proveedores: privados, con el
+    // permiso 'presupuestos'. El agente los lee (comodín de arriba) y los crea
+    // o completa —arma los pedidos y anota lo que contestó cada proveedor—, con
+    // la copia de antes en `_historial/`; borrar, no.
+    match /presupuestos/{id} {
+      allow read, create, update, delete: if con('presupuestos');
+      allow create, update: if esAgente();
+    }
+    match /proveedores/{id} {
+      allow read, create, update, delete: if con('presupuestos');
+      allow create, update: if esAgente();
+    }
+    match /presupuesto_pedidos/{id} {
+      allow read, create, update, delete: if con('presupuestos');
+      allow create, update: if esAgente();
     }
 
     // ---------- el sitio ----------

@@ -114,6 +114,8 @@
 // v80 (2-nov-2026) — calculo-20 + 3d-8: la tapa aislante del toono, con bisagra y manivela.
 // v81 (2-nov-2026) — calculo-21 + 3d-9: las sogas por las aristas del triángulo; la cara vista adentro.
 // v82 (2-nov-2026) — calculo-22 + 3d-10: las sogas escondidas detrás de la tela, un orificio por enganche.
+// v84 (3-nov-2026) — presupuestos-1: entran presupuestos.html y presupuestos.js
+//   (presupuestos y proveedores, permiso 'presupuestos').
 // v83 (2-nov-2026) — consultas-4: «Desde una captura», la IA (Gemini, por claude-proxy)
 //   transcribe la conversación de WhatsApp; entra consultas-ia.js al SHELL.
 //
@@ -122,7 +124,7 @@
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v83';
+const VERSION = 'cy-shell-v84';
 
 // v69 · 29-oct-2026 · `nucleo.js` (nucleo-32, general:C7): CY.explicar usa la tabla
 //   común de `errores.js` del panel (datos) y le suma sus dos causas propias.
@@ -255,6 +257,8 @@ const SHELL = [
   './calculo-3d.js',
   './consultas.html',
   './consultas-ia.js',
+  './presupuestos.html',
+  './presupuestos.js',
   './diagnostico.html',
   './assets/lamina-muro.jpg',
   './assets/lamina-triangulo.jpg',

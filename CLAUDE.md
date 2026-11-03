@@ -221,13 +221,14 @@ previene nada y sí pierde trabajo: ya pasó cuatro veces en dos días.
 Lo que reemplaza a ese momento de revisión es la verificación previa, que corre
 el agente y **no es opcional**: que el JavaScript parsee **como MÓDULO**
 —`node --input-type=module --check < archivo.js`, y no `node --check`—,
-incluidos los módulos que viven adentro de un `.html`; que **los siete bancos
+incluidos los módulos que viven adentro de un `.html`; que **los ocho bancos
 corran** —`node pruebas-secciones.mjs` (16 casos), `node pruebas-reportes.mjs`
 (64 casos), `node pruebas-andamio.mjs` (89 casos), `node
 pruebas-puertas.mjs` (131 casos), `node pruebas-modelos.mjs` (119 casos),
 `node pruebas-calculo.mjs` (141 casos, la geometría de Cálculos y el 3D) y
-`node pruebas-consultas.mjs` (14 casos, la consulta desde una captura), los
-siete sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
+`node pruebas-consultas.mjs` (14 casos, la consulta desde una captura) y `node
+pruebas-presupuestos.mjs` (40 casos, presupuestos y proveedores), los
+ocho sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
 sellos hayan subido, con la `VERSION` del `sw.js` si el archivo está en `SHELL`
 y los `?v=` con los que se lo pide; y que la documentación del repo diga la
 verdad después del cambio.
@@ -671,6 +672,23 @@ verdad después del cambio.
   productos; una captura lleva el nombre y lo que escribió un cliente. Cupo: una
   llamada a Gemini por carga, dentro del gratuito; ninguna lectura nueva de
   Firestore.
+- **Los PRESUPUESTOS y PROVEEDORES viven en el panel, en «Más → Presupuestos
+  y proveedores»** (`presupuestos.html` + `presupuestos.js`, `presupuestos-1`,
+  3-nov-2026, Mauro: «una lista que sea presupuestos y proveedores contando el
+  estado del pedido, lo que fue solicitado y esperando, seguir ahí la línea de
+  la respuesta para establecer un precio de cada material por proveedor»).
+  Tres colecciones: `presupuestos/{id}` (una obra a cotizar con sus
+  `materiales`, mapa por id), `proveedores/{id}` y `presupuesto_pedidos/{id}`
+  (UN pedido a UN proveedor: `items`, `estado` —por pedir, pedido, respondió,
+  cotizado, no contestó, descartado—, `hilo` y `precios` por material).
+  «Comparar» pone los precios lado a lado y suma por proveedor **por moneda:
+  UYU y USD nunca se suman**, y un precio en otra unidad se muestra pero no
+  entra en el total. Permiso nuevo `presupuestos` (el administrador lo tiene).
+  **Es privado: precios y proveedores no van nunca a este repositorio.** El
+  agente lee y crea o completa (copia previa en `_historial/`), nunca borra;
+  los mails a proveedores salen de un chat con Mauro y sólo con su «sí» al
+  texto. Cupo: unas decenas de documentos, lecturas al abrir la página;
+  despreciable para Spark. Hay que **publicar REGLAS.txt**.
 - **La geometría de Cálculos vive en `calculo-geo.js`, sin navegador**
   (`geo-1`, `calculo-10`, 1-nov-2026, Mauro: «pasá el plancher y muros a
   cálculos»). La autoridad de las reglas es el manual técnico del plancher
