@@ -227,7 +227,7 @@ corran** —`node pruebas-secciones.mjs` (16 casos), `node pruebas-reportes.mjs`
 pruebas-puertas.mjs` (131 casos), `node pruebas-modelos.mjs` (119 casos),
 `node pruebas-calculo.mjs` (141 casos, la geometría de Cálculos y el 3D) y
 `node pruebas-consultas.mjs` (14 casos, la consulta desde una captura) y `node
-pruebas-presupuestos.mjs` (40 casos, presupuestos y proveedores), los
+pruebas-presupuestos.mjs` (43 casos, presupuestos y proveedores), los
 ocho sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
 sellos hayan subido, con la `VERSION` del `sw.js` si el archivo está en `SHELL`
 y los `?v=` con los que se lo pide; y que la documentación del repo diga la
@@ -689,6 +689,17 @@ verdad después del cambio.
   los mails a proveedores salen de un chat con Mauro y sólo con su «sí» al
   texto. Cupo: unas decenas de documentos, lecturas al abrir la página;
   despreciable para Spark. Hay que **publicar REGLAS.txt**.
+  **Desde `presupuestos-2` (3-nov-2026, Mauro: «las fotos de sus catálogos…
+  guardadas en las conversaciones utilizando un registro perdurable para
+  nuestro sitio») cada pedido guarda sus CATÁLOGOS, fotos y capturas** en
+  `presupuesto_pedidos/{id}/adjuntos/`, con el MISMO molde que los adjuntos de
+  consultas (bytes, sólo imagen, 900 KB, achicada en el teléfono; el agente
+  sólo crea, `firestore.mjs casayourte adjuntar presupuesto_pedidos <id>
+  <archivo>`), y cada renglón del hilo dice por dónde fue (`canal`: mail,
+  WhatsApp, teléfono, en persona). Lo que no es un renglón —quién es quién, en
+  qué quedó, qué se aprendió para pedir mejor— va al registro privado del chat
+  en la bodega (`casayourte/proveedores/`). Cupo: una lectura por imagen al
+  abrir un pedido. Hay que **publicar REGLAS.txt** otra vez.
 - **La geometría de Cálculos vive en `calculo-geo.js`, sin navegador**
   (`geo-1`, `calculo-10`, 1-nov-2026, Mauro: «pasá el plancher y muros a
   cálculos»). La autoridad de las reglas es el manual técnico del plancher

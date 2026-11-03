@@ -2,6 +2,9 @@
 // CasaYourte — Reglas de Firestore
 // Se pegan COMPLETAS en la consola. Nunca por fragmentos.
 //
+// 3-nov-2026 (tarde) · ENTRA `presupuesto_pedidos/{id}/adjuntos/`: los catálogos,
+//   fotos y capturas de cada proveedor, como bytes (la misma forma que los de
+//   consultas). El agente sólo los crea.
 // 3-nov-2026 · ENTRAN `presupuestos/`, `proveedores/` y `presupuesto_pedidos/`:
 //   pedir precio de materiales y comparar (presupuestos.html, pedido de Mauro:
 //   «una lista que sea presupuestos y proveedores contando el estado del
@@ -256,6 +259,20 @@ service cloud.firestore {
     match /presupuesto_pedidos/{id} {
       allow read, create, update, delete: if con('presupuestos');
       allow create, update: if esAgente();
+      // Los catálogos, fotos y capturas que mandó el proveedor (presupuestos-2,
+      // 3-nov-2026). La MISMA forma y el MISMO techo que los adjuntos de
+      // consultas: bytes, imagen, 900 KB. El agente sólo los crea (los lee el
+      // comodín de arriba); quitarlos es de una persona.
+      match /adjuntos/{aid} {
+        allow read, delete: if con('presupuestos');
+        allow create: if (con('presupuestos') || esAgente())
+          && request.resource.data.keys().hasOnly(['en', 'tipo', 'mime', 'nombre', 'datos', 'por', 'nota'])
+          && request.resource.data.tipo == 'imagen'
+          && request.resource.data.mime is string
+          && request.resource.data.mime.matches('image/[a-z0-9.+-]+')
+          && request.resource.data.datos is bytes
+          && request.resource.data.datos.size() <= 900000;
+      }
     }
 
     // ---------- el sitio ----------

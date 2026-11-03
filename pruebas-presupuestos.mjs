@@ -75,6 +75,11 @@ ok("y en el menú, con su permiso", /href:'\.\/presupuestos\.html', grupo:'clien
 ok("los dos archivos están en el SHELL", sw.includes("'./presupuestos.html'") && sw.includes("'./presupuestos.js'"));
 ok("los estados de la página salen del módulo", ESTADO_IDS.length === 6 && /ESTADOS\.map/.test(h));
 ok("los rubros también", RUBRO_IDS.includes("madera") && /RUBROS\.map/.test(h));
+ok("los catálogos y capturas: regla con forma fija, sólo imagen, 900 KB, el agente sólo crea",
+  /match \/presupuesto_pedidos\/\{id\} \{[\s\S]*?match \/adjuntos\/\{aid\} \{\s*allow read, delete: if con\('presupuestos'\);\s*allow create: if \(con\('presupuestos'\) \|\| esAgente\(\)\)[\s\S]*?tipo == 'imagen'[\s\S]*?size\(\) <= 900000;/.test(r));
+ok("la página guarda los adjuntos donde dice la regla, achicados y con dos inputs",
+  h.includes('"presupuesto_pedidos", pedido.id, "adjuntos"') && /capture="environment" id="a-camara"/.test(h) && /id="a-archivo"[^>]*multiple/.test(h) && /const MAXIMO = 900000/.test(h));
+ok("el hilo anota por dónde fue (mail, WhatsApp…)", /id="h-canal"/.test(h) && /x\.canal = \$\("h-canal"\)\.value/.test(h));
 ok("el JS de la página no lleva precios escritos", !/precio:\s*\d/.test(h));
 
 console.log(`\n${bien} pasadas, ${mal} fallidas`);
