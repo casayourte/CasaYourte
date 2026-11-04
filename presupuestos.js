@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // presupuestos.js — Pedir precio de materiales a proveedores y compararlos.
-// Sello: presupuestos-js-1
+// Sello: presupuestos-js-2
 //
 // 3-nov-2026, Mauro: «hacer un envío de mails consultando precios para los
 // materiales… busquemos un presupuesto para una yurta de 5 m de diámetro… haz en
@@ -24,7 +24,7 @@
 // Sin Firebase y sin DOM: lo prueba `node pruebas-presupuestos.mjs`.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const VERSION_PRESUPUESTOS = "presupuestos-js-1";
+export const VERSION_PRESUPUESTOS = "presupuestos-js-2";
 
 export const ESTADOS = [
   ["por_pedir", "Por pedir: el mail está listo y sin mandar"],
@@ -157,4 +157,32 @@ export function mailDePedido(pres, proveedor, ids, { firma = "Mauro Gastaldello 
     firma,
   ].join("\n");
   return { asunto, cuerpo };
+}
+
+/* ── Respuestas nuevas (presupuestos-js-2, 4-nov-2026) ───────────────────────
+   Mauro: «cuando se agregan respuestas tienen que marcarse en la vista al
+   inicio para poder ir a leer y ordenar las últimas respuestas». La respuesta
+   es el último renglón del hilo que escribió el PROVEEDOR (lo que mandamos
+   nosotros o una nota no es novedad). Visto es de CADA persona:
+   `vistoPor.<uid>` = cuándo abrió el pedido por última vez, y lo escribe la
+   página al abrirlo. Nuevo = hay una respuesta posterior a ese momento. */
+export function ultimaRespuesta(pedido) {
+  let u = null;
+  for (const x of (pedido && pedido.hilo) || []) {
+    if (x && x.quien === "proveedor" && x.en && (!u || String(x.en) > String(u.en))) u = x;
+  }
+  return u;
+}
+export function esNueva(pedido, uid) {
+  const u = ultimaRespuesta(pedido);
+  if (!u) return false;
+  const visto = ((pedido && pedido.vistoPor) || {})[uid];
+  return !visto || String(u.en) > String(visto);
+}
+/** Los pedidos con alguna respuesta, la más nueva primero; las sin leer arriba. */
+export function respuestasRecientes(pedidos, uid) {
+  return (pedidos || [])
+    .map((p) => ({ pedido: p, respuesta: ultimaRespuesta(p), nueva: esNueva(p, uid) }))
+    .filter((x) => x.respuesta)
+    .sort((a, b) => (b.nueva - a.nueva) || String(b.respuesta.en).localeCompare(String(a.respuesta.en)));
 }

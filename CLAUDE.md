@@ -227,7 +227,7 @@ corran** —`node pruebas-secciones.mjs` (16 casos), `node pruebas-reportes.mjs`
 pruebas-puertas.mjs` (131 casos), `node pruebas-modelos.mjs` (119 casos),
 `node pruebas-calculo.mjs` (141 casos, la geometría de Cálculos y el 3D) y
 `node pruebas-consultas.mjs` (14 casos, la consulta desde una captura) y `node
-pruebas-presupuestos.mjs` (43 casos, presupuestos y proveedores), los
+pruebas-presupuestos.mjs` (52 casos, presupuestos y proveedores), los
 ocho sin npm y sin navegador—, contra sus casos límite y no sólo el camino feliz; que los
 sellos hayan subido, con la `VERSION` del `sw.js` si el archivo está en `SHELL`
 y los `?v=` con los que se lo pide; y que la documentación del repo diga la
@@ -700,6 +700,16 @@ verdad después del cambio.
   qué quedó, qué se aprendió para pedir mejor— va al registro privado del chat
   en la bodega (`casayourte/proveedores/`). Cupo: una lectura por imagen al
   abrir un pedido. Hay que **publicar REGLAS.txt** otra vez.
+  **Desde `presupuestos-3` (4-nov-2026, Mauro: «cuando se agregan respuestas
+  tienen que marcarse en la vista al inicio para poder ir a leer y ordenar las
+  últimas respuestas») la página abre con las ÚLTIMAS RESPUESTAS** de los
+  proveedores: las sin leer primero, marcadas «nuevo», la más nueva arriba
+  (`respuestasRecientes` de `presupuestos.js`). Respuesta = el último renglón
+  del hilo del PROVEEDOR; leído es de cada persona (`vistoPor.<uid>`, lo
+  escribe la página al abrir el pedido, sin tocar `actualizadoISO`), así que
+  lo que la ronda suma al hilo aparece como nuevo. Los pedidos de una obra se
+  ordenan igual. La ficha del proveedor muestra «Lo que sabemos» (catálogo,
+  contacto, WhatsApp, horario). Sin regla nueva.
 - **La geometría de Cálculos vive en `calculo-geo.js`, sin navegador**
   (`geo-1`, `calculo-10`, 1-nov-2026, Mauro: «pasá el plancher y muros a
   cálculos»). La autoridad de las reglas es el manual técnico del plancher

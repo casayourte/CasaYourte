@@ -767,7 +767,7 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-33` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `cy-shell-v85` |
+| `sw.js` | `VERSION` | `cy-shell-v86` |
 | `admin.html` | `PANEL` | `admin-19` |
 | `editar.html` | `EDITOR` | `editar-23` |
 | `taller.html` | `SELLO` | `andamio-3` |
@@ -776,7 +776,7 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 | `calculo-3d.js` | `SELLO_3D` | `3d-10` |
 | `consultas.html` | `CY.PANEL` | `consultas-4` |
 | `consultas-ia.js` | `VERSION_CONSULTAS_IA` | `consultas-ia-1` |
-| `presupuestos.html` | `CY.PANEL` | `presupuestos-2` |
+| `presupuestos.html` | `CY.PANEL` | `presupuestos-3` |
 | `presupuestos.js` | `VERSION_PRESUPUESTOS` | `presupuestos-js-1` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-4` |
 | `diagnostico.html` | `CY.PANEL` | `diagnostico-8` |

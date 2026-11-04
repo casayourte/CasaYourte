@@ -2,7 +2,8 @@
 // Sin npm y sin navegador: `node pruebas-presupuestos.mjs`.
 import fs from "node:fs";
 import { leerPrecio, materialesDe, comparativa, totalesPorProveedor, sinCotizar,
-         estadoTrasHilo, estadoTrasPrecios, mailDePedido, ESTADO_IDS, RUBRO_IDS } from "./presupuestos.js";
+         estadoTrasHilo, estadoTrasPrecios, mailDePedido, ESTADO_IDS, RUBRO_IDS,
+         ultimaRespuesta, esNueva, respuestasRecientes } from "./presupuestos.js";
 
 let bien = 0, mal = 0;
 const ok = (n, c) => { if (c) bien++; else { mal++; console.log("  ✗ " + n); } };
@@ -62,6 +63,20 @@ ok("pide IVA, plazo y envío", /IVA/.test(m.cuerpo) && /plazo/.test(m.cuerpo) &&
 ok("el asunto nombra la obra", /Yurta Ø 5 m/.test(m.asunto));
 ok("no promete compra ni da precios nuestros", !/\$|US\$|compramos|confirmamos/.test(m.cuerpo));
 
+console.log("4 bis · las respuestas nuevas se marcan para cada persona");
+const pr = (id, hilo, vistoPor) => ({ id, hilo, vistoPor });
+const R1 = pr("a", [{ en: "2026-11-03T10:00Z", quien: "nosotros" }, { en: "2026-11-03T15:00Z", quien: "proveedor", texto: "precio" }, { en: "2026-11-03T16:00Z", quien: "nosotros" }]);
+const R2 = pr("b", [{ en: "2026-11-03T10:00Z", quien: "nosotros" }, { en: "2026-11-03T12:00Z", quien: "proveedor" }], { u1: "2026-11-03T13:00Z" });
+const R3 = pr("c", [{ en: "2026-11-03T10:00Z", quien: "nosotros" }, { en: "2026-11-03T11:00Z", quien: "nota" }]);
+const R4 = pr("d", [{ en: "2026-11-03T18:00Z", quien: "proveedor" }], { u1: "2026-11-03T13:00Z" });
+ok("la respuesta es lo último del PROVEEDOR, no lo que mandamos después", ultimaRespuesta(R1).en === "2026-11-03T15:00Z");
+ok("sin respuesta del proveedor no hay novedad", ultimaRespuesta(R3) === null && !esNueva(R3, "u1"));
+ok("nunca abierto: nuevo", esNueva(R1, "u1"));
+ok("abierto después de la respuesta: leído", !esNueva(R2, "u1"));
+ok("respondió de nuevo después de abrirlo: nuevo otra vez", esNueva(R4, "u1"));
+ok("lo leído por una persona sigue nuevo para otra", esNueva(R2, "u2"));
+ok("la lista: sin leer arriba, la más nueva primero, sin los que no contestaron",
+  respuestasRecientes([R1, R2, R3, R4], "u1").map((x) => x.pedido.id).join() === "d,a,b");
 console.log("5 · la página, las reglas y el menú dicen lo mismo");
 const h = leer("presupuestos.html"), r = leer("REGLAS.txt"), n = leer("nucleo.js"), sw = leer("sw.js");
 ok("la página entra con el permiso presupuestos", /CY\.arrancar\([^)]*"presupuestos", "presupuestos"\)/.test(h));
@@ -80,6 +95,9 @@ ok("los catálogos y capturas: regla con forma fija, sólo imagen, 900 KB, el ag
 ok("la página guarda los adjuntos donde dice la regla, achicados y con dos inputs",
   h.includes('"presupuesto_pedidos", pedido.id, "adjuntos"') && /capture="environment" id="a-camara"/.test(h) && /id="a-archivo"[^>]*multiple/.test(h) && /const MAXIMO = 900000/.test(h));
 ok("el hilo anota por dónde fue (mail, WhatsApp…)", /id="h-canal"/.test(h) && /x\.canal = \$\("h-canal"\)\.value/.test(h));
+ok("la página pinta las últimas respuestas arriba y marca leído sólo con vistoPor",
+  /id="respuestas"/.test(h) && /respuestasRecientes\(pedidos, yo\.uid\)/.test(h) && /`vistoPor\.\$\{yo\.uid\}`/.test(h));
+ok("la ficha del proveedor muestra lo que sabemos (catálogo, contacto…)", /id="pv-sabemos"/.test(h) && /prov\.catalogo/.test(h));
 ok("el JS de la página no lleva precios escritos", !/precio:\s*\d/.test(h));
 
 console.log(`\n${bien} pasadas, ${mal} fallidas`);

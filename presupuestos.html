@@ -63,6 +63,11 @@
   .adj .a .n{font-size:.78rem;color:var(--dim)}
   .adj img{width:100%;max-height:260px;object-fit:cover;object-position:top;border-radius:calc(var(--r) - 2px);cursor:zoom-in}
   input.elegir{display:none}
+  .nuevo{display:inline-block;font-family:var(--mono);font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;
+    padding:.1rem .4rem;border-radius:999px;background:var(--blond);color:var(--ink, #111);margin-left:.35rem;vertical-align:middle}
+  .resp .snip{font-size:.82rem;color:var(--dim);margin-top:.2rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .resp.leida{opacity:.7}
+  .sabemos{white-space:pre-wrap;font-size:.86rem}
 </style>
 </head>
 <body>
@@ -75,6 +80,7 @@
     <h1>Presupuestos</h1>
     <p class="gris">Las obras a cotizar, a quién se le pidió precio de cada material, qué
     contestó y en qué quedó. Privado: sólo con el permiso de presupuestos.</p>
+    <div id="respuestas"></div>
     <div class="tabs" id="tabsLista">
       <button data-lista="obras" class="on">Obras</button>
       <button data-lista="proveedores">Proveedores</button>
@@ -94,6 +100,7 @@
       <label style="grid-column:1/-1"><span class="k">Rubros</span><span id="pv-rubros" class="row" style="flex-wrap:wrap;gap:.5rem"></span></label>
       <label style="grid-column:1/-1"><span class="k">Nota</span><textarea id="pv-nota" rows="2"></textarea></label>
     </div>
+    <div id="pv-sabemos"></div>
     <div class="row" style="margin-top:.6rem"><button class="btn p" id="pv-guardar">Guardar</button><span class="gris" id="pv-dice"></span></div>
   </section>
 
@@ -175,9 +182,10 @@ import { cargarFirebase,
          collection, Bytes, onAuthStateChanged, signOut } from "./firebase-init.js";
 import { CY } from "./nucleo.js";
 import { ESTADOS, RUBROS, MONEDAS, materialesDe, comparativa, totalesPorProveedor, sinCotizar,
-         estadoTrasHilo, estadoTrasPrecios, leerPrecio, mailDePedido } from "./presupuestos.js";
+         estadoTrasHilo, estadoTrasPrecios, leerPrecio, mailDePedido,
+         ultimaRespuesta, esNueva, respuestasRecientes } from "./presupuestos.js";
 
-CY.PANEL = "presupuestos-2";
+CY.PANEL = "presupuestos-3";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 if (!await CY.conFirebase(cargarFirebase)) throw new Error("sin SDK");
@@ -208,7 +216,27 @@ async function cargar() {
   return true;
 }
 
+/* Arriba de todo, las ÚLTIMAS RESPUESTAS de los proveedores (presupuestos-3):
+   las sin leer primero y marcadas, después las leídas, la más nueva arriba.
+   Un toque abre el pedido y lo marca leído para quien lo abrió. */
+function pintarRespuestas() {
+  const rs = respuestasRecientes(pedidos, yo.uid);
+  const nuevas = rs.filter((x) => x.nueva).length;
+  const nom = (id) => (proveedores.find((p) => p.id === id) || {}).nombre || id;
+  const obraDe = (id) => (obras.find((o) => o.id === id) || {}).titulo || id;
+  $("respuestas").innerHTML = !rs.length ? "" : `<h2 style="margin-top:.4rem">Últimas respuestas${nuevas ? ` <span class="nuevo">${nuevas} sin leer</span>` : ""}</h2>` +
+    rs.slice(0, 8).map(({ pedido: p, respuesta: r, nueva }) => `
+      <div class="tarj card pulsa resp ${nueva ? "" : "leida"}" data-pedido="${esc(p.id)}">
+        <div class="grow"><h3>${esc(nom(p.proveedor))}${nueva ? '<span class="nuevo">nuevo</span>' : ""}</h3>
+          <div class="sub">${esc(fecha(r.en))}${r.canal ? " · " + esc(CANAL[r.canal] || r.canal) : ""} · ${esc(obraDe(p.presupuesto))}</div>
+          <div class="snip">${esc(r.texto || "")}</div></div>
+        <span class="chip ${esc(p.estado || "por_pedir")}">${esc((p.estado || "por_pedir").replace("_", " "))}</span>
+        <span class="material-icons" style="color:var(--dim)">chevron_right</span></div>`).join("") +
+    (rs.length > 8 ? `<p class="gris">y ${rs.length - 8} más, adentro de cada obra.</p>` : "");
+}
+
 function pintarLista() {
+  pintarRespuestas();
   document.querySelectorAll("#tabsLista button").forEach((b) => b.classList.toggle("on", b.dataset.lista === listaVista));
   if (listaVista === "obras") {
     $("lista").innerHTML = obras.length ? obras.map((o) => {
@@ -237,6 +265,10 @@ function abrirProv(p) {
   $("pv-titulo").textContent = prov.nombre || "Proveedor nuevo";
   $("pv-nombre").value = prov.nombre || ""; $("pv-mail").value = prov.mail || ""; $("pv-tel").value = prov.telefono || "";
   $("pv-dir").value = prov.direccion || ""; $("pv-web").value = prov.web || ""; $("pv-nota").value = prov.nota || "";
+  const sabe = [["Contacto", prov.contacto], ["WhatsApp", prov.whatsapp], ["Horario", prov.horario], ["Qué hace", prov.vende],
+    ["Copia a", prov.cc], ["Catálogo", prov.catalogo]].filter(([, v]) => v);
+  $("pv-sabemos").innerHTML = sabe.length ? `<h2 style="margin-top:1rem">Lo que sabemos</h2><div class="card">${sabe.map(([k, v]) =>
+    `<div style="margin:.25rem 0"><span class="k">${esc(k)}</span><div class="sabemos">${esc(v)}</div></div>`).join("")}</div>` : "";
   $("pv-rubros").innerHTML = RUBROS.map(([id, t]) => `<label class="row" style="gap:.25rem;font-size:.85rem"><input type="checkbox" value="${id}" ${(prov.rubros || []).includes(id) ? "checked" : ""}> ${esc(t)}</label>`).join("");
   $("pv-dice").textContent = "";
   mostrar("v-prov");
@@ -280,9 +312,13 @@ function pintarObra() {
 
   const ps = pedidos.filter((p) => p.presupuesto === obra.id);
   const nom = (id) => (proveedores.find((p) => p.id === id) || {}).nombre || id;
-  $("t-pedidos").innerHTML = ps.length ? ps.sort((a, b) => ESTADOS.findIndex((e) => e[0] === a.estado) - ESTADOS.findIndex((e) => e[0] === b.estado)).map((p) => `
+  // Primero lo que contestó y no se leyó; después por la respuesta más nueva; después por estado.
+  const ultima = (p) => (ultimaRespuesta(p) || {}).en || "";
+  $("t-pedidos").innerHTML = ps.length ? ps.sort((a, b) => (esNueva(b, yo.uid) - esNueva(a, yo.uid))
+      || ultima(b).localeCompare(ultima(a))
+      || ESTADOS.findIndex((e) => e[0] === a.estado) - ESTADOS.findIndex((e) => e[0] === b.estado)).map((p) => `
     <div class="tarj card pulsa" data-pedido="${esc(p.id)}">
-      <div class="grow"><h3>${esc(nom(p.proveedor))}</h3>
+      <div class="grow"><h3>${esc(nom(p.proveedor))}${esNueva(p, yo.uid) ? '<span class="nuevo">nuevo</span>' : ""}</h3>
         <div class="sub">${(p.items || []).length} materiales pedidos${p.enviadoISO ? " · enviado " + esc(fecha(p.enviadoISO)) : ""}${(p.hilo || []).length ? " · " + p.hilo.length + " en el hilo" : ""}</div></div>
       <span class="chip ${esc(p.estado || "por_pedir")}">${esc((p.estado || "por_pedir").replace("_", " "))}</span>
       <span class="material-icons" style="color:var(--dim)">chevron_right</span></div>`).join("")
@@ -303,6 +339,13 @@ function pintarObra() {
 /* ── pedido ── */
 function abrirPedido(p) {
   pedido = p; if (!p) return;
+  obra = obras.find((o) => o.id === p.presupuesto) || obra || { id: p.presupuesto, titulo: p.presupuesto, materiales: {} };
+  // Leído para quien lo abre: sólo su marca, sin tocar «actualizado» (no es un cambio del pedido).
+  if (esNueva(p, yo.uid)) {
+    const ahora = new Date().toISOString();
+    updateDoc(doc(db, "presupuesto_pedidos", p.id), { [`vistoPor.${yo.uid}`]: ahora })
+      .then(() => { p.vistoPor = { ...(p.vistoPor || {}), [yo.uid]: ahora }; }).catch(() => { /* sin marca: la próxima vez sigue «nuevo» */ });
+  }
   const pv = proveedores.find((x) => x.id === p.proveedor) || { nombre: p.proveedor };
   $("pd-titulo").textContent = pv.nombre;
   $("pd-sub").textContent = [pv.mail, pv.telefono, obra.titulo].filter(Boolean).join(" · ");

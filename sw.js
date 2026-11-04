@@ -114,6 +114,9 @@
 // v80 (2-nov-2026) — calculo-20 + 3d-8: la tapa aislante del toono, con bisagra y manivela.
 // v81 (2-nov-2026) — calculo-21 + 3d-9: las sogas por las aristas del triángulo; la cara vista adentro.
 // v82 (2-nov-2026) — calculo-22 + 3d-10: las sogas escondidas detrás de la tela, un orificio por enganche.
+// v86 (4-nov-2026) — presupuestos-3 / presupuestos-js-2: las últimas respuestas de los
+//   proveedores arriba de la página, marcadas «nuevo» por persona (vistoPor), y la
+//   ficha del proveedor con lo que sabemos (catálogo, contacto, horario).
 // v85 (3-nov-2026) — presupuestos-2: catálogos, fotos y capturas de cada pedido
 //   (presupuesto_pedidos/<id>/adjuntos/) y el canal de cada renglón del hilo.
 // v84 (3-nov-2026) — presupuestos-1: entran presupuestos.html y presupuestos.js
@@ -126,7 +129,7 @@
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v85';
+const VERSION = 'cy-shell-v86';
 
 // v69 · 29-oct-2026 · `nucleo.js` (nucleo-32, general:C7): CY.explicar usa la tabla
 //   común de `errores.js` del panel (datos) y le suma sus dos causas propias.
