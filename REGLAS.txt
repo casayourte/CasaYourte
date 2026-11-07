@@ -2,6 +2,10 @@
 // CasaYourte — Reglas de Firestore
 // Se pegan COMPLETAS en la consola. Nunca por fragmentos.
 //
+// 7-nov-2026 · el AGENTE puede CREAR una invitación de COLABORADOR (nunca
+//   administrador), con `autorizado` —lo que dijo Mauro— y `creadoPor:
+//   'Claude'`. No la lee, no la cambia, no la borra.
+//
 // 3-nov-2026 (tarde) · ENTRA `presupuesto_pedidos/{id}/adjuntos/`: los catálogos,
 //   fotos y capturas de cada proveedor, como bytes (la misma forma que los de
 //   consultas). El agente sólo los crea.
@@ -181,6 +185,19 @@ service cloud.firestore {
       allow read: if admin()
                   || (request.auth != null && request.auth.token.email.lower() == mail);
       allow create, update: if admin();
+      // 7-nov-2026 · el AGENTE invita, con la autorización de Mauro (Mauro:
+      //   «hacé la invitación a todo lo que le falta Florencia directamente
+      //   tú»). Sólo CREA (no pisa una invitación que ya está), sólo como
+      //   COLABORADOR —nunca administrador, que daría todo— y deja escrito
+      //   quién lo autorizó. No lee las invitaciones de nadie.
+      allow create: if esAgente()
+        && request.resource.data.keys().hasOnly(['rol', 'permisos', 'nombre', 'creadoPor', 'autorizado'])
+        && request.resource.data.rol == 'colaborador'
+        && request.resource.data.permisos is map
+        && request.resource.data.permisos.keys().hasOnly(['albumes', 'contenido', 'taller', 'publicar', 'calculo', 'consultas', 'presupuestos'])
+        && request.resource.data.autorizado is string
+        && request.resource.data.autorizado.size() > 0
+        && request.resource.data.creadoPor == 'Claude';
       // Se borra sola al usarse, o la anula el administrador.
       allow delete: if admin()
                     || (request.auth != null && request.auth.token.email.lower() == mail);

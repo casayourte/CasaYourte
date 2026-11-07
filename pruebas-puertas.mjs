@@ -431,5 +431,19 @@ titulo("consultas-2 · capturas y audios privados");
      /telefono: \$\("f-tel"\)/.test(c) && /const telDe =/.test(c));
 }
 
+// 7-nov-2026: el agente invita, con autorización de Mauro, y NUNCA como administrador.
+{
+  const r = leer("REGLAS.txt");
+  const bloque = (r.split("match /invitaciones/{mail} {")[1] || "").split("// ---------- álbumes")[0];
+  ok("el agente sólo CREA invitaciones (no lee, no cambia, no borra)",
+     /allow create: if esAgente\(\)/.test(bloque) && !/(read|update|delete)[^;]*esAgente\(\)/.test(bloque));
+  ok("una invitación del agente es SIEMPRE de colaborador",
+     /request\.resource\.data\.rol == 'colaborador'/.test(bloque) && !/esAgente\(\)[\s\S]*rol == 'admin'/.test(bloque));
+  ok("y lleva quién la autorizó", /autorizado is string/.test(bloque) && /autorizado\.size\(\) > 0/.test(bloque));
+  const lista = (leer("nucleo.js").split("CY.PERMISOS = [")[1] || "").split("];")[0];
+  const permisos = [...lista.matchAll(/\{ id:'(\w+)'/g)].map((m) => m[1]);
+  ok("los permisos que puede dar son los del panel", permisos.every((p) => bloque.includes(`'${p}'`)));
+}
+
 console.log(`\n${bien} bien · ${mal} mal`);
 process.exit(mal ? 1 : 0);
