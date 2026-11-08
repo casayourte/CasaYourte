@@ -765,9 +765,9 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 
 | Archivo | Constante | Valor de esta versión |
 |---|---|---|
-| `nucleo.js` | `CY.VERSION` | `nucleo-33` |
+| `nucleo.js` | `CY.VERSION` | `nucleo-34` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `cy-shell-v86` |
+| `sw.js` | `VERSION` | `cy-shell-v87` |
 | `admin.html` | `PANEL` | `admin-19` |
 | `editar.html` | `EDITOR` | `editar-23` |
 | `taller.html` | `SELLO` | `andamio-3` |
@@ -775,7 +775,7 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 | `calculo-geo.js` | `SELLO_GEO` | `geo-4` |
 | `calculo-3d.js` | `SELLO_3D` | `3d-10` |
 | `consultas.html` | `CY.PANEL` | `consultas-4` |
-| `consultas-ia.js` | `VERSION_CONSULTAS_IA` | `consultas-ia-1` |
+| `consultas-ia.js` | `VERSION_CONSULTAS_IA` | `consultas-ia-2` |
 | `presupuestos.html` | `CY.PANEL` | `presupuestos-3` |
 | `presupuestos.js` | `VERSION_PRESUPUESTOS` | `presupuestos-js-1` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-4` |

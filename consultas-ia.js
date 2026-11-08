@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// consultas-ia.js — Leer una captura de la conversación con IA. Sello: consultas-ia-1
+// consultas-ia.js — Leer una captura de la conversación con IA. Sello: consultas-ia-2
 //
 // 2-nov-2026, Mauro: «La consulta en CasaYourte debería cargarse a partir de una
 // imagen, una foto, una captura de pantalla que puede ser del chat de WhatsApp
@@ -22,8 +22,8 @@
 // Sin Firebase y sin DOM: lo prueba `node pruebas-consultas.mjs`.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const VERSION_CONSULTAS_IA = "consultas-ia-1";
-export const FUNCION_IA = "https://serene-scone-76bd4e.netlify.app/.netlify/functions/claude-proxy";
+export const VERSION_CONSULTAS_IA = "consultas-ia-2";
+export const FUNCION_IA = "https://timon-servidor.netlify.app/.netlify/functions/claude-proxy";   // consultas-ia-2: timon-servidor (8-nov-2026)
 export const MODELO = "gemini-2.5-flash-lite";
 // Netlify corta un pedido de más de 6 MB: seis capturas achicadas entran de sobra.
 export const MAX_IMAGENES = 6;

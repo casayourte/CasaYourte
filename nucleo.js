@@ -12,7 +12,7 @@
 
 export const CY = {};
 
-CY.VERSION = 'nucleo-33';
+CY.VERSION = 'nucleo-34';
 
 // ═════════════════════════════════════════════════════════════
 //  BOTÓN ATRÁS DE ANDROID
@@ -1006,7 +1006,10 @@ async function enviarReporte(cerrar) {
 //  nada que configurar por sitio. Y CallMeBot contesta 200 aunque rechace
 //  (cuenta en pausa, clave mala): la respuesta se LEE, como hace Casa Verde.
 // ═════════════════════════════════════════════════════════════
-CY.PUENTE_WA = 'https://serene-scone-76bd4e.netlify.app/.netlify/functions/notify-whatsapp';
+// Desde nucleo-34 (8-nov-2026, plan «Timón») el puente y avisar-claude son del
+// servidor del ecosistema, timon-servidor (la dirección de servidor-1.js de datos).
+CY.SERVIDOR = 'https://timon-servidor.netlify.app/.netlify/functions';
+CY.PUENTE_WA = CY.SERVIDOR + '/notify-whatsapp';
 
 /* CONSULTA EN VIVO (nucleo-26, 3-oct-2026). Pedido de Mauro: que la consulta
    de alguien registrado despierte al chat de Claude en el momento y no a la
@@ -1014,7 +1017,7 @@ CY.PUENTE_WA = 'https://serene-scone-76bd4e.netlify.app/.netlify/functions/notif
    la sesión; la función avisar-claude del Netlify de Casa Verde verifica la
    ficha y dispara la rutina. Es la misma forma que CV2.avisarClaude: cada
    sitio tiene la suya porque cada uno tiene su SDK y su sesión. */
-CY.AVISAR_CLAUDE = 'https://serene-scone-76bd4e.netlify.app/.netlify/functions/avisar-claude';
+CY.AVISAR_CLAUDE = CY.SERVIDOR + '/avisar-claude';
 CY.avisarClaude = async function (auth, reporteId) {
   try {
     const u = auth && auth.currentUser;
