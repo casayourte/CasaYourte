@@ -282,7 +282,7 @@ import { CY } from "./nucleo.js";
 // Sello de ESTE archivo. El de nucleo.js no sirve para saber si admin.html
 // quedó viejo en la caché: son dos archivos distintos. Al cambiar el panel,
 // se sube este número.
-const PANEL = "admin-19";
+const PANEL = "admin-20";
 
 const CLOUD = CY.CLOUDINARY.cloud;
 const PRESET = CY.CLOUDINARY.preset;
@@ -393,6 +393,13 @@ $("olvide").addEventListener("click", async () => {
 
 // Alta por invitación: la persona crea su propia cuenta y el sistema le pone
 // el rol que dejó el administrador. Nadie maneja contraseñas ajenas.
+// admin-20 (8-nov-2026): la invitación se lee DESPUÉS de entrar. La regla deja
+// leerla sólo a quien ya tiene sesión con ese mail; leyéndola antes, una
+// invitación que existía contestaba «permiso denegado» (le pasó a Florencia).
+// Y si ese mail ya tenía cuenta (sin ficha), entra con su contraseña en vez
+// de fallar con «el mail ya está en uso». Mientras dura el alta, el vigía de
+// la sesión no la echa por no tener ficha todavía (`registrando`).
+let registrando = false;
 $("r-crear").addEventListener("click", async () => {
   const nombre = $("r-nombre").value.trim();
   const mail = $("r-mail").value.trim().toLowerCase();
@@ -400,22 +407,36 @@ $("r-crear").addEventListener("click", async () => {
   if (!nombre || !mail || pass.length < 6)
     return toast("Faltan datos, o la contraseña es muy corta", true);
   const b = $("r-crear"); b.disabled = true; b.textContent = "Creando…";
+  registrando = true;
+  let cred = null, nueva = false;
   try {
+    try { cred = await createUserWithEmailAndPassword(auth, mail, pass); nueva = true; }
+    catch (e) {
+      if (e && e.code === "auth/email-already-in-use") cred = await signInWithEmailAndPassword(auth, mail, pass);
+      else throw e;
+    }
     const inv = await getDoc(doc(db, "invitaciones", mail));
-    if (!inv.exists()) throw new Error("No hay ninguna invitación para ese mail");
+    if (!inv.exists()) {
+      if (nueva) await cred.user.delete().catch(() => {});
+      throw new Error("No hay ninguna invitación para ese mail");
+    }
     // El rol Y los permisos salen de la invitación, no de lo que escriba
     // la persona: las reglas exigen que coincidan.
     const { rol, permisos } = inv.data();
-    const cred = await createUserWithEmailAndPassword(auth, mail, pass);
     await setDoc(doc(db, "usuarios", cred.user.uid), {
       email: mail, nombre, rol, permisos: permisos || {}, activo: true,
       creado: serverTimestamp(),
     });
     await deleteDoc(doc(db, "invitaciones", mail)).catch(() => {});
     toast("Cuenta creada");
+    registrando = false;
+    location.reload();   // el vigía de la sesión la toma, ya con su ficha
+    return;
   } catch (e) {
+    registrando = false;
+    if (auth.currentUser) await signOut(auth).catch(() => {});
     toast(CY.explicar(e) || e.message, true);
-  } finally { b.disabled = false; b.textContent = "Crear mi cuenta"; }
+  } finally { registrando = false; b.disabled = false; b.textContent = "Crear mi cuenta"; }
 });
 
 // PWA: el service worker se registra sólo desde el panel. Un visitante del
@@ -431,10 +452,16 @@ if (!await CY.conFirebase(cargarFirebase)) throw new Error("sin SDK");
 
 onAuthStateChanged(auth, async (u) => {
   if (!u) { yo = null; CY.usuario = null; ver("login"); return; }
+  if (registrando) return;   // admin-20: el alta por invitación todavía está escribiendo la ficha
   try {
     const d = await getDoc(doc(db, "usuarios", u.uid));
     if (!d.exists()) {
-      toast("Tu cuenta existe pero todavía no tiene permisos. Avisale a Mauro.", true);
+      // admin-20: si hay una invitación para este mail, se dice cómo usarla.
+      let hayInv = false;
+      try { hayInv = (await getDoc(doc(db, "invitaciones", (u.email || "").toLowerCase()))).exists(); } catch {}
+      toast(hayInv
+        ? "Tenés una invitación: abrí «Fui invitado y no tengo cuenta», poné tu nombre, este mail y tu contraseña, y tocá «Crear mi cuenta»."
+        : "Tu cuenta existe pero todavía no tiene permisos. Avisale a Mauro.", true);
       await signOut(auth); return;
     }
     yo = { uid: u.uid, ...d.data() };

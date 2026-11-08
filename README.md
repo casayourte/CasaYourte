@@ -767,8 +767,8 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-34` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `cy-shell-v87` |
-| `admin.html` | `PANEL` | `admin-19` |
+| `sw.js` | `VERSION` | `cy-shell-v88` |
+| `admin.html` | `PANEL` | `admin-20` |
 | `editar.html` | `EDITOR` | `editar-23` |
 | `taller.html` | `SELLO` | `andamio-3` |
 | `calculo.html` | `CY.PANEL` | `calculo-22` |
