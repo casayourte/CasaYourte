@@ -382,6 +382,9 @@ ok("calculo.html ya no pide el cable (el doble techo no lo lleva)", !/faltan los
   const bl = (reglas.match(/match \/entregas\/\{token\} \{([\s\S]*?)\n    \}/) || [])[1] || "";
   ok("reglas: entregas se lee sin cuenta de a uno, activo y sin vencer; listar sólo con permiso", /allow get: if token\.size\(\) >= 20\s*&& resource\.data\.activo == true\s*&& request\.time < resource\.data\.vence;/.test(bl)
     && !/allow (list|read)[^;]*if (true|token)/.test(bl) && /allow read, delete: if con\('calculo'\) \|\| con\('presupuestos'\);/.test(bl));
+  ok("reglas: el agente crea y actualiza un link, pero no lo borra", /allow create, update: if \(con\('calculo'\) \|\| con\('presupuestos'\) \|\| esAgente\(\)\)/.test(bl)
+    && !/allow[^;]*delete[^;]*esAgente/.test(bl));
+  ok("calculo.html: el lugar de abajo es el alto medido de la barra de guardar", /--barra-p/.test(html) && /ResizeObserver\(\(\) => document\.body\.style\.setProperty\("--barra-p"/.test(html));
   ok("reglas: la forma de una entrega es fija (sin costos ni contacto)", /hasOnly\(\['titulo', 'para', 'idioma', 'descripcion', 'incluye',\s*'no_incluye', 'precio', 'moneda', 'datos', 'vence', 'activo', 'actualizado'\]\)/.test(bl));
   ok("calculo.html escribe la entrega con esas claves y nada más", (() => { const m = html.match(/const pub = \{([\s\S]*?)\n  \};/); if (!m) return false;
     const ks = [...m[1].matchAll(/^\s{4}(\w+)[,:]/gm)].map(x => x[1]); return ks.length >= 10 && ks.every(k => ["titulo","para","idioma","descripcion","incluye","no_incluye","precio","moneda","datos","vence","activo","actualizado"].includes(k)); })());

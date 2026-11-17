@@ -96,7 +96,9 @@
   svg.corte .apoyo-p{fill:#e8a33d}
   svg.corte text{fill:var(--wool);font-family:var(--mono);font-size:16px}
   svg.corte .barra line{stroke:var(--dim);stroke-width:2}
-  body{padding-bottom:calc(var(--barra) + 4.2rem + var(--safe))}
+  /* calculo-29: el lugar de abajo es el alto REAL de la barra de guardar (en un teléfono el
+     resumen ocupa cuatro renglones y tapaba «Crear el link»); lo mide un ResizeObserver. */
+  body{padding-bottom:calc(var(--barra) + var(--barra-p, 4.2rem) + var(--safe) + .8rem)}
 </style>
 </head>
 <body>
@@ -228,7 +230,7 @@ import { CY } from "./nucleo.js";
 import { calc as calcGeo, corte, vanos } from "./calculo-geo.js";
 import { montar as montar3d, PARTES as PARTES3D, CAMPO_PARTES } from "./calculo-3d.js";
 
-CY.PANEL = "calculo-28";
+CY.PANEL = "calculo-29";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 // ── El SDK se baja acá, y recién después arranca la pantalla ────────────────
@@ -802,6 +804,9 @@ function pintarPiezas() {
     `${P.tipo === 2 ? "simple · " + un(C.simple.n_perchas) : "doble techo · " + P.n_per_r} perchas · ${un(C.n_mon)} montantes · techo ${m2(C.area_techo)}` +
     (sucio ? " · <b>sin guardar</b>" : "");
 }
+
+// El alto de la barra de guardar, medido (no un número a mano): el body deja ese lugar.
+try { new ResizeObserver(() => document.body.style.setProperty("--barra-p", $("barra-p").offsetHeight + "px")).observe($("barra-p")); } catch {}
 
 /* ═══ lista de cálculos ════════════════════════════════════ */
 async function cargarProyectos() {

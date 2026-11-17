@@ -2,6 +2,11 @@
 // CasaYourte — Reglas de Firestore
 // Se pegan COMPLETAS en la consola. Nunca por fragmentos.
 //
+// 17-nov-2026 (tarde) · el AGENTE también crea y actualiza un link de `entregas/`
+//   (Mauro: «incluye el agente»), con la misma forma fija y nunca borra; la
+//   herramienta (datos/herramientas/firestore.mjs) le pide la autorización de
+//   Mauro citada para crear uno, porque el link sale hacia un cliente.
+//
 // 17-nov-2026 · ENTRA `entregas/{token}`: el presupuesto con link para el
 //   cliente (calculo-23, pedido de Mauro: «un presupuesto en un link… para que
 //   la persona… pueda ver la descripción detallada online… con un vencimiento,
@@ -247,7 +252,7 @@ service cloud.firestore {
         && resource.data.activo == true
         && request.time < resource.data.vence;
       allow read, delete: if con('calculo') || con('presupuestos');
-      allow create, update: if (con('calculo') || con('presupuestos'))
+      allow create, update: if (con('calculo') || con('presupuestos') || esAgente())
         && token.size() >= 20
         && request.resource.data.keys().hasOnly(['titulo', 'para', 'idioma', 'descripcion', 'incluye',
              'no_incluye', 'precio', 'moneda', 'datos', 'vence', 'activo', 'actualizado'])
