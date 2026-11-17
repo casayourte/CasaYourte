@@ -114,6 +114,8 @@
 // v80 (2-nov-2026) — calculo-20 + 3d-8: la tapa aislante del toono, con bisagra y manivela.
 // v81 (2-nov-2026) — calculo-21 + 3d-9: las sogas por las aristas del triángulo; la cara vista adentro.
 // v82 (2-nov-2026) — calculo-22 + 3d-10: las sogas escondidas detrás de la tela, un orificio por enganche.
+// v97 (17-nov-2026) — calculo-31 + geo-12: el desborde de la simple (10 cm), el cable en la punta
+//   de la percha y la lista de materiales sin precios (también en propuesta-4, fuera del SHELL).
 // v96 (17-nov-2026) — calculo-30 + 3d-15 + geo-11: «piso» en vez de «plancher»; el OSB opaco;
 //   del sobrealto se abren sólo dos ventanas opuestas; lo que no corresponde queda deshabilitado.
 // v95 (17-nov-2026) — calculo-29: el lugar de abajo es el alto medido de la barra de guardar
@@ -148,7 +150,7 @@
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v96';
+const VERSION = 'cy-shell-v97';
 
 // v69 · 29-oct-2026 · `nucleo.js` (nucleo-32, general:C7): CY.explicar usa la tabla
 //   común de `errores.js` del panel (datos) y le suma sus dos causas propias.

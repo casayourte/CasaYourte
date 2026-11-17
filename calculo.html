@@ -228,10 +228,10 @@ import { cargarFirebase,
          db, auth, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, addDoc,
          collection, serverTimestamp, onAuthStateChanged, signOut } from "./firebase-init.js";
 import { CY } from "./nucleo.js";
-import { calc as calcGeo, corte, vanos } from "./calculo-geo.js";
+import { calc as calcGeo, corte, vanos, materiales, NOMBRES_MAT, renglonMat } from "./calculo-geo.js";
 import { montar as montar3d, PARTES as PARTES3D, CAMPO_PARTES } from "./calculo-3d.js";
 
-CY.PANEL = "calculo-30";
+CY.PANEL = "calculo-31";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 // ── El SDK se baja acá, y recién después arranca la pantalla ────────────────
@@ -299,7 +299,8 @@ const CAMPOS = [
   ["tri_esp",  "Espesor de la madera del triángulo",0.030,"m"],
   ["·","EL TECHO · SEGUNDA CAPA"],
   ["n_per_r",  "Perchas radiales",                36,    "unidades"],
-  ["desb",     "Desborde de la percha",           0.500, "m"],
+  ["desb",     "Desborde de la percha",           0.500, "m · doble techo"],
+  ["desb_s",   "Desborde de la percha · simple",  0.100, "m · en la simple es corto"],
   ["p_anc",    "Alto de la percha",               0.080, "m"],
   ["p_alt",    "Ancho de la percha",              0.040, "m"],
   ["r_toono",  "Radio exterior del toono",        1.000, "m · Ø 2,00 en Christine"],
@@ -307,7 +308,7 @@ const CAMPOS = [
   ["·","LA YURTA SIMPLE · UNA PERCHA POR CRUCE DEL TREI"],
   ["s_anillo", "Borde del techo",                 0,     "0 = cable de acero · 1 = anillo periférico (reemplaza al cable)", [[0, "Cable de acero"], [1, "Anillo periférico"]]],
   ["esc",      "Escuadra metálica · lado",        0.050, "m · como la del piso: por fuera del trei, del bulón del último agujero, doblada al ángulo del techo"],
-  ["cab_dist", "Cable · desde la cabeza del trei",0.100, "m · pasa por una perforación de cada percha"],
+  ["cab_dist", "Cable · desde la punta de la percha",0.030, "m · pasa por una perforación en el extremo de cada percha"],
   ["s_ais",    "Aislación sobre las perchas",     0.040, "m · fieltro o guata, entre el freno y el Tyvek"],
   ["·","LAS ABERTURAS"],
   ["n_ab",     "Aberturas de piso (puertas)",     5,     "unidades · del piso hasta arriba"],
@@ -347,8 +348,8 @@ const CAMPOS = [
 ];
 // Qué medidas usa cada elección (las demás quedan apagadas en la pantalla).
 const SOLO = {
-  doble: ["ais_techo", "e_per", "anc_per", "n_tri", "tri_anc", "tri_esp", "n_per_r", "sep_max", "diente", "tapa_cam", "tapa_ranura", "ts_giro", "ts_esp", "ts_rendija"],
-  simple: ["esc", "s_ais", "s_anillo", "cab_dist"],
+  doble: ["desb", "ais_techo", "e_per", "anc_per", "n_tri", "tri_anc", "tri_esp", "n_per_r", "sep_max", "diente", "tapa_cam", "tapa_ranura", "ts_giro", "ts_esp", "ts_rendija"],
+  simple: ["desb_s", "esc", "s_ais", "s_anillo", "cab_dist"],
   cable: ["cab_dist"],                     // sólo con el cable (no con el anillo)
   piso2: ["osb_inf"],                      // sólo con el piso de doble capa
   ventanas: ["vt_anc", "vt_alto", "vt_ant"],
@@ -379,7 +380,7 @@ const CASOS = {
   simple:    { ...PORDEF, tipo: 2, tono_tipo: 2 },
   // calculo-27: la simple de 6 m con una puerta y dos ventanas (el modelo de la consulta del 17-nov).
   simple6:   { ...PORDEF, D:6, ais_nom:.120, ais_techo:.120, E:.050, e_mad:.040, e_trei:.016, T:.042, anc_per:.040, tri_anc:.080, tri_esp:.040,
-              alto:2.280, n_per_r:30, desb:.450, tipo: 2, tono_tipo: 2, r_toono: .800, sa_alto: .350, n_ab: 1, n_gr: 1, n_vt: 2 },
+              alto:2.280, n_per_r:30, desb:.450, desb_s: .100, tipo: 2, tono_tipo: 2, r_toono: .800, sa_alto: .350, n_ab: 1, n_gr: 1, n_vt: 2, piso_tipo: 2 },
   g6:        {D:6, ais_nom:.120, ais_techo:.120, E:.050, e_mad:.040, e_trei:.016, T:.042, anc_per:.040, tri_anc:.080, tri_esp:.040,
               alto:2.280, n_per_r:30, desb:.450, r_toono:.900},
 };
@@ -793,6 +794,15 @@ function pintarPiezas() {
   ], [C.piso_doble && ["", `Los kilos de celulosa salen de la densidad de colocación del fabricante, que todavía
       no está cargada.`]]);
 
+  // calculo-31: la lista de materiales (la misma que ve el cliente, sin precios).
+  {
+    const fmt = (v, d) => Number(v).toFixed(d).replace(".", ",");
+    const lista = materiales(P, C), grupos = [...new Set(lista.map(x => x.g))];
+    h += `<h2 style="margin:1.2rem 0 .5rem">Lista de materiales</h2>`;
+    for (const g of grupos) h += tarjeta(NOMBRES_MAT.grupos[g], "", lista.filter(x => x.g === g).map(x => {
+      const r = renglonMat(x, NOMBRES_MAT, fmt); return ["", r.nombre, r.detalle, r.cant, "d"]; }));
+  }
+
   h += `<div class="tarj"><h3>Lo que todavía no calcula</h3>
     <p class="sub" style="margin-bottom:.55rem">Está en la planilla, pero su regla general no
     está confirmada. No lo pongo inventado.</p>
@@ -1113,7 +1123,7 @@ function descripcionDe() {
   L.push(`Piso de madera sobre pilares, ${P.piso_tipo === 2 ? "con una capa de OSB sobre los tirantes, sin aislación" : `con dos capas de OSB y ${Math.round(P.tir_alt * 100)} cm de celulosa entre tirantes`}. Muro: trei, celosía de madera a 60° abulonada cada ${Math.round(P.bul * 100)} cm, ${sinAnillo ? "sobre el anillo de madera colada del piso" : "con el anillo periférico de madera colada arriba y abajo"}. ${un(P.n_ab)} ${P.n_ab == 1 ? "puerta" : "aberturas"} de ${n(P.anc_ab)} × ${n(P.alt_ab)} m, con su piso de una pieza${P.n_vt > 0 ? `, y ${un(P.n_vt)} ${P.n_vt == 1 ? "ventana" : "ventanas"} de ${n(P.vt_anc)} × ${n(P.vt_alto)} m` : ""}.`);
   L.push("");
   L.push(simple
-    ? `Techo simple: ${un(C.simple.n_perchas)} perchas de ${Math.round(P.p_anc * 1000)} × ${Math.round(P.p_alt * 1000)} mm, una en cada cruce de arriba del trei, tomada por una escuadra metálica, del toono hasta ${Math.round(P.desb * 100)} cm de alero; ${sinAnillo ? "un cable de acero por todo el borde" : "el anillo periférico"} toma el empuje. Encima, algodón, freno de vapor, aislación, Tyvek y lona de PVC.`
+    ? `Techo simple: ${un(C.simple.n_perchas)} perchas de ${Math.round(P.p_anc * 1000)} × ${Math.round(P.p_alt * 1000)} mm, una en cada cruce de arriba del trei, tomada por una escuadra metálica, del toono hasta ${Math.round(C.desb_e * 100)} cm de alero; ${sinAnillo ? "un cable de acero por el extremo de las perchas, en todo el borde," : "el anillo periférico"} toma el empuje. Encima, algodón, freno de vapor, aislación, Tyvek y lona de PVC.`
     : `Doble techo ventilado: una primera capa de ${un(C.nt)} triángulos estructurales y una segunda de ${un(P.n_per_r)} perchas con ${Math.round(P.desb * 100)} cm de alero. Entre las dos, ${Math.round(C.H * 1000)} mm de aislación de PET reciclado; arriba, una cámara de aire que ventila por el toono, y la lona de PVC.`);
   L.push("");
   L.push(sobre

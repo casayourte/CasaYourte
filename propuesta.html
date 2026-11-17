@@ -4,7 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tu yurta · CasaYourte</title>
-<!-- propuesta-3 (17-nov-2026): «Tapas de los montantes» en los cuatro idiomas.
+<!-- propuesta-4 (17-nov-2026): debajo, la LISTA DE MATERIALES del modelo, sin precios
+     (`materiales()` de calculo-geo.js), en los cuatro idiomas.
+     propuesta-3 (17-nov-2026): «Tapas de los montantes» en los cuatro idiomas.
      propuesta-2 (17-nov-2026): el cliente ve el 3D y un RESUMEN de lo que lleva
      (madera, placas, lona y tela, de `resumen()` de calculo-geo.js), no los
      cálculos; y cada componente del 3D se prende y apaga, en su idioma (Mauro:
@@ -78,6 +80,9 @@ h1{font-size:clamp(1.9rem,6vw,3.2rem)}
 .partes b{grid-column:1/-1;font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--blond);margin-top:.35rem}
 .partes input{accent-color:var(--blond);width:1rem;height:1rem}
 .sub{color:var(--dim);font-size:.8rem}
+.mat{display:grid;gap:.4rem 1.6rem}
+@media(min-width:820px){.mat{grid-template-columns:1fr 1fr}}
+.mat h3{font-size:1rem;color:var(--blond);margin:.8rem 0 .2rem}
 .grid{display:grid;gap:1.2rem;margin-top:2rem}
 @media(min-width:820px){.grid{grid-template-columns:1fr 1.3fr}}
 .caja{background:var(--ink-2);border:1px solid var(--line);border-radius:8px;padding:1.1rem 1.2rem}
@@ -108,13 +113,13 @@ li{margin:.25rem 0}
 <main id="main"><div class="vacio" id="cargando">…</div></main>
 
 <script type="module">
-// Sello: propuesta-3
+// Sello: propuesta-4
 const PROYECTO = "casayourte-mauro";
 const CLAVE = "AIzaSyDDD_xvpC4I_ec2OZymyDqVsm1K0ISTr4Q";
 const BASE = "https://firestore.googleapis.com/v1/projects/" + PROYECTO + "/databases/(default)/documents/";
 
 const T = {
-  es: { resumen: "Tu yurta", lleva: "Lo que lleva", madera: "Madera", placas: "Placas de OSB para el piso", lona_techo: "Lona del techo", tela_muro: "Tela del muro", aberturas2: (p, v) => [p ? p + (p === 1 ? " puerta" : " puertas") : "", v ? v + (v === 1 ? " ventana" : " ventanas") : ""].filter(Boolean).join(" y ") || "—", m_piso: "piso", m_muro: "muro", m_techo: "techo", m_toono: "toono", partes: "Componentes ▾", estructura_t: "Estructura", capas_t: "Las capas, de adentro hacia afuera", todas: "Todas", ninguna: "Ninguna", u_placas: "placas",
+  es: { mat_t: "Los materiales", mat_sub: "Lo que compone esta yurta, según su modelo.", resumen: "Tu yurta", lleva: "Lo que lleva", madera: "Madera", placas: "Placas de OSB para el piso", lona_techo: "Lona del techo", tela_muro: "Tela del muro", aberturas2: (p, v) => [p ? p + (p === 1 ? " puerta" : " puertas") : "", v ? v + (v === 1 ? " ventana" : " ventanas") : ""].filter(Boolean).join(" y ") || "—", m_piso: "piso", m_muro: "muro", m_techo: "techo", m_toono: "toono", partes: "Componentes ▾", estructura_t: "Estructura", capas_t: "Las capas, de adentro hacia afuera", todas: "Todas", ninguna: "Ninguna", u_placas: "placas",
     eyebrow: "Propuesta", para: "Para", vence: "Válida hasta el", terminada: "Terminada", estructura: "La estructura",
     encuadrar: "Encuadrar", nota3d: "A escala real · girá con el dedo, acercá con dos · cuadrícula de 1 m",
     medidas: "Medidas principales", descripcion: "Descripción", incluye: "Incluye", no_incluye: "No incluye", precio: "Precio",
@@ -124,7 +129,7 @@ const T = {
     sin3d: "No se pudo cargar el 3D (sin conexión, o el teléfono no tiene WebGL). El resto de la propuesta está completo.",
     no: "Esta propuesta no está disponible", noTxt: "El link venció, se desactivó o no es correcto. Escribinos y te mandamos uno nuevo.",
     pie: (f) => `Propuesta válida hasta el ${f}. Para cualquier consulta, respondé el mensaje por el que te llegó este link.`, sitio: "Ver más yurtas" },
-  fr: { resumen: "Votre yourte", lleva: "Ce qu'elle comprend", madera: "Bois", placas: "Panneaux OSB pour le plancher", lona_techo: "Bâche du toit", tela_muro: "Toile du mur", aberturas2: (p, v) => [p ? p + (p === 1 ? " porte" : " portes") : "", v ? v + (v === 1 ? " fenêtre" : " fenêtres") : ""].filter(Boolean).join(" et ") || "—", m_piso: "plancher", m_muro: "mur", m_techo: "toit", m_toono: "toono", partes: "Éléments ▾", estructura_t: "Structure", capas_t: "Les couches, de l'intérieur vers l'extérieur", todas: "Tout", ninguna: "Rien", u_placas: "panneaux",
+  fr: { mat_t: "Les matériaux", mat_sub: "Ce qui compose cette yourte, selon son modèle.", resumen: "Votre yourte", lleva: "Ce qu'elle comprend", madera: "Bois", placas: "Panneaux OSB pour le plancher", lona_techo: "Bâche du toit", tela_muro: "Toile du mur", aberturas2: (p, v) => [p ? p + (p === 1 ? " porte" : " portes") : "", v ? v + (v === 1 ? " fenêtre" : " fenêtres") : ""].filter(Boolean).join(" et ") || "—", m_piso: "plancher", m_muro: "mur", m_techo: "toit", m_toono: "toono", partes: "Éléments ▾", estructura_t: "Structure", capas_t: "Les couches, de l'intérieur vers l'extérieur", todas: "Tout", ninguna: "Rien", u_placas: "panneaux",
     eyebrow: "Proposition", para: "Pour", vence: "Valable jusqu'au", terminada: "Terminée", estructura: "La structure",
     encuadrar: "Recadrer", nota3d: "À l'échelle réelle · tournez du doigt, zoomez à deux doigts · grille de 1 m",
     medidas: "Dimensions principales", descripcion: "Description", incluye: "Comprend", no_incluye: "Ne comprend pas", precio: "Prix",
@@ -134,7 +139,7 @@ const T = {
     sin3d: "Impossible de charger la 3D (pas de connexion ou pas de WebGL). Le reste de la proposition est complet.",
     no: "Cette proposition n'est pas disponible", noTxt: "Le lien a expiré, a été désactivé ou n'est pas correct. Écrivez-nous et nous vous en enverrons un nouveau.",
     pie: (f) => `Proposition valable jusqu'au ${f}. Pour toute question, répondez au message par lequel ce lien vous est parvenu.`, sitio: "Voir d'autres yourtes" },
-  en: { resumen: "Your yurt", lleva: "What it takes", madera: "Timber", placas: "OSB boards for the floor", lona_techo: "Roof cover", tela_muro: "Wall fabric", aberturas2: (p, v) => [p ? p + (p === 1 ? " door" : " doors") : "", v ? v + (v === 1 ? " window" : " windows") : ""].filter(Boolean).join(" and ") || "—", m_piso: "floor", m_muro: "wall", m_techo: "roof", m_toono: "toono", partes: "Parts ▾", estructura_t: "Structure", capas_t: "The layers, from inside out", todas: "All", ninguna: "None", u_placas: "boards",
+  en: { mat_t: "Materials", mat_sub: "What this yurt is made of, according to its model.", resumen: "Your yurt", lleva: "What it takes", madera: "Timber", placas: "OSB boards for the floor", lona_techo: "Roof cover", tela_muro: "Wall fabric", aberturas2: (p, v) => [p ? p + (p === 1 ? " door" : " doors") : "", v ? v + (v === 1 ? " window" : " windows") : ""].filter(Boolean).join(" and ") || "—", m_piso: "floor", m_muro: "wall", m_techo: "roof", m_toono: "toono", partes: "Parts ▾", estructura_t: "Structure", capas_t: "The layers, from inside out", todas: "All", ninguna: "None", u_placas: "boards",
     eyebrow: "Proposal", para: "For", vence: "Valid until", terminada: "Finished", estructura: "The structure",
     encuadrar: "Reset view", nota3d: "Real scale · drag to turn, pinch to zoom · 1 m grid",
     medidas: "Main dimensions", descripcion: "Description", incluye: "Includes", no_incluye: "Does not include", precio: "Price",
@@ -144,7 +149,7 @@ const T = {
     sin3d: "The 3D view could not load (no connection, or no WebGL). The rest of the proposal is complete.",
     no: "This proposal is not available", noTxt: "The link has expired, was turned off or is not correct. Write to us and we will send you a new one.",
     pie: (f) => `Proposal valid until ${f}. For any question, reply to the message this link came with.`, sitio: "See more yurts" },
-  pt: { resumen: "Sua yurt", lleva: "O que leva", madera: "Madeira", placas: "Placas de OSB para o piso", lona_techo: "Lona do telhado", tela_muro: "Tecido da parede", aberturas2: (p, v) => [p ? p + (p === 1 ? " porta" : " portas") : "", v ? v + (v === 1 ? " janela" : " janelas") : ""].filter(Boolean).join(" e ") || "—", m_piso: "piso", m_muro: "parede", m_techo: "telhado", m_toono: "toono", partes: "Componentes ▾", estructura_t: "Estrutura", capas_t: "As camadas, de dentro para fora", todas: "Tudo", ninguna: "Nada", u_placas: "placas",
+  pt: { mat_t: "Os materiais", mat_sub: "O que compõe esta yurt, conforme o modelo.", resumen: "Sua yurt", lleva: "O que leva", madera: "Madeira", placas: "Placas de OSB para o piso", lona_techo: "Lona do telhado", tela_muro: "Tecido da parede", aberturas2: (p, v) => [p ? p + (p === 1 ? " porta" : " portas") : "", v ? v + (v === 1 ? " janela" : " janelas") : ""].filter(Boolean).join(" e ") || "—", m_piso: "piso", m_muro: "parede", m_techo: "telhado", m_toono: "toono", partes: "Componentes ▾", estructura_t: "Estrutura", capas_t: "As camadas, de dentro para fora", todas: "Tudo", ninguna: "Nada", u_placas: "placas",
     eyebrow: "Proposta", para: "Para", vence: "Válida até", terminada: "Pronta", estructura: "A estrutura",
     encuadrar: "Enquadrar", nota3d: "Em escala real · gire com o dedo, aproxime com dois · grade de 1 m",
     medidas: "Medidas principais", descripcion: "Descrição", incluye: "Inclui", no_incluye: "Não inclui", precio: "Preço",
@@ -157,6 +162,42 @@ const T = {
 };
 
 // Los componentes del 3D, en los otros idiomas (en castellano, los de PARTES).
+// La lista de materiales en los otros idiomas (en castellano, NOMBRES_MAT de calculo-geo.js).
+const MAT_T = {
+  fr: { grupos: { piso: "Le plancher", muro: "Le mur", techo: "Le toit", toono: "Le toono", telas: "Toiles et couches", herrajes: "Quincaillerie" },
+    pilares: "Poteaux", vigas: "Poutres", tirantes: "Solives", anillo_piso: "Anneau du plancher, lamellé-collé", osb: "Panneaux OSB", celulosa: "Ouate de cellulose (isolant du plancher)",
+    trei: "Lattes du treillis", bulones: "Boulons du treillis", zocalos: "Plinthes", anillo: "Anneau périphérique, lamellé-collé", montantes: "Montants",
+    tapas: "Couvre-joints des montants", pisos_ab: "Seuils des ouvertures", puertas: "Portes", ventanas: "Fenêtres",
+    perchas: "Perches", cable: "Câble d'acier", triangulos: "Triangles de la première couche", radiales: "Perches radiales", cal: "Cales",
+    cinta: "Double lisse du mur", cinta_alero: "Lisse de l'avant-toit", toono: "Toono, lamellé-collé", sobrealto: "Lanterneau : fenêtres", vidrio: "Vitrage du lanterneau",
+    techito: "Petit toit du lanterneau", domo: "Dôme géodésique", policarbonato: "Polycarbonate du dôme", lona_techo: "Bâche PVC du toit",
+    tela_muro: "Toile du mur", algodon: "Coton (toit et mur)", freno: "Pare-vapeur (toit et mur)", aislacion_techo: "Isolant du toit",
+    aislacion_muro: "Isolant du mur", tyvek: "Tyvek du toit", escuadras: "Équerres métalliques", tornillos_640: "Vis 6 × 40", tornillos_690: "Vis 6 × 90",
+    u: { u: "u", pz: "pièces", capas: "couches", placas: "panneaux", m: "m", m2: "m²", m3: "m³" },
+    palabras: { cu: "chacune", total: "au total", abren: "s'ouvrent :", compra: "achetées toutes faites", aprox: "≈" } },
+  en: { grupos: { piso: "The floor", muro: "The wall", techo: "The roof", toono: "The toono", telas: "Fabrics and layers", herrajes: "Hardware" },
+    pilares: "Posts", vigas: "Beams", tirantes: "Joists", anillo_piso: "Floor ring, glue-laminated", osb: "OSB boards", celulosa: "Cellulose (floor insulation)",
+    trei: "Lattice wall slats", bulones: "Lattice bolts", zocalos: "Skirting", anillo: "Perimeter ring, glue-laminated", montantes: "Door posts",
+    tapas: "Post cover boards", pisos_ab: "Opening sills", puertas: "Doors", ventanas: "Windows",
+    perchas: "Rafters", cable: "Steel cable", triangulos: "First-layer triangles", radiales: "Radial rafters", cal: "Wedges",
+    cinta: "Double wall band", cinta_alero: "Eave band", toono: "Toono, glue-laminated", sobrealto: "Lantern: windows", vidrio: "Lantern glass",
+    techito: "Lantern roof", domo: "Geodesic dome", policarbonato: "Dome polycarbonate", lona_techo: "PVC roof cover",
+    tela_muro: "Wall fabric", algodon: "Cotton (roof and wall)", freno: "Vapour barrier (roof and wall)", aislacion_techo: "Roof insulation",
+    aislacion_muro: "Wall insulation", tyvek: "Roof Tyvek", escuadras: "Steel brackets", tornillos_640: "6 × 40 screws", tornillos_690: "6 × 90 screws",
+    u: { u: "u", pz: "pieces", capas: "layers", placas: "boards", m: "m", m2: "m²", m3: "m³" },
+    palabras: { cu: "each", total: "in total", abren: "opening:", compra: "bought ready-made", aprox: "≈" } },
+  pt: { grupos: { piso: "O piso", muro: "A parede", techo: "O telhado", toono: "O toono", telas: "Tecidos e camadas", herrajes: "Ferragens" },
+    pilares: "Pilares", vigas: "Vigas", tirantes: "Barrotes", anillo_piso: "Anel do piso, laminado colado", osb: "Placas de OSB", celulosa: "Celulose (isolamento do piso)",
+    trei: "Ripas da treliça", bulones: "Parafusos da treliça", zocalos: "Rodapés", anillo: "Anel periférico, laminado colado", montantes: "Montantes",
+    tapas: "Tampas dos montantes", pisos_ab: "Soleiras das aberturas", puertas: "Portas", ventanas: "Janelas",
+    perchas: "Caibros", cable: "Cabo de aço", triangulos: "Triângulos da primeira camada", radiales: "Caibros radiais", cal: "Calços",
+    cinta: "Fita dupla da parede", cinta_alero: "Fita do beiral", toono: "Toono, laminado colado", sobrealto: "Lanternim: janelas", vidrio: "Vidro do lanternim",
+    techito: "Telhadinho do lanternim", domo: "Domo geodésico", policarbonato: "Policarbonato do domo", lona_techo: "Lona de PVC do telhado",
+    tela_muro: "Tecido da parede", algodon: "Algodão (telhado e parede)", freno: "Barreira de vapor (telhado e parede)", aislacion_techo: "Isolamento do telhado",
+    aislacion_muro: "Isolamento da parede", tyvek: "Tyvek do telhado", escuadras: "Esquadros metálicos", tornillos_640: "Parafusos 6 × 40", tornillos_690: "Parafusos 6 × 90",
+    u: { u: "u", pz: "peças", capas: "camadas", placas: "placas", m: "m", m2: "m²", m3: "m³" },
+    palabras: { cu: "cada", total: "no total", abren: "abrem:", compra: "compradas prontas", aprox: "≈" } },
+};
 const PARTES_T = {
   fr: { pilares: "Poteaux", vigas: "Poutres", osb_inf: "OSB inférieur", tirantes: "Solives", anillo_piso: "Anneau du plancher", osb_sup: "OSB supérieur",
     trei: "Treillis (khana)", zocalos: "Plinthes", anillo: "Anneau périphérique", cal: "Cales", cinta: "Double lisse", triangulos: "Triangles",
@@ -227,7 +268,7 @@ async function pintar() {
   const t = T[lang] || T.es;
   marcarIdioma();
   if (!E) { noDisponible(); return; }
-  const { calc, resumen } = await import("./calculo-geo.js");
+  const { calc, resumen, materiales, NOMBRES_MAT, renglonMat } = await import("./calculo-geo.js");
   const P = E.datos || {}, C = calc(P), Rs = resumen(P, C);
   const simple = P.tipo === 2, sobre = P.tono_tipo === 2;
   const nf = (v, d = 2) => new Intl.NumberFormat(lang, { minimumFractionDigits: d, maximumFractionDigits: d }).format(v);
@@ -293,6 +334,13 @@ async function pintar() {
         ${(E.no_incluye || []).length ? `<h3 style="margin-top:1rem">${esc(t.no_incluye)}</h3>${lista(E.no_incluye)}` : ""}
       </div>
     </div>
+    ${(() => {
+      const N = lang === "es" ? NOMBRES_MAT : { ...NOMBRES_MAT, ...(MAT_T[lang] || {}) };
+      const L = materiales(P, C), grupos = [...new Set(L.map(x => x.g))];
+      return `<div class="caja" style="margin-top:1.2rem"><h2>${esc(t.mat_t)}</h2><p class="sub" style="margin:-.3rem 0 .6rem">${esc(t.mat_sub)}</p>
+        <div class="mat">${grupos.map(g => `<div><h3>${esc(N.grupos[g])}</h3>${L.filter(x => x.g === g).map(x => { const r = renglonMat(x, N, nf);
+          return `<div class="fil"><span class="n">${esc(r.nombre)}${r.detalle ? `<br><span class="sub">${esc(r.detalle)}</span>` : ""}</span><span class="v">${esc(r.cant)}</span></div>`; }).join("")}</div>`).join("")}</div></div>`;
+    })()}
     <p class="pie">${esc(t.pie(fecha))} · <a href="./">casayourte.com</a></p>`;
   document.title = (E.titulo || "Tu yurta") + " · CasaYourte";
   montar3d(P, C, t);

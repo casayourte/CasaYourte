@@ -31,7 +31,7 @@ menú ⋮ → *Agregar a la pantalla principal*.
 | `admin.html` | los álbumes de obra |
 | `editar.html` | el editor: la página real, tocás un texto o una foto y la cambiás |
 | `calculo.html` | los cálculos de taller, uno por cliente, con el corte del borde a escala. Dos yurtas (doble techo o **simple**: una percha por cruce del trei, tomada por una escuadra metálica como la del piso —por fuera del trei, del bulón del último agujero, doblada al ángulo del techo, con un tornillo 6×40—, y el borde con un cable de acero o, a elección, el anillo periférico), el piso de doble capa con aislación (del alto del tirante) o simple, sólo la capa de arriba y sin aislación, ventanas además de las aberturas de piso (que se compran hechas: se calcula el vano, con su piso que drena, dos montantes de eucalipto de 40 mm parados en él y una tapa interior —toma los bulones del trei— y otra exterior —sujeta la lona— por montante), y dos remates del toono (cuarto de domo o **sobrealto con ventanas**). La pestaña «Para el cliente» arma el link de la propuesta |
-| `propuesta.html` | **pública, por link** (`?p=<token>`): la propuesta para un cliente: el 3D de su yurta con cada componente para prender y apagar, un resumen de lo que lleva (madera en m³, placas, lona y tela, de `resumen()`), la descripción y el precio si se puso; vence. Sin SDK ni sesión (REST), `noindex`, fuera del SHELL. El token es la llave (`entregas/` en `REGLAS.txt`) |
+| `propuesta.html` | **pública, por link** (`?p=<token>`): la propuesta para un cliente: el 3D de su yurta con cada componente para prender y apagar, un resumen de lo que lleva (madera en m³, placas, lona y tela, de `resumen()`), la descripción, el precio si se puso y, debajo, la lista de materiales del modelo sin precios (`materiales()`, también en la pestaña «Piezas»); vence. Sin SDK ni sesión (REST), `noindex`, fuera del SHELL. El token es la llave (`entregas/` en `REGLAS.txt`) |
 | `usuarios.html` | quién entra y qué puede hacer |
 | `diagnostico.html` | las pruebas de conexión |
 
@@ -792,14 +792,14 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-34` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `cy-shell-v96` |
+| `sw.js` | `VERSION` | `cy-shell-v97` |
 | `admin.html` | `PANEL` | `admin-20` |
 | `editar.html` | `EDITOR` | `editar-23` |
 | `taller.html` | `SELLO` | `andamio-3` |
-| `calculo.html` | `CY.PANEL` | `calculo-30` |
-| `calculo-geo.js` | `SELLO_GEO` | `geo-11` |
+| `calculo.html` | `CY.PANEL` | `calculo-31` |
+| `calculo-geo.js` | `SELLO_GEO` | `geo-12` |
 | `calculo-3d.js` | `SELLO_3D` | `3d-15` |
-| `propuesta.html` | (en el comentario) | `propuesta-3` |
+| `propuesta.html` | (en el comentario) | `propuesta-4` |
 | `consultas.html` | `CY.PANEL` | `consultas-4` |
 | `consultas-ia.js` | `VERSION_CONSULTAS_IA` | `consultas-ia-2` |
 | `presupuestos.html` | `CY.PANEL` | `presupuestos-3` |

@@ -1,5 +1,9 @@
 // calculo-geo.js — la geometría de la yurta, sin navegador y sin Firebase.
-// Sello: geo-11 (17-nov-2026): el sobrealto dice cuántas ventanas se abren (n_abiertas).
+// Sello: geo-12 (17-nov-2026): en la simple el desborde es otro campo (`desb_s`, 10 cm:
+// «cuando el techo no es doble el desborde es de apenas 10 cm») y el cable va en la punta
+// de la percha (`cab_dist` se mide desde la punta); `materiales(P, C)`: la lista de lo que
+// compone la construcción, sin precios, para el cliente.
+// geo-11 (17-nov-2026): el sobrealto dice cuántas ventanas se abren (n_abiertas).
 // geo-10 (17-nov-2026): `vanos(P, C)`, la madera de cada abertura (que se compra
 // hecha): dos montantes parados en su piso, el piso que drena hacia afuera y las dos
 // tapas de cada montante (la interior toma los bulones del trei; la exterior sujeta
@@ -46,7 +50,7 @@
 // TODO lo que se elige por diseño es un campo de la página: si cambia una
 // medida, cambian los números y el dibujo.
 
-export const SELLO_GEO = "geo-11";
+export const SELLO_GEO = "geo-12";
 
 // El tirante, la viga: cuerdas paralelas del círculo de radio R, con una en el
 // centro y cada `paso` a los dos lados. Devuelve [{x, L, n}] con n = 1 para la
@@ -150,6 +154,101 @@ export function vanos(P, C) {
   return out;
 }
 
+// Los nombres de la lista, en castellano (los otros idiomas, en propuesta.html).
+export const NOMBRES_MAT = {
+  grupos: { piso: "El piso", muro: "El muro", techo: "El techo", toono: "El toono", telas: "Telas y capas", herrajes: "Herrajes" },
+  pilares: "Pilares", vigas: "Vigas", tirantes: "Tirantes", anillo_piso: "Anillo del piso, colado", osb: "Placas de OSB", celulosa: "Celulosa (aislación del piso)",
+  trei: "Listones del trei", bulones: "Bulones del trei", zocalos: "Zócalos", anillo: "Anillo periférico, colado", montantes: "Montantes",
+  tapas: "Tapas de los montantes", pisos_ab: "Pisos de las aberturas", puertas: "Puertas", ventanas: "Ventanas",
+  perchas: "Perchas", cable: "Cable de acero", triangulos: "Triángulos de la primera capa", radiales: "Perchas radiales", cal: "Cales",
+  cinta: "Doble cinta del muro", cinta_alero: "Cinta del alero", toono: "Toono, colado", sobrealto: "Sobrealto: ventanas", vidrio: "Vidrio del sobrealto",
+  techito: "Techito del sobrealto", domo: "Domo geodésico", policarbonato: "Policarbonato del domo", lona_techo: "Lona de PVC del techo",
+  tela_muro: "Tela del muro", algodon: "Algodón (techo y muro)", freno: "Freno de vapor (techo y muro)", aislacion_techo: "Aislación del techo",
+  aislacion_muro: "Aislación del muro", tyvek: "Tyvek del techo", escuadras: "Escuadras metálicas", tornillos_640: "Tornillos 6 × 40",
+  tornillos_690: "Tornillos 6 × 90",
+  u: { u: "u", pz: "piezas", capas: "capas", placas: "placas", m: "m", m2: "m²", m3: "m³" },
+  palabras: { cu: "c/u", total: "en total", abren: "se abren", compra: "se compran hechas", aprox: "≈" },
+};
+// Un renglón de la lista, en texto, con los nombres que se le pasen (N) y el formato de número (f).
+export function renglonMat(x, N, f) {
+  const d = [];
+  if (x.sec) d.push(`${x.sec[0]} × ${x.sec[1]} mm`);
+  if (x.esp) d.push(x.esp.map(e => e + " mm").join(" + "));
+  if (x.diam) d.push(`Ø ${f(x.diam, 2)} m`);
+  if (x.largo) d.push(`${f(x.largo, 2)} m ${N.palabras.cu}`);
+  if (x.ml) d.push(`${f(x.ml, 1)} m ${N.palabras.total}`);
+  if (x.frec) d.push(`${x.frec}V`);
+  if (x.abiertas != null) d.push(`${N.palabras.abren} ${x.abiertas}`);
+  if (x.compra) d.push(N.palabras.compra);
+  const dec = ["m", "m2", "m3"].includes(x.u) ? (x.u === "m3" ? 2 : 1) : 0;
+  return { nombre: N[x.k] || x.k, cant: (x.aprox ? N.palabras.aprox + " " : "") + f(x.n, dec) + " " + (N.u[x.u] || x.u), detalle: d.join(" · ") };
+}
+
+// ── LA LISTA DE MATERIALES (geo-12, Mauro: «haz ahora la lista debajo, sin poner precios,
+// de los materiales que componen esta construcción por defecto, de acuerdo al modelo»).
+// Sale de las mismas cuentas; cada renglón lleva una clave (`k`, el nombre lo pone quien
+// la muestra, en su idioma), la cantidad y su unidad, y si hace falta la sección (mm) y
+// los largos (m). Lo que es aproximado lleva `aprox`. Sin precios.
+export function materiales(P, C) {
+  const simple = P.tipo === 2, conAnillo = !simple || P.s_anillo === 1, sobre = P.tono_tipo === 2;
+  const L = [], mm = (a, b) => [Math.round(a * 1000), Math.round(b * 1000)];
+  const add = (g, k, n, u, extra = {}) => { if (n > 0 && isFinite(n)) L.push({ g, k, n, u, ...extra }); };
+  // EL PISO
+  add("piso", "pilares", C.n_pil, "u");
+  add("piso", "vigas", C.n_vig, "pz", { sec: mm(P.viga_alt, P.viga_anc), ml: C.m_vig });
+  add("piso", "tirantes", C.n_tir, "pz", { sec: mm(P.tir_alt, P.tir_anc), ml: C.m_tir });
+  add("piso", "anillo_piso", P.n_cap, "capas", { sec: mm(P.E, P.e_mad), ml: P.n_cap * C.per_med });
+  add("piso", "osb", C.capas_osb * C.placas_capa, "placas", { esp: C.piso_doble ? [Math.round(P.osb_inf * 1000), Math.round(P.osb_sup * 1000)] : [Math.round(P.osb_sup * 1000)] });
+  if (C.piso_doble) add("piso", "celulosa", C.cel_neto, "m3");
+  // EL MURO
+  add("muro", "trei", C.n_lito_trei, "pz", { sec: mm(P.anc_trei, P.e_trei), largo: C.largo_lito_trei });
+  const bul = Math.round(C.n_lito_trei * (Math.floor(C.largo_lito_trei / P.bul) + 1) / 2);
+  add("muro", "bulones", bul, "u", { aprox: true });
+  add("muro", "zocalos", 2, "pz", { sec: mm(P.anc_int, P.e_int), ml: 2 * C.zocalo });
+  if (conAnillo) add("muro", "anillo", P.n_cap, "capas", { sec: mm(P.E, P.e_mad), ml: P.n_cap * C.per_med });
+  const V = vanos(P, C), nSueltos = C.mon ? C.mon.sueltos.length : 0;
+  add("muro", "montantes", V.montantes.length + nSueltos, "pz", { sec: mm(C.mon_ancho, P.esp_mon || 0), ml: V.montantes.reduce((s, m) => s + m.largo, 0) + nSueltos * (P.alto - P.e_mad) });
+  add("muro", "tapas", V.tapas.length, "pz", { sec: mm(P.tapa_anc ?? 0.12, P.tapa_esp ?? 0.02), ml: V.tapas.reduce((s, t) => s + t.largo, 0) });
+  add("muro", "pisos_ab", V.pisos.length, "pz", { sec: mm(V.pisos[0] ? V.pisos[0].prof : 0, P.umb_esp || 0), ml: V.pisos.reduce((s, p) => s + p.largo, 0) });
+  add("muro", "puertas", Math.round(P.n_ab || 0), "u", { compra: true });
+  add("muro", "ventanas", Math.round(P.n_vt || 0), "u", { compra: true });
+  // EL TECHO
+  if (simple) {
+    add("techo", "perchas", C.simple.n_perchas, "pz", { sec: mm(P.p_anc, P.p_alt), largo: C.simple.largo });
+    if (!conAnillo) add("techo", "cable", C.simple.cable, "m");
+  } else {
+    add("techo", "triangulos", C.nt, "u", { sec: mm(P.tri_anc, P.tri_esp), ml: C.nt * (2 * C.lado_tri + C.cuerda), aprox: true });
+    if (C.con_radial) add("techo", "radiales", C.nt, "pz", { sec: mm(P.tri_anc, P.tri_esp), largo: C.largo_radial });
+    add("techo", "perchas", P.n_per_r, "pz", { sec: mm(P.p_anc, P.p_alt), largo: C.slant });
+    add("techo", "cal", P.n_per_r, "u");
+    add("techo", "cinta", 2, "pz", { sec: mm(P.anc_per, P.e_per), ml: C.per_lito_ext });
+  }
+  add("techo", "cinta_alero", 2, "pz", { sec: mm(P.anc_per, P.e_per), ml: 2 * 2 * Math.PI * C.Rp });
+  // EL TOONO
+  add("toono", "toono", 2, "capas", { diam: 2 * P.r_toono, sec: mm(0.10, P.e_mad) });
+  if (sobre) {
+    add("toono", "sobrealto", C.sobrealto.n_vent, "u", { abiertas: C.sobrealto.n_abiertas, alto: C.sobrealto.alto });
+    add("toono", "vidrio", C.sobrealto.area_vidrio, "m2");
+    add("toono", "techito", C.sobrealto.area_techito, "m2");
+  } else {
+    const r = P.r_toono + (P.tapa_vuelo ?? 0.05), phi = (P.dom_ang ?? 60) * Math.PI / 180, Rd = r / Math.sin(phi);
+    add("toono", "domo", 1, "u", { diam: 2 * r, frec: Math.round(P.dom_frec ?? 3) });
+    add("toono", "policarbonato", 2 * Math.PI * Rd * Rd * (1 - Math.cos(phi)), "m2", { aprox: true });
+  }
+  // LAS TELAS Y LAS CAPAS
+  add("telas", "lona_techo", C.lona_area, "m2");
+  add("telas", "tela_muro", 2 * Math.PI * C.R * (P.alto + C.alto_piso + 0.1), "m2");
+  for (const k of ["algodon", "freno"]) add("telas", k, C.area_techo + C.area_muro, "m2");
+  add("telas", "aislacion_techo", C.area_techo, "m2", { esp: [Math.round((simple ? (P.s_ais ?? 0.04) : C.H) * 1000)] });
+  add("telas", "aislacion_muro", C.area_muro, "m2", { esp: [Math.round(C.A * 1000)] });
+  add("telas", "tyvek", C.area_techo, "m2");
+  // LOS HERRAJES
+  add("herrajes", "escuadras", C.n_pts * (simple ? 2 : 1), "u");
+  add("herrajes", "tornillos_640", C.n_pts * (simple ? 2 : 1), "u");
+  if (conAnillo) add("herrajes", "tornillos_690", C.n_pts, "u");
+  return L;
+}
+
 // ── EL RESUMEN DE MATERIALES (geo-9), lo que ve el cliente: la madera en m³ por
 // parte de la obra, las placas, la lona del techo y la tela del muro. Sale de
 // las mismas cuentas de calc(); no tiene precios. ──
@@ -200,7 +299,8 @@ export function calc(P) {
   const r_trei_med = r_trei - P.e_trei;
   const alfa = 2 * Math.asin(Math.min(1, P.bul / (2 * r_trei_med)));
   const n_pts = Math.round(2 * Math.PI / alfa);  // puntos de abajo (y de arriba) del trei
-  const Rp = R + P.desb;
+  const desb_e = P.tipo === 2 ? (P.desb_s ?? 0.10) : P.desb;   // geo-12: la simple tiene el suyo
+  const Rp = R + desb_e;
 
   // ── PRIMERA capa · los triángulos (ver el comentario largo en la versión
   //    anterior de calculo.html: β = δ − asen((r toono / R int) · sen δ)).
@@ -285,7 +385,7 @@ export function calc(P) {
     mediana: Math.hypot(bx - P.r_toono, h_vert),
     dip: Math.atan(h_vert / (bx - P.r_toono)) * 180 / Math.PI,
     vol_tri: nt * (2 * lado_tri + 2 * Rint * Math.sin(beta)) * P.tri_anc * P.tri_esp,
-    slant, area_techo: Math.PI * (Rp + P.r_toono) * slant,
+    desb_e, slant, area_techo: Math.PI * (Rp + P.r_toono) * slant,
     area_muro: 2 * Math.PI * R * P.alto,
     mon, n_mon: mon.n_mon, n_mon_ab: mon.de_ab, n_mon_sueltos: mon.sueltos.length, mon_max_sep: mon.max_sep,
     lona_r_ext, lona_r_int, lona_ang_cono, lona_ang, lona_area,
@@ -310,7 +410,7 @@ export function calc(P) {
     //    punto de arriba del trei, de la cabeza al toono y con el desborde. Se
     //    calcula siempre; la página lo muestra cuando P.tipo = 2.
     simple: (() => {
-      const E = escuadraSimple(P, { alto_an, Rext, r_trei });
+      const E = escuadraSimple(P, { alto_an, Rext, r_trei, Rp });
       const paso_toono = 2 * Math.PI * P.r_toono / n_pts;
       return {
         n_perchas: n_pts,
@@ -366,7 +466,8 @@ export function escuadraSimple(P, C) {
   const bajo = (r) => yb + (rb - r) * tan;               // cara de abajo de la percha
   const e = Math.max(0.03, P.esc ?? 0.05);
   const enAla = (d) => [rb + d * cs, yb - d * sn];       // un punto del ala, a d del doblez
-  const rCable = rb + Math.max(0.02, P.cab_dist ?? 0.10);
+  // geo-12 (Mauro: «el cable va en el extremo exterior de la percha»): a `cab_dist` de la punta.
+  const rCable = Math.max(rb + 0.02, (C.Rp ?? rb + 0.13) - Math.max(0.01, P.cab_dist ?? 0.03));
   return { conAnillo, rb, yb, bajo, e, doblez: 90 - P.ang,
     pata: [[rb, yb - e], [rb, yb]], ala: [[rb, yb], enAla(e)], tornillo: enAla(Math.min(0.035, e * 0.7)),
     bulon: conAnillo ? null : yb - (P.b_borde || 0.02), rCable,
@@ -394,7 +495,7 @@ export function corte(P, C, ancho = 680) {
   const techo = simple ? r => zt + ES.yb + (xb - r) * tan             // cara de abajo de la percha
                        : r => za + C.h0 - (r - rt) * tan;
   const pv = P.p_anc / Math.cos(P.ang * Math.PI / 180);
-  const r0 = rt - 2 * P.e_trei - P.e_int - 0.12, r9 = R + Math.min(P.desb, 0.08);
+  const r0 = rt - 2 * P.e_trei - P.e_int - 0.12, r9 = R + Math.min(C.desb_e ?? P.desb, 0.08);
   const zLo = zt - P.e_mad - 0.06, zHi = techo(r0) + pv + 0.01;
   const izq = 190, der = 250;                        // lugar para los rótulos
   const S = (ancho - izq - der) / (r9 - r0);

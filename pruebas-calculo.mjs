@@ -7,7 +7,7 @@
 
 import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
-import { calc, corte, cuerdas, pilares, montaje, escuadraSimple, resumen, vanos } from "./calculo-geo.js";
+import { calc, corte, cuerdas, pilares, montaje, escuadraSimple, resumen, vanos, materiales, NOMBRES_MAT, renglonMat } from "./calculo-geo.js";
 import { piezas3d, arriostramiento, geodesica, PARTES, CAMPO_PARTES } from "./calculo-3d.js";
 
 let bien = 0, mal = 0;
@@ -260,7 +260,8 @@ ok("calculo.html ya no pide el cable (el doble techo no lo lleva)", !/faltan los
   const Q = { ...P, tipo: 2 }, Cs = calc(Q), K = piezas3d(Q, Cs), de = (g) => K.piezas.filter(p => p.g === g);
   ok("simple: una percha por punto de arriba del trei (63), con su escuadra", Cs.simple.n_perchas === C.n_pts && Cs.simple.escuadras === 63);
   ok("simple: el paso es el de los bulones, medido en la cabeza", cerca(Cs.simple.paso, 2 * Math.PI * C.r_trei / 63, 1e-9) && Math.abs(Cs.simple.paso - P.bul) < 0.01);
-  ok("simple: la percha tiene el largo de la 2.ª capa", cerca(Cs.simple.largo, C.slant, 1e-9));
+  ok("simple: el desborde es el suyo (10 cm), y la percha va del toono a la punta", P.desb_s === 0.1 && cerca(Cs.Rp, Cs.R + 0.1, 1e-12)
+    && cerca(Cs.simple.largo, (Cs.R + 0.1 - P.r_toono) / Math.cos(P.ang * Math.PI / 180), 1e-9) && cerca(C.Rp, C.R + P.desb, 1e-12));
   ok("3D simple: 63 perchas de la sección de la 2.ª capa; cada una con su escuadra metálica (pata, ala, tornillo 6×40 y bulón)",
     de("perchas").length === 63 && de("escuadras").length === 63 * 4 && de("escuadras").every(p => p.mat === "metal"));
   ok("3D simple: sin primera capa (ni triángulos, ni radiales, ni cal, ni doble cinta, ni anillo tapa, ni tapa aislante)",
@@ -268,7 +269,7 @@ ok("calculo.html ya no pide el cable (el doble techo no lo lleva)", !/faltan los
   ok("3D simple: cada percha arranca en el toono, sin meterse", de("perchas").every(p => cerca(Math.hypot(p.a[0], p.a[2]), P.r_toono, 1e-9)));
   const ES = escuadraSimple(Q, Cs), yt = K.yt, tan = Math.tan(P.ang * Math.PI / 180);
   ok("3D simple: con cable, sin el anillo de arriba; el cable da toda la vuelta por las perchas", de("anillo").length === 0 && de("cable").length === 1
-    && cerca(de("cable")[0].r1 + 0.003, Cs.r_trei + P.cab_dist, 1e-9) && cerca(Cs.simple.cable, 2 * Math.PI * (Cs.r_trei + P.cab_dist), 1e-9));
+    && cerca(de("cable")[0].r1 + 0.003, Cs.Rp - P.cab_dist, 1e-9) && cerca(Cs.simple.cable, 2 * Math.PI * (Cs.Rp - P.cab_dist), 1e-9) && P.cab_dist === 0.03);
   ok("3D simple: la percha apoya en la cabeza del trei, en su canto de afuera", (() => { const q = de("perchas")[0], r = Math.hypot(q.a[0], q.a[2]);
     const yAb = q.a[1] - P.p_anc / 2 / Math.cos(P.ang * Math.PI / 180); return cerca(yAb + (r - Cs.r_trei) * tan, yt, 1e-9); })());
   ok("escuadra: metálica, por fuera del trei, la pata baja «esc» y la toma el bulón del último agujero", (() => {
@@ -343,6 +344,20 @@ ok("calculo.html ya no pide el cable (el doble techo no lo lleva)", !/faltan los
     && Rs.madera_total > 1 && Rs.madera_total < 4 && cerca(Rs.lona_techo, Cq.lona_area, 1e-12) && Rs.puertas === 1 && Rs.ventanas === 2 && Rs.placas === 2 * Cq.placas_capa);
   ok("resumen: en la simple no entra la madera de la primera capa", resumen(P, C).madera.techo > Rs.madera.techo);
 }
+// ── la lista de materiales (geo-12) ──
+{
+  const Q = { ...P, D: 6, tipo: 2, tono_tipo: 2, r_toono: 0.8, sa_alto: 0.35, n_ab: 1, n_gr: 1, n_vt: 2, piso_tipo: 2 }, Cq = calc(Q), L = materiales(Q, Cq);
+  const de = (k) => L.find(x => x.k === k);
+  ok("materiales: cada renglón tiene nombre en castellano y unidad", L.length > 20 && L.every(x => NOMBRES_MAT[x.k] && NOMBRES_MAT.u[x.u] && NOMBRES_MAT.grupos[x.g]));
+  ok("materiales: la simple de 6 m lleva perchas, cable y escuadras arriba y abajo, y no lleva primera capa ni anillo de arriba",
+    de("perchas").n === Cq.n_pts && de("cable") && de("escuadras").n === 2 * Cq.n_pts && !de("triangulos") && !de("cal") && !de("anillo") && !de("tornillos_690"));
+  ok("materiales: piso simple, una capa de OSB y sin celulosa", de("osb").n === Cq.placas_capa && !de("celulosa") && de("osb").esp.length === 1);
+  ok("materiales: la puerta y las ventanas se compran hechas, y sus vanos sí están", de("puertas").compra && de("ventanas").n === 2 && de("montantes").n === 6 + Cq.mon.sueltos.length && de("tapas").n === 12);
+  ok("materiales: sin precios", !JSON.stringify(L).match(/precio|USD|UYU|\$/));
+  ok("materiales: el doble techo lleva su primera capa y su cal", (() => { const D = materiales(P, C); return D.some(x => x.k === "triangulos") && D.some(x => x.k === "cal") && D.some(x => x.k === "celulosa"); })());
+  ok("materiales: el renglón se arma con la sección y los largos", (() => { const r = renglonMat(de("perchas"), NOMBRES_MAT, (v, d) => v.toFixed(d));
+    return /80 × 40 mm/.test(r.detalle) && /m c\/u/.test(r.detalle) && new RegExp("^" + Cq.n_pts + " piezas$").test(r.cant); })());
+}
 // ── el toono en sobrealto (geo-5, 3d-11) ──
 {
   const Q = { ...P, tipo: 2, tono_tipo: 2 }, Cs = calc(Q), K = piezas3d(Q, Cs), de = (g) => K.piezas.filter(p => p.g === g);
@@ -400,6 +415,9 @@ ok("calculo.html ya no pide el cable (el doble techo no lo lleva)", !/faltan los
   ok("propuesta.html lee las medidas con calculo-geo.js y el 3D con calculo-3d.js, diferidos", /import\("\.\/calculo-geo\.js"\)/.test(pr) && /import\("\.\/calculo-3d\.js"\)/.test(pr));
   const mod = (pr.match(/<script type="module">([\s\S]*?)<\/script>/) || [])[1] || "";
   ok("propuesta.html: su módulo parsea", parsea(mod));
+  ok("propuesta.html: la lista de materiales tiene cada nombre en francés, inglés y portugués", (() => { const b = (mod.match(/const MAT_T = \{([\s\S]*?)\n\};/) || [])[1] || "";
+    return Object.keys(NOMBRES_MAT).filter(k => typeof NOMBRES_MAT[k] === "string").every(k => (b.match(new RegExp("\\b" + k + ": \"", "g")) || []).length >= 3)   // «toono» está también en los grupos
+      && /materiales\(P, C\)/.test(mod); })());
   ok("propuesta.html: los cuatro idiomas tienen las mismas claves", (() => { const T = mod.match(/const T = \{([\s\S]*?)\n\};/)[1];
     const claves = (l) => [...(T.split(new RegExp("\\n  " + l + ": \\{"))[1] || "").split(/\n  \w\w: \{/)[0].matchAll(/(\w+):/g)].map(x => x[1]).sort().join();
     return ["fr", "en", "pt"].every(l => claves(l) === claves("es")) && claves("es").length > 50; })());
