@@ -353,6 +353,11 @@ ok("calculo.html ya no pide el cable (el doble techo no lo lleva)", !/faltan los
     de("perchas").n === Cq.n_pts && de("cable") && de("escuadras").n === 2 * Cq.n_pts && !de("triangulos") && !de("cal") && !de("anillo") && !de("tornillos_690"));
   ok("materiales: piso simple, una capa de OSB y sin celulosa", de("osb").n === Cq.placas_capa && !de("celulosa") && de("osb").esp.length === 1);
   ok("materiales: la puerta y las ventanas se compran hechas, y sus vanos sí están", de("puertas").compra && de("ventanas").n === 2 && de("montantes").n === 6 + Cq.mon.sueltos.length && de("tapas").n === 12);
+  ok("materiales: el sobrealto pieza por pieza (geo-13): solera y cabezal, parantes, limatesas, marcos, vidrios y herrajes de las que abren", (() => {
+    const n = Cq.sobrealto.n_vent; return de("sob_solera").n === 2 * n && de("sob_parantes").n === n && de("sob_limatesas").n === n && de("sob_limatesas").sec.join() === "80,40"
+      && de("sob_marcos").n === n && de("vidrio").n === n && de("vidrio").medida[0] < de("sob_marcos").medida[0] && de("bisagras").n === 4 && de("compases").n === 2
+      && cerca(de("techito_capas").n, Cq.sobrealto.area_techito, 1e-9); })());
+  ok("resumen: la madera del toono suma la del sobrealto", resumen(Q, Cq).madera.toono > resumen({ ...Q, tono_tipo: 1 }, calc({ ...Q, tono_tipo: 1 })).madera.toono);
   ok("materiales: sin precios", !JSON.stringify(L).match(/precio|USD|UYU|\$/));
   ok("materiales: el doble techo lleva su primera capa y su cal", (() => { const D = materiales(P, C); return D.some(x => x.k === "triangulos") && D.some(x => x.k === "cal") && D.some(x => x.k === "celulosa"); })());
   ok("materiales: el renglón se arma con la sección y los largos", (() => { const r = renglonMat(de("perchas"), NOMBRES_MAT, (v, d) => v.toFixed(d));

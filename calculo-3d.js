@@ -1,5 +1,7 @@
 // calculo-3d.js — el modelo en 3D de la estructura, con las medidas del cálculo.
-// Sello: 3d-15 (17-nov-2026). 3d-15: del sobrealto se abren sólo `sa_abiertas` ventanas,
+// Sello: 3d-16 (17-nov-2026). 3d-16: las limatesas del techito del sobrealto son de la sección de
+// la percha (el mismo sistema de la yurta: perchas, algodón, aislación y lona).
+// 3d-15 (17-nov-2026). 3d-15: del sobrealto se abren sólo `sa_abiertas` ventanas,
 // opuestas y repartidas parejo (Mauro: «no todas sino sólo dos opuestas»); el OSB se
 // dibuja opaco (semitransparente, los tirantes se veían a través y parecía que el OSB
 // iba debajo).
@@ -65,7 +67,7 @@
 // de abajo (donde apoyan los tirantes). Todo sale de calc(P): si cambia una
 // medida, cambia el modelo.
 
-export const SELLO_3D = "3d-15";
+export const SELLO_3D = "3d-16";
 import { escuadraSimple } from "./calculo-geo.js";
 export const THREE_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/+esm";
 export const ORBIT_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js/+esm";
@@ -658,8 +660,8 @@ export function piezas3d(P, C) {
       const nrm = [Math.cos(am), 0, Math.sin(am)], tg = [-Math.sin(am), 0, Math.cos(am)];
       for (const yc of [y0 + e / 2, y2 + e / 2]) barra("sobrealto", V(i, rS - e / 2, yc), V(i + 1, rS - e / 2, yc), e, e, [0, 1, 0], "toono");
       barra("sobrealto", V(i, rS - e / 2, y1), V(i, rS - e / 2, y2), e, e, [Math.cos(ai), 0, Math.sin(ai)], "toono2");
-      barra("sobrealto", [0, yR(0) + 0.035, 0], V(i, rTe, yR(rTe) + 0.035), 0.045, 0.07, [0, 1, 0], "toono");
-      const top = (r) => yR(r) + 0.073;
+      barra("sobrealto", [0, yR(0) + P.p_anc / 2, 0], V(i, rTe, yR(rTe) + P.p_anc / 2), P.p_alt, P.p_anc, [0, 1, 0], "toono");
+      const top = (r) => yR(r) + P.p_anc + 0.003;
       tri(vt, [0, top(0), 0], V(i, rTe, top(rTe)), V(i + 1, rTe, top(rTe)));
       // La ventana: marco de 3,5 cm y vidrio, colgada del cabezal por afuera.
       const w = 2 * rS * sn - e - 0.01, h = hV - 0.01, fr = 0.035, abre = abiertas.has(i) ? abreMax : 0;

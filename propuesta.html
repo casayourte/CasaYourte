@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tu yurta · CasaYourte</title>
-<!-- propuesta-4 (17-nov-2026): debajo, la LISTA DE MATERIALES del modelo, sin precios
+<!-- propuesta-5 (17-nov-2026): las piezas del sobrealto en la lista, en los cuatro idiomas.
+     propuesta-4 (17-nov-2026): debajo, la LISTA DE MATERIALES del modelo, sin precios
      (`materiales()` de calculo-geo.js), en los cuatro idiomas.
      propuesta-3 (17-nov-2026): «Tapas de los montantes» en los cuatro idiomas.
      propuesta-2 (17-nov-2026): el cliente ve el 3D y un RESUMEN de lo que lleva
@@ -113,7 +114,7 @@ li{margin:.25rem 0}
 <main id="main"><div class="vacio" id="cargando">…</div></main>
 
 <script type="module">
-// Sello: propuesta-4
+// Sello: propuesta-5
 const PROYECTO = "casayourte-mauro";
 const CLAVE = "AIzaSyDDD_xvpC4I_ec2OZymyDqVsm1K0ISTr4Q";
 const BASE = "https://firestore.googleapis.com/v1/projects/" + PROYECTO + "/databases/(default)/documents/";
@@ -169,8 +170,9 @@ const MAT_T = {
     trei: "Lattes du treillis", bulones: "Boulons du treillis", zocalos: "Plinthes", anillo: "Anneau périphérique, lamellé-collé", montantes: "Montants",
     tapas: "Couvre-joints des montants", pisos_ab: "Seuils des ouvertures", puertas: "Portes", ventanas: "Fenêtres",
     perchas: "Perches", cable: "Câble d'acier", triangulos: "Triangles de la première couche", radiales: "Perches radiales", cal: "Cales",
-    cinta: "Double lisse du mur", cinta_alero: "Lisse de l'avant-toit", toono: "Toono, lamellé-collé", sobrealto: "Lanterneau : fenêtres", vidrio: "Vitrage du lanterneau",
-    techito: "Petit toit du lanterneau", domo: "Dôme géodésique", policarbonato: "Polycarbonate du dôme", lona_techo: "Bâche PVC du toit",
+    cinta: "Double lisse du mur", cinta_alero: "Lisse de l'avant-toit", toono: "Toono, lamellé-collé", sobrealto: "Lanterneau : fenêtres", vidrio: "Vitres du lanterneau",
+    sob_solera: "Lanterneau : sablière et chapeau", sob_parantes: "Lanterneau : poteaux", sob_limatesas: "Lanterneau : arêtiers du petit toit",
+    sob_marcos: "Lanterneau : cadres des fenêtres", techito_capas: "Petit toit : coton, isolant et bâche", bisagras: "Charnières (fenêtres ouvrantes)", compases: "Compas (fenêtres ouvrantes)", domo: "Dôme géodésique", policarbonato: "Polycarbonate du dôme", lona_techo: "Bâche PVC du toit",
     tela_muro: "Toile du mur", algodon: "Coton (toit et mur)", freno: "Pare-vapeur (toit et mur)", aislacion_techo: "Isolant du toit",
     aislacion_muro: "Isolant du mur", tyvek: "Tyvek du toit", escuadras: "Équerres métalliques", tornillos_640: "Vis 6 × 40", tornillos_690: "Vis 6 × 90",
     u: { u: "u", pz: "pièces", capas: "couches", placas: "panneaux", m: "m", m2: "m²", m3: "m³" },
@@ -180,8 +182,9 @@ const MAT_T = {
     trei: "Lattice wall slats", bulones: "Lattice bolts", zocalos: "Skirting", anillo: "Perimeter ring, glue-laminated", montantes: "Door posts",
     tapas: "Post cover boards", pisos_ab: "Opening sills", puertas: "Doors", ventanas: "Windows",
     perchas: "Rafters", cable: "Steel cable", triangulos: "First-layer triangles", radiales: "Radial rafters", cal: "Wedges",
-    cinta: "Double wall band", cinta_alero: "Eave band", toono: "Toono, glue-laminated", sobrealto: "Lantern: windows", vidrio: "Lantern glass",
-    techito: "Lantern roof", domo: "Geodesic dome", policarbonato: "Dome polycarbonate", lona_techo: "PVC roof cover",
+    cinta: "Double wall band", cinta_alero: "Eave band", toono: "Toono, glue-laminated", sobrealto: "Lantern: windows", vidrio: "Lantern glass panes",
+    sob_solera: "Lantern: sill and head plates", sob_parantes: "Lantern: posts", sob_limatesas: "Lantern: hip rafters",
+    sob_marcos: "Lantern: window frames", techito_capas: "Lantern roof: cotton, insulation and cover", bisagras: "Hinges (opening windows)", compases: "Window stays (opening windows)", domo: "Geodesic dome", policarbonato: "Dome polycarbonate", lona_techo: "PVC roof cover",
     tela_muro: "Wall fabric", algodon: "Cotton (roof and wall)", freno: "Vapour barrier (roof and wall)", aislacion_techo: "Roof insulation",
     aislacion_muro: "Wall insulation", tyvek: "Roof Tyvek", escuadras: "Steel brackets", tornillos_640: "6 × 40 screws", tornillos_690: "6 × 90 screws",
     u: { u: "u", pz: "pieces", capas: "layers", placas: "boards", m: "m", m2: "m²", m3: "m³" },
@@ -191,8 +194,9 @@ const MAT_T = {
     trei: "Ripas da treliça", bulones: "Parafusos da treliça", zocalos: "Rodapés", anillo: "Anel periférico, laminado colado", montantes: "Montantes",
     tapas: "Tampas dos montantes", pisos_ab: "Soleiras das aberturas", puertas: "Portas", ventanas: "Janelas",
     perchas: "Caibros", cable: "Cabo de aço", triangulos: "Triângulos da primeira camada", radiales: "Caibros radiais", cal: "Calços",
-    cinta: "Fita dupla da parede", cinta_alero: "Fita do beiral", toono: "Toono, laminado colado", sobrealto: "Lanternim: janelas", vidrio: "Vidro do lanternim",
-    techito: "Telhadinho do lanternim", domo: "Domo geodésico", policarbonato: "Policarbonato do domo", lona_techo: "Lona de PVC do telhado",
+    cinta: "Fita dupla da parede", cinta_alero: "Fita do beiral", toono: "Toono, laminado colado", sobrealto: "Lanternim: janelas", vidrio: "Vidros do lanternim",
+    sob_solera: "Lanternim: soleira e travessa", sob_parantes: "Lanternim: montantes", sob_limatesas: "Lanternim: espigões do telhadinho",
+    sob_marcos: "Lanternim: caixilhos das janelas", techito_capas: "Telhadinho: algodão, isolamento e lona", bisagras: "Dobradiças (janelas que abrem)", compases: "Compassos (janelas que abrem)", domo: "Domo geodésico", policarbonato: "Policarbonato do domo", lona_techo: "Lona de PVC do telhado",
     tela_muro: "Tecido da parede", algodon: "Algodão (telhado e parede)", freno: "Barreira de vapor (telhado e parede)", aislacion_techo: "Isolamento do telhado",
     aislacion_muro: "Isolamento da parede", tyvek: "Tyvek do telhado", escuadras: "Esquadros metálicos", tornillos_640: "Parafusos 6 × 40", tornillos_690: "Parafusos 6 × 90",
     u: { u: "u", pz: "peças", capas: "camadas", placas: "placas", m: "m", m2: "m²", m3: "m³" },

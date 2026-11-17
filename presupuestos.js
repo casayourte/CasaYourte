@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // presupuestos.js — Pedir precio de materiales a proveedores y compararlos.
-// Sello: presupuestos-js-2
+// Sello: presupuestos-js-3 (17-nov-2026: entra el rubro «vidrios», para la vidriería del sobrealto)
 //
 // 3-nov-2026, Mauro: «hacer un envío de mails consultando precios para los
 // materiales… busquemos un presupuesto para una yurta de 5 m de diámetro… haz en
@@ -24,7 +24,7 @@
 // Sin Firebase y sin DOM: lo prueba `node pruebas-presupuestos.mjs`.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const VERSION_PRESUPUESTOS = "presupuestos-js-2";
+export const VERSION_PRESUPUESTOS = "presupuestos-js-3";
 
 export const ESTADOS = [
   ["por_pedir", "Por pedir: el mail está listo y sin mandar"],
@@ -46,6 +46,7 @@ export const RUBROS = [
   ["lonas", "Lonas y telas exteriores"],
   ["telas", "Telas interiores"],
   ["policarbonato", "Policarbonato y domo"],
+  ["vidrios", "Vidrios (vidriería)"],
   ["fijaciones", "Bulones, tornillos y herrajes"],
   ["otros", "Otros"],
 ];

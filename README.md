@@ -794,18 +794,18 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-34` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `cy-shell-v98` |
+| `sw.js` | `VERSION` | `cy-shell-v99` |
 | `admin.html` | `PANEL` | `admin-20` |
 | `editar.html` | `EDITOR` | `editar-23` |
 | `taller.html` | `SELLO` | `andamio-3` |
 | `calculo.html` | `CY.PANEL` | `calculo-32` |
-| `calculo-geo.js` | `SELLO_GEO` | `geo-12` |
-| `calculo-3d.js` | `SELLO_3D` | `3d-15` |
-| `propuesta.html` | (en el comentario) | `propuesta-4` |
+| `calculo-geo.js` | `SELLO_GEO` | `geo-13` |
+| `calculo-3d.js` | `SELLO_3D` | `3d-16` |
+| `propuesta.html` | (en el comentario) | `propuesta-5` |
 | `consultas.html` | `CY.PANEL` | `consultas-4` |
 | `consultas-ia.js` | `VERSION_CONSULTAS_IA` | `consultas-ia-2` |
 | `presupuestos.html` | `CY.PANEL` | `presupuestos-3` |
-| `presupuestos.js` | `VERSION_PRESUPUESTOS` | `presupuestos-js-1` |
+| `presupuestos.js` | `VERSION_PRESUPUESTOS` | `presupuestos-js-3` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-4` |
 | `diagnostico.html` | `CY.PANEL` | `diagnostico-8` |
 | `idiomas.js` | `SELLO` | `idiomas-5` |

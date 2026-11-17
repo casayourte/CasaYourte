@@ -1,5 +1,10 @@
 // calculo-geo.js — la geometría de la yurta, sin navegador y sin Firebase.
-// Sello: geo-12 (17-nov-2026): en la simple el desborde es otro campo (`desb_s`, 10 cm:
+// Sello: geo-13 (17-nov-2026): el sobrealto entra pieza por pieza en la lista y en la madera
+// (Mauro: «las fabricamos nosotros, techito con el mismo sistema de la yurta con algodón,
+// aislante y lona, eucalipto para la estructura, y un presupuesto de vidriería»): solera y
+// cabezal, parantes, limatesas (de la sección de la percha), los marcos de las ventanas, los
+// vidrios, las capas del techito y las bisagras y compases de las que se abren.
+// geo-12 (17-nov-2026): en la simple el desborde es otro campo (`desb_s`, 10 cm:
 // «cuando el techo no es doble el desborde es de apenas 10 cm») y el cable va en la punta
 // de la percha (`cab_dist` se mide desde la punta); `materiales(P, C)`: la lista de lo que
 // compone la construcción, sin precios, para el cliente.
@@ -50,7 +55,7 @@
 // TODO lo que se elige por diseño es un campo de la página: si cambia una
 // medida, cambian los números y el dibujo.
 
-export const SELLO_GEO = "geo-12";
+export const SELLO_GEO = "geo-13";
 
 // El tirante, la viga: cuerdas paralelas del círculo de radio R, con una en el
 // centro y cada `paso` a los dos lados. Devuelve [{x, L, n}] con n = 1 para la
@@ -154,6 +159,19 @@ export function vanos(P, C) {
   return out;
 }
 
+// ── EL SOBREALTO, pieza por pieza (geo-13): un prisma de n caras sobre el aro (radio
+// r_aro): solera y cabezal de 50 × 50 por cara, un parante por vértice, una limatesa por
+// vértice (de la sección de la percha) y en cada cara una ventana: marco de 35 × 30 y vidrio.
+// Las medidas son las del 3D (calculo-3d.js): marco = cara − parante − 1 cm de juego.
+export function sobrealtoPiezas(P, C) {
+  const A = C.sobrealto, n = A.n_vent, e = 0.05, fr = 0.035, fe = 0.03;
+  const cuerda = 2 * A.r_aro * Math.sin(Math.PI / n);
+  const w = cuerda - e - 0.01, h = A.alto - 0.01;
+  const vidrio = [Math.max(0, w - 2 * fr + 0.01), Math.max(0, h - 2 * fr + 0.01)];   // 5 mm dentro del marco de cada lado
+  const vol = 2 * n * cuerda * e * e + n * A.alto * e * e + n * A.slant_techito * P.p_anc * P.p_alt + n * 2 * (w + h) * fr * fe;
+  return { n, cuerda, marco: [w, h], vidrio, vol, e, fr, fe };
+}
+
 // Los nombres de la lista, en castellano (los otros idiomas, en propuesta.html).
 export const NOMBRES_MAT = {
   grupos: { piso: "El piso", muro: "El muro", techo: "El techo", toono: "El toono", telas: "Telas y capas", herrajes: "Herrajes" },
@@ -161,8 +179,10 @@ export const NOMBRES_MAT = {
   trei: "Listones del trei", bulones: "Bulones del trei", zocalos: "Zócalos", anillo: "Anillo periférico, colado", montantes: "Montantes",
   tapas: "Tapas de los montantes", pisos_ab: "Pisos de las aberturas", puertas: "Puertas", ventanas: "Ventanas",
   perchas: "Perchas", cable: "Cable de acero", triangulos: "Triángulos de la primera capa", radiales: "Perchas radiales", cal: "Cales",
-  cinta: "Doble cinta del muro", cinta_alero: "Cinta del alero", toono: "Toono, colado", sobrealto: "Sobrealto: ventanas", vidrio: "Vidrio del sobrealto",
-  techito: "Techito del sobrealto", domo: "Domo geodésico", policarbonato: "Policarbonato del domo", lona_techo: "Lona de PVC del techo",
+  cinta: "Doble cinta del muro", cinta_alero: "Cinta del alero", toono: "Toono, colado", sobrealto: "Sobrealto: ventanas", vidrio: "Vidrios del sobrealto",
+  sob_solera: "Sobrealto: solera y cabezal", sob_parantes: "Sobrealto: parantes", sob_limatesas: "Sobrealto: limatesas del techito",
+  sob_marcos: "Sobrealto: marcos de las ventanas", techito_capas: "Techito: algodón, aislación y lona", bisagras: "Bisagras (ventanas que abren)",
+  compases: "Compases (ventanas que abren)", domo: "Domo geodésico", policarbonato: "Policarbonato del domo", lona_techo: "Lona de PVC del techo",
   tela_muro: "Tela del muro", algodon: "Algodón (techo y muro)", freno: "Freno de vapor (techo y muro)", aislacion_techo: "Aislación del techo",
   aislacion_muro: "Aislación del muro", tyvek: "Tyvek del techo", escuadras: "Escuadras metálicas", tornillos_640: "Tornillos 6 × 40",
   tornillos_690: "Tornillos 6 × 90",
@@ -175,6 +195,7 @@ export function renglonMat(x, N, f) {
   if (x.sec) d.push(`${x.sec[0]} × ${x.sec[1]} mm`);
   if (x.esp) d.push(x.esp.map(e => e + " mm").join(" + "));
   if (x.diam) d.push(`Ø ${f(x.diam, 2)} m`);
+  if (x.medida) d.push(`${f(x.medida[0], 2)} × ${f(x.medida[1], 2)} m`);
   if (x.largo) d.push(`${f(x.largo, 2)} m ${N.palabras.cu}`);
   if (x.ml) d.push(`${f(x.ml, 1)} m ${N.palabras.total}`);
   if (x.frec) d.push(`${x.frec}V`);
@@ -227,9 +248,13 @@ export function materiales(P, C) {
   // EL TOONO
   add("toono", "toono", 2, "capas", { diam: 2 * P.r_toono, sec: mm(0.10, P.e_mad) });
   if (sobre) {
-    add("toono", "sobrealto", C.sobrealto.n_vent, "u", { abiertas: C.sobrealto.n_abiertas, alto: C.sobrealto.alto });
-    add("toono", "vidrio", C.sobrealto.area_vidrio, "m2");
-    add("toono", "techito", C.sobrealto.area_techito, "m2");
+    const S = sobrealtoPiezas(P, C);
+    add("toono", "sobrealto", S.n, "u", { abiertas: C.sobrealto.n_abiertas, alto: C.sobrealto.alto });
+    add("toono", "sob_solera", 2 * S.n, "pz", { sec: mm(S.e, S.e), largo: S.cuerda });
+    add("toono", "sob_parantes", S.n, "pz", { sec: mm(S.e, S.e), largo: C.sobrealto.alto });
+    add("toono", "sob_limatesas", S.n, "pz", { sec: mm(P.p_anc, P.p_alt), largo: C.sobrealto.slant_techito });
+    add("toono", "sob_marcos", S.n, "u", { sec: mm(S.fr, S.fe), medida: S.marco });
+    add("toono", "vidrio", S.n, "u", { medida: S.vidrio });
   } else {
     const r = P.r_toono + (P.tapa_vuelo ?? 0.05), phi = (P.dom_ang ?? 60) * Math.PI / 180, Rd = r / Math.sin(phi);
     add("toono", "domo", 1, "u", { diam: 2 * r, frec: Math.round(P.dom_frec ?? 3) });
@@ -242,10 +267,12 @@ export function materiales(P, C) {
   add("telas", "aislacion_techo", C.area_techo, "m2", { esp: [Math.round((simple ? (P.s_ais ?? 0.04) : C.H) * 1000)] });
   add("telas", "aislacion_muro", C.area_muro, "m2", { esp: [Math.round(C.A * 1000)] });
   add("telas", "tyvek", C.area_techo, "m2");
+  if (sobre) add("telas", "techito_capas", C.sobrealto.area_techito, "m2");
   // LOS HERRAJES
   add("herrajes", "escuadras", C.n_pts * (simple ? 2 : 1), "u");
   add("herrajes", "tornillos_640", C.n_pts * (simple ? 2 : 1), "u");
   if (conAnillo) add("herrajes", "tornillos_690", C.n_pts, "u");
+  if (sobre) { add("herrajes", "bisagras", 2 * C.sobrealto.n_abiertas, "u"); add("herrajes", "compases", C.sobrealto.n_abiertas, "u"); }
   return L;
 }
 
@@ -265,7 +292,8 @@ export function resumen(P, C) {
   const muro = v(C.vol_trei) + v(montantes) + v(2 * C.zocalo * P.anc_int * P.e_int) + (conAnillo ? v(C.vol_an) : 0);
   const techo = simple ? v(C.simple.vol_perchas)
     : v(C.vol_perchas) + v(C.vol_tri) + (C.con_radial ? v(C.nt * C.largo_radial * P.tri_anc * P.tri_esp) : 0) + v(P.n_per_r * C.tri_base * (C.h0 + C.tri_tr) / 2 * P.p_alt);   // la cal: un trapecio por percha
-  const remate = toono + (sobre ? v(C.sobrealto.n_vent * (2 * 2 * C.sobrealto.r_aro * Math.sin(Math.PI / C.sobrealto.n_vent) + P.sa_alto + C.sobrealto.slant_techito) * 0.05 * 0.05) : 0);
+  const S = sobrealtoPiezas(P, C);
+  const remate = toono + (sobre ? S.vol : 0);
   const madera = { piso, muro, techo, toono: remate };
   return {
     madera, madera_total: piso + muro + techo + remate,
