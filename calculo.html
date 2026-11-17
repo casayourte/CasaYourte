@@ -239,7 +239,7 @@ import { CY } from "./nucleo.js";
 import { calc as calcGeo, corte, vanos, materiales, NOMBRES_MAT, renglonMat } from "./calculo-geo.js";
 import { montar as montar3d, PARTES as PARTES3D, CAMPO_PARTES } from "./calculo-3d.js";
 
-CY.PANEL = "calculo-32";
+CY.PANEL = "calculo-33";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 // ── El SDK se baja acá, y recién después arranca la pantalla ────────────────
@@ -280,7 +280,7 @@ const CAMPOS = [
   ["e_per",    "<b>S</b> espesor de un listón",   0.010, "m · van dos: c = 2 × S"],
   ["anc_per",  "<b>P</b> alto de la cinta",       0.020, "m"],
   ["·","EL TREI"],
-  ["e_trei",   "Espesor de un listón",            0.020, "m"],
+  ["e_trei",   "Espesor de un listón",            0.020, "m · cepillado; 20 mm como mínimo (no va de 16)"],
   ["anc_trei", "Ancho de un listón",              0.040, "m"],
   ["bul",      "Distancia entre bulones",         0.330, "m"],
   ["b_borde",  "Del bulón al borde del listón",   0.020, "m"],
@@ -379,7 +379,7 @@ const CLAVES = CAMPOS.filter(c => c[0] !== "·").map(c => c[0]);
 const PORDEF = {}; CAMPOS.forEach(c => { if (c[0] !== "·") PORDEF[c[0]] = c[2]; });
 
 const CASOS = {
-  m7:        {D:7, ais_nom:.120, ais_techo:.120, E:.050, e_mad:.040, e_trei:.016, T:.042, anc_per:.040, tri_anc:.080, tri_esp:.040,
+  m7:        {D:7, ais_nom:.120, ais_techo:.120, E:.050, e_mad:.040, e_trei:.020, T:.042, anc_per:.040, tri_anc:.080, tri_esp:.040,
               alto:2.280, n_per_r:36, desb:.474, r_toono:1.000},
   // Christine: los valores por defecto (manual del plancher, 1-nov-2026); el toono, el de la obra.
   christine: { ...PORDEF },
@@ -387,9 +387,9 @@ const CASOS = {
   // una percha por cruce del trei y el toono en sobrealto con 8 ventanas de 30 cm.
   simple:    { ...PORDEF, tipo: 2, tono_tipo: 2 },
   // calculo-27: la simple de 6 m con una puerta y dos ventanas (el modelo de la consulta del 17-nov).
-  simple6:   { ...PORDEF, D:6, ais_nom:.120, ais_techo:.120, E:.050, e_mad:.040, e_trei:.016, T:.042, anc_per:.040, tri_anc:.080, tri_esp:.040,
+  simple6:   { ...PORDEF, D:6, ais_nom:.120, ais_techo:.120, E:.050, e_mad:.040, e_trei:.020, T:.042, anc_per:.040, tri_anc:.080, tri_esp:.040,
               alto:2.280, n_per_r:30, desb:.450, desb_s: .100, tipo: 2, tono_tipo: 2, r_toono: .800, sa_alto: .350, n_ab: 1, n_gr: 1, n_vt: 2, piso_tipo: 2 },
-  g6:        {D:6, ais_nom:.120, ais_techo:.120, E:.050, e_mad:.040, e_trei:.016, T:.042, anc_per:.040, tri_anc:.080, tri_esp:.040,
+  g6:        {D:6, ais_nom:.120, ais_techo:.120, E:.050, e_mad:.040, e_trei:.020, T:.042, anc_per:.040, tri_anc:.080, tri_esp:.040,
               alto:2.280, n_per_r:30, desb:.450, r_toono:.900},
 };
 
@@ -500,7 +500,10 @@ function pintarPiezas() {
     ["", "Cantidad de listones", "lados × 2 capas", un(C.n_lito_trei), "d"],
     ["", "Sección", "", `${mm(P.anc_trei)} × ${mm(P.e_trei)}`, ""],
     ["", "Volumen", "", m3(C.vol_trei), ""],
-  ], [["ojo", `El largo del listón sale de la altura y del ángulo. <b>Verificar contra la hoja
+  ], [P.e_trei < 0.02 - 1e-9 && ["ojo", `El listón del trei tiene ${mm(P.e_trei)} de espesor: <b>el mínimo es 20 mm</b>
+      (Mauro, 17-nov-2026: «el trei no va con 40 × 16, mínimo 40 × 20, todo cepillado»).`],
+    ["", `Toda la madera va <b>cepillada</b>.`],
+    ["ojo", `El largo del listón sale de la altura y del ángulo. <b>Verificar contra la hoja
       Trei</b>, que usaba un «largo ideal» de 2,70 m como dato de entrada, no como
       resultado.`]]);
 

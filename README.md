@@ -794,11 +794,11 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-34` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `cy-shell-v99` |
+| `sw.js` | `VERSION` | `cy-shell-v100` |
 | `admin.html` | `PANEL` | `admin-20` |
 | `editar.html` | `EDITOR` | `editar-23` |
 | `taller.html` | `SELLO` | `andamio-3` |
-| `calculo.html` | `CY.PANEL` | `calculo-32` |
+| `calculo.html` | `CY.PANEL` | `calculo-33` |
 | `calculo-geo.js` | `SELLO_GEO` | `geo-13` |
 | `calculo-3d.js` | `SELLO_3D` | `3d-16` |
 | `propuesta.html` | (en el comentario) | `propuesta-5` |
