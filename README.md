@@ -30,7 +30,8 @@ menú ⋮ → *Agregar a la pantalla principal*.
 |---|---|
 | `admin.html` | los álbumes de obra |
 | `editar.html` | el editor: la página real, tocás un texto o una foto y la cambiás |
-| `calculo.html` | los cálculos de taller, uno por cliente, con el corte del borde a escala |
+| `calculo.html` | los cálculos de taller, uno por cliente, con el corte del borde a escala. Dos yurtas (doble techo o **simple**, una percha por cruce del trei con su escuadra) y dos remates del toono (cuarto de domo o **sobrealto con ventanas**). La pestaña «Para el cliente» arma el link de la propuesta |
+| `propuesta.html` | **pública, por link** (`?p=<token>`): la propuesta para un cliente con la descripción, las medidas, el precio si se puso y el 3D de su yurta; vence. Sin SDK ni sesión (REST), `noindex`, fuera del SHELL. El token es la llave (`entregas/` en `REGLAS.txt`) |
 | `usuarios.html` | quién entra y qué puede hacer |
 | `diagnostico.html` | las pruebas de conexión |
 
@@ -751,6 +752,27 @@ una segunda copia del porqué son dos documentos que se separan.
 el bloque `reportes/` hay que pegarlo: hasta que eso pase, el formulario manda y
 la base contesta que no.
 
+## La propuesta para el cliente, por link (`calculo-23`, `propuesta-1`, 17-nov-2026)
+
+Pedido de Mauro: «un presupuesto en un link que yo pueda cargar y enviar para que la persona… pueda
+ver la descripción detallada online… con un vencimiento, algo parecido a lo que pasa con el link de
+remate taller».
+
+- Se arma en la pestaña **«Para el cliente»** de un cálculo guardado: título, para quién, idioma de la
+  página (es/fr/en/pt), descripción (un botón la escribe a partir del cálculo, y después se edita),
+  qué incluye y qué no, precio con su moneda (vacío = no se muestra) y la fecha hasta la que vale.
+- «Crear el link» escribe `entregas/{token}`: el token son 16 bytes al azar y **es la llave**, como la
+  de remate. La regla deja leerlo sin cuenta **de a uno**, sólo si está activo y no venció; listar,
+  nunca. La forma es fija (`hasOnly`): **ni costos, ni márgenes, ni proveedores, ni el contacto**.
+  Las medidas se copian en ese momento: si el cálculo cambia, el link muestra lo de antes hasta
+  «Actualizar». «Desactivar» lo apaga sin borrarlo.
+- `propuesta.html?p=<token>` lo lee por REST (sin SDK ni sesión), arma las medidas con
+  `calculo-geo.js` y el 3D con `calculo-3d.js` (dos vistas: terminada, con las lonas, y la
+  estructura). No se indexa y no está en el SHELL.
+- **Hay que publicar `REGLAS.txt`** para que el link ande (sin la regla de `entregas/`, crear el link
+  da «sin permiso» y la página dice que no está disponible).
+- Uso: un documento chico por propuesta y una lectura por visita: nada contra el cupo gratuito.
+
 ## Los sellos de versión
 
 Cada archivo con lógica propia lleva su número, visible en el panel abajo del nombre. **Al
@@ -767,13 +789,14 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-34` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `cy-shell-v88` |
+| `sw.js` | `VERSION` | `cy-shell-v89` |
 | `admin.html` | `PANEL` | `admin-20` |
 | `editar.html` | `EDITOR` | `editar-23` |
 | `taller.html` | `SELLO` | `andamio-3` |
-| `calculo.html` | `CY.PANEL` | `calculo-22` |
-| `calculo-geo.js` | `SELLO_GEO` | `geo-4` |
-| `calculo-3d.js` | `SELLO_3D` | `3d-10` |
+| `calculo.html` | `CY.PANEL` | `calculo-23` |
+| `calculo-geo.js` | `SELLO_GEO` | `geo-5` |
+| `calculo-3d.js` | `SELLO_3D` | `3d-11` |
+| `propuesta.html` | (en el comentario) | `propuesta-1` |
 | `consultas.html` | `CY.PANEL` | `consultas-4` |
 | `consultas-ia.js` | `VERSION_CONSULTAS_IA` | `consultas-ia-2` |
 | `presupuestos.html` | `CY.PANEL` | `presupuestos-3` |

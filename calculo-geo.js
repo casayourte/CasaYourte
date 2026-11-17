@@ -1,5 +1,9 @@
 // calculo-geo.js — la geometría de la yurta, sin navegador y sin Firebase.
-// Sello: geo-4 (2-nov-2026): la lona plana es el círculo entero (la lengüeta
+// Sello: geo-5 (17-nov-2026): la VERSIÓN SIMPLE (una percha por cruce de arriba
+// del trei, con su escuadra, la sección de la 2.ª capa) y el TONO a elegir:
+// domo geodésico o SOBREALTO con ventanas alrededor que abren hacia arriba y
+// afuera, con el techito de vuelo (Mauro, 16/17-nov-2026).
+// geo-4 (2-nov-2026): la lona plana es el círculo entero (la lengüeta
 // lleva todo el sobrante). geo-3: los montantes y las aberturas en el
 // perímetro, y la lona del techo cortada plana. geo-2 (1-nov-2026): la percha radial.
 //
@@ -22,7 +26,7 @@
 // TODO lo que se elige por diseño es un campo de la página: si cambia una
 // medida, cambian los números y el dibujo.
 
-export const SELLO_GEO = "geo-4";
+export const SELLO_GEO = "geo-5";
 
 // El tirante, la viga: cuerdas paralelas del círculo de radio R, con una en el
 // centro y cada `paso` a los dos lados. Devuelve [{x, L, n}] con n = 1 para la
@@ -209,7 +213,65 @@ export function calc(P) {
     circ_trazo: 2 * Math.PI * r_trei,
     // trei
     zocalo, grip_cruce, grip_abajo,
+    // ── geo-5 · LA VERSIÓN SIMPLE (Mauro, 16-nov-2026: «en cada cruce final,
+    //    donde estaría el último bulón, una escuadra y una percha del mismo
+    //    tamaño de la segunda capa del techo, aproximadamente a 33 cm según la
+    //    configuración del trei»). El paso ES el de los bulones: una percha por
+    //    punto de arriba del trei, de la cabeza al toono y con el desborde. Se
+    //    calcula siempre; la página lo muestra cuando P.tipo = 2.
+    simple: (() => {
+      const E = escuadraSimple(P, { alto_an, Rext, r_trei_int });
+      const paso_toono = 2 * Math.PI * P.r_toono / n_pts;
+      return {
+        n_perchas: n_pts,
+        paso: 2 * Math.PI * r_trei / n_pts,          // ≈ bulón (la cuerda real en la cabeza)
+        paso_toono,                                   // lo que queda entre dos perchas en el toono
+        aprieta: paso_toono < 1.5 * P.p_alt,          // no entran: hay que agrandar el toono
+        largo: slant,                                 // (Rp − r toono) ÷ cos, como la 2.ª capa
+        escuadras: n_pts,
+        l_pata: E.l_pata, l_riostra: E.l_riostra,
+        vol_perchas: n_pts * slant * P.p_anc * P.p_alt,
+        vol_escuadras: n_pts * (E.l_pata + E.l_riostra) * P.p_anc * P.p_alt,
+      };
+    })(),
+    // ── geo-5 · EL TOONO EN SOBREALTO (Mauro, 17-nov-2026: «un techo en
+    //    sobrealto en el tonoo con un pequeño desborde y ventanas alrededor…
+    //    de unos 30 cm de alto, unas 8, que se abren hacia arriba hacia
+    //    afuera»). La alternativa al domo; P.tono_tipo = 2 lo elige. Es un
+    //    prisma de n lados sobre el anillo del remate (radio r toono + vuelo):
+    //    solera, un parante en cada vértice, cabezal, una ventana por cara
+    //    abisagrada arriba, y el techito piramidal con su desborde.
+    sobrealto: (() => {
+      const n = Math.max(3, Math.round(P.sa_vent ?? 8)), alto = Math.max(0.1, P.sa_alto ?? 0.30);
+      const r_aro = P.r_toono + (P.tapa_vuelo ?? 0.05) - 0.02, r_techito = r_aro + (P.sa_desb ?? 0.15);
+      const a = (P.sa_ang ?? 25) * Math.PI / 180;
+      const ancho_vent = 2 * r_aro * Math.sin(Math.PI / n) - 0.05;   // entre parantes de 5 cm
+      return { n_vent: n, alto, r_aro, r_techito, ancho_vent,
+        area_vidrio: n * ancho_vent * alto,
+        cumbrera: r_aro * Math.tan(a),                // del cabezal a la punta
+        slant_techito: r_techito / Math.cos(a) / Math.cos(Math.PI / n),   // la limatesa, del vértice a la punta
+        area_techito: n * r_techito * Math.sin(Math.PI / n) * r_techito * Math.cos(Math.PI / n) / Math.cos(a) };
+    })(),
   };
+}
+
+// ── LA ESCUADRA DE LA YURTA SIMPLE (geo-5): en cada cruce de arriba del trei,
+// una PATA vertical contra la cara interior (debajo del zócalo, atornillada al
+// último bulón) que sube hasta la cara de abajo de la percha, y una RIOSTRA que
+// cierra el triángulo: sale de la pata `esc` por debajo de la percha y llega a
+// la percha `esc` más adentro. Las dos de la sección de la percha (Mauro: «del
+// mismo tamaño de la segunda capa del techo»). La pata baja `esc` debajo de la
+// cabeza del trei. Alturas desde la cabeza del trei; radios absolutos. La
+// percha apoya en el canto de afuera del anillo periférico.
+export function escuadraSimple(P, C) {
+  const tan = Math.tan(P.ang * Math.PI / 180);
+  const dA = C.alto_an - P.e_mad;                       // cara de arriba del anillo
+  const bajo = (r) => dA + (C.Rext - r) * tan;          // cara de abajo de la percha
+  const e = Math.max(0.05, P.esc ?? 0.30);
+  const rL = C.r_trei_int - (P.e_int || 0) - P.p_anc / 2;
+  const r0 = rL - P.p_anc / 2, y0 = Math.max(-e + 0.05, bajo(r0) - e), r1 = r0 - e;
+  return { rL, bajo, pata: [-e, bajo(rL)], riostra: [[r0, y0], [r1, bajo(r1)]],
+    l_pata: e + bajo(rL), l_riostra: Math.hypot(e, bajo(r1) - y0) };
 }
 
 // ── EL CORTE DEL BORDE, a escala y con los valores cargados ──
@@ -224,10 +286,14 @@ export function corte(P, C, ancho = 680) {
   // la cabeza del trei, que tapa la primera capa del anillo.
   const zt = P.alto;                                 // cabeza del trei
   const za = zt - P.e_mad + C.alto_an;               // cara de arriba del anillo
-  const techo = r => za + C.h0 - (r - rt) * tan;     // cara de abajo de la percha
+  // geo-5: en la simple la percha apoya en el canto de afuera del anillo y la
+  // sostiene la escuadra (pata y riostra); no hay cal ni doble cinta.
+  const simple = P.tipo === 2, ES = simple ? escuadraSimple(P, C) : null, dT = P.T || 0;
+  const techo = simple ? r => za + (C.Rext - r) * tan                // cara de abajo de la percha
+                       : r => za + C.h0 - (r - rt) * tan;
   const pv = P.p_anc / Math.cos(P.ang * Math.PI / 180);
-  const r0 = rt - 2 * P.e_trei - P.e_int - 0.12, r9 = R + Math.min(P.desb, 0.08);
-  const zLo = zt - P.e_mad - 0.06, zHi = techo(r0) + pv + 0.01;
+  const r0 = Math.min(rt - 2 * P.e_trei - P.e_int - 0.12, simple ? ES.riostra[1][0] + dT - 0.04 : 9), r9 = R + Math.min(P.desb, 0.08);
+  const zLo = Math.min(zt - P.e_mad - 0.06, simple ? zt + ES.pata[0] - 0.03 : 9), zHi = techo(r0) + pv + 0.01;
   const izq = 190, der = 250;                        // lugar para los rótulos
   const S = (ancho - izq - der) / (r9 - r0);
   const X = r => izq + (r - r0) * S;
@@ -253,25 +319,38 @@ export function corte(P, C, ancho = 680) {
   let s = "";
   s += `<g class="pz">`;
   s += `<polygon class="percha" points="${f(X(r0))},${f(Y(techo(r0)))} ${f(X(r9))},${f(Y(techo(r9)))} ${f(X(r9))},${f(Y(techo(r9) + pv))} ${f(X(r0))},${f(Y(techo(r0) + pv))}"/>`;
-  s += `<polygon class="cal" points="${f(X(rt))},${f(Y(za))} ${f(X(R - c))},${f(Y(za))} ${f(X(R - c))},${f(Y(za + C.tri_tr))} ${f(X(rt))},${f(Y(techo(rt)))}"/>`;
+  if (!simple) s += `<polygon class="cal" points="${f(X(rt))},${f(Y(za))} ${f(X(R - c))},${f(Y(za))} ${f(X(R - c))},${f(Y(za + C.tri_tr))} ${f(X(rt))},${f(Y(techo(rt)))}"/>`;
   s += rect(rt, C.Rext, za - C.alto_an, za - C.alto_an + P.e_mad, "anillo", Y);
   s += rect(rt, C.Rext, za - C.alto_an + P.e_mad, za, "anillo", Y);
-  s += rect(R - c, R - c / 2, zc - P.anc_per, zc, "cinta", Y);
-  s += rect(R - c / 2, R, zc - P.anc_per, zc, "cinta", Y);
+  if (!simple) {
+    s += rect(R - c, R - c / 2, zc - P.anc_per, zc, "cinta", Y);
+    s += rect(R - c / 2, R, zc - P.anc_per, zc, "cinta", Y);
+  } else {
+    // La escuadra: la pata contra el trei y la riostra a 45°, de la sección de la percha.
+    s += rect(ES.rL + dT - P.p_anc / 2, ES.rL + dT + P.p_anc / 2, zt + ES.pata[0], zt + ES.pata[1], "percha", Y);
+    const [[ra, ya], [rb, yb]] = ES.riostra, L = Math.hypot(rb - ra, yb - ya);
+    const hr = (yb - ya) / L * P.p_anc, hy = (ra - rb) / L * P.p_anc;   // el ancho, hacia arriba y afuera
+    const pt = (r, y) => `${f(X(r + dT))},${f(Y(zt + y))}`;
+    s += `<polygon class="percha" points="${pt(ra, ya)} ${pt(ra + hr, ya + hy)} ${pt(rb + hr, yb + hy)} ${pt(rb, yb)}"/>`;
+  }
   s += rect(rt - 2 * P.e_trei, rt, zLo, zt, "trei", Y);
   s += rect(rt - 2 * P.e_trei - P.e_int, rt - 2 * P.e_trei, zt - P.e_mad, zt, "zocalo", Y);
   s += `<line class="tornillo" x1="${f(X(rt - 2 * P.e_trei - P.e_int))}" x2="${f(X(rt - 2 * P.e_trei - P.e_int + 0.09))}" y1="${f(Y(zt - P.e_mad / 2))}" y2="${f(Y(zt - P.e_mad / 2))}"/>`;
-  s += `<line class="lona" x1="${f(X(R))}" x2="${f(X(R))}" y1="${f(Y(zc - P.anc_per))}" y2="${f(Y(zLo))}"/>`;
+  s += `<line class="lona" x1="${f(X(R))}" x2="${f(X(R))}" y1="${f(Y(simple ? techo(R) : zc - P.anc_per))}" y2="${f(Y(zLo))}"/>`;
   const ax = X(rt - P.e_trei), ay = Y(zt);
-  s += `<line class="apoyo" x1="${f(ax - 40)}" y1="${f(ay - 46)}" x2="${f(ax)}" y2="${f(ay - 3)}"/><circle class="apoyo-p" cx="${f(ax)}" cy="${f(ay)}" r="3"/>`;
+  if (!simple) s += `<line class="apoyo" x1="${f(ax - 40)}" y1="${f(ay - 46)}" x2="${f(ax)}" y2="${f(ay - 3)}"/><circle class="apoyo-p" cx="${f(ax)}" cy="${f(ay)}" r="3"/>`;
   s += `</g>`;
   s += `<g class="rot">`;
   const xr = ancho - der + 12;
-  s += columna(izq - 10, [[ay - 40, "apoyo de los"], [ay - 21, "triángulos"],
-    [Y(zt - P.e_mad / 2) + 5, "zócalo · 6×90"]], "end", 20, h1 - 30);
+  s += columna(izq - 10, simple
+    ? [[Y(zt + ES.pata[0] / 2), "escuadra: pata"], [Y(zt + ES.pata[0] / 2) + 19, `${n(C.simple.l_pata)} · al bulón`],
+       [Y(zt - P.e_mad / 2) + 5, "zócalo · 6×90"]]
+    : [[ay - 40, "apoyo de los"], [ay - 21, "triángulos"],
+       [Y(zt - P.e_mad / 2) + 5, "zócalo · 6×90"]], "end", 20, h1 - 30);
   s += columna(xr, [[Y(techo(r9) + pv) - 6, `percha ${n(P.p_anc)} × ${n(P.p_alt)}`],
-    [Y(zc) + 5, `cinta 2×${n(P.e_per)} × ${n(P.anc_per)}`],
-    [Y(za + C.tri_tr / 2) + 5, `cal ${n(C.h0)} · punta ${n(C.tri_tr)}`],
+    ...(simple ? [[Y(za + 0.02) - 6, `riostra ${n(C.simple.l_riostra)}`]]
+      : [[Y(zc) + 5, `cinta 2×${n(P.e_per)} × ${n(P.anc_per)}`],
+         [Y(za + C.tri_tr / 2) + 5, `cal ${n(C.h0)} · punta ${n(C.tri_tr)}`]]),
     [Y(za - C.alto_an / 2) + 5, `anillo ${n(P.E)} × ${n(C.alto_an)}`],
     [Y(zLo + 0.03), `trei ${n(2 * P.e_trei)} · r ${n(rt)}`]], "start", 20, h1 - 30);
   s += `</g>`;

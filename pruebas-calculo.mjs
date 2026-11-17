@@ -7,7 +7,7 @@
 
 import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
-import { calc, corte, cuerdas, pilares, montaje } from "./calculo-geo.js";
+import { calc, corte, cuerdas, pilares, montaje, escuadraSimple } from "./calculo-geo.js";
 import { piezas3d, arriostramiento, geodesica, PARTES, CAMPO_PARTES } from "./calculo-3d.js";
 
 let bien = 0, mal = 0;
@@ -140,14 +140,18 @@ ok("3D: una percha mide del toono al desborde", (() => { const q = T3.piezas.fin
   const L = Math.hypot(q.b[0] - q.a[0], q.b[1] - q.a[1], q.b[2] - q.a[2]); return cerca(L, (C.Rp - (P.r_toono - 0.02)) / Math.cos(P.ang * Math.PI / 180), 0.002); })());
 ok("3D: el toono lleva 5 coronas de relleno (0,187)", T3.nCor === 5 && cerca(T3.relleno, 0.187, 0.002), T3.relleno);
 ok("3D: con el toono de 0,502 no hay perchas radiales", piezas3d({ ...P, r_toono: 0.502 }, calc({ ...P, r_toono: 0.502 })).piezas.filter(p => p.g === "radiales").length === 0);
-ok("3D: cada parte tiene su casilla, y cada casilla su parte", (() => { const g = new Set(T3.piezas.map(p => p.g));
+// Las partes salen de las cuatro combinaciones (doble/simple × domo/sobrealto, 3d-11).
+ok("3D: cada parte tiene su casilla, y cada casilla su parte", (() => { const g = new Set();
+  for (const Q of [P, { ...P, tipo: 2, tono_tipo: 2 }]) piezas3d(Q, calc(Q)).piezas.forEach(p => g.add(p.g));
   return [...g].every(x => PARTES.some(([k]) => k === x)) && PARTES.every(([k]) => g.has(k)); })());
 ok("3D: lo que resalta cada medida son partes que existen", Object.values(CAMPO_PARTES).flat().every(x => PARTES.some(([k]) => k === x)));
 ok("3D: cada medida que resalta es un campo de la página", Object.keys(CAMPO_PARTES).every(k => k in PORDEF));
 ok("3D: toda medida de la estructura resalta algo", ["D","ang","alto","E","e_trei","tir_alt","viga_alt","n_tri","p_anc","r_toono","osb_sup"].every(k => (CAMPO_PARTES[k] || []).length > 0));
 ok("calculo.html: el 3D está en la pestaña de las medidas", /<div id="t-datos">[\s\S]*?id="vista3d"[\s\S]*?id="campos"/.test(html) && !/\["3d","3D"\]/.test(html));
 for (const [nom, Q] of [["Christine", P], ["4 m", { ...P, D: 4 }], ["12 m", { ...P, D: 12 }], ["10 triángulos", { ...P, n_tri: 10 }], ["6 triángulos", { ...P, n_tri: 6 }],
-  ["sin aberturas", { ...P, n_ab: 0 }], ["domo media esfera, 5V", { ...P, dom_ang: 90, dom_frec: 5 }], ["domo bajo", { ...P, dom_ang: 30, dom_frec: 1 }], ["tapa a medio camino", { ...P, ts_giro: 0.5 }], ["una abertura", { ...P, n_ab: 1, n_gr: 1 }], ["aberturas bajas", { ...P, alt_ab: 1.9 }], ["sin campos nuevos", Object.fromEntries(Object.entries(P).filter(([k]) => !["anc_ab","sep_mon","umb_esp","umb_vuelo","umb_caida","lona_baja","diente","tapa_cam","tapa_vuelo","dom_ang","dom_frec","tapa_ranura","ts_giro","ts_esp","ts_rendija"].includes(k)))]]) {
+  ["sin aberturas", { ...P, n_ab: 0 }], ["domo media esfera, 5V", { ...P, dom_ang: 90, dom_frec: 5 }], ["domo bajo", { ...P, dom_ang: 30, dom_frec: 1 }], ["tapa a medio camino", { ...P, ts_giro: 0.5 }], ["una abertura", { ...P, n_ab: 1, n_gr: 1 }], ["aberturas bajas", { ...P, alt_ab: 1.9 }], ["simple", { ...P, tipo: 2 }], ["simple con sobrealto", { ...P, tipo: 2, tono_tipo: 2 }], ["doble con sobrealto", { ...P, tono_tipo: 2 }],
+  ["simple 4 m, 3 ventanas cerradas", { ...P, D: 4, tipo: 2, tono_tipo: 2, sa_vent: 3, sa_abre: 0 }], ["simple 12 m, 12 ventanas", { ...P, D: 12, tipo: 2, tono_tipo: 2, sa_vent: 12 }],
+  ["sin campos nuevos", Object.fromEntries(Object.entries(P).filter(([k]) => !["tipo","tono_tipo","esc","s_ais","sa_alto","sa_vent","sa_desb","sa_ang","sa_abre","anc_ab","sep_mon","umb_esp","umb_vuelo","umb_caida","lona_baja","diente","tapa_cam","tapa_vuelo","dom_ang","dom_frec","tapa_ranura","ts_giro","ts_esp","ts_rendija"].includes(k)))]]) {
   const K = piezas3d(Q, calc(Q));
   ok(`3D ${nom}: sin NaN`, !/null|NaN|Infinity/.test(JSON.stringify(K)));
 }
@@ -175,13 +179,14 @@ ok("3D: nueve capas, techo y muro", capas.length === 9 && capas.filter(k => /tec
 ok("3D: las capas son mallas sin NaN", capas.every(k => T3.piezas.filter(p => p.g === k).every(p => p.tipo === "malla" || p.tipo === "barra") && T3.piezas.some(p => p.g === k && p.tipo === "malla")));
 const radios = (k) => { const r = []; for (const p of T3.piezas.filter(q => q.g === k && q.tipo === "malla")) for (let i = 0; i < p.v.length; i += 3) r.push(Math.hypot(p.v[i], p.v[i + 2])); return r; };
 // La altura de una malla sobre el punto (r, θ) del piso: el triángulo que lo cubre, por baricéntricas.
-const alturaEn = (k, r0, th = 0.1) => { const x = r0 * Math.cos(th), z = r0 * Math.sin(th); let y = null;
-  for (const p of T3.piezas.filter(q => q.g === k && q.tipo === "malla")) for (let i = 0; i < p.v.length; i += 9) {
+const alturaDe = (K, k, r0, th = 0.1) => { const x = r0 * Math.cos(th), z = r0 * Math.sin(th); let y = null;
+  for (const p of K.piezas.filter(q => q.g === k && q.tipo === "malla")) for (let i = 0; i < p.v.length; i += 9) {
     const [ax, ay, az, bx, by, bz, cx, cy, cz] = p.v.slice(i, i + 9);
     const d = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz); if (Math.abs(d) < 1e-12) continue;
     const l1 = ((bz - cz) * (x - cx) + (cx - bx) * (z - cz)) / d, l2 = ((cz - az) * (x - cx) + (ax - cx) * (z - cz)) / d, l3 = 1 - l1 - l2;
     if (l1 >= -1e-9 && l2 >= -1e-9 && l3 >= -1e-9) { const h = l1 * ay + l2 * by + l3 * cy; if (y === null || h > y) y = h; } }
   return y; };
+const alturaEn = (k, r0, th) => alturaDe(T3, k, r0, th);
 ok("3D: el Tyvek va debajo de las perchas y la lona encima (la cámara)", (() => {
   const r = 2.5, tan = Math.tan(P.ang * Math.PI / 180), yPer = T3.yA + C.h0 + (C.Rint - r) * tan;
   return alturaEn("tyvek", r) < yPer && alturaEn("lona_techo", r) > yPer + P.p_anc / Math.cos(P.ang * Math.PI / 180); })());
@@ -233,11 +238,12 @@ ok("3D: abierta, la tapa queda paralela a la cara del triángulo (gira 180° −
   const u = p1.map((x, i) => x - p0[i]), w = p2.map((x, i) => x - p0[i]);
   const nrm = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]];
   const inc = Math.acos(Math.abs(nrm[1]) / Math.hypot(...nrm)) * 180 / Math.PI; return cerca(inc, C.dip, 0.01); })());
-ok("3D: las sogas escondidas: por encima del freno, debajo de la aislación, y a la vista sólo del orificio a la tapa", (() => {
-  for (const g of [0, 1]) { const K = piezas3d({ ...P, ts_giro: g }, calc({ ...P, ts_giro: g })), s = K.piezas.filter(p => p.g === "tapa_sol");
-    if (s.filter(p => p.mat === "cordon" && p.alto < 0.01).length !== 2 || s.filter(p => p.mat === "oculto").length !== 8) return false; }
-  const o = T3.piezas.find(p => p.g === "tapa_sol" && p.mat === "oculto"), r = Math.hypot(o.a[0], o.a[2]), th = Math.atan2(o.a[2], o.a[0]);
-  return o.a[1] > alturaEn("freno_techo", r, th) && o.a[1] < alturaEn("tyvek", r, th); })());
+// 3d-11 (Mauro, 17-nov-2026: «las sogas para la tapa en el caso de la doble techo no se
+// tienen que dibujar»): ni las escondidas ni la que se ve, abierta o cerrada. Quedan la
+// bisagra, la manivela y la traba.
+ok("3D: las sogas de la tapa aislante no se dibujan", [0, 1].every(g => {
+  const s = piezas3d({ ...P, ts_giro: g }, calc({ ...P, ts_giro: g })).piezas.filter(p => p.g === "tapa_sol");
+  return s.length > 0 && !s.some(p => p.mat === "oculto" || p.mat === "cordon") && s.filter(p => p.mat === "tapa").length === 3; }));
 ok("3D: la cara vista de la tapa mira hacia adentro abierta y cerrada", (() => {
   for (const g of [0, 1]) { const K = piezas3d({ ...P, ts_giro: g }, calc({ ...P, ts_giro: g }));
     const m = K.piezas.find(p => p.g === "tapa_sol" && p.tipo === "malla").v, aro = K.piezas.find(p => p.g === "tapa_sol" && p.mat === "madera");
@@ -246,6 +252,86 @@ ok("3D: la cara vista de la tapa mira hacia adentro abierta y cerrada", (() => {
 ok("3D: la aislación del muro sube al costado del anillo", (() => { const p = T3.piezas.find(q => q.g === "aislacion_muro"); let m = -9;
   for (let i = 0; i < p.v.length; i += 3) if (Math.hypot(p.v[i], p.v[i + 2]) > C.Rext) m = Math.max(m, p.v[i + 1]); return cerca(m, T3.yA, 1e-6); })());
 ok("calculo.html ya no pide el cable (el doble techo no lo lleva)", !/faltan los del techo y el cable/.test(html) && /no hace falta el cable/.test(html));
+
+// ── la yurta simple (geo-5, 3d-11) ──
+{
+  const Q = { ...P, tipo: 2 }, Cs = calc(Q), K = piezas3d(Q, Cs), de = (g) => K.piezas.filter(p => p.g === g);
+  ok("simple: una percha por punto de arriba del trei (63), con su escuadra", Cs.simple.n_perchas === C.n_pts && Cs.simple.escuadras === 63);
+  ok("simple: el paso es el de los bulones, medido en la cabeza", cerca(Cs.simple.paso, 2 * Math.PI * C.r_trei / 63, 1e-9) && Math.abs(Cs.simple.paso - P.bul) < 0.01);
+  ok("simple: la percha tiene el largo de la 2.ª capa", cerca(Cs.simple.largo, C.slant, 1e-9));
+  ok("3D simple: 63 perchas de la sección de la 2.ª capa y 126 piezas de escuadra (pata y riostra)",
+    de("perchas").length === 63 && de("escuadras").length === 126 && de("escuadras").every(p => p.alto === P.p_anc && p.ancho === P.p_alt));
+  ok("3D simple: sin primera capa (ni triángulos, ni radiales, ni cal, ni doble cinta, ni anillo tapa, ni tapa aislante)",
+    ["triangulos", "radiales", "cal", "cinta", "tapa", "tapa_sol"].every(g => de(g).length === 0));
+  ok("3D simple: cada percha arranca en el toono, sin meterse", de("perchas").every(p => cerca(Math.hypot(p.a[0], p.a[2]), P.r_toono, 1e-9)));
+  const ES = escuadraSimple(Q, Cs), yt = K.yt, tan = Math.tan(P.ang * Math.PI / 180);
+  ok("3D simple: la percha apoya en el canto de afuera del anillo", (() => { const q = de("perchas")[0], r = Math.hypot(q.a[0], q.a[2]);
+    const yAb = q.a[1] - P.p_anc / 2 / Math.cos(P.ang * Math.PI / 180); return cerca(yAb + (r - Cs.Rext) * tan, K.yA, 1e-9); })());
+  ok("3D simple: la pata sube del trei hasta la cara de abajo de la percha, y baja «esc» de la cabeza", (() => {
+    const pata = de("escuadras")[0], ya = Math.min(pata.a[1], pata.b[1]), yb = Math.max(pata.a[1], pata.b[1]);
+    return cerca(ya, yt - P.esc, 1e-9) && cerca(yb, K.yA + (Cs.Rext - ES.rL) * tan, 1e-9) && ES.rL < Cs.r_trei_int; })());
+  ok("3D simple: la riostra toma la percha «esc» más adentro de la pata", cerca(ES.riostra[0][0] - ES.riostra[1][0], P.esc, 1e-9) && Cs.simple.l_riostra > P.esc);
+  ok("3D simple: las capas van encima de las perchas, de adentro hacia afuera", [1.5, 2.2, 3.0].every(r => {
+    const yTop = K.yA + (Cs.Rext - r) * tan + P.p_anc / Math.cos(P.ang * Math.PI / 180);
+    const ys = ["algodon_techo", "freno_techo", "aislacion_techo", "tyvek", "lona_techo"].map(g => alturaDe(K, g, r));
+    return ys[0] > yTop && ys.every((y, i) => y !== null && (i === 0 || y > ys[i - 1])); }), "");
+  ok("simple: el corte no dibuja la cal ni la doble cinta, y sí la escuadra", (() => { const k = corte(Q, Cs).svg1;
+    return !/class="cal"/.test(k) && !/class="cinta"/.test(k) && /escuadra: pata/.test(k) && /riostra/.test(k); })());
+  ok("doble: el corte sigue con la cal y la doble cinta", /class="cal"/.test(corte(P, C).svg1) && /class="cinta"/.test(corte(P, C).svg1));
+  ok("simple: un toono chico avisa que las perchas no entran", calc({ ...Q, r_toono: 0.35 }).simple.aprieta && !Cs.simple.aprieta);
+}
+// ── el toono en sobrealto (geo-5, 3d-11) ──
+{
+  const Q = { ...P, tipo: 2, tono_tipo: 2 }, Cs = calc(Q), K = piezas3d(Q, Cs), de = (g) => K.piezas.filter(p => p.g === g);
+  const A = Cs.sobrealto;
+  ok("sobrealto: 8 ventanas de 30 cm por defecto, sobre el aro del remate", A.n_vent === 8 && A.alto === 0.3 && cerca(A.r_aro, P.r_toono + P.tapa_vuelo - 0.02, 1e-9));
+  ok("sobrealto: el techito pasa el aro el desborde", cerca(A.r_techito - A.r_aro, P.sa_desb, 1e-9));
+  ok("3D sobrealto: sin domo; solera, cabezal, parante y limatesa por cara", de("domo").length === 0 && de("sobrealto").filter(p => p.tipo === "barra").length === 8 * 4);
+  ok("3D sobrealto: una ventana por cara, con marco, vidrio y compás", de("ventanas").filter(p => p.mat === "madera").length === 8 * 4
+    && de("ventanas").filter(p => p.mat === "tapa").length === 8 && de("ventanas").find(p => p.mat === "vidrio").v.length === 8 * 18);
+  const radioAbajo = (Qx) => { const v = piezas3d(Qx, calc(Qx)).piezas.find(p => p.g === "ventanas" && p.mat === "vidrio").v;
+    let rMin = 9, rMax = 0, yMin = 9, rDeYmin = 0;
+    for (let i = 0; i < v.length; i += 3) { const r = Math.hypot(v[i], v[i + 2]); rMin = Math.min(rMin, r); rMax = Math.max(rMax, r); if (v[i + 1] < yMin) { yMin = v[i + 1]; rDeYmin = r; } }
+    return { rMin, rMax, yMin, rDeYmin }; };
+  ok("3D sobrealto: las ventanas se abren hacia arriba y hacia afuera (cerradas, a plomo)", (() => {
+    const c = radioAbajo({ ...Q, sa_abre: 0 }), a = radioAbajo({ ...Q, sa_abre: 30 });
+    return a.yMin > c.yMin + 0.01 && a.rDeYmin > c.rDeYmin + 0.05; })());
+  ok("3D sobrealto: el techito cubre las ventanas abiertas", (() => { const a = radioAbajo(Q); const t = de("sobrealto").find(p => p.tipo === "malla").v;
+    let r = 0; for (let i = 0; i < t.length; i += 3) r = Math.max(r, Math.hypot(t[i], t[i + 2])); return r > a.rMax && cerca(r, A.r_techito, 1e-6); })());
+  ok("3D sobrealto: el modelo crece con el sobrealto", K.alto > piezas3d({ ...Q, tono_tipo: 1 }, calc({ ...Q, tono_tipo: 1 })).alto - 0.5);
+  ok("3D: en el doble techo el sobrealto va sobre el anillo tapa", (() => { const Qd = { ...P, tono_tipo: 2 }, Kd = piezas3d(Qd, calc(Qd));
+    const tapa = Kd.piezas.filter(p => p.g === "tapa" && p.tipo === "anillo"), yTapa = Math.max(...tapa.map(p => p.y2));
+    const sol = Kd.piezas.filter(p => p.g === "sobrealto" && p.tipo === "barra"); return Math.min(...sol.map(p => Math.min(p.a[1], p.b[1]))) >= yTapa - 0.03 && Kd.piezas.some(p => p.g === "tapa_sol"); })());
+}
+// ── los colores (3d-11, Mauro: «corrige los colores azules de los listones…»
+//    y «la madera que va entre los triángulos está roja… también color madera») ──
+{
+  const f3 = readFileSync(new URL("./calculo-3d.js", import.meta.url), "utf8");
+  const color = (k) => { const m = f3.match(new RegExp("\\b" + k + ": 0x([0-9a-f]{6})")); return m && [0, 2, 4].map(i => parseInt(m[1].slice(i, i + 2), 16)); };
+  const madera = (c) => c && c[0] > c[1] && c[1] > c[2] && c[0] - c[2] > 60 && c[1] - c[2] > 20;   // tono madera: rojo > verde > azul
+  ok("3D: las cintas del muro y del alero son color madera, no azules", madera(color("cinta")), JSON.stringify(color("cinta")));
+  ok("3D: las perchas radiales son color madera, no rojas", madera(color("radial")), JSON.stringify(color("radial")));
+}
+// ── el link para el cliente (calculo-23, propuesta-1) ──
+{
+  const pr = readFileSync(new URL("./propuesta.html", import.meta.url), "utf8");
+  const reglas = readFileSync(new URL("./REGLAS.txt", import.meta.url), "utf8");
+  const bl = (reglas.match(/match \/entregas\/\{token\} \{([\s\S]*?)\n    \}/) || [])[1] || "";
+  ok("reglas: entregas se lee sin cuenta de a uno, activo y sin vencer; listar sólo con permiso", /allow get: if token\.size\(\) >= 20\s*&& resource\.data\.activo == true\s*&& request\.time < resource\.data\.vence;/.test(bl)
+    && !/allow (list|read)[^;]*if (true|token)/.test(bl) && /allow read, delete: if con\('calculo'\) \|\| con\('presupuestos'\);/.test(bl));
+  ok("reglas: la forma de una entrega es fija (sin costos ni contacto)", /hasOnly\(\['titulo', 'para', 'idioma', 'descripcion', 'incluye',\s*'no_incluye', 'precio', 'moneda', 'datos', 'vence', 'activo', 'actualizado'\]\)/.test(bl));
+  ok("calculo.html escribe la entrega con esas claves y nada más", (() => { const m = html.match(/const pub = \{([\s\S]*?)\n  \};/); if (!m) return false;
+    const ks = [...m[1].matchAll(/^\s{4}(\w+)[,:]/gm)].map(x => x[1]); return ks.length >= 10 && ks.every(k => ["titulo","para","idioma","descripcion","incluye","no_incluye","precio","moneda","datos","vence","activo","actualizado"].includes(k)); })());
+  ok("el token del link son 16 bytes al azar (22 caracteres)", /new Uint8Array\(16\); crypto\.getRandomValues/.test(html));
+  ok("propuesta.html no carga el SDK de Firebase ni pide sesión", !/firebase-init|gstatic\.com\/firebasejs|signIn/.test(pr) && /firestore\.googleapis\.com/.test(pr));
+  ok("propuesta.html no se indexa y no está en el SHELL", /<meta name="robots" content="noindex,nofollow">/.test(pr) && !/'\.\/propuesta\.html'/.test(sw));
+  ok("propuesta.html lee las medidas con calculo-geo.js y el 3D con calculo-3d.js, diferidos", /import\("\.\/calculo-geo\.js"\)/.test(pr) && /import\("\.\/calculo-3d\.js"\)/.test(pr));
+  const mod = (pr.match(/<script type="module">([\s\S]*?)<\/script>/) || [])[1] || "";
+  ok("propuesta.html: su módulo parsea", parsea(mod));
+  ok("propuesta.html: los cuatro idiomas tienen las mismas claves", (() => { const T = mod.match(/const T = \{([\s\S]*?)\n\};/)[1];
+    const claves = (l) => [...(T.split(new RegExp("\\n  " + l + ": \\{"))[1] || "").split(/\n  \w\w: \{/)[0].matchAll(/(\w+):/g)].map(x => x[1]).sort().join();
+    return ["fr", "en", "pt"].every(l => claves(l) === claves("es")) && claves("es").length > 50; })());
+}
 
 ok("calculo-3d.js parsea como módulo", parsea(readFileSync(new URL("./calculo-3d.js", import.meta.url), "utf8")));
 ok("calculo.html importa calculo-3d.js", /from "\.\/calculo-3d\.js"/.test(html));

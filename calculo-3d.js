@@ -1,5 +1,12 @@
 // calculo-3d.js — el modelo en 3D de la estructura, con las medidas del cálculo.
-// Sello: 3d-10 (2-nov-2026). 3d-10: las sogas escondidas detrás de la tela,
+// Sello: 3d-11 (17-nov-2026). 3d-11: la YURTA SIMPLE (P.tipo = 2: una percha por
+// cruce de arriba del trei, con su escuadra, sin la primera capa) y el TOONO EN
+// SOBREALTO (P.tono_tipo = 2: un prisma de ventanas abisagradas arriba que abren
+// hacia afuera, con su techito y desborde), en cualquiera de los dos techos. Los
+// listones de los bordes (las cintas) y las perchas radiales, color madera; y
+// las sogas de la tapa aislante ya no se dibujan (Mauro, 17-nov-2026: «las
+// sogas para la tapa en el caso de la doble techo no se tienen que dibujar»).
+// 3d-10: las sogas escondidas detrás de la tela,
 // con un orificio de salida por enganche. 3d-9: 3d-9: las sogas de la tapa aislante por las
 // aristas de un triángulo, y la cara vista siempre hacia adentro. 3d-8: 3d-8: la tapa aislante del toono, que gira sobre
 // una bisagra y se cierra con manivela y roldanas. 3d-7: 3d-7: el domo es un tercio de la circunferencia y
@@ -40,7 +47,8 @@
 // de abajo (donde apoyan los tirantes). Todo sale de calc(P): si cambia una
 // medida, cambia el modelo.
 
-export const SELLO_3D = "3d-10";
+export const SELLO_3D = "3d-11";
+import { escuadraSimple } from "./calculo-geo.js";
 export const THREE_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/+esm";
 export const ORBIT_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js/+esm";
 // Las dos con «/+esm»: jsDelivr reescribe el «import from \"three\"» de OrbitControls a
@@ -64,9 +72,12 @@ export const PARTES = [
   ["radiales",    "Perchas radiales"],
   ["toono",       "Toono"],
   ["perchas",     "Perchas · 2.ª capa"],
+  ["escuadras",   "Escuadras · simple"],
   ["cinta_alero", "Cinta del alero"],
   ["tapa",        "Toono · anillo tapa"],
   ["domo",        "Toono · domo geodésico"],
+  ["sobrealto",   "Toono · sobrealto"],
+  ["ventanas",    "Sobrealto · ventanas"],
   ["tapa_sol",    "Toono · tapa aislante"],
   ["montantes",   "Montantes"],
   ["suelo_ab",    "Piso de las aberturas"],
@@ -111,12 +122,19 @@ export const CAMPO_PARTES = {
   lona_baja: ["lona_techo"],
   diente: ["toono"], tapa_cam: ["tapa"], tapa_vuelo: ["tapa", "domo"], tapa_ranura: ["tapa"], dom_ang: ["domo"], dom_frec: ["domo"],
   ts_giro: ["tapa_sol"], ts_esp: ["tapa_sol"], ts_rendija: ["tapa_sol"],
+  // 3d-11: la simple y el sobrealto
+  tipo: ["perchas", "escuadras", "triangulos", "cal"], tono_tipo: ["domo", "sobrealto", "ventanas"],
+  esc: ["escuadras"], s_ais: ["aislacion_techo"],
+  sa_alto: ["sobrealto", "ventanas"], sa_vent: ["sobrealto", "ventanas"], sa_desb: ["sobrealto"],
+  sa_ang: ["sobrealto"], sa_abre: ["ventanas"],
 };
 for (const k of ["ais_techo", "rel", "ang"]) CAMPO_PARTES[k].push("aislacion_techo", "tyvek", "lona_techo");
 for (const k of ["ais_nom", "rel", "alto"]) CAMPO_PARTES[k].push("aislacion_muro", "lona_muro");
 CAMPO_PARTES.desb.push("cinta_alero", "lona_techo");
 CAMPO_PARTES.e_per.push("cinta_alero"); CAMPO_PARTES.anc_per.push("cinta_alero");
 CAMPO_PARTES.alto.push("montantes", "algodon_muro", "freno_muro");
+CAMPO_PARTES.p_anc.push("escuadras"); CAMPO_PARTES.p_alt.push("escuadras"); CAMPO_PARTES.bul.push("perchas", "escuadras");
+CAMPO_PARTES.r_toono.push("sobrealto", "domo"); CAMPO_PARTES.tapa_vuelo.push("sobrealto", "ventanas");
 
 // El arriostramiento de un triángulo, en su plano: s = lateral desde la
 // mediana, t = a lo largo de la mediana desde la base. Es el de Christine
@@ -188,6 +206,7 @@ export function geodesica(n) {
 
 export function piezas3d(P, C) {
   const out = [];
+  const simple = P.tipo === 2, sobre = P.tono_tipo === 2;   // 3d-11
   const rad = P.ang * Math.PI / 180, tan = Math.tan(rad), cos = Math.cos(rad);
   const barra = (g, a, b, ancho, alto, arriba, mat) => out.push({ g, tipo: "barra", a, b, ancho, alto, arriba, mat });
   const anillo = (g, r1, r2, y1, y2, mat) => out.push({ g, tipo: "anillo", r1, r2, y1, y2, mat });
@@ -315,12 +334,12 @@ export function piezas3d(P, C) {
 
   // ── la cal (un calce por percha) y la doble cinta ──
   const rCinta = C.R - C.c;
-  for (let i = 0; i < P.n_per_r; i++) {
+  if (!simple) for (let i = 0; i < P.n_per_r; i++) {
     const th = 2 * Math.PI * i / P.n_per_r;
     out.push({ g: "cal", tipo: "calce", th, ancho: P.p_alt, mat: "cal",
       perfil: [[C.Rint, yA], [rCinta, yA], [rCinta, yA + C.tri_tr], [C.Rint, yA + C.h0]] });
   }
-  anillo("cinta", rCinta, C.R, yA + C.cinta_max - P.anc_per, yA + C.cinta_max, "cinta");
+  if (!simple) anillo("cinta", rCinta, C.R, yA + C.cinta_max - P.anc_per, yA + C.cinta_max, "cinta");
 
   // ── la primera capa: los triángulos, y la percha radial si hace falta ──
   const yB = yt + P.tri_anc / 2;                  // centro de la madera en la base
@@ -328,7 +347,7 @@ export function piezas3d(P, C) {
   const B = C.cuerda, M = C.mediana;
   const segs = arriostramiento(B, M);
   const esq = [];                                 // las tres puntas de cada triángulo (para las capas)
-  for (let k = 0; k < C.nt; k++) {
+  for (let k = 0; k < (simple ? 0 : C.nt); k++) {
     const th = 2 * Math.PI * k / C.nt;
     const A = rotY(v3(C.Rint * Math.cos(beta), yB, C.Rint * Math.sin(beta)), th);
     const Bp = rotY(v3(C.Rint * Math.cos(beta), yB, -C.Rint * Math.sin(beta)), th);
@@ -349,28 +368,47 @@ export function piezas3d(P, C) {
   }
 
   // ── el toono: anillo de sujeción, coronas de relleno, anillo superior ──
-  const yC = yB + C.h_vert;
+  // En la simple la percha apoya en el canto de afuera del anillo (no hay cal):
+  // su cara de abajo es otra recta, y todo lo de arriba sale de ella.
+  const yAbajo = simple ? (r) => yA + (C.Rext - r) * tan : (r) => yA + C.h0 + (C.Rint - r) * tan;
+  const yC = simple ? undefined : yB + C.h_vert;
   const ySuj1 = yC - P.tri_anc / 2, ySuj0 = ySuj1 - 0.02;
-  const yPerchaToono = yA + C.h0 + (C.Rint - P.r_toono) * tan;  // cara de abajo de la percha
-  const ySup1 = yPerchaToono + 0.02, ySup0 = ySup1 - 0.05;
-  anillo("toono", P.r_toono - 0.03, P.r_toono + 0.02, ySuj0, ySuj1, "toono");
-  const relleno = Math.max(0, ySup0 - ySuj1);
-  const nCor = Math.max(1, Math.round(relleno / P.e_mad));
-  for (let i = 0; i < nCor; i++)
-    anillo("toono", P.r_toono - 0.03, P.r_toono, ySuj1 + i * relleno / nCor, ySuj1 + (i + 1) * relleno / nCor, i % 2 ? "toono" : "toono2");
-  anillo("toono", P.r_toono - 0.05, P.r_toono, ySup0, ySup1, "toono");
+  const yPerchaToono = yAbajo(P.r_toono);                      // cara de abajo de la percha
+  let relleno = 0, nCor = 0;
+  if (!simple) {
+    const ySup1 = yPerchaToono + 0.02, ySup0 = ySup1 - 0.05;
+    anillo("toono", P.r_toono - 0.03, P.r_toono + 0.02, ySuj0, ySuj1, "toono");
+    relleno = Math.max(0, ySup0 - ySuj1);
+    nCor = Math.max(1, Math.round(relleno / P.e_mad));
+    for (let i = 0; i < nCor; i++)
+      anillo("toono", P.r_toono - 0.03, P.r_toono, ySuj1 + i * relleno / nCor, ySuj1 + (i + 1) * relleno / nCor, i % 2 ? "toono" : "toono2");
+    anillo("toono", P.r_toono - 0.05, P.r_toono, ySup0, ySup1, "toono");
+  }
 
-  // ── la segunda capa: las perchas, de la cal al toono y con su desborde ──
-  const rIn = P.r_toono - 0.02, rOut = C.Rp;
-  const yAbajo = (r) => yA + C.h0 + (C.Rint - r) * tan;
-  for (let i = 0; i < P.n_per_r; i++) {
-    const th = 2 * Math.PI * i / P.n_per_r;
+  // ── la segunda capa: las perchas, de la cal al toono y con su desborde.
+  //    En la simple son la única capa: una por punto de arriba del trei, en el
+  //    extremo de arriba de un listón, y del toono (sin meterse) al desborde. ──
+  const nPer = simple ? C.n_pts : P.n_per_r, th0P = simple ? span / rT : 0;
+  const rIn = simple ? P.r_toono : P.r_toono - 0.02, rOut = C.Rp;
+  const ES = simple ? escuadraSimple(P, C) : null;
+  for (let i = 0; i < nPer; i++) {
+    const th = th0P + 2 * Math.PI * i / nPer;
     const d = [Math.cos(th), 0, Math.sin(th)];
     const off = P.p_anc / 2 / cos;
     const p1 = v3(rIn * d[0], yAbajo(rIn) + off, rIn * d[2]);
     const p2 = v3(rOut * d[0], yAbajo(rOut) + off, rOut * d[2]);
     const arriba = nor([Math.sin(rad) * d[0], Math.cos(rad), Math.sin(rad) * d[2]]);
     barra("perchas", p1, p2, P.p_alt, P.p_anc, arriba, "percha");
+    if (ES) {
+      // La escuadra: la pata contra la cara interior del trei, atornillada al
+      // último bulón, y la riostra a 45° hasta la cara de abajo de la percha.
+      barra("escuadras", pol(ES.rL, th, yt + ES.pata[0]), pol(ES.rL, th, yt + ES.pata[1]), P.p_alt, P.p_anc, d, "percha");
+      // La riostra: su canto de abajo va de un punto al otro; el centro, medio alto más arriba.
+      const [[ra, ya], [rb, yb]] = ES.riostra, L = Math.hypot(rb - ra, yb - ya);
+      const nr = -(yb - ya) / L * Math.sign(rb - ra || -1), ny = Math.abs(rb - ra) / L, h = P.p_anc / 2;
+      const up = [nr * d[0], ny, nr * d[2]];
+      barra("escuadras", addv(pol(ra, th, yt + ya), mul(up, h)), addv(pol(rb, th, yt + yb), mul(up, h)), P.p_alt, P.p_anc, up, "percha");
+    }
   }
 
   // ── la cinta del alero: dos capas en la punta de las perchas, al ras de su
@@ -418,7 +456,7 @@ export function piezas3d(P, C) {
   }
   // La aislación del techo: de la cáscara al Tyvek, del toono a la cinta.
   const yTy = (r) => yAbajo(r) - 0.002;                    // el Tyvek, debajo de las perchas
-  {
+  if (!simple) {
     const v = [], dz = dzTri + 0.010, rC = C.R - C.c, yI = (r) => yTy(r) - 0.003;
     if (nt) { cascara(v, dz); faldon(v, bordeBase, dz, C.Rint, yA + 0.004); faldon(v, bordeToono, dz, P.r_toono, yI(P.r_toono)); }
     // Llena TODO (Mauro, 2-nov: «el aislante debe llenar todos los espacios»):
@@ -430,22 +468,38 @@ export function piezas3d(P, C) {
   // El Tyvek: cierra el primer techo. Del toono al borde, pasando sobre la
   // cal (las perchas se atornillan encima, en sándwich), y baja por la cinta
   // del borde, donde se fija y se sella sobre la lona del muro.
-  {
+  if (!simple) {
     const v = [];
     revolver(v, [[P.r_toono, yTy(P.r_toono)], [C.R, yTy(C.R)], [C.R + 0.006, yTy(C.R)], [C.R + 0.006, yTy(C.R) - P.anc_per - 0.03]]);
     malla("tyvek", "tyvek", v);
   }
   // La lona del techo: sobre las perchas, del toono hasta pasar la cinta del
   // alero; baja y el urlete con el cordón la cierra por debajo del alero.
-  const yLona = (r) => yTopP(r) + 0.003;
+  // En la simple las capas van todas ENCIMA de las perchas (se ven desde
+  // adentro): algodón, freno, la aislación de `s_ais`, Tyvek y la lona. Pasan
+  // sobre la cinta del alero.
+  const sAis = Math.max(0, P.s_ais ?? 0.04);
+  const yS = (r) => yTopP(Math.min(r, rOut));
+  if (simple) {
+    const r1 = P.r_toono, r2 = rOut + C.c + 0.002;
+    const cono = (dz) => [[r1, yS(r1) + dz], [rOut, yS(rOut) + dz], [r2, yS(r2) + dz]];
+    for (const [g, mat, dz] of [["algodon_techo", "algodon", 0.003], ["freno_techo", "freno", 0.006], ["tyvek", "tyvek", 0.010 + sAis]]) {
+      const v = []; revolver(v, cono(dz)); malla(g, mat, v);
+    }
+    const v = [];
+    const ya = (r) => yS(r) + 0.008, yb = (r) => yS(r) + 0.008 + sAis;
+    revolver(v, [[r1, ya(r1)], [rOut, ya(rOut)], [r2, ya(r2)], [r2, yb(r2)], [rOut, yb(rOut)], [r1, yb(r1)], [r1, ya(r1)]]);
+    malla("aislacion_techo", "aislacion", v);
+  }
+  const yLona = simple ? (r) => yS(r) + 0.013 + sAis : (r) => yTopP(r) + 0.003;
   {
-    const v = [], r1 = Math.max(0.05, P.r_toono - 0.05), rC = rOut + C.c + 0.003;
-    const baja = Math.max(P.anc_per + 0.01, P.lona_baja || 0.1);
-    revolver(v, [[r1, yLona(r1)], [rOut, yLona(rOut)], [rC, yAl + 0.003], [rC, yAl + 0.003 - baja], [rC - 0.04, yAl + 0.003 - baja]]);
+    const v = [], r1 = simple ? P.r_toono : Math.max(0.05, P.r_toono - 0.05), rC = rOut + C.c + 0.003;
+    const baja = Math.max(P.anc_per + 0.01, P.lona_baja || 0.1), yBorde = simple ? yLona(rC) : yAl + 0.003;
+    revolver(v, [[r1, yLona(r1)], [rOut, yLona(rOut)], [rC, yBorde], [rC, yBorde - baja], [rC - 0.04, yBorde - baja]]);
     malla("lona_techo", "lona", v);
     // El cierre: la banda con las anillas baja sobre la línea de una percha, y
     // el cordón la cose en zigzag con las del borde de la lona.
-    const th = 2 * Math.PI * Math.round(P.n_per_r / 8) / P.n_per_r;
+    const th = th0P + 2 * Math.PI * Math.round(nPer / 8) / nPer;
     const arriba = nor([Math.sin(rad) * Math.cos(th), Math.cos(rad), Math.sin(rad) * Math.sin(th)]);
     barra("lona_techo", sube(pol(r1, th, yLona(r1)), 0.004), sube(pol(rOut, th, yLona(rOut)), 0.004), 0.08, 0.004, arriba, "lona2");
     const pasos = Math.max(2, Math.round((rOut - r1) / cos / 0.25));
@@ -463,10 +517,15 @@ export function piezas3d(P, C) {
   //    y se sella con el ANILLO TAPA, hermanado con las cámaras del toono: hace
   //    los huecos al exterior de la lona con el canal mirando hacia abajo.
   //    Encima, la pieza de cierre: una fracción de DOMO GEODÉSICO. ──
-  const rD = P.r_toono - 0.05, eD = P.diente ?? 0.015;
-  anillo("toono", rD, rD + eD, ySup1, yLona(rD) - 0.003, "toono2");
-  {
-    const yT0 = yLona(rD) + 0.003, yT1 = yT0 + (P.tapa_cam ?? 0.03), rT1 = P.r_toono + (P.tapa_vuelo ?? 0.05);
+  // El remate del toono: en el doble techo, el anillo tapa sobre las cámaras;
+  // en la simple, un anillo plano del mismo vuelo sobre el aro de las perchas.
+  // Encima va el DOMO o el SOBREALTO (P.tono_tipo), los dos sobre el mismo borde.
+  let rT1, yBase, cima = 0;
+  if (!simple) {
+    const rD = P.r_toono - 0.05, eD = P.diente ?? 0.015;
+    anillo("toono", rD, rD + eD, yPerchaToono + 0.02, yLona(rD) - 0.003, "toono2");
+    const yT0 = yLona(rD) + 0.003, yT1 = yT0 + (P.tapa_cam ?? 0.03);
+    rT1 = P.r_toono + (P.tapa_vuelo ?? 0.05);
     anillo("tapa", rD, rD + eD, yT0, yT1, "tapa");                      // cerrado hacia adentro
     anillo("tapa", rD, rT1, yT1, yT1 + 0.02, "tapa");                   // la tapa
     // El faldón NO toca la lona: deja una ranura por donde sale el aire, hacia abajo.
@@ -475,13 +534,23 @@ export function piezas3d(P, C) {
       const th = 2 * Math.PI * i / P.n_per_r, r1 = rD + eD, r2 = rT1 - 0.012;
       barra("tapa", pol(r1, th, (yLona(r1) + yT1) / 2), pol(r2, th, (yLona(r2) + yT1) / 2 + 0), P.p_alt, 0.001 + yT1 - yLona(r1), [0, 1, 0], "tapa");
     }
+    yBase = yT1 + 0.02;
+  } else {
+    // El aro de la simple: las perchas llegan a su cara de afuera; la lona, a su canto.
+    const yTo0 = yAbajo(P.r_toono) - 0.04, yTo1 = yLona(P.r_toono) + 0.01;
+    rT1 = P.r_toono + (P.tapa_vuelo ?? 0.05);
+    anillo("toono", P.r_toono - 0.07, P.r_toono, yTo0, yTo1, "toono");
+    anillo("toono", P.r_toono - 0.07, rT1, yTo1, yTo1 + 0.02, "toono2");
+    yBase = yTo1 + 0.02;
+  }
+  if (!sobre) {
     // El domo: un casquete de esfera geodésica sobre la tapa, hasta el borde
     // EXTERIOR del anillo tapa (3d-7, Mauro: «al borde exterior del anillo que
     // va a cerrar la cámara»), y bajo: un tercio de la circunferencia, la parte
     // de arriba, la de menos pendiente (dom_ang 60 = un arco de 120°).
     const phi = Math.min(Math.PI / 2, Math.max(0.2, (P.dom_ang ?? 60) * Math.PI / 180));
-    const Rd = rT1 / Math.sin(phi), yc = yT1 + 0.02 + 0.03 - Rd * Math.cos(phi);
-    anillo("domo", rT1 - 0.04, rT1, yT1 + 0.02, yT1 + 0.05, "domo");
+    const Rd = rT1 / Math.sin(phi), yc = yBase + 0.03 - Rd * Math.cos(phi);
+    anillo("domo", rT1 - 0.04, rT1, yBase, yBase + 0.03, "domo");
     const { aristas, caras } = geodesica(Math.max(1, Math.min(6, Math.round(P.dom_frec ?? 3))));
     const cosC = Math.cos(phi), dentroC = (p) => p[1] >= cosC - 1e-9;
     const aMundo = (p) => [p[0] * Rd, yc + p[1] * Rd, p[2] * Rd];
@@ -495,6 +564,44 @@ export function piezas3d(P, C) {
     const vd = [];
     for (const [a, b, c] of caras) if (dentroC(a) && dentroC(b) && dentroC(c)) tri(vd, aMundo(a), aMundo(b), aMundo(c));
     malla("domo", "vidrio", vd);
+  } else {
+    // EL SOBREALTO (3d-11, Mauro, 17-nov: «un techo en sobrealto en el toono
+    // con un pequeño desborde y ventanas alrededor… de unos 30 cm de alto,
+    // unas 8, que se abren hacia arriba hacia afuera»). Un prisma de n caras
+    // sobre el remate: solera, un parante en cada vértice y cabezal, de 5 × 5;
+    // en cada cara una ventana abisagrada en el cabezal que abre `sa_abre`
+    // grados hacia afuera (la parte de abajo sale y sube), con su compás; y el
+    // techito piramidal, con una limatesa por vértice y `sa_desb` de desborde.
+    const n = Math.max(3, Math.round(P.sa_vent ?? 8)), hV = Math.max(0.1, P.sa_alto ?? 0.30);
+    const rS = rT1 - 0.02, e = 0.05, rTe = rS + (P.sa_desb ?? 0.15);
+    const tT = Math.tan(Math.max(5, Math.min(60, P.sa_ang ?? 25)) * Math.PI / 180);
+    const abre = Math.max(0, Math.min(80, P.sa_abre ?? 30)) * Math.PI / 180;
+    const y0 = yBase, y1 = y0 + e, y2 = y1 + hV, y3 = y2 + e;
+    const V = (i, r, y) => pol(r, TAU * i / n, y), sn = Math.sin(Math.PI / n), cs = Math.cos(Math.PI / n);
+    const vv = [], vt = [];
+    const yR = (r) => y3 + (rS - r) * tT;                         // cara de abajo de la limatesa
+    for (let i = 0; i < n; i++) {
+      const ai = TAU * i / n, am = TAU * (i + 0.5) / n;
+      const nrm = [Math.cos(am), 0, Math.sin(am)], tg = [-Math.sin(am), 0, Math.cos(am)];
+      for (const yc of [y0 + e / 2, y2 + e / 2]) barra("sobrealto", V(i, rS - e / 2, yc), V(i + 1, rS - e / 2, yc), e, e, [0, 1, 0], "toono");
+      barra("sobrealto", V(i, rS - e / 2, y1), V(i, rS - e / 2, y2), e, e, [Math.cos(ai), 0, Math.sin(ai)], "toono2");
+      barra("sobrealto", [0, yR(0) + 0.035, 0], V(i, rTe, yR(rTe) + 0.035), 0.045, 0.07, [0, 1, 0], "toono");
+      const top = (r) => yR(r) + 0.073;
+      tri(vt, [0, top(0), 0], V(i, rTe, top(rTe)), V(i + 1, rTe, top(rTe)));
+      // La ventana: marco de 3,5 cm y vidrio, colgada del cabezal por afuera.
+      const w = 2 * rS * sn - e - 0.01, h = hV - 0.01, fr = 0.035;
+      const H0 = addv(mul(nrm, rS * cs + 0.012), [0, y2 - 0.005, 0]);
+      const baja = addv([0, -Math.cos(abre), 0], mul(nrm, Math.sin(abre)));
+      const Q = (s, d) => addv(H0, addv(mul(tg, s), mul(baja, d)));
+      barra("ventanas", Q(-w / 2, fr / 2), Q(w / 2, fr / 2), 0.03, fr, baja, "madera");
+      barra("ventanas", Q(-w / 2, h - fr / 2), Q(w / 2, h - fr / 2), 0.03, fr, baja, "madera");
+      for (const sx of [-1, 1]) barra("ventanas", Q(sx * (w / 2 - fr / 2), fr), Q(sx * (w / 2 - fr / 2), h - fr), 0.03, fr, tg, "madera");
+      quad(vv, Q(-w / 2 + fr, fr), Q(w / 2 - fr, fr), Q(w / 2 - fr, h - fr), Q(-w / 2 + fr, h - fr));
+      if (abre > 0.02) barra("ventanas", addv(mul(nrm, rS * cs), [0, y1 + 0.03, 0]), Q(w / 2 - fr, h - fr), 0.012, 0.012, [0, 1, 0], "tapa");
+    }
+    malla("ventanas", "vidrio", vv);
+    malla("sobrealto", "lona", vt);
+    cima = yR(0) + 0.08;
   }
 
   // El muro: del trei hacia afuera, cortado en las aberturas (arriba de una
@@ -517,7 +624,7 @@ export function piezas3d(P, C) {
   capaMuro("aislacion_muro", "aislacion", (a, b) => b >= yA0 - 1e-9
     ? [[rM + 0.009, a], [C.R - 0.002, a], [C.R - 0.002, yA], [C.Rext + 0.002, yA], [C.Rext + 0.002, b], [rM + 0.009, b], [rM + 0.009, a]]
     : [[rM + 0.009, a], [C.R - 0.002, a], [C.R - 0.002, b], [rM + 0.009, b], [rM + 0.009, a]], yPiso, yA0, true);
-  capaMuro("lona_muro", "lona_muro", (a, b) => [[C.R + 0.003, a], [C.R + 0.003, b]], -P.osb_inf - 0.02, yA + C.cinta_max);
+  capaMuro("lona_muro", "lona_muro", (a, b) => [[C.R + 0.003, a], [C.R + 0.003, b]], -P.osb_inf - 0.02, simple ? yAbajo(C.R) - 0.003 : yA + C.cinta_max);
 
   // ── LA TAPA AISLANTE del toono (3d-8, Mauro, 2-nov: «para bloquear el calor
   //    del sol… impedir la acumulación de rayos ultravioletas que pasan por una
@@ -527,8 +634,8 @@ export function piezas3d(P, C) {
   //    gira, se engancha a la cuerda que pasa por roldanas del lado opuesto
   //    hasta una manivela en el trei, y al girar la manivela sube y cierra
   //    como una tapa, dejando una rendija de ventilación. `ts_giro`: 0 cerrada,
-  //    1 abierta contra el techo. ──
-  {
+  //    1 abierta contra el techo. Es del doble techo: la simple no la lleva. ──
+  if (!simple) {
     const rI = P.r_toono - 0.03, gap = P.ts_rendija ?? 0.02, e = P.ts_esp ?? 0.06;
     const Rt = rI - 0.01, thH = Math.PI;                       // la bisagra, del lado de atrás
     const yH = ySuj0 - gap;                                    // cara de arriba de la tapa, cerrada
@@ -566,43 +673,20 @@ export function piezas3d(P, C) {
       const z = f * Rt, x = Math.sqrt(Rt * Rt - z * z);
       barra("tapa_sol", rodar([-x, yv, z]), rodar([x, yv, z]), 0.03, 0.02, sub(cen(ya), cen(yb)), "madera");
     }
-    // La bisagra (fija para siempre), y las SOGAS (3d-10, Mauro, 2-nov): van
-    // ESCONDIDAS por detrás de la tela de terminación, por encima del freno de
-    // vapor, de la manivela del muro hasta dos ORIFICIOS de salida en el techo,
-    // en los puntos que triangulan con la bisagra. Sólo desde ahí salen a la
-    // vista: hasta la tapa, en uso, o hasta la tapa plegada contra el techo,
-    // para guardarla. Menos recorrido de soga, y nada tendido a la vista.
+    // La bisagra (fija para siempre) y la manivela en el muro. Las SOGAS van
+    // escondidas detrás de la tela de terminación (3d-10) y desde 3d-11 no se
+    // dibujan (Mauro, 17-nov-2026): del recorrido se ocupa la obra.
     barra("tapa_sol", pol(rI + 0.02, thH, ySuj0), pol(rI + 0.02, thH, yH - e), 0.05, 0.03, [Math.cos(thH), 0, Math.sin(thH)], "tapa");
-    const man = pol(C.r_trei_int - 0.03, 0, yPiso + 1.4);
-    // La altura sobre el triángulo del lado de las sogas (θ = 0): arriba del
-    // freno de vapor (que está a dzTri + 0,006), debajo de la aislación.
-    const t0 = esq[0], dzS = dzTri + 0.009;
-    const enTela = (x, z) => {
-      const a = sube(t0.A, dzS), b = sube(t0.Bp, dzS), c = sube(t0.Cv, dzS);
-      const nn = cross(sub(b, a), sub(c, a));
-      return a[1] - (nn[0] * (x - a[0]) + nn[2] * (z - a[2])) / nn[1];
-    };
-    for (const g of [-1, 1]) {
-      const rO = P.r_toono + 0.25, aO = g * 0.2;                           // el orificio de salida
-      const O = [rO * Math.cos(aO), 0, rO * Math.sin(aO)]; O[1] = enTela(O[0], O[2]);
-      const rB = C.Rint * Math.cos(C.beta * Math.PI / 180) - 0.05, aB = g * 0.12;   // al pie del techo
-      const Bq = [rB * Math.cos(aB), 0, rB * Math.sin(aB)]; Bq[1] = enTela(Bq[0], Bq[2]);
-      const Mu = pol(C.r_trei + 0.008, g * 0.03, yA0 - 0.02);             // baja por el muro, detrás del algodón
-      const Mb = pol(C.r_trei + 0.008, g * 0.03, yPiso + 1.45);
-      for (const [a, b] of [[O, Bq], [Bq, Mu], [Mu, Mb], [Mb, man]]) barra("tapa_sol", a, b, 0.006, 0.006, [0, 1, 0], "oculto");
-      barra("tapa_sol", sub(O, [0, 0.004, 0]), addv(O, [0, 0.004, 0]), 0.03, 0.03, [1, 0, 0], "tapa");      // el orificio, con su ojal
-      barra("tapa_sol", O, P0(g * 0.6, (ya + yb) / 2), 0.006, 0.006, [0, 1, 0], "cordon");                   // lo único a la vista
-    }
     barra("tapa_sol", pol(C.r_trei_int, 0, yPiso + 1.4), pol(C.r_trei_int - 0.05, 0, yPiso + 1.4), 0.18, 0.18, [0, 1, 0], "tapa"); // la manivela
-    barra("tapa_sol", pol(C.r_trei_int - 0.05, 0.02, yPiso + 1.4), pol(C.r_trei_int - 0.05, 0.02, yPiso + 1.52), 0.02, 0.02, [1, 0, 0], "cordon"); // la traba
+    barra("tapa_sol", pol(C.r_trei_int - 0.05, 0.02, yPiso + 1.4), pol(C.r_trei_int - 0.05, 0.02, yPiso + 1.52), 0.02, 0.02, [1, 0, 0], "tapa"); // la traba
   }
 
-  return { piezas: out, alto: yPerchaToono + 0.1, suelo: yViga - P.viga_alt - 0.6, yt, yA, yC, nCor, relleno, yAbre, conDintel };
+  return { piezas: out, alto: Math.max(yPerchaToono + 0.1, cima), suelo: yViga - P.viga_alt - 0.6, yt, yA, yC, nCor, relleno, yAbre, conDintel };
 }
 
 const COLORES = {
   madera: 0xd9b27c, madera2: 0xc49a62, pilar: 0x8a6a4a, osb: 0xd8bf8a, anillo: 0xc8874a,
-  trei: 0xe0b98a, cal: 0xb98a4f, cinta: 0x6fa8dc, triangulo: 0xe2a95c, radial: 0xb5481c,
+  trei: 0xe0b98a, cal: 0xb98a4f, cinta: 0xcc9a5e, triangulo: 0xe2a95c, radial: 0xd4a362,
   toono: 0xa86a3a, toono2: 0xc08050, percha: 0x9c6b3c,
   montante: 0xb07a44, umbral: 0x8f5a2e, tapa: 0x7a4a2a, domo: 0xeadfcf, vidrio: 0xbfe3f2,
   algodon: 0xf1e9d8, freno: 0x7f9fb8, aislacion: 0xf0cf73, tyvek: 0xf6f6f2,

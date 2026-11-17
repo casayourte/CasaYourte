@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tu yurta · CasaYourte</title>
+<!-- propuesta-1 (17-nov-2026). La propuesta para UN cliente, por link:
+     propuesta.html?p=<token>. Mauro, 16-nov-2026: «un presupuesto en un link
+     que yo pueda cargar y enviar para que la persona a la que le estoy
+     enviando el presupuesto pueda ver la descripción detallada online… con un
+     vencimiento, algo parecido a lo que pasa con el link de remate taller».
+
+     Cómo es: el documento `entregas/{token}` lo arma la pestaña «Para el
+     cliente» de calculo.html. El token es la llave: la regla deja leerlo de a
+     uno, sin cuenta, sólo si está activo y no venció (REGLAS.txt), y nunca
+     listar. Esta página NO carga el SDK de Firebase ni pide sesión: lo lee por
+     REST con la clave web pública (la misma de album.html), arma las medidas
+     con calculo-geo.js y el 3D con calculo-3d.js (three.js diferido: si el CDN
+     no contesta, la página sigue y lo dice).
+
+     No lleva costos, márgenes, proveedores ni el contacto del cliente: sólo lo
+     que se escribió para él. No se indexa (noindex) y no está en el SHELL del
+     service worker: siempre se lee fresca. -->
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" href="/favicon.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#181614; --ink-2:#242019; --ink-3:#2C2722; --line:#35302a;
+  --wool:#EFE8DA; --dim:#A89E8C; --blond:#DCA96B; --burg:#7A2C3C;
+  --disp:"Fraunces",Georgia,serif; --body:"Instrument Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+  --pad:clamp(1rem,5vw,4rem);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--ink);color:var(--wool);font-family:var(--body);line-height:1.55;-webkit-text-size-adjust:100%}
+h1,h2,h3{font-family:var(--disp);font-weight:500;margin:0;line-height:1.1}
+header{position:sticky;top:0;z-index:10;background:rgba(24,22,20,.92);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);padding:.75rem var(--pad);display:flex;align-items:center;gap:.8rem}
+header .mark{font-family:var(--disp);font-size:.95rem;letter-spacing:.16em;font-weight:600;color:var(--wool);
+  text-decoration:none;text-transform:uppercase;display:flex;align-items:center;gap:.5rem;flex:1}
+header .mark img{width:1.6rem;height:1.6rem}
+header .mark span{color:var(--blond)}
+.lang{display:flex;gap:.2rem}
+.lang button{font-family:var(--mono);font-size:.62rem;letter-spacing:.12em;background:none;color:var(--dim);
+  border:1px solid var(--line);border-radius:3px;padding:.3rem .45rem;cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--blond);color:var(--ink);border-color:var(--blond)}
+main{max-width:1100px;margin:0 auto;padding:clamp(1.5rem,5vw,3rem) var(--pad) 4rem}
+.eyebrow{font-family:var(--mono);font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;color:var(--blond);display:block;margin-bottom:.9rem}
+h1{font-size:clamp(1.9rem,6vw,3.2rem)}
+.para{color:var(--dim);margin:.6rem 0 0}
+.vence{display:inline-block;margin-top:.9rem;font-family:var(--mono);font-size:.7rem;letter-spacing:.08em;
+  color:var(--ink);background:var(--blond);border-radius:3px;padding:.25rem .5rem}
+.v3{margin:1.6rem 0 .4rem}
+.vista3d{width:100%;height:clamp(280px,58vh,620px);border:1px solid var(--line);border-radius:8px;overflow:hidden;
+  touch-action:none;background:#1d1a17}
+.v3-barra{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.5rem;align-items:center}
+.btn{font:inherit;font-size:.84rem;color:var(--wool);background:var(--ink-2);border:1px solid var(--line);
+  border-radius:6px;padding:.45rem .75rem;cursor:pointer}
+.btn[aria-pressed="true"]{border-color:var(--blond);color:var(--blond)}
+.nota{color:var(--dim);font-size:.78rem;flex:1;min-width:10rem}
+.grid{display:grid;gap:1.2rem;margin-top:2rem}
+@media(min-width:820px){.grid{grid-template-columns:1fr 1.3fr}}
+.caja{background:var(--ink-2);border:1px solid var(--line);border-radius:8px;padding:1.1rem 1.2rem}
+.caja h2{font-size:1.25rem;margin-bottom:.7rem}
+.fil{display:flex;gap:.8rem;justify-content:space-between;padding:.42rem 0;border-bottom:1px solid var(--line)}
+.fil:last-child{border-bottom:0}
+.fil .n{color:var(--dim);font-size:.9rem}
+.fil .v{font-family:var(--mono);font-size:.88rem;text-align:right}
+.desc p{margin:0 0 .8rem;max-width:68ch}
+ul{margin:.2rem 0 0;padding-left:1.1rem}
+li{margin:.25rem 0}
+.precio{font-family:var(--disp);font-size:clamp(1.6rem,5vw,2.3rem);color:var(--blond)}
+.pie{color:var(--dim);font-size:.82rem;margin-top:2rem;border-top:1px solid var(--line);padding-top:1rem}
+.pie a{color:var(--blond)}
+.vacio{text-align:center;padding:4rem 1rem;color:var(--dim)}
+.vacio h1{color:var(--wool);margin-bottom:.8rem;font-size:clamp(1.5rem,5vw,2.2rem)}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<header>
+  <a class="mark" href="./"><img src="assets/logo.png" alt="">Casa<span>Yourte</span></a>
+  <div class="lang" role="group" aria-label="Idioma" id="lang">
+    <button type="button" data-l="es">ES</button><button type="button" data-l="fr">FR</button>
+    <button type="button" data-l="en">EN</button><button type="button" data-l="pt">PT</button>
+  </div>
+</header>
+<main id="main"><div class="vacio" id="cargando">…</div></main>
+
+<script type="module">
+// Sello: propuesta-1
+const PROYECTO = "casayourte-mauro";
+const CLAVE = "AIzaSyDDD_xvpC4I_ec2OZymyDqVsm1K0ISTr4Q";
+const BASE = "https://firestore.googleapis.com/v1/projects/" + PROYECTO + "/databases/(default)/documents/";
+
+const T = {
+  es: { eyebrow: "Propuesta", para: "Para", vence: "Válida hasta el", terminada: "Terminada", estructura: "La estructura",
+    encuadrar: "Encuadrar", nota3d: "A escala real · girá con el dedo, acercá con dos · cuadrícula de 1 m",
+    medidas: "Medidas principales", descripcion: "Descripción", incluye: "Incluye", no_incluye: "No incluye", precio: "Precio",
+    diam: "Diámetro", piso: "Superficie de piso", muro: "Altura del muro", centro: "Altura al centro", toono: "Toono",
+    techo: "Techo", doble: "Doble techo ventilado", simple: "Techo simple de perchas", aberturas: "Aberturas",
+    remate: "Remate del toono", domo: "Cuarto de domo geodésico", sobre: (n) => `Sobrealto con ${n} ventanas`,
+    sin3d: "No se pudo cargar el 3D (sin conexión, o el teléfono no tiene WebGL). El resto de la propuesta está completo.",
+    no: "Esta propuesta no está disponible", noTxt: "El link venció, se desactivó o no es correcto. Escribinos y te mandamos uno nuevo.",
+    pie: (f) => `Propuesta válida hasta el ${f}. Para cualquier consulta, respondé el mensaje por el que te llegó este link.`, sitio: "Ver más yurtas" },
+  fr: { eyebrow: "Proposition", para: "Pour", vence: "Valable jusqu'au", terminada: "Terminée", estructura: "La structure",
+    encuadrar: "Recadrer", nota3d: "À l'échelle réelle · tournez du doigt, zoomez à deux doigts · grille de 1 m",
+    medidas: "Dimensions principales", descripcion: "Description", incluye: "Comprend", no_incluye: "Ne comprend pas", precio: "Prix",
+    diam: "Diamètre", piso: "Surface au sol", muro: "Hauteur du mur", centro: "Hauteur au centre", toono: "Toono",
+    techo: "Toit", doble: "Double toit ventilé", simple: "Toit simple à perches", aberturas: "Ouvertures",
+    remate: "Couronnement du toono", domo: "Quart de dôme géodésique", sobre: (n) => `Lanterneau à ${n} fenêtres`,
+    sin3d: "Impossible de charger la 3D (pas de connexion ou pas de WebGL). Le reste de la proposition est complet.",
+    no: "Cette proposition n'est pas disponible", noTxt: "Le lien a expiré, a été désactivé ou n'est pas correct. Écrivez-nous et nous vous en enverrons un nouveau.",
+    pie: (f) => `Proposition valable jusqu'au ${f}. Pour toute question, répondez au message par lequel ce lien vous est parvenu.`, sitio: "Voir d'autres yourtes" },
+  en: { eyebrow: "Proposal", para: "For", vence: "Valid until", terminada: "Finished", estructura: "The structure",
+    encuadrar: "Reset view", nota3d: "Real scale · drag to turn, pinch to zoom · 1 m grid",
+    medidas: "Main dimensions", descripcion: "Description", incluye: "Includes", no_incluye: "Does not include", precio: "Price",
+    diam: "Diameter", piso: "Floor area", muro: "Wall height", centro: "Height at the centre", toono: "Toono",
+    techo: "Roof", doble: "Ventilated double roof", simple: "Single rafter roof", aberturas: "Openings",
+    remate: "Toono crown", domo: "Geodesic quarter dome", sobre: (n) => `Raised lantern with ${n} windows`,
+    sin3d: "The 3D view could not load (no connection, or no WebGL). The rest of the proposal is complete.",
+    no: "This proposal is not available", noTxt: "The link has expired, was turned off or is not correct. Write to us and we will send you a new one.",
+    pie: (f) => `Proposal valid until ${f}. For any question, reply to the message this link came with.`, sitio: "See more yurts" },
+  pt: { eyebrow: "Proposta", para: "Para", vence: "Válida até", terminada: "Pronta", estructura: "A estrutura",
+    encuadrar: "Enquadrar", nota3d: "Em escala real · gire com o dedo, aproxime com dois · grade de 1 m",
+    medidas: "Medidas principais", descripcion: "Descrição", incluye: "Inclui", no_incluye: "Não inclui", precio: "Preço",
+    diam: "Diâmetro", piso: "Área de piso", muro: "Altura da parede", centro: "Altura no centro", toono: "Toono",
+    techo: "Telhado", doble: "Telhado duplo ventilado", simple: "Telhado simples de caibros", aberturas: "Aberturas",
+    remate: "Remate do toono", domo: "Quarto de domo geodésico", sobre: (n) => `Lanternim com ${n} janelas`,
+    sin3d: "Não foi possível carregar o 3D (sem conexão ou sem WebGL). O resto da proposta está completo.",
+    no: "Esta proposta não está disponível", noTxt: "O link venceu, foi desativado ou não está correto. Escreva para nós e enviaremos um novo.",
+    pie: (f) => `Proposta válida até ${f}. Para qualquer dúvida, responda à mensagem pela qual este link chegou.`, sitio: "Ver mais yurts" },
+};
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+/* ---------- REST (la misma lectura que album.html, más las fechas) ---------- */
+function valor(v) {
+  if (!v || typeof v !== "object") return undefined;
+  if ("stringValue" in v) return v.stringValue;
+  if ("booleanValue" in v) return v.booleanValue;
+  if ("integerValue" in v) return Number(v.integerValue);
+  if ("doubleValue" in v) return v.doubleValue;
+  if ("timestampValue" in v) return new Date(v.timestampValue);
+  if ("nullValue" in v) return null;
+  if ("arrayValue" in v) return (v.arrayValue.values || []).map(valor);
+  if ("mapValue" in v) return mapa(v.mapValue.fields || {});
+  return undefined;
+}
+function mapa(f) { const o = {}; for (const k in f) { const x = valor(f[k]); if (x !== undefined) o[k] = x; } return o; }
+
+const token = new URLSearchParams(location.search).get("p") || "";
+let lang = new URLSearchParams(location.search).get("lang");
+let E = null, vista = null, modo = "terminada";
+
+function noDisponible() {
+  const t = T[lang] || T.es;
+  $("main").innerHTML = `<div class="vacio"><h1>${esc(t.no)}</h1><p>${esc(t.noTxt)}</p>
+    <p><a class="btn" href="./">${esc(t.sitio)}</a></p></div>`;
+}
+
+async function traer() {
+  if (!/^[A-Za-z0-9_-]{20,}$/.test(token)) return null;
+  try {
+    const r = await fetch(BASE + "entregas/" + encodeURIComponent(token) + "?key=" + CLAVE, { cache: "no-store" });
+    if (!r.ok) return null;
+    const j = await r.json();
+    const d = mapa(j.fields || {});
+    // La regla ya no deja leer uno vencido o apagado; esto es por las dudas.
+    if (d.activo !== true || !(d.vence instanceof Date) || d.vence < new Date()) return null;
+    return d;
+  } catch { return null; }
+}
+
+function marcarIdioma() {
+  document.documentElement.lang = lang;
+  document.querySelectorAll("#lang button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.l === lang)));
+}
+
+async function pintar() {
+  const t = T[lang] || T.es;
+  marcarIdioma();
+  if (!E) { noDisponible(); return; }
+  const { calc } = await import("./calculo-geo.js");
+  const P = E.datos || {}, C = calc(P);
+  const simple = P.tipo === 2, sobre = P.tono_tipo === 2;
+  const nf = (v, d = 2) => new Intl.NumberFormat(lang, { minimumFractionDigits: d, maximumFractionDigits: d }).format(v);
+  const fecha = new Intl.DateTimeFormat(lang, { day: "numeric", month: "long", year: "numeric" }).format(E.vence);
+  // La altura al centro: lo más alto del modelo, sobre el piso terminado.
+  let alto = 0;
+  try {
+    const { piezas3d } = await import("./calculo-3d.js");
+    const K = piezas3d(P, C); let y = -Infinity;
+    for (const p of K.piezas) {
+      if (p.tipo === "barra") y = Math.max(y, p.a[1], p.b[1]);
+      else if (p.tipo === "anillo" || p.tipo === "disco") y = Math.max(y, p.y2);
+      else if (p.tipo === "malla") for (let i = 1; i < p.v.length; i += 3) y = Math.max(y, p.v[i]);
+    }
+    alto = y - (P.tir_alt + P.osb_sup);
+  } catch {}
+  const filas = [
+    [t.diam, nf(P.D, 1) + " m"],
+    [t.piso, nf(Math.PI * (P.D / 2) ** 2, 1) + " m²"],
+    [t.muro, nf(P.alto) + " m"],
+    ...(alto > 0 ? [[t.centro, "≈ " + nf(alto, 1) + " m"]] : []),
+    [t.techo, simple ? t.simple : t.doble],
+    [t.toono, "Ø " + nf(2 * P.r_toono) + " m"],
+    [t.remate, sobre ? t.sobre(C.sobrealto.n_vent) : t.domo],
+    [t.aberturas, String(Math.round(P.n_ab ?? 0))],
+  ];
+  const parrafos = String(E.descripcion || "").split(/\n\s*\n/).map(p => p.trim()).filter(Boolean)
+    .map(p => `<p>${esc(p).replace(/\n/g, "<br>")}</p>`).join("");
+  const lista = (xs) => `<ul>${xs.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`;
+  const precio = typeof E.precio === "number"
+    ? new Intl.NumberFormat(lang, { style: "currency", currency: E.moneda || "USD", maximumFractionDigits: 0 }).format(E.precio) : "";
+  $("main").innerHTML = `
+    <span class="eyebrow">${esc(t.eyebrow)}</span>
+    <h1>${esc(E.titulo || "")}</h1>
+    ${E.para ? `<p class="para">${esc(t.para)} ${esc(E.para)}</p>` : ""}
+    <span class="vence">${esc(t.vence)} ${esc(fecha)}</span>
+    <div class="v3">
+      <div class="vista3d" id="vista3d"></div>
+      <div class="v3-barra">
+        <button class="btn" type="button" data-modo="terminada">${esc(t.terminada)}</button>
+        <button class="btn" type="button" data-modo="estructura">${esc(t.estructura)}</button>
+        <button class="btn" type="button" id="encuadrar">${esc(t.encuadrar)}</button>
+        <span class="nota" id="nota3d">${esc(t.nota3d)}</span>
+      </div>
+    </div>
+    <div class="grid">
+      <div class="caja"><h2>${esc(t.medidas)}</h2>
+        ${filas.map(([n, v]) => `<div class="fil"><span class="n">${esc(n)}</span><span class="v">${esc(v)}</span></div>`).join("")}
+        ${precio ? `<h2 style="margin-top:1.3rem">${esc(t.precio)}</h2><div class="precio">${esc(precio)}</div>` : ""}
+      </div>
+      <div class="caja desc"><h2>${esc(t.descripcion)}</h2>${parrafos}
+        ${(E.incluye || []).length ? `<h3 style="margin-top:1rem">${esc(t.incluye)}</h3>${lista(E.incluye)}` : ""}
+        ${(E.no_incluye || []).length ? `<h3 style="margin-top:1rem">${esc(t.no_incluye)}</h3>${lista(E.no_incluye)}` : ""}
+      </div>
+    </div>
+    <p class="pie">${esc(t.pie(fecha))} · <a href="./">casayourte.com</a></p>`;
+  document.title = (E.titulo || "Tu yurta") + " · CasaYourte";
+  montar3d(P, C, t);
+}
+
+// Lo que se ve en cada modo: «terminada» con las lonas por fuera; «la
+// estructura», la madera sola. Las capas de adentro no se muestran.
+const MODOS = {
+  terminada: (k, capa) => !capa || k === "lona_techo" || k === "lona_muro",
+  estructura: (k, capa) => !capa,
+};
+async function montar3d(P, C, t) {
+  if (vista) { vista.destruir(); vista = null; }
+  marcarModo();
+  try {
+    const { montar, PARTES } = await import("./calculo-3d.js");
+    const vis = {}; for (const [k, , capa] of PARTES) vis[k] = MODOS[modo](k, !!capa);
+    vista = await montar($("vista3d"), P, C, vis);
+    $("vista3d").dataset.partes = JSON.stringify(PARTES.map(p => [p[0], !!p[2]]));
+  } catch (e) {
+    console.error(e);
+    $("vista3d").innerHTML = `<p class="nota" style="padding:1rem">${esc(t.sin3d)}</p>`;
+  }
+}
+function marcarModo() { document.querySelectorAll("[data-modo]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.modo === modo))); }
+
+document.addEventListener("click", (ev) => {
+  const l = ev.target.closest("#lang button");
+  if (l) { lang = l.dataset.l; pintar(); return; }
+  const m = ev.target.closest("[data-modo]");
+  if (m && vista) {
+    modo = m.dataset.modo; marcarModo();
+    for (const [k, capa] of JSON.parse($("vista3d").dataset.partes || "[]")) vista.ver(k, MODOS[modo](k, capa));
+    return;
+  }
+  if (ev.target.closest("#encuadrar") && vista) vista.encuadrar();
+});
+
+E = await traer();
+if (!T[lang]) lang = (E && T[E.idioma]) ? E.idioma : "es";
+pintar();
+</script>
+</body>
+</html>

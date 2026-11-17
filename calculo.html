@@ -31,6 +31,18 @@
   .campos label .k b{color:var(--blond);font-family:var(--mono);font-size:.72rem}
   .campos input{padding:.45rem .5rem;font-family:var(--mono);font-size:.84rem}
   .campos .u{font-size:.64rem;color:var(--dim2);margin-top:.1rem;display:block}
+  /* calculo-23: el tipo de yurta y el remate del toono se eligen con dos botones;
+     las medidas que no usa lo elegido quedan apagadas (se pueden tocar igual). */
+  .campos .elige{grid-column:1/-1}
+  .seg{display:flex;gap:.35rem;flex-wrap:wrap}
+  .seg button{flex:1;min-width:8rem;padding:.5rem .6rem;border:1px solid var(--line);border-radius:var(--r-s);
+    background:var(--ink2);color:var(--dim);font:inherit;font-size:.84rem}
+  .seg button.on{border-color:var(--blond);color:var(--ink);background:var(--blond);font-weight:600}
+  .campos label.apagado{opacity:.38}
+  .ent{display:grid;gap:.55rem;max-width:44rem}
+  .ent .dos{display:grid;grid-template-columns:1fr 1fr;gap:.55rem}
+  .ent-link{background:var(--ink2);border:1px solid var(--line);border-radius:var(--r);padding:.7rem .8rem;
+    font-family:var(--mono);font-size:.74rem;word-break:break-all}
 
   .fil{display:flex;gap:.55rem;align-items:baseline;padding:.38rem 0;
     border-bottom:1px solid var(--line)}
@@ -130,6 +142,7 @@
         <button class="btn" data-caso="m7">Modelo 7 m</button>
         <button class="btn" data-caso="christine">Christine</button>
         <button class="btn" data-caso="g6">6 m</button>
+        <button class="btn" data-caso="simple">Simple con sobrealto</button>
       </div>
     </div>
 
@@ -154,6 +167,38 @@
       <div class="lam"><img id="lam2" src="./assets/lamina-triangulo.jpg" loading="lazy" alt="El triángulo estructural de la primera capa">
         <p class="pie"><b>L</b> el lado del isósceles · <b>B</b> la base, que es la cuerda ·
         <b>M</b> la mediana. Los tres se miden al centro de la madera.</p></div>
+    </div>
+
+    <div id="t-cliente" class="hide">
+      <p class="gris">Un link para mandarle al cliente (calculo-23): ve la descripción, las medidas
+      principales y el 3D de <b>su</b> yurta, sin cuenta, hasta la fecha que elijas. <b>No ve costos,
+      márgenes, proveedores ni el contacto</b>: sólo lo que está en esta pestaña y las medidas del
+      cálculo. Las medidas se copian al tocar «Crear» o «Actualizar»: si después cambiás el cálculo,
+      el link sigue mostrando lo de antes hasta que lo actualices. Primero se guarda el cálculo.</p>
+      <div class="ent">
+        <label><span class="k">Título</span><input id="e-titulo" maxlength="120"></label>
+        <div class="dos">
+          <label><span class="k">Para</span><input id="e-para" maxlength="80"></label>
+          <label><span class="k">Idioma de la página</span><select id="e-idioma">
+            <option value="es">Español</option><option value="fr">Français</option>
+            <option value="en">English</option><option value="pt">Português</option></select></label>
+        </div>
+        <label><span class="k">Descripción</span><textarea id="e-desc" rows="9" maxlength="8000"></textarea></label>
+        <div class="row"><button class="btn" id="e-armar" type="button">Escribirla a partir del cálculo</button></div>
+        <label><span class="k">Incluye · una cosa por renglón</span><textarea id="e-incluye" rows="5" maxlength="3000"></textarea></label>
+        <label><span class="k">No incluye · una cosa por renglón</span><textarea id="e-noincluye" rows="3" maxlength="2000"></textarea></label>
+        <div class="dos">
+          <label><span class="k">Precio · vacío = no se muestra</span><input id="e-precio" type="number" step="any" inputmode="decimal"></label>
+          <label><span class="k">Moneda</span><select id="e-moneda">
+            <option>USD</option><option>UYU</option><option>EUR</option><option>BRL</option></select></label>
+        </div>
+        <label><span class="k">Válido hasta</span><input id="e-vence" type="date"></label>
+        <div class="row">
+          <button class="btn p" id="e-crear" type="button">Crear el link</button>
+          <button class="btn d hide" id="e-apagar" type="button">Desactivar el link</button>
+        </div>
+        <div id="e-link"></div>
+      </div>
     </div>
 
     <div id="t-ficha" class="hide">
@@ -182,7 +227,7 @@ import { CY } from "./nucleo.js";
 import { calc as calcGeo, corte } from "./calculo-geo.js";
 import { montar as montar3d, PARTES as PARTES3D, CAMPO_PARTES } from "./calculo-3d.js";
 
-CY.PANEL = "calculo-22";
+CY.PANEL = "calculo-23";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 // ── El SDK se baja acá, y recién después arranca la pantalla ────────────────
@@ -205,6 +250,8 @@ const esc = CY.esc;
    ═══════════════════════════════════════════════════════════════ */
 const CAMPOS = [
   ["·","LA YURTA"],
+  ["tipo",     "Tipo de yurta",                   1,     "1 = doble techo · 2 = simple", [[1, "Doble techo"], [2, "Simple"]]],
+  ["tono_tipo","Remate del toono",                1,     "1 = cuarto de domo · 2 = sobrealto", [[1, "Cuarto de domo"], [2, "Sobrealto con ventanas"]]],
   ["D",        "Diámetro final del piso",         7.000, "m · el dato de partida"],
   ["ang",      "Ángulo del techo",                30,    "grados"],
   ["alto",     "Altura del muro",                 2.400, "m · del piso a la cabeza del trei"],
@@ -252,6 +299,9 @@ const CAMPOS = [
   ["p_alt",    "Ancho de la percha",              0.040, "m"],
   ["r_toono",  "Radio exterior del toono",        1.000, "m · Ø 2,00 en Christine"],
   ["sep_max",  "Hueco máximo para el aislante",   0.400, "m · entre triángulos"],
+  ["·","LA YURTA SIMPLE · UNA PERCHA POR CRUCE DEL TREI"],
+  ["esc",      "Escuadra · lado",                 0.300, "m · la pata baja eso del trei; la riostra toma la percha eso más adentro"],
+  ["s_ais",    "Aislación sobre las perchas",     0.040, "m · fieltro o guata, entre el freno y el Tyvek"],
   ["·","LAS ABERTURAS"],
   ["n_ab",     "Aberturas",                       5,     "unidades"],
   ["n_gr",     "Grupos contiguos",                3,     "las juntas comparten montante"],
@@ -274,7 +324,22 @@ const CAMPOS = [
   ["ts_giro",  "Tapa aislante · abierta",         1,     "1 = contra el techo, 0 = cerrada"],
   ["ts_esp",   "Tapa aislante · espesor",         0.060, "m · aislante y cara vista"],
   ["ts_rendija","Tapa aislante · rendija cerrada",0.020, "m · ventilación con la tapa cerrada"],
+  ["·","EL TOONO · SOBREALTO CON VENTANAS"],
+  ["sa_alto",  "Sobrealto · alto de las ventanas", 0.300, "m"],
+  ["sa_vent",  "Sobrealto · ventanas",            8,     "una por cara del prisma"],
+  ["sa_desb",  "Sobrealto · desborde del techito",0.150, "m · más allá del aro"],
+  ["sa_ang",   "Sobrealto · pendiente del techito",25,   "grados"],
+  ["sa_abre",  "Sobrealto · ventanas abiertas",   30,    "grados · abisagradas arriba, abren hacia afuera · 0 = cerradas"],
 ];
+// Qué medidas usa cada elección (las demás quedan apagadas en la pantalla).
+const SOLO = {
+  doble: ["ais_techo", "e_per", "anc_per", "n_tri", "tri_anc", "tri_esp", "n_per_r", "sep_max", "diente", "tapa_cam", "tapa_ranura", "ts_giro", "ts_esp", "ts_rendija"],
+  simple: ["esc", "s_ais"],
+  domo: ["dom_ang", "dom_frec"],
+  sobre: ["sa_alto", "sa_vent", "sa_desb", "sa_ang", "sa_abre"],
+};
+const usa = (k) => !((SOLO.doble.includes(k) && P.tipo === 2) || (SOLO.simple.includes(k) && P.tipo !== 2)
+  || (SOLO.domo.includes(k) && P.tono_tipo === 2) || (SOLO.sobre.includes(k) && P.tono_tipo !== 2));
 const CLAVES = CAMPOS.filter(c => c[0] !== "·").map(c => c[0]);
 const PORDEF = {}; CAMPOS.forEach(c => { if (c[0] !== "·") PORDEF[c[0]] = c[2]; });
 
@@ -283,6 +348,9 @@ const CASOS = {
               alto:2.280, n_per_r:36, desb:.474, r_toono:1.000},
   // Christine: los valores por defecto (manual del plancher, 1-nov-2026); el toono, el de la obra.
   christine: { ...PORDEF },
+  // calculo-23: la propuesta para la simple (Mauro, 17-nov-2026): Christine con
+  // una percha por cruce del trei y el toono en sobrealto con 8 ventanas de 30 cm.
+  simple:    { ...PORDEF, tipo: 2, tono_tipo: 2 },
   g6:        {D:6, ais_nom:.120, ais_techo:.120, E:.050, e_mad:.040, e_trei:.016, T:.042, anc_per:.040, tri_anc:.080, tri_esp:.040,
               alto:2.280, n_per_r:30, desb:.450, r_toono:.900},
 };
@@ -316,7 +384,12 @@ function tarjeta(tit, nota, filas, avisos) {
 
 function pintarPiezas() {
   const C = calc();
+  const simple = P.tipo === 2, sobre = P.tono_tipo === 2;
   let h = "";
+  h += `<div class="aviso ${simple ? "" : "ok"}"><b>${simple ? "Yurta simple" : "Yurta de doble techo"}</b> ·
+    toono ${sobre ? "en sobrealto con " + un(C.sobrealto.n_vent) + " ventanas" : "con cuarto de domo"}.
+    ${simple ? "Una sola capa de techo: una percha por cruce de arriba del trei, con su escuadra." :
+      "Dos capas de techo con la cámara ventilada entre ellas (base: Christine)."}</div>`;
 
   h += `<div class="aviso"><b>Todas las medidas van en líneas</b>, al centro de la madera. Los
     espesores y anchos de las secciones no entran en la geometría: alimentan los metros
@@ -338,7 +411,7 @@ function pintarPiezas() {
       de tablas rectas: en Christine la planilla daba 0,2233 m³ contra 0,1906 netos, un 17 %
       de más.`]]);
 
-  h += tarjeta("La cal · triángulo separador",
+  if (!simple) h += tarjeta("La cal · triángulo separador",
     "Una por percha. Separa las dos capas del techo: va del trei hasta la doble cinta, " +
     "y la geometría la cierra.", [
     ["", "Cantidad", "una por percha", un(P.n_per_r), "d"],
@@ -355,7 +428,7 @@ function pintarPiezas() {
       : ["ok", `El anillo llega hasta el borde. <b>Sin vuelo.</b>`],
   ]);
 
-  h += tarjeta("La doble cinta",
+  if (!simple) h += tarjeta("La doble cinta",
     "Dos listones arriba, en la parte de arriba de la cal y debajo de la percha. Ahí se " +
     "fija la lona del muro, que baja a plomo hasta el borde del piso.", [
     ["c", "Ancho de las dos", "2 × S", mm(C.c), "d"],
@@ -401,6 +474,7 @@ function pintarPiezas() {
   ], [["", `A los bulones se les suma lo que piden la tuerca y la arandela. La fabricación y el
       ensamblado del trei todavía no están escritos: esto es su lugar en la estructura.`]]);
 
+  if (!simple) {
   h += `<h2 style="margin:1.2rem 0 .5rem">El techo · primera capa</h2>`;
   h += tarjeta("Los triángulos",
     "Cada uno apoya en el anillo en dos puntos, A y B, y su vértice C toca la cara " +
@@ -439,7 +513,39 @@ function pintarPiezas() {
       hay que vigilar son una sola, y <b>no depende del diámetro de la yurta</b>, sólo del
       toono y de la cantidad de triángulos.`],
   ]);
+  }
 
+  if (simple) {
+    const S = C.simple;
+    h += `<h2 style="margin:1.2rem 0 .5rem">El techo · una sola capa</h2>`;
+    h += tarjeta("Perchas · una por cruce del trei",
+      "En cada cruce de arriba del trei, donde va el último bulón, una percha de la sección de " +
+      "la segunda capa del doble techo. Apoya en el canto de afuera del anillo periférico y va " +
+      "del toono al desborde.", [
+      ["", "Cantidad", "una por punto de arriba del trei", un(S.n_perchas), "d"],
+      ["", "Paso en la cabeza del trei", "≈ la distancia entre bulones", mm(S.paso), "d"],
+      ["", "Lo que queda entre dos en el toono", "2π r toono ÷ cantidad", mm(S.paso_toono), ""],
+      ["", "Radio hasta la punta", "R + desborde", m(C.Rp), ""],
+      ["", "Largo sobre la pendiente", "(Rp − r toono) ÷ cos", m(S.largo), "d"],
+      ["", "Sección", "la de la 2.ª capa", `${mm(P.p_anc)} × ${mm(P.p_alt)}`, ""],
+      ["", "Volumen", "", m3(S.vol_perchas), ""],
+    ], [S.aprieta
+      ? ["ojo", `En el toono quedan <b>${mm(S.paso_toono)}</b> entre percha y percha, con perchas de
+         ${mm(P.p_alt)}: <b>no entran cómodas</b>. Agrandá el toono o separá los bulones.`]
+      : ["ok", `En el toono quedan ${mm(S.paso_toono)} entre percha y percha: entran.`]]);
+    h += tarjeta("Escuadras · una por percha",
+      "Una pata vertical contra la cara interior del trei, atornillada al último bulón, que sube " +
+      "hasta la percha, y una riostra que cierra el triángulo. Las dos de la sección de la percha.", [
+      ["", "Cantidad", "una por percha", un(S.escuadras), "d"],
+      ["", "Lado", "la pata baja eso del trei; la riostra toma la percha eso más adentro", mm(P.esc), "d"],
+      ["", "Largo de la pata", "", m(S.l_pata), "d"],
+      ["", "Largo de la riostra", "", m(S.l_riostra), "d"],
+      ["", "Volumen", "patas + riostras", m3(S.vol_escuadras), ""],
+    ], [["", `Sin primera capa, <b>no hay cal ni doble cinta</b>: la lona del muro se fija debajo de
+        las perchas, en el borde. Los cortes de la pata y la riostra se marcan en obra contra la
+        percha (el ángulo es el del techo, ${gr(P.ang)}).`]]);
+  }
+  if (!simple) {
   h += `<h2 style="margin:1.2rem 0 .5rem">El techo · segunda capa</h2>`;
   h += tarjeta("Perchas radiales",
     "Son la superficie del techo. Apoyan en el vértice de la cal, no en el anillo.", [
@@ -462,6 +568,7 @@ function pintarPiezas() {
     ["", "Segunda capa en el toono", "+ la separación", m(C.h_vert + C.sep_capas), ""],
   ], [["", `Los dos planos son <b>paralelos</b>, a ${P.ang}°. La primera capa arranca en la
       cara alta del anillo; la segunda, en el vértice de la cal.`]]);
+  }
 
   h += `<h2 style="margin:1.2rem 0 .5rem">Aberturas</h2>`;
   h += tarjeta("Montantes", "Del borde exterior del plancher a la cara interior del trei. Las aberturas van " +
@@ -490,7 +597,18 @@ function pintarPiezas() {
   ]);
 
   h += `<h2 style="margin:1.2rem 0 .5rem">Las capas</h2>`;
-  h += tarjeta("De adentro hacia afuera", "Se prenden y apagan en el 3D, cada una por separado.", [
+  h += tarjeta("De adentro hacia afuera", "Se prenden y apagan en el 3D, cada una por separado.", simple ? [
+    ["", "Techo · perchas a la vista", "desde adentro se ven las perchas y el algodón entre ellas", "", ""],
+    ["", "Techo · 1 · algodón", "terminación, sobre las perchas", "", ""],
+    ["", "Techo · 2 · freno de vapor", "", "", ""],
+    ["", "Techo · 3 · aislación", "fieltro o guata sobre el freno", mm(P.s_ais), "d"],
+    ["", "Techo · 4 · Tyvek", "", "", ""],
+    ["", "Techo · 5 · lona de PVC", "termosoldada, con urlete y cordón", "", ""],
+    ["", "Muro · 1 · algodón", "", "", ""],
+    ["", "Muro · 2 · freno de vapor", "optativo", "", ""],
+    ["A", "Muro · 3 · aislación", "comprimida", mm(C.A), "d"],
+    ["", "Muro · 4 · tela náutica de entramado", "respira", "", ""],
+  ] : [
     ["", "Techo · 1 · algodón", "terminación: se ve detrás de los triángulos", "", ""],
     ["", "Techo · 2 · freno de vapor", "frena la humedad del ambiente", "", ""],
     ["H", "Techo · 3 · aislación", "guata de poliéster de PET reciclado, cosida en cono", mm(C.H), "d"],
@@ -501,7 +619,14 @@ function pintarPiezas() {
     ["", "Muro · 2 · freno de vapor", "optativo", "", ""],
     ["A", "Muro · 3 · aislación", "comprimida", mm(C.A), "d"],
     ["", "Muro · 4 · tela náutica de entramado", "respira", "", ""],
-  ], [
+  ], simple ? [
+    ["", `En la simple <b>todo va encima de las perchas</b>, que quedan a la vista desde adentro. No
+      hay cámara ventilada: el aire de adentro sale por el toono (${sobre ? "las ventanas del sobrealto" : "el domo"}).`],
+    ["", `En la punta de las perchas, en su canto de arriba, va la <b>cinta del alero</b>: dos
+      capas (${mm(C.c)}), que remata el borde y que la lona tiene que pasar.`],
+    ["ojo", `El anillo periférico sigue, y las perchas apoyan en su canto de afuera: el empuje lo
+      toma el anillo. <b>A confirmar</b> si con eso alcanza o si va el cable de las yurtas comunes.`],
+  ] : [
     ["", `El <b>Tyvek</b> se fija y se sella sobre la doble cinta del borde, encima de la lona
       del muro (que conviene poner antes que la aislación del muro), y pasa sobre la cal
       dejando el asiento de las perchas: <b>las perchas se atornillan haciendo sándwich con
@@ -525,6 +650,36 @@ function pintarPiezas() {
     ["", "La lengüeta, medida en el borde", "2π × radio × (1 − cos)", m(C.sobrante_cono), "d"],
     ["", "Superficie de la pieza", "", m2(C.lona_area), "d"],
   ]);
+
+  h += `<h2 style="margin:1.2rem 0 .5rem">El remate del toono</h2>`;
+  if (sobre) {
+    const A = C.sobrealto;
+    h += tarjeta("Sobrealto con ventanas",
+      `Un prisma de ${un(A.n_vent)} caras sobre el anillo del remate: solera, un parante en cada
+      vértice y cabezal, de 50 × 50. En cada cara una ventana abisagrada en el cabezal, que se
+      abre hacia arriba y hacia afuera (la parte de abajo sale), con su compás. Arriba, un techito
+      piramidal con una limatesa por vértice y su desborde.`, [
+      ["", "Ventanas", "una por cara", un(A.n_vent), "d"],
+      ["", "Alto de la ventana", "", m(A.alto), "d"],
+      ["", "Ancho de la ventana", "entre parantes", m(A.ancho_vent), "d"],
+      ["", "Vidrio en total", "", m2(A.area_vidrio), ""],
+      ["", "Radio del aro", "r toono + vuelo − 2 cm", m(A.r_aro), ""],
+      ["", "Radio del techito", "aro + desborde", m(A.r_techito), "d"],
+      ["", "Pendiente del techito", "", gr(P.sa_ang), ""],
+      ["", "Del cabezal a la punta", "aro × tan", m(A.cumbrera), ""],
+      ["", "Limatesa", "del vértice a la punta", m(A.slant_techito), "d"],
+      ["", "Superficie del techito", "", m2(A.area_techito), ""],
+    ], [["", `El techito tapa la lluvia, y con las ventanas abiertas el aire caliente sale por los
+        costados. Cerradas, el sobrealto es la luz del toono. Herrajes de las ventanas (bisagras y
+        compases) y el sellado contra el remate, <b>a definir</b>.`]]);
+  } else {
+    h += tarjeta("Cuarto de domo geodésico",
+      "Un casquete de esfera geodésica sobre el borde exterior del remate del toono.", [
+      ["", "Fracción de esfera", "desde arriba", gr(P.dom_ang), "d"],
+      ["", "Frecuencia", "", un(P.dom_frec) + "V", "d"],
+      ["", "Radio de la base", "r toono + vuelo", m(P.r_toono + P.tapa_vuelo), ""],
+    ]);
+  }
 
   h += `<h2 style="margin:1.2rem 0 .5rem">Superficies</h2>`;
   h += tarjeta("Para la lona y el aislante", "", [
@@ -585,7 +740,7 @@ function pintarPiezas() {
   $("corte2").innerHTML = k.svg2;
   $("resumen").innerHTML =
     `Ø ${P.D} m · A ${mm(C.A)} · anillo ${m(C.Rint)} → ${m(C.Rext)}<br>` +
-    `${P.n_per_r} perchas · ${un(C.n_mon)} montantes · techo ${m2(C.area_techo)}` +
+    `${P.tipo === 2 ? "simple · " + un(C.simple.n_perchas) : "doble techo · " + P.n_per_r} perchas · ${un(C.n_mon)} montantes · techo ${m2(C.area_techo)}` +
     (sucio ? " · <b>sin guardar</b>" : "");
 }
 
@@ -658,7 +813,7 @@ function abrir(p) {
     ? `Creado por ${proy.creadoPor || "—"}${proy.creadoISO ? " el " + proy.creadoISO.slice(0,10) : ""}`
     : "Todavía no está guardado.";
   $("f-borrar").classList.toggle("hide", !proy.id);
-  document.querySelectorAll("#campos input").forEach(i => { i.value = P[i.dataset.k]; });
+  refrescarCampos();
   scrollDe["pest:datos"] = 0; scrollDe.proy = 0;
   verPestaña("datos");
   verSeccion("proy");
@@ -743,7 +898,7 @@ async function abrir3d() {
 abrir3d();
 
 /* ═══ pestañas ═════════════════════════════════════════════ */
-const PEST = [["datos","Medidas"],["piezas","Piezas"],["corte","Corte"],["croquis","Croquis"],["ficha","Ficha"]];
+const PEST = [["datos","Medidas"],["piezas","Piezas"],["corte","Corte"],["croquis","Croquis"],["cliente","Para el cliente"],["ficha","Ficha"]];
 $("pest").innerHTML = PEST.map(([k,t],i) =>
   `<button data-p="${k}" class="${i===0?"on":""}">${t}</button>`).join("");
 function verPestaña(k) {
@@ -753,6 +908,7 @@ function verPestaña(k) {
   document.querySelectorAll("#pest button").forEach(b => b.classList.toggle("on", b.dataset.p === k));
   if (k === "piezas" || k === "corte") pintarPiezas();
   if (k === "datos") abrir3d();
+  if (k === "cliente") pintarEntrega();
   restituir("pest:" + k);
 }
 $("pest").addEventListener("click", (ev) => {
@@ -763,18 +919,34 @@ $("pest").addEventListener("click", (ev) => {
 $("campos").innerHTML = CAMPOS.map(c =>
   c[0] === "·"
     ? `<div class="gt">${c[1]}</div>`
-    : `<label><span class="k">${c[1]}</span>
+    : c[4]
+    ? `<div class="elige"><span class="k">${c[1]}</span><div class="seg" data-seg="${c[0]}">${c[4].map(([v, t]) =>
+        `<button type="button" data-k="${c[0]}" data-v="${v}">${t}</button>`).join("")}</div></div>`
+    : `<label data-campo="${c[0]}"><span class="k">${c[1]}</span>
        <input type="number" step="any" inputmode="decimal" data-k="${c[0]}" value="${c[2]}">
        <span class="u">${c[3]}</span></label>`).join("");
+
+// Pone en la pantalla lo que dice P: los números, los dos botones y qué medidas
+// no usa lo elegido.
+function refrescarCampos() {
+  document.querySelectorAll("#campos input").forEach(i => { i.value = P[i.dataset.k]; });
+  document.querySelectorAll("#campos .seg button").forEach(b => b.classList.toggle("on", Number(P[b.dataset.k]) === Number(b.dataset.v)));
+  document.querySelectorAll("#campos label[data-campo]").forEach(l => l.classList.toggle("apagado", !usa(l.dataset.campo)));
+}
+refrescarCampos();
 
 $("campos").addEventListener("input", (e) => {
   const k = e.target.dataset.k, v = parseFloat(e.target.value);
   if (k && isFinite(v)) { P[k] = v; sucio = true; pintarPiezas(); }
 });
+$("campos").addEventListener("click", (e) => {
+  const b = e.target.closest(".seg button"); if (!b) return;
+  P[b.dataset.k] = Number(b.dataset.v); sucio = true; refrescarCampos(); pintarPiezas();
+});
 document.querySelectorAll("[data-caso]").forEach(b =>
   b.addEventListener("click", () => {
     Object.assign(P, CASOS[b.dataset.caso]);
-    document.querySelectorAll("#campos input").forEach(i => { i.value = P[i.dataset.k]; });
+    refrescarCampos();
     sucio = true; pintarPiezas();
   }));
 ["nombre","cliente","lugar","contacto","notas"].forEach(k =>
@@ -830,6 +1002,117 @@ $("f-borrar").addEventListener("click", async () => {
     if (cerrarProy) { const c = cerrarProy; cerrarProy = null; c(); }
     else cerrarProyecto();
   } catch (e) { CY.aviso(CY.explicar(e), true); }
+});
+
+/* ═══ el link para el cliente (calculo-23) ═════════════════
+   Mauro, 16-nov-2026: «un presupuesto en un link que yo pueda cargar y enviar
+   para que la persona… pueda ver la descripción detallada online… con un
+   vencimiento, algo parecido al link de remate». El link es un documento de
+   `entregas/{token}`: el token (22 caracteres al azar) ES la llave, como la de
+   remate; la regla deja leerlo de a uno por su id, nunca listar, y sólo si
+   está activo y no venció. Lleva lo que escribe esta pestaña y las medidas
+   del cálculo, nada más: ni costos, ni el contacto, ni las notas. La página
+   que lo muestra es `propuesta.html?p=<token>` (sin cuenta, por REST). En el
+   cálculo queda `entrega` con el token y lo escrito, para volver a editarlo. */
+const ENT_CAMPOS = ["titulo", "para", "idioma", "descripcion", "incluye", "no_incluye", "precio", "moneda", "vence_iso"];
+const renglones = (t) => String(t || "").split("\n").map(x => x.trim()).filter(Boolean).slice(0, 40);
+const masDias = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+function tokenNuevo() {
+  const b = new Uint8Array(16); crypto.getRandomValues(b);
+  return btoa(String.fromCharCode(...b)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+const urlEntrega = (t) => new URL("./propuesta.html?p=" + encodeURIComponent(t), location.href).href;
+
+// La descripción de arranque, a partir del cálculo. Se edita a mano después.
+function descripcionDe() {
+  const C = calc(), simple = P.tipo === 2, sobre = P.tono_tipo === 2;
+  const n = (v, d = 2) => Number(v).toFixed(d).replace(".", ",");
+  const L = [];
+  L.push(`Yurta de ${n(P.D, 1)} m de diámetro (${n(C.area, 1)} m² de piso), con el muro de ${n(P.alto)} m de altura y el techo a ${Math.round(P.ang)}°.`);
+  L.push("");
+  L.push(`Piso: plancher de madera sobre pilares, con dos capas de OSB y celulosa entre tirantes. Muro: trei, celosía de madera a 60° abulonada cada ${Math.round(P.bul * 100)} cm, con el anillo periférico de madera colada arriba y abajo. ${un(P.n_ab)} aberturas de ${n(P.anc_ab)} × ${n(P.alt_ab)} m, con su piso de una pieza.`);
+  L.push("");
+  L.push(simple
+    ? `Techo simple: ${un(C.simple.n_perchas)} perchas de ${Math.round(P.p_anc * 1000)} × ${Math.round(P.p_alt * 1000)} mm, una en cada cruce de arriba del trei, sostenidas por su escuadra, del toono hasta ${Math.round(P.desb * 100)} cm de alero. Encima, algodón, freno de vapor, aislación, Tyvek y lona de PVC.`
+    : `Doble techo ventilado: una primera capa de ${un(C.nt)} triángulos estructurales y una segunda de ${un(P.n_per_r)} perchas con ${Math.round(P.desb * 100)} cm de alero. Entre las dos, ${Math.round(C.H * 1000)} mm de aislación de PET reciclado; arriba, una cámara de aire que ventila por el toono, y la lona de PVC.`);
+  L.push("");
+  L.push(sobre
+    ? `Toono de ${n(2 * P.r_toono)} m de diámetro en sobrealto: ${un(C.sobrealto.n_vent)} ventanas de ${Math.round(C.sobrealto.alto * 100)} cm de alto que se abren hacia afuera y hacia arriba, bajo un techito con ${Math.round((P.sa_desb || 0) * 100)} cm de desborde.`
+    : `Toono de ${n(2 * P.r_toono)} m de diámetro, cerrado con un cuarto de domo geodésico.`);
+  L.push("");
+  L.push(`Muro con algodón, aislación de ${Math.round(C.A * 1000)} mm y tela náutica que respira.`);
+  return L.join("\n");
+}
+
+function pintarEntrega() {
+  if (!proy) return;
+  const e = proy.entrega || {};
+  $("e-titulo").value = e.titulo ?? proy.nombre ?? "";
+  $("e-para").value = e.para ?? proy.cliente ?? "";
+  $("e-idioma").value = e.idioma || "es";
+  $("e-desc").value = e.descripcion ?? "";
+  $("e-incluye").value = (e.incluye || []).join("\n");
+  $("e-noincluye").value = (e.no_incluye || []).join("\n");
+  $("e-precio").value = e.precio ?? "";
+  $("e-moneda").value = e.moneda || "USD";
+  $("e-vence").value = e.vence_iso || masDias(30);
+  $("e-crear").textContent = e.token ? "Actualizar el link" : "Crear el link";
+  $("e-apagar").classList.toggle("hide", !(e.token && e.activo !== false));
+  const vencido = e.vence_iso && e.vence_iso < new Date().toISOString().slice(0, 10);
+  $("e-link").innerHTML = e.token
+    ? `<div class="ent-link">${esc(urlEntrega(e.token))}</div>
+       <p class="ayuda">${e.activo === false ? "<b>Desactivado</b>: el cliente ve que no está disponible." : vencido ? "<b>Vencido</b>: poné otra fecha y actualizalo." : "Activo hasta el " + esc(e.vence_iso) + "."}</p>
+       <div class="row"><button class="btn" id="e-copiar" type="button">Copiar el link</button>
+       <a class="btn" href="${esc(urlEntrega(e.token))}" target="_blank" rel="noopener">Ver como el cliente</a></div>`
+    : "";
+}
+$("e-armar").addEventListener("click", () => {
+  if ($("e-desc").value.trim() && !confirm("¿Reemplazar la descripción que está escrita?")) return;
+  $("e-desc").value = descripcionDe();
+});
+$("e-link").addEventListener("click", async (ev) => {
+  if (!ev.target.closest("#e-copiar")) return;
+  try { await navigator.clipboard.writeText(urlEntrega(proy.entrega.token)); CY.aviso("Link copiado"); }
+  catch { CY.aviso("No pude copiar: mantené apretado el link.", true); }
+});
+async function guardarEntrega(activo) {
+  if (!proy || !proy.id) { CY.aviso("Primero guardá el cálculo.", true); return; }
+  if (sucio && !confirm("El cálculo tiene cambios sin guardar. El link va a llevar las medidas que ves ahora. ¿Seguir?")) return;
+  const vence_iso = $("e-vence").value || masDias(30);
+  const precio = $("e-precio").value.trim() === "" ? null : parseFloat($("e-precio").value);
+  const ant = proy.entrega || {};
+  const token = ant.token || tokenNuevo();
+  const datos = {}; CLAVES.forEach(k => { if (isFinite(P[k])) datos[k] = P[k]; });
+  const pub = {
+    titulo: $("e-titulo").value.trim() || "Tu yurta",
+    para: $("e-para").value.trim(),
+    idioma: $("e-idioma").value,
+    descripcion: $("e-desc").value.trim(),
+    incluye: renglones($("e-incluye").value),
+    no_incluye: renglones($("e-noincluye").value),
+    moneda: $("e-moneda").value,
+    datos,
+    vence: new Date(vence_iso + "T23:59:59"),
+    activo: activo !== false,
+    actualizado: new Date().toISOString(),
+  };
+  if (precio !== null && isFinite(precio)) pub.precio = precio;
+  const b = $("e-crear"); b.disabled = true;
+  try {
+    await setDoc(doc(db, "entregas", token), pub);
+    const entrega = { token, vence_iso, activo: pub.activo };
+    ENT_CAMPOS.forEach(k => { if (k in pub) entrega[k] = pub[k]; });
+    if (!("precio" in pub)) entrega.precio = null;
+    await updateDoc(doc(db, "calculos", proy.id), { entrega });
+    proy.entrega = entrega;
+    CY.aviso(pub.activo ? (ant.token ? "Link actualizado" : "Link creado") : "Link desactivado");
+    pintarEntrega();
+  } catch (e) { CY.aviso(CY.explicar(e), true); }
+  finally { b.disabled = false; }
+}
+$("e-crear").addEventListener("click", () => guardarEntrega(true));
+$("e-apagar").addEventListener("click", () => {
+  if (confirm("¿Desactivar el link? El cliente va a ver que ya no está disponible.")) guardarEntrega(false);
 });
 
 /* ═══ copiar ═══════════════════════════════════════════════ */

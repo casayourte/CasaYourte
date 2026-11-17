@@ -2,6 +2,15 @@
 // CasaYourte — Reglas de Firestore
 // Se pegan COMPLETAS en la consola. Nunca por fragmentos.
 //
+// 17-nov-2026 · ENTRA `entregas/{token}`: el presupuesto con link para el
+//   cliente (calculo-23, pedido de Mauro: «un presupuesto en un link… para que
+//   la persona… pueda ver la descripción detallada online… con un vencimiento,
+//   algo parecido al link de remate»). El TOKEN es la llave (22 caracteres al
+//   azar, como `llaves/` de remate): sin cuenta se lee DE A UNO por su id y
+//   sólo si está activo y no venció; listar, nunca. Escriben quienes tienen
+//   'calculo' o 'presupuestos', con la forma fija (lo que ve el cliente: ni
+//   costos ni contacto). El agente lo lee por el comodín; no lo escribe.
+//
 // 7-nov-2026 · el AGENTE puede CREAR una invitación de COLABORADOR (nunca
 //   administrador), con `autorizado` —lo que dijo Mauro— y `creadoPor:
 //   'Claude'`. No la lee, no la cambia, no la borra.
@@ -228,6 +237,31 @@ service cloud.firestore {
     // obra. Sólo quien tenga el permiso 'calculo' los ve y los escribe.
     match /calculos/{id} {
       allow read, create, update, delete: if con('calculo');
+    }
+
+    // ---------- el link para el cliente (17-nov-2026) ----------
+    // Ver la nota de arriba. `get` sin cuenta con el token; `list` sólo con
+    // permiso (el panel no lo usa, pero un administrador puede revisar).
+    match /entregas/{token} {
+      allow get: if token.size() >= 20
+        && resource.data.activo == true
+        && request.time < resource.data.vence;
+      allow read, delete: if con('calculo') || con('presupuestos');
+      allow create, update: if (con('calculo') || con('presupuestos'))
+        && token.size() >= 20
+        && request.resource.data.keys().hasOnly(['titulo', 'para', 'idioma', 'descripcion', 'incluye',
+             'no_incluye', 'precio', 'moneda', 'datos', 'vence', 'activo', 'actualizado'])
+        && request.resource.data.titulo is string && request.resource.data.titulo.size() <= 120
+        && request.resource.data.para is string && request.resource.data.para.size() <= 80
+        && request.resource.data.descripcion is string && request.resource.data.descripcion.size() <= 8000
+        && request.resource.data.idioma in ['es', 'fr', 'en', 'pt']
+        && request.resource.data.incluye is list && request.resource.data.incluye.size() <= 40
+        && request.resource.data.no_incluye is list && request.resource.data.no_incluye.size() <= 40
+        && (!('precio' in request.resource.data) || request.resource.data.precio is number)
+        && request.resource.data.moneda in ['USD', 'UYU', 'EUR', 'BRL']
+        && request.resource.data.datos is map
+        && request.resource.data.vence is timestamp
+        && request.resource.data.activo is bool;
     }
 
     // ---------- consultas de clientes (27-oct-2026) ----------
