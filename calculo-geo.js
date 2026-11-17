@@ -1,5 +1,8 @@
 // calculo-geo.js — la geometría de la yurta, sin navegador y sin Firebase.
-// Sello: geo-6 (17-nov-2026): la escuadra de la simple es METÁLICA, como la
+// Sello: geo-7 (17-nov-2026): el piso en TRES opciones (P.piso_tipo): 1 doble capa con
+// aislación, 3 doble capa sin aislación, 2 simple, de una capa (Mauro: «o simple el
+// piso también como opción»).
+// geo-6 (17-nov-2026): la escuadra de la simple es METÁLICA, como la
 // del piso, por fuera del trei y tomada del bulón del último agujero, doblada al
 // ángulo del techo y con un tornillo 6×40 a la percha; el borde de la simple lo
 // toma un CABLE de acero (o, a elección, el anillo periférico); el piso puede
@@ -31,7 +34,7 @@
 // TODO lo que se elige por diseño es un campo de la página: si cambia una
 // medida, cambian los números y el dibujo.
 
-export const SELLO_GEO = "geo-6";
+export const SELLO_GEO = "geo-7";
 
 // El tirante, la viga: cuerdas paralelas del círculo de radio R, con una en el
 // centro y cada `paso` a los dos lados. Devuelve [{x, L, n}] con n = 1 para la
@@ -155,10 +158,12 @@ export function calc(P) {
   const placas_capa = placa > 0 ? Math.ceil(area * P.desp / placa - 1e-9) : 0;
   const vol_anillo_piso = per_med * P.E * alto_an;
   // geo-6: el piso de UNA capa no lleva el OSB de abajo ni la celulosa.
+  // geo-7: 3 = doble capa SIN aislación (las dos placas, sin la celulosa).
   const piso_doble = P.piso_tipo !== 2, osb_inf_e = piso_doble ? P.osb_inf : 0;
+  const piso_aislado = piso_doble && P.piso_tipo !== 3;
   const capas_osb = piso_doble ? 2 : 1;
-  const cel_bruto = piso_doble ? area * P.tir_alt : 0;
-  const cel_neto = piso_doble ? cel_bruto - m_tir * P.tir_alt * P.tir_anc - vol_anillo_piso : 0;
+  const cel_bruto = piso_aislado ? area * P.tir_alt : 0;
+  const cel_neto = piso_aislado ? cel_bruto - m_tir * P.tir_alt * P.tir_anc - vol_anillo_piso : 0;
   const alto_piso = osb_inf_e + P.tir_alt + P.osb_sup;
   const por_placa = P.paso_t > 0 ? P.placa_a / P.paso_t : 0;
   const placa_ok = Math.abs(por_placa - Math.round(por_placa)) < 0.01;
@@ -216,7 +221,7 @@ export function calc(P) {
     // plancher
     tirantes, n_tir, m_tir, vol_tir: m_tir * P.tir_alt * P.tir_anc,
     vigas, n_vig, m_vig, n_pil, vol_vig: m_vig * P.viga_alt * P.viga_anc,
-    area, placas_capa, vol_anillo_piso, cel_bruto, cel_neto, alto_piso, piso_doble, osb_inf_e, capas_osb,
+    area, placas_capa, vol_anillo_piso, cel_bruto, cel_neto, alto_piso, piso_doble, piso_aislado, osb_inf_e, capas_osb,
     por_placa, placa_ok, encastre, bajo_encastre,
     circ_trazo: 2 * Math.PI * r_trei,
     // trei

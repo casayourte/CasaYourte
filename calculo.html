@@ -227,7 +227,7 @@ import { CY } from "./nucleo.js";
 import { calc as calcGeo, corte } from "./calculo-geo.js";
 import { montar as montar3d, PARTES as PARTES3D, CAMPO_PARTES } from "./calculo-3d.js";
 
-CY.PANEL = "calculo-24";
+CY.PANEL = "calculo-25";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 // ── El SDK se baja acá, y recién después arranca la pantalla ────────────────
@@ -275,7 +275,7 @@ const CAMPOS = [
   ["e_int",    "Espesor del zócalo interior",     0.010, "m · abajo y arriba"],
   ["anc_int",  "Ancho del zócalo interior",       0.040, "m"],
   ["·","EL PLANCHER"],
-  ["piso_tipo","Piso",                            1,     "1 = doble capa con aislación · 2 = una capa", [[1, "Doble capa con aislación"], [2, "Una capa"]]],
+  ["piso_tipo","Piso",                            1,     "1 = doble capa con aislación · 3 = doble capa sin aislación · 2 = simple, una capa", [[1, "Doble capa con aislación"], [3, "Doble capa sin aislación"], [2, "Simple · una capa"]]],
   ["paso_t",   "Entreeje de los tirantes",        0.400, "m · con uno central"],
   ["tir_alt",  "Alto del tirante",                0.140, "m"],
   ["tir_anc",  "Ancho del tirante",               0.040, "m"],
@@ -728,10 +728,10 @@ function pintarPiezas() {
       .concat([["", "Vigas", "", un(C.n_vig), "d"], ["", "Metros", "", m(C.m_vig), "d"],
         ["", "Pilares", "", un(C.n_pil), "d"], ["", "Sección", "", `${mm(P.viga_alt)} × ${mm(P.viga_anc)}`, ""],
         ["", "Volumen", "", m3(C.vol_vig), ""]]));
-  h += tarjeta(C.piso_doble ? "Placas, anillo del piso y celulosa" : "Placas y anillo del piso · una capa",
+  h += tarjeta(C.piso_aislado ? "Placas, anillo del piso y celulosa" : C.piso_doble ? "Placas y anillo del piso · doble capa sin aislación" : "Placas y anillo del piso · una capa",
     C.piso_doble
       ? "Dos capas de OSB; el anillo del piso, igual al de arriba, encastrado en los tirantes " +
-        "al ras de su borde de arriba; la celulosa entre las dos capas."
+        "al ras de su borde de arriba" + (C.piso_aislado ? "; la celulosa entre las dos capas." : "; entre las dos capas queda la cámara de aire, sin aislación.")
       : "Una sola capa de OSB, arriba de los tirantes, sin aislación; el anillo del piso, encastrado " +
         "en los tirantes al ras de su borde de arriba.", [
     ["", "Superficie", "π R²", m2(C.area), ""],
@@ -741,9 +741,9 @@ function pintarPiezas() {
     ["", "Encastre del anillo", "su alto entero", mm(C.encastre), "d"],
     ["", "Queda de tirante debajo", "", mm(C.bajo_encastre), ""],
     ["", "Anillo del piso · volumen", "como el de arriba", m3(C.vol_anillo_piso), ""],
-    ...(C.piso_doble ? [["", "Celulosa · bruta", "π R² × alto del tirante", m3(C.cel_bruto), ""],
+    ...(C.piso_aislado ? [["", "Celulosa · bruta", "π R² × alto del tirante", m3(C.cel_bruto), ""],
       ["", "Celulosa · neta", "− tirantes − anillo del piso", m3(C.cel_neto), "d"]] : []),
-  ], [C.piso_doble && ["", `Los kilos de celulosa salen de la densidad de colocación del fabricante, que todavía
+  ], [C.piso_aislado && ["", `Los kilos de celulosa salen de la densidad de colocación del fabricante, que todavía
       no está cargada.`]]);
 
   h += `<div class="tarj"><h3>Lo que todavía no calcula</h3>
@@ -1055,7 +1055,7 @@ function descripcionDe() {
   L.push(`Yurta de ${n(P.D, 1)} m de diámetro (${n(C.area, 1)} m² de piso), con el muro de ${n(P.alto)} m de altura y el techo a ${Math.round(P.ang)}°.`);
   L.push("");
   const sinAnillo = simple && P.s_anillo !== 1;
-  L.push(`Piso: plancher de madera sobre pilares, ${P.piso_tipo === 2 ? "con una capa de OSB sobre los tirantes" : "con dos capas de OSB y celulosa entre tirantes"}. Muro: trei, celosía de madera a 60° abulonada cada ${Math.round(P.bul * 100)} cm, ${sinAnillo ? "sobre el anillo de madera colada del piso" : "con el anillo periférico de madera colada arriba y abajo"}. ${un(P.n_ab)} aberturas de ${n(P.anc_ab)} × ${n(P.alt_ab)} m, con su piso de una pieza.`);
+  L.push(`Piso: plancher de madera sobre pilares, ${P.piso_tipo === 2 ? "con una capa de OSB sobre los tirantes" : P.piso_tipo === 3 ? "con dos capas de OSB, sin aislación" : "con dos capas de OSB y celulosa entre tirantes"}. Muro: trei, celosía de madera a 60° abulonada cada ${Math.round(P.bul * 100)} cm, ${sinAnillo ? "sobre el anillo de madera colada del piso" : "con el anillo periférico de madera colada arriba y abajo"}. ${un(P.n_ab)} aberturas de ${n(P.anc_ab)} × ${n(P.alt_ab)} m, con su piso de una pieza.`);
   L.push("");
   L.push(simple
     ? `Techo simple: ${un(C.simple.n_perchas)} perchas de ${Math.round(P.p_anc * 1000)} × ${Math.round(P.p_alt * 1000)} mm, una en cada cruce de arriba del trei, tomada por una escuadra metálica, del toono hasta ${Math.round(P.desb * 100)} cm de alero; ${sinAnillo ? "un cable de acero por todo el borde" : "el anillo periférico"} toma el empuje. Encima, algodón, freno de vapor, aislación, Tyvek y lona de PVC.`

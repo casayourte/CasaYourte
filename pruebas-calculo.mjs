@@ -151,7 +151,7 @@ ok("calculo.html: el 3D está en la pestaña de las medidas", /<div id="t-datos"
 for (const [nom, Q] of [["Christine", P], ["4 m", { ...P, D: 4 }], ["12 m", { ...P, D: 12 }], ["10 triángulos", { ...P, n_tri: 10 }], ["6 triángulos", { ...P, n_tri: 6 }],
   ["sin aberturas", { ...P, n_ab: 0 }], ["domo media esfera, 5V", { ...P, dom_ang: 90, dom_frec: 5 }], ["domo bajo", { ...P, dom_ang: 30, dom_frec: 1 }], ["tapa a medio camino", { ...P, ts_giro: 0.5 }], ["una abertura", { ...P, n_ab: 1, n_gr: 1 }], ["aberturas bajas", { ...P, alt_ab: 1.9 }], ["simple", { ...P, tipo: 2 }], ["simple con sobrealto", { ...P, tipo: 2, tono_tipo: 2 }], ["doble con sobrealto", { ...P, tono_tipo: 2 }],
   ["simple 4 m, 3 ventanas cerradas", { ...P, D: 4, tipo: 2, tono_tipo: 2, sa_vent: 3, sa_abre: 0 }], ["simple 12 m, 12 ventanas", { ...P, D: 12, tipo: 2, tono_tipo: 2, sa_vent: 12 }],
-  ["simple con anillo", { ...P, tipo: 2, s_anillo: 1 }], ["piso de una capa", { ...P, piso_tipo: 2 }], ["simple, una capa, 4 m", { ...P, tipo: 2, piso_tipo: 2, D: 4 }],
+  ["simple con anillo", { ...P, tipo: 2, s_anillo: 1 }], ["piso de una capa", { ...P, piso_tipo: 2 }], ["piso doble sin aislación", { ...P, piso_tipo: 3 }], ["simple, una capa, 4 m", { ...P, tipo: 2, piso_tipo: 2, D: 4 }],
   ["sin campos nuevos", Object.fromEntries(Object.entries(P).filter(([k]) => !["s_anillo","cab_dist","piso_tipo","tipo","tono_tipo","esc","s_ais","sa_alto","sa_vent","sa_desb","sa_ang","sa_abre","anc_ab","sep_mon","umb_esp","umb_vuelo","umb_caida","lona_baja","diente","tapa_cam","tapa_vuelo","dom_ang","dom_frec","tapa_ranura","ts_giro","ts_esp","ts_rendija"].includes(k)))]]) {
   const K = piezas3d(Q, calc(Q));
   ok(`3D ${nom}: sin NaN`, !/null|NaN|Infinity/.test(JSON.stringify(K)));
@@ -299,6 +299,10 @@ ok("calculo.html ya no pide el cable (el doble techo no lo lleva)", !/faltan los
   ok("piso de una capa: sin OSB de abajo ni celulosa; una capa de placas", !K.piezas.some(p => p.g === "osb_inf") && Cq.cel_neto === 0 && Cq.capas_osb === 1
     && cerca(Cq.alto_piso, P.tir_alt + P.osb_sup, 1e-12) && C.capas_osb === 2 && C.cel_neto > 0);
   ok("piso de una capa: las vigas suben a tocar los tirantes", cerca(Math.max(...K.piezas.filter(p => p.g === "vigas").map(p => p.a[1] + p.alto / 2)), 0, 1e-9));
+  ok("piso doble sin aislación: las dos placas, sin celulosa", (() => { const Qd = { ...P, piso_tipo: 3 }, Cd = calc(Qd);
+    return Cd.capas_osb === 2 && Cd.cel_neto === 0 && Cd.cel_bruto === 0 && !Cd.piso_aislado && C.piso_aislado
+      && cerca(Cd.alto_piso, C.alto_piso, 1e-12) && piezas3d(Qd, Cd).piezas.some(p => p.g === "osb_inf"); })());
+  ok("calculo.html: el piso tiene tres opciones", /\[\[1, "Doble capa con aislación"\], \[3, "Doble capa sin aislación"\], \[2, "Simple · una capa"\]\]/.test(html));
   ok("piso de una capa: el corte no dibuja el OSB de abajo", (corte(Q, Cq).svg2.match(/class="osb"/g) || []).length === 1 && (corte(P, C).svg2.match(/class="osb"/g) || []).length === 2);
 }
 // ── el toono en sobrealto (geo-5, 3d-11) ──
