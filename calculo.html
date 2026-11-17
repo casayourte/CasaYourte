@@ -227,7 +227,7 @@ import { CY } from "./nucleo.js";
 import { calc as calcGeo, corte } from "./calculo-geo.js";
 import { montar as montar3d, PARTES as PARTES3D, CAMPO_PARTES } from "./calculo-3d.js";
 
-CY.PANEL = "calculo-23";
+CY.PANEL = "calculo-24";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 // ── El SDK se baja acá, y recién después arranca la pantalla ────────────────
@@ -275,6 +275,7 @@ const CAMPOS = [
   ["e_int",    "Espesor del zócalo interior",     0.010, "m · abajo y arriba"],
   ["anc_int",  "Ancho del zócalo interior",       0.040, "m"],
   ["·","EL PLANCHER"],
+  ["piso_tipo","Piso",                            1,     "1 = doble capa con aislación · 2 = una capa", [[1, "Doble capa con aislación"], [2, "Una capa"]]],
   ["paso_t",   "Entreeje de los tirantes",        0.400, "m · con uno central"],
   ["tir_alt",  "Alto del tirante",                0.140, "m"],
   ["tir_anc",  "Ancho del tirante",               0.040, "m"],
@@ -300,7 +301,9 @@ const CAMPOS = [
   ["r_toono",  "Radio exterior del toono",        1.000, "m · Ø 2,00 en Christine"],
   ["sep_max",  "Hueco máximo para el aislante",   0.400, "m · entre triángulos"],
   ["·","LA YURTA SIMPLE · UNA PERCHA POR CRUCE DEL TREI"],
-  ["esc",      "Escuadra · lado",                 0.300, "m · la pata baja eso del trei; la riostra toma la percha eso más adentro"],
+  ["s_anillo", "Borde del techo",                 0,     "0 = cable de acero · 1 = anillo periférico (reemplaza al cable)", [[0, "Cable de acero"], [1, "Anillo periférico"]]],
+  ["esc",      "Escuadra metálica · lado",        0.050, "m · como la del piso: por fuera del trei, del bulón del último agujero, doblada al ángulo del techo"],
+  ["cab_dist", "Cable · desde la cabeza del trei",0.100, "m · pasa por una perforación de cada percha"],
   ["s_ais",    "Aislación sobre las perchas",     0.040, "m · fieltro o guata, entre el freno y el Tyvek"],
   ["·","LAS ABERTURAS"],
   ["n_ab",     "Aberturas",                       5,     "unidades"],
@@ -334,12 +337,15 @@ const CAMPOS = [
 // Qué medidas usa cada elección (las demás quedan apagadas en la pantalla).
 const SOLO = {
   doble: ["ais_techo", "e_per", "anc_per", "n_tri", "tri_anc", "tri_esp", "n_per_r", "sep_max", "diente", "tapa_cam", "tapa_ranura", "ts_giro", "ts_esp", "ts_rendija"],
-  simple: ["esc", "s_ais"],
+  simple: ["esc", "s_ais", "s_anillo", "cab_dist"],
+  cable: ["cab_dist"],                     // sólo con el cable (no con el anillo)
+  piso2: ["osb_inf"],                      // sólo con el piso de doble capa
   domo: ["dom_ang", "dom_frec"],
   sobre: ["sa_alto", "sa_vent", "sa_desb", "sa_ang", "sa_abre"],
 };
 const usa = (k) => !((SOLO.doble.includes(k) && P.tipo === 2) || (SOLO.simple.includes(k) && P.tipo !== 2)
-  || (SOLO.domo.includes(k) && P.tono_tipo === 2) || (SOLO.sobre.includes(k) && P.tono_tipo !== 2));
+  || (SOLO.domo.includes(k) && P.tono_tipo === 2) || (SOLO.sobre.includes(k) && P.tono_tipo !== 2)
+  || (SOLO.cable.includes(k) && P.s_anillo === 1) || (SOLO.piso2.includes(k) && P.piso_tipo === 2));
 const CLAVES = CAMPOS.filter(c => c[0] !== "·").map(c => c[0]);
 const PORDEF = {}; CAMPOS.forEach(c => { if (c[0] !== "·") PORDEF[c[0]] = c[2]; });
 
@@ -396,8 +402,15 @@ function pintarPiezas() {
     cúbicos, y en un solo caso definen una medida —el ancho del montante, que tiene que cubrir
     los dos listones del trei—.</div>`;
 
+  const sinAnillo = simple && P.s_anillo !== 1;
   h += `<h2 style="margin:.3rem 0 .5rem">El anillo periférico</h2>`;
-  h += tarjeta("Radios y volumen", "Dos capas idénticas, un sándwich.", [
+  if (sinAnillo) h += tarjeta("Arriba no va: el borde lo toma el cable",
+    "En la simple con cable de acero, el anillo periférico de arriba no va. Sus medidas siguen " +
+    "sirviendo para el anillo del piso y para ubicar el trei (R int = R − A).", [
+    ["A", "Aislación comprimida", "nominal × 3/4", mm(C.A), "d"],
+    ["", "Radio de la cara de afuera del trei", "R − A − T", m(C.r_trei), "d"],
+  ]);
+  else h += tarjeta("Radios y volumen", "Dos capas idénticas, un sándwich.", [
     ["A", "Aislación comprimida", "nominal × 3/4", mm(C.A), "d"],
     ["E", "Ancho del anillo", "se decide", mm(P.E), "d"],
     ["", "Radio interior", "R − A", m(C.Rint), "d"],
@@ -459,14 +472,15 @@ function pintarPiezas() {
       Trei</b>, que usaba un «largo ideal» de 2,70 m como dato de entrada, no como
       resultado.`]]);
 
-  h += tarjeta("El trei en el piso y en el anillo",
+  h += tarjeta(sinAnillo ? "El trei en el piso y arriba" : "El trei en el piso y en el anillo",
     "Abajo, una escuadra por punto: el bulón TRCC aprieta escuadra, trei y zócalo, y un " +
-    "tornillo la fija al anillo del piso. Arriba no hay bulón: un tornillo aprieta zócalo y " +
-    "trei contra la capa de abajo del anillo.", [
+    "tornillo la fija al anillo del piso. " + (sinAnillo
+      ? "Arriba, lo mismo dado vuelta: el bulón del último agujero aprieta zócalo, trei y la escuadra de la percha."
+      : "Arriba no hay bulón: un tornillo aprieta zócalo y trei contra la capa de abajo del anillo."), [
     ["", "Puntos abajo · puntos arriba", "perímetro ÷ distancia entre bulones", un(C.n_pts), "d"],
     ["", "Escuadras", "una por punto de abajo", un(C.n_pts), "d"],
     ["", "Tornillos 6 × 40 al piso", "uno por escuadra", un(C.n_pts), "d"],
-    ["", "Tornillos 6 × 90 al anillo", "uno por punto de arriba", un(C.n_pts), "d"],
+    ...(sinAnillo ? [] : [["", "Tornillos 6 × 90 al anillo", "uno por punto de arriba", un(C.n_pts), "d"]]),
     ["", "Bulón de cruce aprieta", "2 listones", mm(C.grip_cruce), ""],
     ["", "Bulón de abajo aprieta", "2 listones + zócalo", mm(C.grip_abajo), ""],
     ["", "Zócalos interiores", "dos, de " + mm(P.anc_int) + " × " + mm(P.e_int), "2 × " + m(C.zocalo), "d"],
@@ -533,17 +547,24 @@ function pintarPiezas() {
       ? ["ojo", `En el toono quedan <b>${mm(S.paso_toono)}</b> entre percha y percha, con perchas de
          ${mm(P.p_alt)}: <b>no entran cómodas</b>. Agrandá el toono o separá los bulones.`]
       : ["ok", `En el toono quedan ${mm(S.paso_toono)} entre percha y percha: entran.`]]);
-    h += tarjeta("Escuadras · una por percha",
-      "Una pata vertical contra la cara interior del trei, atornillada al último bulón, que sube " +
-      "hasta la percha, y una riostra que cierra el triángulo. Las dos de la sección de la percha.", [
-      ["", "Cantidad", "una por percha", un(S.escuadras), "d"],
-      ["", "Lado", "la pata baja eso del trei; la riostra toma la percha eso más adentro", mm(P.esc), "d"],
-      ["", "Largo de la pata", "", m(S.l_pata), "d"],
-      ["", "Largo de la riostra", "", m(S.l_riostra), "d"],
-      ["", "Volumen", "patas + riostras", m3(S.vol_escuadras), ""],
-    ], [["", `Sin primera capa, <b>no hay cal ni doble cinta</b>: la lona del muro se fija debajo de
-        las perchas, en el borde. Los cortes de la pata y la riostra se marcan en obra contra la
-        percha (el ángulo es el del techo, ${gr(P.ang)}).`]]);
+    h += tarjeta("Escuadras metálicas · una por percha",
+      "Como la del piso, dada vuelta: una escuadra de chapa en la cara de afuera del " + (S.con_anillo ? "anillo" : "trei") +
+      ", que " + (S.con_anillo ? "se atornilla al anillo" : "toma el bulón del último agujero") + ", con el ala " +
+      "doblada al ángulo del techo hacia el desborde, por debajo de la percha, y un tornillo de carpintería 6 × 40 a la percha.", [
+      ["", "Escuadras", "una por percha", un(S.escuadras), "d"],
+      ["", "Lado", "pata y ala", mm(S.lado), "d"],
+      ["", "Doblez", "90° − ángulo del techo", gr(S.doblez), "d"],
+      ["", "Tornillos 6 × 40", "uno por escuadra, a la percha", un(S.tornillos), "d"],
+      ...(S.con_anillo ? [["", "Tornillos al anillo", "uno por escuadra", un(S.escuadras), "d"]] : []),
+    ], [["", `La percha apoya en la ${S.con_anillo ? "cara de arriba del anillo, en su canto de afuera" : "cabeza del trei, en su canto de afuera"}.
+        Sin primera capa, <b>no hay cal ni doble cinta</b>: la lona del muro se fija debajo de las perchas.`]]);
+    if (!S.con_anillo) h += tarjeta("El cable de acero",
+      "Hace todo el borde: pasa por una perforación de cada percha, a media altura, cerca de la cabeza del trei, y toma el empuje del techo.", [
+      ["", "Distancia desde la cabeza del trei", "", mm(P.cab_dist), "d"],
+      ["", "Radio del cable", "", m(S.r_cable), ""],
+      ["", "Largo", "2π × radio, sin el empalme", m(S.cable), "d"],
+      ["", "Perforaciones", "una por percha", un(S.n_perchas), "d"],
+    ], [["", `Cable de acero de 6 mm. El empalme y el tensor (y sus metros de más) se definen en obra.`]]);
   }
   if (!simple) {
   h += `<h2 style="margin:1.2rem 0 .5rem">El techo · segunda capa</h2>`;
@@ -624,8 +645,8 @@ function pintarPiezas() {
       hay cámara ventilada: el aire de adentro sale por el toono (${sobre ? "las ventanas del sobrealto" : "el domo"}).`],
     ["", `En la punta de las perchas, en su canto de arriba, va la <b>cinta del alero</b>: dos
       capas (${mm(C.c)}), que remata el borde y que la lona tiene que pasar.`],
-    ["ojo", `El anillo periférico sigue, y las perchas apoyan en su canto de afuera: el empuje lo
-      toma el anillo. <b>A confirmar</b> si con eso alcanza o si va el cable de las yurtas comunes.`],
+    ["", P.s_anillo === 1 ? `Con el anillo periférico, el empuje de las perchas lo toma el anillo: no va el cable.`
+      : `El empuje de las perchas lo toma el <b>cable de acero</b> del borde; el anillo periférico de arriba es la otra opción, y lo reemplaza.`],
   ] : [
     ["", `El <b>Tyvek</b> se fija y se sella sobre la doble cinta del borde, encima de la lona
       del muro (que conviene poner antes que la aislación del muro), y pasa sobre la cal
@@ -707,19 +728,22 @@ function pintarPiezas() {
       .concat([["", "Vigas", "", un(C.n_vig), "d"], ["", "Metros", "", m(C.m_vig), "d"],
         ["", "Pilares", "", un(C.n_pil), "d"], ["", "Sección", "", `${mm(P.viga_alt)} × ${mm(P.viga_anc)}`, ""],
         ["", "Volumen", "", m3(C.vol_vig), ""]]));
-  h += tarjeta("Placas, anillo del piso y celulosa",
-    "Dos capas de OSB; el anillo del piso, igual al de arriba, encastrado en los tirantes " +
-    "al ras de su borde de arriba; la celulosa entre las dos capas.", [
+  h += tarjeta(C.piso_doble ? "Placas, anillo del piso y celulosa" : "Placas y anillo del piso · una capa",
+    C.piso_doble
+      ? "Dos capas de OSB; el anillo del piso, igual al de arriba, encastrado en los tirantes " +
+        "al ras de su borde de arriba; la celulosa entre las dos capas."
+      : "Una sola capa de OSB, arriba de los tirantes, sin aislación; el anillo del piso, encastrado " +
+        "en los tirantes al ras de su borde de arriba.", [
     ["", "Superficie", "π R²", m2(C.area), ""],
     ["", "Placas por capa", `× ${P.desp} ÷ ${m(P.placa_a)} × ${m(P.placa_l)}`, un(C.placas_capa), "d"],
-    ["", "Placas en total", `OSB ${mm(P.osb_inf)} + OSB ${mm(P.osb_sup)}`, un(2 * C.placas_capa), "d"],
-    ["", "Alto del piso", "OSB + tirante + OSB", mm(C.alto_piso), ""],
+    ["", "Placas en total", C.piso_doble ? `OSB ${mm(P.osb_inf)} + OSB ${mm(P.osb_sup)}` : `OSB ${mm(P.osb_sup)}`, un(C.capas_osb * C.placas_capa), "d"],
+    ["", "Alto del piso", C.piso_doble ? "OSB + tirante + OSB" : "tirante + OSB", mm(C.alto_piso), ""],
     ["", "Encastre del anillo", "su alto entero", mm(C.encastre), "d"],
     ["", "Queda de tirante debajo", "", mm(C.bajo_encastre), ""],
     ["", "Anillo del piso · volumen", "como el de arriba", m3(C.vol_anillo_piso), ""],
-    ["", "Celulosa · bruta", "π R² × alto del tirante", m3(C.cel_bruto), ""],
-    ["", "Celulosa · neta", "− tirantes − anillo del piso", m3(C.cel_neto), "d"],
-  ], [["", `Los kilos de celulosa salen de la densidad de colocación del fabricante, que todavía
+    ...(C.piso_doble ? [["", "Celulosa · bruta", "π R² × alto del tirante", m3(C.cel_bruto), ""],
+      ["", "Celulosa · neta", "− tirantes − anillo del piso", m3(C.cel_neto), "d"]] : []),
+  ], [C.piso_doble && ["", `Los kilos de celulosa salen de la densidad de colocación del fabricante, que todavía
       no está cargada.`]]);
 
   h += `<div class="tarj"><h3>Lo que todavía no calcula</h3>
@@ -1030,10 +1054,11 @@ function descripcionDe() {
   const L = [];
   L.push(`Yurta de ${n(P.D, 1)} m de diámetro (${n(C.area, 1)} m² de piso), con el muro de ${n(P.alto)} m de altura y el techo a ${Math.round(P.ang)}°.`);
   L.push("");
-  L.push(`Piso: plancher de madera sobre pilares, con dos capas de OSB y celulosa entre tirantes. Muro: trei, celosía de madera a 60° abulonada cada ${Math.round(P.bul * 100)} cm, con el anillo periférico de madera colada arriba y abajo. ${un(P.n_ab)} aberturas de ${n(P.anc_ab)} × ${n(P.alt_ab)} m, con su piso de una pieza.`);
+  const sinAnillo = simple && P.s_anillo !== 1;
+  L.push(`Piso: plancher de madera sobre pilares, ${P.piso_tipo === 2 ? "con una capa de OSB sobre los tirantes" : "con dos capas de OSB y celulosa entre tirantes"}. Muro: trei, celosía de madera a 60° abulonada cada ${Math.round(P.bul * 100)} cm, ${sinAnillo ? "sobre el anillo de madera colada del piso" : "con el anillo periférico de madera colada arriba y abajo"}. ${un(P.n_ab)} aberturas de ${n(P.anc_ab)} × ${n(P.alt_ab)} m, con su piso de una pieza.`);
   L.push("");
   L.push(simple
-    ? `Techo simple: ${un(C.simple.n_perchas)} perchas de ${Math.round(P.p_anc * 1000)} × ${Math.round(P.p_alt * 1000)} mm, una en cada cruce de arriba del trei, sostenidas por su escuadra, del toono hasta ${Math.round(P.desb * 100)} cm de alero. Encima, algodón, freno de vapor, aislación, Tyvek y lona de PVC.`
+    ? `Techo simple: ${un(C.simple.n_perchas)} perchas de ${Math.round(P.p_anc * 1000)} × ${Math.round(P.p_alt * 1000)} mm, una en cada cruce de arriba del trei, tomada por una escuadra metálica, del toono hasta ${Math.round(P.desb * 100)} cm de alero; ${sinAnillo ? "un cable de acero por todo el borde" : "el anillo periférico"} toma el empuje. Encima, algodón, freno de vapor, aislación, Tyvek y lona de PVC.`
     : `Doble techo ventilado: una primera capa de ${un(C.nt)} triángulos estructurales y una segunda de ${un(P.n_per_r)} perchas con ${Math.round(P.desb * 100)} cm de alero. Entre las dos, ${Math.round(C.H * 1000)} mm de aislación de PET reciclado; arriba, una cámara de aire que ventila por el toono, y la lona de PVC.`);
   L.push("");
   L.push(sobre

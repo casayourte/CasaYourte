@@ -151,7 +151,8 @@ ok("calculo.html: el 3D está en la pestaña de las medidas", /<div id="t-datos"
 for (const [nom, Q] of [["Christine", P], ["4 m", { ...P, D: 4 }], ["12 m", { ...P, D: 12 }], ["10 triángulos", { ...P, n_tri: 10 }], ["6 triángulos", { ...P, n_tri: 6 }],
   ["sin aberturas", { ...P, n_ab: 0 }], ["domo media esfera, 5V", { ...P, dom_ang: 90, dom_frec: 5 }], ["domo bajo", { ...P, dom_ang: 30, dom_frec: 1 }], ["tapa a medio camino", { ...P, ts_giro: 0.5 }], ["una abertura", { ...P, n_ab: 1, n_gr: 1 }], ["aberturas bajas", { ...P, alt_ab: 1.9 }], ["simple", { ...P, tipo: 2 }], ["simple con sobrealto", { ...P, tipo: 2, tono_tipo: 2 }], ["doble con sobrealto", { ...P, tono_tipo: 2 }],
   ["simple 4 m, 3 ventanas cerradas", { ...P, D: 4, tipo: 2, tono_tipo: 2, sa_vent: 3, sa_abre: 0 }], ["simple 12 m, 12 ventanas", { ...P, D: 12, tipo: 2, tono_tipo: 2, sa_vent: 12 }],
-  ["sin campos nuevos", Object.fromEntries(Object.entries(P).filter(([k]) => !["tipo","tono_tipo","esc","s_ais","sa_alto","sa_vent","sa_desb","sa_ang","sa_abre","anc_ab","sep_mon","umb_esp","umb_vuelo","umb_caida","lona_baja","diente","tapa_cam","tapa_vuelo","dom_ang","dom_frec","tapa_ranura","ts_giro","ts_esp","ts_rendija"].includes(k)))]]) {
+  ["simple con anillo", { ...P, tipo: 2, s_anillo: 1 }], ["piso de una capa", { ...P, piso_tipo: 2 }], ["simple, una capa, 4 m", { ...P, tipo: 2, piso_tipo: 2, D: 4 }],
+  ["sin campos nuevos", Object.fromEntries(Object.entries(P).filter(([k]) => !["s_anillo","cab_dist","piso_tipo","tipo","tono_tipo","esc","s_ais","sa_alto","sa_vent","sa_desb","sa_ang","sa_abre","anc_ab","sep_mon","umb_esp","umb_vuelo","umb_caida","lona_baja","diente","tapa_cam","tapa_vuelo","dom_ang","dom_frec","tapa_ranura","ts_giro","ts_esp","ts_rendija"].includes(k)))]]) {
   const K = piezas3d(Q, calc(Q));
   ok(`3D ${nom}: sin NaN`, !/null|NaN|Infinity/.test(JSON.stringify(K)));
 }
@@ -259,26 +260,46 @@ ok("calculo.html ya no pide el cable (el doble techo no lo lleva)", !/faltan los
   ok("simple: una percha por punto de arriba del trei (63), con su escuadra", Cs.simple.n_perchas === C.n_pts && Cs.simple.escuadras === 63);
   ok("simple: el paso es el de los bulones, medido en la cabeza", cerca(Cs.simple.paso, 2 * Math.PI * C.r_trei / 63, 1e-9) && Math.abs(Cs.simple.paso - P.bul) < 0.01);
   ok("simple: la percha tiene el largo de la 2.ª capa", cerca(Cs.simple.largo, C.slant, 1e-9));
-  ok("3D simple: 63 perchas de la sección de la 2.ª capa y 126 piezas de escuadra (pata y riostra)",
-    de("perchas").length === 63 && de("escuadras").length === 126 && de("escuadras").every(p => p.alto === P.p_anc && p.ancho === P.p_alt));
+  ok("3D simple: 63 perchas de la sección de la 2.ª capa; cada una con su escuadra metálica (pata, ala, tornillo 6×40 y bulón)",
+    de("perchas").length === 63 && de("escuadras").length === 63 * 4 && de("escuadras").every(p => p.mat === "metal"));
   ok("3D simple: sin primera capa (ni triángulos, ni radiales, ni cal, ni doble cinta, ni anillo tapa, ni tapa aislante)",
     ["triangulos", "radiales", "cal", "cinta", "tapa", "tapa_sol"].every(g => de(g).length === 0));
   ok("3D simple: cada percha arranca en el toono, sin meterse", de("perchas").every(p => cerca(Math.hypot(p.a[0], p.a[2]), P.r_toono, 1e-9)));
   const ES = escuadraSimple(Q, Cs), yt = K.yt, tan = Math.tan(P.ang * Math.PI / 180);
-  ok("3D simple: la percha apoya en el canto de afuera del anillo", (() => { const q = de("perchas")[0], r = Math.hypot(q.a[0], q.a[2]);
-    const yAb = q.a[1] - P.p_anc / 2 / Math.cos(P.ang * Math.PI / 180); return cerca(yAb + (r - Cs.Rext) * tan, K.yA, 1e-9); })());
-  ok("3D simple: la pata sube del trei hasta la cara de abajo de la percha, y baja «esc» de la cabeza", (() => {
-    const pata = de("escuadras")[0], ya = Math.min(pata.a[1], pata.b[1]), yb = Math.max(pata.a[1], pata.b[1]);
-    return cerca(ya, yt - P.esc, 1e-9) && cerca(yb, K.yA + (Cs.Rext - ES.rL) * tan, 1e-9) && ES.rL < Cs.r_trei_int; })());
-  ok("3D simple: la riostra toma la percha «esc» más adentro de la pata", cerca(ES.riostra[0][0] - ES.riostra[1][0], P.esc, 1e-9) && Cs.simple.l_riostra > P.esc);
+  ok("3D simple: con cable, sin el anillo de arriba; el cable da toda la vuelta por las perchas", de("anillo").length === 0 && de("cable").length === 1
+    && cerca(de("cable")[0].r1 + 0.003, Cs.r_trei + P.cab_dist, 1e-9) && cerca(Cs.simple.cable, 2 * Math.PI * (Cs.r_trei + P.cab_dist), 1e-9));
+  ok("3D simple: la percha apoya en la cabeza del trei, en su canto de afuera", (() => { const q = de("perchas")[0], r = Math.hypot(q.a[0], q.a[2]);
+    const yAb = q.a[1] - P.p_anc / 2 / Math.cos(P.ang * Math.PI / 180); return cerca(yAb + (r - Cs.r_trei) * tan, yt, 1e-9); })());
+  ok("escuadra: metálica, por fuera del trei, la pata baja «esc» y la toma el bulón del último agujero", (() => {
+    const [[r1, y1], [r2, y2]] = ES.pata; return r1 === Cs.r_trei && r2 === Cs.r_trei && cerca(y2 - y1, P.esc, 1e-12) && y2 === 0
+      && cerca(ES.bulon, -P.b_borde, 1e-12) && ES.bulon < y2 && ES.bulon > y1; })());
+  ok("escuadra: el ala sale hacia el desborde por debajo de la percha, doblada a 90° − ángulo", (() => {
+    const [[ra, ya], [rb, yb]] = ES.ala; return rb > ra && cerca(yb, ES.bajo(rb), 1e-12) && cerca(ES.doblez, 90 - P.ang, 1e-12)
+      && cerca(Math.hypot(rb - ra, yb - ya), P.esc, 1e-12); })());
+  ok("escuadra: el tornillo 6×40 entra en la percha, a 35 mm del doblez", (() => { const t = de("escuadras").filter(p => p.ancho === 0.006)[0];
+    const L = Math.hypot(t.b[0] - t.a[0], t.b[1] - t.a[1], t.b[2] - t.a[2]); return t && cerca(L, 0.04, 1e-9) && t.b[1] > t.a[1] && Cs.simple.tornillos === 63; })());
+  ok("3D simple: sin anillo, los montantes no se meten en las perchas", de("montantes").every(p => Math.max(p.a[1], p.b[1]) + (p.a[1] === p.b[1] ? P.esp_mon / 2 : 0) <= yt + ES.bajo((Cs.R + Cs.r_trei_int) / 2) + 1e-9));
+  ok("3D simple con anillo: va el anillo, no el cable, y la percha apoya en su canto de afuera", (() => {
+    const Qa = { ...Q, s_anillo: 1 }, Ca = calc(Qa), Ka = piezas3d(Qa, Ca), q = Ka.piezas.find(p => p.g === "perchas"), r = Math.hypot(q.a[0], q.a[2]);
+    const yAb = q.a[1] - P.p_anc / 2 / Math.cos(P.ang * Math.PI / 180);
+    return Ka.piezas.some(p => p.g === "anillo") && !Ka.piezas.some(p => p.g === "cable") && Ca.simple.cable === 0
+      && cerca(yAb + (r - Ca.Rext) * tan, Ka.yA, 1e-9) && Ka.piezas.filter(p => p.g === "escuadras").length === 63 * 3; })());
   ok("3D simple: las capas van encima de las perchas, de adentro hacia afuera", [1.5, 2.2, 3.0].every(r => {
-    const yTop = K.yA + (Cs.Rext - r) * tan + P.p_anc / Math.cos(P.ang * Math.PI / 180);
+    const yTop = yt + ES.bajo(r) + P.p_anc / Math.cos(P.ang * Math.PI / 180);
     const ys = ["algodon_techo", "freno_techo", "aislacion_techo", "tyvek", "lona_techo"].map(g => alturaDe(K, g, r));
     return ys[0] > yTop && ys.every((y, i) => y !== null && (i === 0 || y > ys[i - 1])); }), "");
   ok("simple: el corte no dibuja la cal ni la doble cinta, y sí la escuadra", (() => { const k = corte(Q, Cs).svg1;
-    return !/class="cal"/.test(k) && !/class="cinta"/.test(k) && /escuadra: pata/.test(k) && /riostra/.test(k); })());
+    return !/class="cal"/.test(k) && !/class="cinta"/.test(k) && !/class="anillo"/.test(k) && /escuadra metálica · 60°/.test(k) && /tornillo 6×40/.test(k) && /cable de acero/.test(k); })());
   ok("doble: el corte sigue con la cal y la doble cinta", /class="cal"/.test(corte(P, C).svg1) && /class="cinta"/.test(corte(P, C).svg1));
   ok("simple: un toono chico avisa que las perchas no entran", calc({ ...Q, r_toono: 0.35 }).simple.aprieta && !Cs.simple.aprieta);
+}
+// ── el piso de una capa (geo-6, Mauro, 17-nov-2026: «el piso tiene que tener la opción de ser doble capa o con aislación») ──
+{
+  const Q = { ...P, piso_tipo: 2 }, Cq = calc(Q), K = piezas3d(Q, Cq);
+  ok("piso de una capa: sin OSB de abajo ni celulosa; una capa de placas", !K.piezas.some(p => p.g === "osb_inf") && Cq.cel_neto === 0 && Cq.capas_osb === 1
+    && cerca(Cq.alto_piso, P.tir_alt + P.osb_sup, 1e-12) && C.capas_osb === 2 && C.cel_neto > 0);
+  ok("piso de una capa: las vigas suben a tocar los tirantes", cerca(Math.max(...K.piezas.filter(p => p.g === "vigas").map(p => p.a[1] + p.alto / 2)), 0, 1e-9));
+  ok("piso de una capa: el corte no dibuja el OSB de abajo", (corte(Q, Cq).svg2.match(/class="osb"/g) || []).length === 1 && (corte(P, C).svg2.match(/class="osb"/g) || []).length === 2);
 }
 // ── el toono en sobrealto (geo-5, 3d-11) ──
 {

@@ -1,5 +1,10 @@
 // calculo-geo.js — la geometría de la yurta, sin navegador y sin Firebase.
-// Sello: geo-5 (17-nov-2026): la VERSIÓN SIMPLE (una percha por cruce de arriba
+// Sello: geo-6 (17-nov-2026): la escuadra de la simple es METÁLICA, como la
+// del piso, por fuera del trei y tomada del bulón del último agujero, doblada al
+// ángulo del techo y con un tornillo 6×40 a la percha; el borde de la simple lo
+// toma un CABLE de acero (o, a elección, el anillo periférico); el piso puede
+// ser de doble capa con aislación o de una capa (P.piso_tipo).
+// geo-5 (17-nov-2026): la VERSIÓN SIMPLE (una percha por cruce de arriba
 // del trei, con su escuadra, la sección de la 2.ª capa) y el TONO a elegir:
 // domo geodésico o SOBREALTO con ventanas alrededor que abren hacia arriba y
 // afuera, con el techito de vuelo (Mauro, 16/17-nov-2026).
@@ -26,7 +31,7 @@
 // TODO lo que se elige por diseño es un campo de la página: si cambia una
 // medida, cambian los números y el dibujo.
 
-export const SELLO_GEO = "geo-5";
+export const SELLO_GEO = "geo-6";
 
 // El tirante, la viga: cuerdas paralelas del círculo de radio R, con una en el
 // centro y cada `paso` a los dos lados. Devuelve [{x, L, n}] con n = 1 para la
@@ -149,9 +154,12 @@ export function calc(P) {
   const placa = P.placa_a * P.placa_l;
   const placas_capa = placa > 0 ? Math.ceil(area * P.desp / placa - 1e-9) : 0;
   const vol_anillo_piso = per_med * P.E * alto_an;
-  const cel_bruto = area * P.tir_alt;
-  const cel_neto = cel_bruto - m_tir * P.tir_alt * P.tir_anc - vol_anillo_piso;
-  const alto_piso = P.osb_inf + P.tir_alt + P.osb_sup;
+  // geo-6: el piso de UNA capa no lleva el OSB de abajo ni la celulosa.
+  const piso_doble = P.piso_tipo !== 2, osb_inf_e = piso_doble ? P.osb_inf : 0;
+  const capas_osb = piso_doble ? 2 : 1;
+  const cel_bruto = piso_doble ? area * P.tir_alt : 0;
+  const cel_neto = piso_doble ? cel_bruto - m_tir * P.tir_alt * P.tir_anc - vol_anillo_piso : 0;
+  const alto_piso = osb_inf_e + P.tir_alt + P.osb_sup;
   const por_placa = P.paso_t > 0 ? P.placa_a / P.paso_t : 0;
   const placa_ok = Math.abs(por_placa - Math.round(por_placa)) < 0.01;
   const encastre = alto_an;                    // el anillo del piso, al ras del tirante
@@ -208,7 +216,7 @@ export function calc(P) {
     // plancher
     tirantes, n_tir, m_tir, vol_tir: m_tir * P.tir_alt * P.tir_anc,
     vigas, n_vig, m_vig, n_pil, vol_vig: m_vig * P.viga_alt * P.viga_anc,
-    area, placas_capa, vol_anillo_piso, cel_bruto, cel_neto, alto_piso,
+    area, placas_capa, vol_anillo_piso, cel_bruto, cel_neto, alto_piso, piso_doble, osb_inf_e, capas_osb,
     por_placa, placa_ok, encastre, bajo_encastre,
     circ_trazo: 2 * Math.PI * r_trei,
     // trei
@@ -220,7 +228,7 @@ export function calc(P) {
     //    punto de arriba del trei, de la cabeza al toono y con el desborde. Se
     //    calcula siempre; la página lo muestra cuando P.tipo = 2.
     simple: (() => {
-      const E = escuadraSimple(P, { alto_an, Rext, r_trei_int });
+      const E = escuadraSimple(P, { alto_an, Rext, r_trei });
       const paso_toono = 2 * Math.PI * P.r_toono / n_pts;
       return {
         n_perchas: n_pts,
@@ -228,10 +236,12 @@ export function calc(P) {
         paso_toono,                                   // lo que queda entre dos perchas en el toono
         aprieta: paso_toono < 1.5 * P.p_alt,          // no entran: hay que agrandar el toono
         largo: slant,                                 // (Rp − r toono) ÷ cos, como la 2.ª capa
-        escuadras: n_pts,
-        l_pata: E.l_pata, l_riostra: E.l_riostra,
         vol_perchas: n_pts * slant * P.p_anc * P.p_alt,
-        vol_escuadras: n_pts * (E.l_pata + E.l_riostra) * P.p_anc * P.p_alt,
+        // geo-6: la escuadra metálica, una por percha, con su tornillo 6×40
+        escuadras: n_pts, tornillos: n_pts, lado: E.e, doblez: E.doblez, con_anillo: E.conAnillo,
+        // el cable de acero, si no va el anillo: por una perforación de cada percha
+        r_cable: E.conAnillo ? 0 : E.rCable,
+        cable: E.conAnillo ? 0 : 2 * Math.PI * E.rCable,
       };
     })(),
     // ── geo-5 · EL TOONO EN SOBREALTO (Mauro, 17-nov-2026: «un techo en
@@ -255,23 +265,30 @@ export function calc(P) {
   };
 }
 
-// ── LA ESCUADRA DE LA YURTA SIMPLE (geo-5): en cada cruce de arriba del trei,
-// una PATA vertical contra la cara interior (debajo del zócalo, atornillada al
-// último bulón) que sube hasta la cara de abajo de la percha, y una RIOSTRA que
-// cierra el triángulo: sale de la pata `esc` por debajo de la percha y llega a
-// la percha `esc` más adentro. Las dos de la sección de la percha (Mauro: «del
-// mismo tamaño de la segunda capa del techo»). La pata baja `esc` debajo de la
-// cabeza del trei. Alturas desde la cabeza del trei; radios absolutos. La
-// percha apoya en el canto de afuera del anillo periférico.
+// ── LA ESCUADRA DE LA YURTA SIMPLE (geo-6, Mauro, 17-nov-2026: «es una escuadra
+// metálica como la que tiene el piso, que va en la parte exterior hacia el
+// pequeño desborde… de 90 grados curvada al ángulo necesario, agarrada del bulón
+// del último agujero del trei y atornillada por un tornillo de carpintería 6×40»).
+// La percha apoya en la CABEZA del trei, en su canto de afuera. La escuadra
+// tiene una PATA contra la cara de afuera del trei, que baja `esc` y la toma el
+// bulón del último agujero, y un ALA que sale hacia el desborde por debajo de la
+// percha, doblada al ángulo del techo (90° − ángulo), con el tornillo 6×40 a
+// 35 mm del doblez, como la del piso. Con el anillo periférico (P.s_anillo = 1,
+// que reemplaza al cable) la percha apoya en el canto de afuera del anillo y la
+// escuadra va contra la cara de afuera del anillo.
+// Alturas desde la cabeza del trei; radios absolutos.
 export function escuadraSimple(P, C) {
-  const tan = Math.tan(P.ang * Math.PI / 180);
-  const dA = C.alto_an - P.e_mad;                       // cara de arriba del anillo
-  const bajo = (r) => dA + (C.Rext - r) * tan;          // cara de abajo de la percha
-  const e = Math.max(0.05, P.esc ?? 0.30);
-  const rL = C.r_trei_int - (P.e_int || 0) - P.p_anc / 2;
-  const r0 = rL - P.p_anc / 2, y0 = Math.max(-e + 0.05, bajo(r0) - e), r1 = r0 - e;
-  return { rL, bajo, pata: [-e, bajo(rL)], riostra: [[r0, y0], [r1, bajo(r1)]],
-    l_pata: e + bajo(rL), l_riostra: Math.hypot(e, bajo(r1) - y0) };
+  const rad = P.ang * Math.PI / 180, tan = Math.tan(rad), cs = Math.cos(rad), sn = Math.sin(rad);
+  const conAnillo = P.s_anillo === 1;
+  const rb = conAnillo ? C.Rext : C.r_trei, yb = conAnillo ? C.alto_an - P.e_mad : 0;
+  const bajo = (r) => yb + (rb - r) * tan;               // cara de abajo de la percha
+  const e = Math.max(0.03, P.esc ?? 0.05);
+  const enAla = (d) => [rb + d * cs, yb - d * sn];       // un punto del ala, a d del doblez
+  const rCable = rb + Math.max(0.02, P.cab_dist ?? 0.10);
+  return { conAnillo, rb, yb, bajo, e, doblez: 90 - P.ang,
+    pata: [[rb, yb - e], [rb, yb]], ala: [[rb, yb], enAla(e)], tornillo: enAla(Math.min(0.035, e * 0.7)),
+    bulon: conAnillo ? null : yb - (P.b_borde || 0.02), rCable,
+    yCable: bajo(rCable) + P.p_anc / 2 / cs };            // a media altura de la percha
 }
 
 // ── EL CORTE DEL BORDE, a escala y con los valores cargados ──
@@ -286,14 +303,17 @@ export function corte(P, C, ancho = 680) {
   // la cabeza del trei, que tapa la primera capa del anillo.
   const zt = P.alto;                                 // cabeza del trei
   const za = zt - P.e_mad + C.alto_an;               // cara de arriba del anillo
-  // geo-5: en la simple la percha apoya en el canto de afuera del anillo y la
-  // sostiene la escuadra (pata y riostra); no hay cal ni doble cinta.
+  // geo-6: en la simple la percha apoya en la cabeza del trei (o en el canto de
+  // afuera del anillo, si se eligió) y la toma la escuadra metálica; no hay cal
+  // ni doble cinta. En el corte el trei está en rt (T = 0); con T se corre.
   const simple = P.tipo === 2, ES = simple ? escuadraSimple(P, C) : null, dT = P.T || 0;
-  const techo = simple ? r => za + (C.Rext - r) * tan                // cara de abajo de la percha
+  const conAnillo = !simple || ES.conAnillo;
+  const xb = simple ? (ES.conAnillo ? ES.rb : ES.rb + dT) : 0;        // el doblez de la escuadra, en el corte
+  const techo = simple ? r => zt + ES.yb + (xb - r) * tan             // cara de abajo de la percha
                        : r => za + C.h0 - (r - rt) * tan;
   const pv = P.p_anc / Math.cos(P.ang * Math.PI / 180);
-  const r0 = Math.min(rt - 2 * P.e_trei - P.e_int - 0.12, simple ? ES.riostra[1][0] + dT - 0.04 : 9), r9 = R + Math.min(P.desb, 0.08);
-  const zLo = Math.min(zt - P.e_mad - 0.06, simple ? zt + ES.pata[0] - 0.03 : 9), zHi = techo(r0) + pv + 0.01;
+  const r0 = rt - 2 * P.e_trei - P.e_int - 0.12, r9 = R + Math.min(P.desb, 0.08);
+  const zLo = zt - P.e_mad - 0.06, zHi = techo(r0) + pv + 0.01;
   const izq = 190, der = 250;                        // lugar para los rótulos
   const S = (ancho - izq - der) / (r9 - r0);
   const X = r => izq + (r - r0) * S;
@@ -320,18 +340,23 @@ export function corte(P, C, ancho = 680) {
   s += `<g class="pz">`;
   s += `<polygon class="percha" points="${f(X(r0))},${f(Y(techo(r0)))} ${f(X(r9))},${f(Y(techo(r9)))} ${f(X(r9))},${f(Y(techo(r9) + pv))} ${f(X(r0))},${f(Y(techo(r0) + pv))}"/>`;
   if (!simple) s += `<polygon class="cal" points="${f(X(rt))},${f(Y(za))} ${f(X(R - c))},${f(Y(za))} ${f(X(R - c))},${f(Y(za + C.tri_tr))} ${f(X(rt))},${f(Y(techo(rt)))}"/>`;
-  s += rect(rt, C.Rext, za - C.alto_an, za - C.alto_an + P.e_mad, "anillo", Y);
-  s += rect(rt, C.Rext, za - C.alto_an + P.e_mad, za, "anillo", Y);
+  if (conAnillo) {
+    s += rect(rt, C.Rext, za - C.alto_an, za - C.alto_an + P.e_mad, "anillo", Y);
+    s += rect(rt, C.Rext, za - C.alto_an + P.e_mad, za, "anillo", Y);
+  }
   if (!simple) {
     s += rect(R - c, R - c / 2, zc - P.anc_per, zc, "cinta", Y);
     s += rect(R - c / 2, R, zc - P.anc_per, zc, "cinta", Y);
   } else {
-    // La escuadra: la pata contra el trei y la riostra a 45°, de la sección de la percha.
-    s += rect(ES.rL + dT - P.p_anc / 2, ES.rL + dT + P.p_anc / 2, zt + ES.pata[0], zt + ES.pata[1], "percha", Y);
-    const [[ra, ya], [rb, yb]] = ES.riostra, L = Math.hypot(rb - ra, yb - ya);
-    const hr = (yb - ya) / L * P.p_anc, hy = (ra - rb) / L * P.p_anc;   // el ancho, hacia arriba y afuera
-    const pt = (r, y) => `${f(X(r + dT))},${f(Y(zt + y))}`;
-    s += `<polygon class="percha" points="${pt(ra, ya)} ${pt(ra + hr, ya + hy)} ${pt(rb + hr, yb + hy)} ${pt(rb, yb)}"/>`;
+    // La escuadra metálica: la pata contra la cara de afuera, el ala doblada
+    // hacia el desborde por debajo de la percha, el bulón y el tornillo 6×40.
+    const P_ = (r, y) => `${f(X(r))} ${f(Y(zt + y))}`, dx = xb - ES.rb;
+    const [[, ya], [, yb]] = ES.pata, [, [ra2, ya2]] = ES.ala, [rtS, ytS] = ES.tornillo;
+    s += `<path class="escuadra" d="M${P_(xb, ya)}V${f(Y(zt + yb))}L${P_(ra2 + dx, ya2)}"/>`;
+    if (ES.bulon !== null) s += `<line class="tornillo" x1="${f(X(rt - 2 * P.e_trei - P.e_int))}" x2="${f(X(xb + 0.006))}" y1="${f(Y(zt + ES.bulon))}" y2="${f(Y(zt + ES.bulon))}"/>`;
+    const sn = Math.sin(P.ang * Math.PI / 180), cs = Math.cos(P.ang * Math.PI / 180);
+    s += `<line class="tornillo" x1="${f(X(rtS + dx))}" y1="${f(Y(zt + ytS))}" x2="${f(X(rtS + dx + 0.04 * sn))}" y2="${f(Y(zt + ytS + 0.04 * cs))}"/>`;
+    if (!ES.conAnillo) s += `<circle class="apoyo-p" cx="${f(X(ES.rCable + dx))}" cy="${f(Y(zt + ES.yCable))}" r="3"/>`;
   }
   s += rect(rt - 2 * P.e_trei, rt, zLo, zt, "trei", Y);
   s += rect(rt - 2 * P.e_trei - P.e_int, rt - 2 * P.e_trei, zt - P.e_mad, zt, "zocalo", Y);
@@ -343,15 +368,16 @@ export function corte(P, C, ancho = 680) {
   s += `<g class="rot">`;
   const xr = ancho - der + 12;
   s += columna(izq - 10, simple
-    ? [[Y(zt + ES.pata[0] / 2), "escuadra: pata"], [Y(zt + ES.pata[0] / 2) + 19, `${n(C.simple.l_pata)} · al bulón`],
-       [Y(zt - P.e_mad / 2) + 5, "zócalo · 6×90"]]
+    ? [[Y(zt + (ES.bulon ?? -P.e_mad / 2)) + 5, ES.bulon !== null ? "zócalo · bulón" : "zócalo · 6×90"]]
     : [[ay - 40, "apoyo de los"], [ay - 21, "triángulos"],
        [Y(zt - P.e_mad / 2) + 5, "zócalo · 6×90"]], "end", 20, h1 - 30);
   s += columna(xr, [[Y(techo(r9) + pv) - 6, `percha ${n(P.p_anc)} × ${n(P.p_alt)}`],
-    ...(simple ? [[Y(za + 0.02) - 6, `riostra ${n(C.simple.l_riostra)}`]]
+    ...(simple ? [[Y(zt + ES.yb - ES.e / 2) + 5, `escuadra metálica · ${Math.round(ES.doblez)}°`],
+                  [Y(zt + ES.tornillo[1]) + 5, "tornillo 6×40"],
+                  ...(ES.conAnillo ? [] : [[Y(zt + ES.yCable) - 6, "cable de acero 6 mm"]])]
       : [[Y(zc) + 5, `cinta 2×${n(P.e_per)} × ${n(P.anc_per)}`],
          [Y(za + C.tri_tr / 2) + 5, `cal ${n(C.h0)} · punta ${n(C.tri_tr)}`]]),
-    [Y(za - C.alto_an / 2) + 5, `anillo ${n(P.E)} × ${n(C.alto_an)}`],
+    ...(conAnillo ? [[Y(za - C.alto_an / 2) + 5, `anillo ${n(P.E)} × ${n(C.alto_an)}`]] : []),
     [Y(zLo + 0.03), `trei ${n(2 * P.e_trei)} · r ${n(rt)}`]], "start", 20, h1 - 30);
   s += `</g>`;
   // barra de 0,1 m
@@ -359,12 +385,13 @@ export function corte(P, C, ancho = 680) {
   const svg1 = `<svg class="corte" viewBox="0 0 ${ancho} ${f(h1)}" role="img" aria-label="Corte de la cabeza del muro, a escala">${s}</svg>`;
 
   // Pie del muro y piso
-  const zb0 = -(P.osb_inf + P.tir_alt + P.osb_sup) - 0.03, zb1 = 0.10;
+  const osbI = P.piso_tipo === 2 ? 0 : P.osb_inf;                     // geo-6: piso de una capa
+  const zb0 = -(osbI + P.tir_alt + P.osb_sup) - 0.03, zb1 = 0.10;
   const h2 = (zb1 - zb0) * S + 50;
   const Y2 = z => 20 + (zb1 - z) * S;
   const zt0 = -P.osb_sup, zt1 = zt0 - P.tir_alt;
   let t = `<g class="pz">`;
-  t += rect(r0, R, zt1 - P.osb_inf, zt1, "osb", Y2);
+  if (osbI) t += rect(r0, R, zt1 - osbI, zt1, "osb", Y2);
   t += rect(r0, R, zt1, zt0, "tirante", Y2);
   t += rect(rt, C.Rext, zt0 - C.alto_an, zt0 - C.alto_an + P.e_mad, "anillo", Y2);
   t += rect(rt, C.Rext, zt0 - C.alto_an + P.e_mad, zt0, "anillo", Y2);
@@ -381,7 +408,7 @@ export function corte(P, C, ancho = 680) {
     [Y2(-P.osb_sup / 2) + 5, `OSB ${Math.round(P.osb_sup * 1000)} mm`],
     [Y2(zt0 - C.alto_an / 2) + 5, `anillo encastrado ${n(C.alto_an)}`],
     [Y2(zt1 + 0.03), `tirante ${n(P.tir_alt)} × ${n(P.tir_anc)}`],
-    [Y2(zt1 - P.osb_inf / 2) + 5, `OSB ${Math.round(P.osb_inf * 1000)} mm`]], "start", 20, h2 - 30);
+    ...(osbI ? [[Y2(zt1 - osbI / 2) + 5, `OSB ${Math.round(osbI * 1000)} mm`]] : [])], "start", 20, h2 - 30);
   t += `</g><g class="barra"><line x1="${izq}" x2="${f(izq + 0.1 * S)}" y1="${f(h2 - 10)}" y2="${f(h2 - 10)}"/>${txt(izq + 0.1 * S + 6, h2 - 6, "0,1 m")}</g>`;
   const svg2 = `<svg class="corte" viewBox="0 0 ${ancho} ${f(h2)}" role="img" aria-label="Corte del pie del muro y el piso, a escala">${t}</svg>`;
 
