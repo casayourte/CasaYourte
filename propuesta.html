@@ -4,7 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tu yurta · CasaYourte</title>
-<!-- propuesta-1 (17-nov-2026). La propuesta para UN cliente, por link:
+<!-- propuesta-2 (17-nov-2026): el cliente ve el 3D y un RESUMEN de lo que lleva
+     (madera, placas, lona y tela, de `resumen()` de calculo-geo.js), no los
+     cálculos; y cada componente del 3D se prende y apaga, en su idioma (Mauro:
+     «se muestra sólo el render 3D y no todos los cálculos sino un resumen de
+     cuánto se pide de madera, cuánto de lona… y la opción de dejar de
+     visualizar cada uno de los componentes»).
+     propuesta-1 (17-nov-2026). La propuesta para UN cliente, por link:
      propuesta.html?p=<token>. Mauro, 16-nov-2026: «un presupuesto en un link
      que yo pueda cargar y enviar para que la persona a la que le estoy
      enviando el presupuesto pueda ver la descripción detallada online… con un
@@ -65,6 +71,12 @@ h1{font-size:clamp(1.9rem,6vw,3.2rem)}
   border-radius:6px;padding:.45rem .75rem;cursor:pointer}
 .btn[aria-pressed="true"]{border-color:var(--blond);color:var(--blond)}
 .nota{color:var(--dim);font-size:.78rem;flex:1;min-width:10rem}
+.partes{display:grid;grid-template-columns:repeat(auto-fill,minmax(12rem,1fr));gap:.15rem .8rem;margin-top:.5rem;
+  background:var(--ink-2);border:1px solid var(--line);border-radius:8px;padding:.7rem .8rem}
+.partes label{display:flex;gap:.45rem;align-items:center;font-size:.86rem;color:var(--wool);cursor:pointer;padding:.15rem 0}
+.partes b{grid-column:1/-1;font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--blond);margin-top:.35rem}
+.partes input{accent-color:var(--blond);width:1rem;height:1rem}
+.sub{color:var(--dim);font-size:.8rem}
 .grid{display:grid;gap:1.2rem;margin-top:2rem}
 @media(min-width:820px){.grid{grid-template-columns:1fr 1.3fr}}
 .caja{background:var(--ink-2);border:1px solid var(--line);border-radius:8px;padding:1.1rem 1.2rem}
@@ -95,13 +107,14 @@ li{margin:.25rem 0}
 <main id="main"><div class="vacio" id="cargando">…</div></main>
 
 <script type="module">
-// Sello: propuesta-1
+// Sello: propuesta-2
 const PROYECTO = "casayourte-mauro";
 const CLAVE = "AIzaSyDDD_xvpC4I_ec2OZymyDqVsm1K0ISTr4Q";
 const BASE = "https://firestore.googleapis.com/v1/projects/" + PROYECTO + "/databases/(default)/documents/";
 
 const T = {
-  es: { eyebrow: "Propuesta", para: "Para", vence: "Válida hasta el", terminada: "Terminada", estructura: "La estructura",
+  es: { resumen: "Tu yurta", lleva: "Lo que lleva", madera: "Madera", placas: "Placas de OSB para el piso", lona_techo: "Lona del techo", tela_muro: "Tela del muro", aberturas2: (p, v) => [p ? p + (p === 1 ? " puerta" : " puertas") : "", v ? v + (v === 1 ? " ventana" : " ventanas") : ""].filter(Boolean).join(" y ") || "—", m_piso: "piso", m_muro: "muro", m_techo: "techo", m_toono: "toono", partes: "Componentes ▾", estructura_t: "Estructura", capas_t: "Las capas, de adentro hacia afuera", todas: "Todas", ninguna: "Ninguna", u_placas: "placas",
+    eyebrow: "Propuesta", para: "Para", vence: "Válida hasta el", terminada: "Terminada", estructura: "La estructura",
     encuadrar: "Encuadrar", nota3d: "A escala real · girá con el dedo, acercá con dos · cuadrícula de 1 m",
     medidas: "Medidas principales", descripcion: "Descripción", incluye: "Incluye", no_incluye: "No incluye", precio: "Precio",
     diam: "Diámetro", piso: "Superficie de piso", muro: "Altura del muro", centro: "Altura al centro", toono: "Toono",
@@ -110,7 +123,8 @@ const T = {
     sin3d: "No se pudo cargar el 3D (sin conexión, o el teléfono no tiene WebGL). El resto de la propuesta está completo.",
     no: "Esta propuesta no está disponible", noTxt: "El link venció, se desactivó o no es correcto. Escribinos y te mandamos uno nuevo.",
     pie: (f) => `Propuesta válida hasta el ${f}. Para cualquier consulta, respondé el mensaje por el que te llegó este link.`, sitio: "Ver más yurtas" },
-  fr: { eyebrow: "Proposition", para: "Pour", vence: "Valable jusqu'au", terminada: "Terminée", estructura: "La structure",
+  fr: { resumen: "Votre yourte", lleva: "Ce qu'elle comprend", madera: "Bois", placas: "Panneaux OSB pour le plancher", lona_techo: "Bâche du toit", tela_muro: "Toile du mur", aberturas2: (p, v) => [p ? p + (p === 1 ? " porte" : " portes") : "", v ? v + (v === 1 ? " fenêtre" : " fenêtres") : ""].filter(Boolean).join(" et ") || "—", m_piso: "plancher", m_muro: "mur", m_techo: "toit", m_toono: "toono", partes: "Éléments ▾", estructura_t: "Structure", capas_t: "Les couches, de l'intérieur vers l'extérieur", todas: "Tout", ninguna: "Rien", u_placas: "panneaux",
+    eyebrow: "Proposition", para: "Pour", vence: "Valable jusqu'au", terminada: "Terminée", estructura: "La structure",
     encuadrar: "Recadrer", nota3d: "À l'échelle réelle · tournez du doigt, zoomez à deux doigts · grille de 1 m",
     medidas: "Dimensions principales", descripcion: "Description", incluye: "Comprend", no_incluye: "Ne comprend pas", precio: "Prix",
     diam: "Diamètre", piso: "Surface au sol", muro: "Hauteur du mur", centro: "Hauteur au centre", toono: "Toono",
@@ -119,7 +133,8 @@ const T = {
     sin3d: "Impossible de charger la 3D (pas de connexion ou pas de WebGL). Le reste de la proposition est complet.",
     no: "Cette proposition n'est pas disponible", noTxt: "Le lien a expiré, a été désactivé ou n'est pas correct. Écrivez-nous et nous vous en enverrons un nouveau.",
     pie: (f) => `Proposition valable jusqu'au ${f}. Pour toute question, répondez au message par lequel ce lien vous est parvenu.`, sitio: "Voir d'autres yourtes" },
-  en: { eyebrow: "Proposal", para: "For", vence: "Valid until", terminada: "Finished", estructura: "The structure",
+  en: { resumen: "Your yurt", lleva: "What it takes", madera: "Timber", placas: "OSB boards for the floor", lona_techo: "Roof cover", tela_muro: "Wall fabric", aberturas2: (p, v) => [p ? p + (p === 1 ? " door" : " doors") : "", v ? v + (v === 1 ? " window" : " windows") : ""].filter(Boolean).join(" and ") || "—", m_piso: "floor", m_muro: "wall", m_techo: "roof", m_toono: "toono", partes: "Parts ▾", estructura_t: "Structure", capas_t: "The layers, from inside out", todas: "All", ninguna: "None", u_placas: "boards",
+    eyebrow: "Proposal", para: "For", vence: "Valid until", terminada: "Finished", estructura: "The structure",
     encuadrar: "Reset view", nota3d: "Real scale · drag to turn, pinch to zoom · 1 m grid",
     medidas: "Main dimensions", descripcion: "Description", incluye: "Includes", no_incluye: "Does not include", precio: "Price",
     diam: "Diameter", piso: "Floor area", muro: "Wall height", centro: "Height at the centre", toono: "Toono",
@@ -128,7 +143,8 @@ const T = {
     sin3d: "The 3D view could not load (no connection, or no WebGL). The rest of the proposal is complete.",
     no: "This proposal is not available", noTxt: "The link has expired, was turned off or is not correct. Write to us and we will send you a new one.",
     pie: (f) => `Proposal valid until ${f}. For any question, reply to the message this link came with.`, sitio: "See more yurts" },
-  pt: { eyebrow: "Proposta", para: "Para", vence: "Válida até", terminada: "Pronta", estructura: "A estrutura",
+  pt: { resumen: "Sua yurt", lleva: "O que leva", madera: "Madeira", placas: "Placas de OSB para o piso", lona_techo: "Lona do telhado", tela_muro: "Tecido da parede", aberturas2: (p, v) => [p ? p + (p === 1 ? " porta" : " portas") : "", v ? v + (v === 1 ? " janela" : " janelas") : ""].filter(Boolean).join(" e ") || "—", m_piso: "piso", m_muro: "parede", m_techo: "telhado", m_toono: "toono", partes: "Componentes ▾", estructura_t: "Estrutura", capas_t: "As camadas, de dentro para fora", todas: "Tudo", ninguna: "Nada", u_placas: "placas",
+    eyebrow: "Proposta", para: "Para", vence: "Válida até", terminada: "Pronta", estructura: "A estrutura",
     encuadrar: "Enquadrar", nota3d: "Em escala real · gire com o dedo, aproxime com dois · grade de 1 m",
     medidas: "Medidas principais", descripcion: "Descrição", incluye: "Inclui", no_incluye: "Não inclui", precio: "Preço",
     diam: "Diâmetro", piso: "Área de piso", muro: "Altura da parede", centro: "Altura no centro", toono: "Toono",
@@ -139,6 +155,27 @@ const T = {
     pie: (f) => `Proposta válida até ${f}. Para qualquer dúvida, responda à mensagem pela qual este link chegou.`, sitio: "Ver mais yurts" },
 };
 
+// Los componentes del 3D, en los otros idiomas (en castellano, los de PARTES).
+const PARTES_T = {
+  fr: { pilares: "Poteaux", vigas: "Poutres", osb_inf: "OSB inférieur", tirantes: "Solives", anillo_piso: "Anneau du plancher", osb_sup: "OSB supérieur",
+    trei: "Treillis (khana)", zocalos: "Plinthes", anillo: "Anneau périphérique", cal: "Cales", cinta: "Double lisse", triangulos: "Triangles",
+    radiales: "Perches radiales", toono: "Toono", perchas: "Perches", escuadras: "Équerres métalliques", cable: "Câble d'acier", cinta_alero: "Lisse de l'avant-toit",
+    tapa: "Toono · anneau couvercle", domo: "Toono · dôme géodésique", sobrealto: "Toono · lanterneau", ventanas: "Lanterneau · fenêtres", tapa_sol: "Toono · volet isolant",
+    montantes: "Montants", suelo_ab: "Seuils", vidrios: "Vitrage des fenêtres", algodon_techo: "Toit · coton", freno_techo: "Toit · pare-vapeur", aislacion_techo: "Toit · isolant",
+    tyvek: "Toit · Tyvek", lona_techo: "Toit · bâche PVC", algodon_muro: "Mur · coton", freno_muro: "Mur · pare-vapeur", aislacion_muro: "Mur · isolant", lona_muro: "Mur · toile" },
+  en: { pilares: "Posts", vigas: "Beams", osb_inf: "Lower OSB", tirantes: "Joists", anillo_piso: "Floor ring", osb_sup: "Upper OSB",
+    trei: "Lattice wall (khana)", zocalos: "Skirting", anillo: "Perimeter ring", cal: "Wedges", cinta: "Double band", triangulos: "Triangles",
+    radiales: "Radial rafters", toono: "Toono", perchas: "Rafters", escuadras: "Steel brackets", cable: "Steel cable", cinta_alero: "Eave band",
+    tapa: "Toono · cap ring", domo: "Toono · geodesic dome", sobrealto: "Toono · lantern", ventanas: "Lantern · windows", tapa_sol: "Toono · insulated lid",
+    montantes: "Door posts", suelo_ab: "Thresholds", vidrios: "Window glass", algodon_techo: "Roof · cotton", freno_techo: "Roof · vapour barrier", aislacion_techo: "Roof · insulation",
+    tyvek: "Roof · Tyvek", lona_techo: "Roof · PVC cover", algodon_muro: "Wall · cotton", freno_muro: "Wall · vapour barrier", aislacion_muro: "Wall · insulation", lona_muro: "Wall · fabric" },
+  pt: { pilares: "Pilares", vigas: "Vigas", osb_inf: "OSB de baixo", tirantes: "Barrotes", anillo_piso: "Anel do piso", osb_sup: "OSB de cima",
+    trei: "Treliça (khana)", zocalos: "Rodapés", anillo: "Anel periférico", cal: "Calços", cinta: "Fita dupla", triangulos: "Triângulos",
+    radiales: "Caibros radiais", toono: "Toono", perchas: "Caibros", escuadras: "Esquadros metálicos", cable: "Cabo de aço", cinta_alero: "Fita do beiral",
+    tapa: "Toono · anel tampa", domo: "Toono · domo geodésico", sobrealto: "Toono · lanternim", ventanas: "Lanternim · janelas", tapa_sol: "Toono · tampa isolante",
+    montantes: "Montantes", suelo_ab: "Soleiras", vidrios: "Vidro das janelas", algodon_techo: "Telhado · algodão", freno_techo: "Telhado · barreira de vapor", aislacion_techo: "Telhado · isolamento",
+    tyvek: "Telhado · Tyvek", lona_techo: "Telhado · lona de PVC", algodon_muro: "Parede · algodão", freno_muro: "Parede · barreira de vapor", aislacion_muro: "Parede · isolamento", lona_muro: "Parede · tecido" },
+};
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
@@ -189,8 +226,8 @@ async function pintar() {
   const t = T[lang] || T.es;
   marcarIdioma();
   if (!E) { noDisponible(); return; }
-  const { calc } = await import("./calculo-geo.js");
-  const P = E.datos || {}, C = calc(P);
+  const { calc, resumen } = await import("./calculo-geo.js");
+  const P = E.datos || {}, C = calc(P), Rs = resumen(P, C);
   const simple = P.tipo === 2, sobre = P.tono_tipo === 2;
   const nf = (v, d = 2) => new Intl.NumberFormat(lang, { minimumFractionDigits: d, maximumFractionDigits: d }).format(v);
   const fecha = new Intl.DateTimeFormat(lang, { day: "numeric", month: "long", year: "numeric" }).format(E.vence);
@@ -212,9 +249,15 @@ async function pintar() {
     [t.muro, nf(P.alto) + " m"],
     ...(alto > 0 ? [[t.centro, "≈ " + nf(alto, 1) + " m"]] : []),
     [t.techo, simple ? t.simple : t.doble],
-    [t.toono, "Ø " + nf(2 * P.r_toono) + " m"],
-    [t.remate, sobre ? t.sobre(C.sobrealto.n_vent) : t.domo],
-    [t.aberturas, String(Math.round(P.n_ab ?? 0))],
+    [t.toono, "Ø " + nf(2 * P.r_toono) + " m · " + (sobre ? t.sobre(C.sobrealto.n_vent) : t.domo)],
+    [t.aberturas, t.aberturas2(Rs.puertas, Rs.ventanas)],
+  ];
+  const M = Rs.madera;
+  const lleva = [
+    [t.madera, nf(Rs.madera_total) + " m³", `${t.m_piso} ${nf(M.piso)} · ${t.m_muro} ${nf(M.muro)} · ${t.m_techo} ${nf(M.techo)} · ${t.m_toono} ${nf(M.toono)}`],
+    [t.placas, Math.round(Rs.placas) + " " + t.u_placas, ""],
+    [t.lona_techo, nf(Rs.lona_techo, 1) + " m²", ""],
+    [t.tela_muro, nf(Rs.tela_muro, 1) + " m²", ""],
   ];
   const parrafos = String(E.descripcion || "").split(/\n\s*\n/).map(p => p.trim()).filter(Boolean)
     .map(p => `<p>${esc(p).replace(/\n/g, "<br>")}</p>`).join("");
@@ -231,13 +274,17 @@ async function pintar() {
       <div class="v3-barra">
         <button class="btn" type="button" data-modo="terminada">${esc(t.terminada)}</button>
         <button class="btn" type="button" data-modo="estructura">${esc(t.estructura)}</button>
+        <button class="btn" type="button" id="partes-b">${esc(t.partes)}</button>
         <button class="btn" type="button" id="encuadrar">${esc(t.encuadrar)}</button>
         <span class="nota" id="nota3d">${esc(t.nota3d)}</span>
       </div>
+      <div class="partes hide" id="partes"></div>
     </div>
     <div class="grid">
-      <div class="caja"><h2>${esc(t.medidas)}</h2>
+      <div class="caja"><h2>${esc(t.resumen)}</h2>
         ${filas.map(([n, v]) => `<div class="fil"><span class="n">${esc(n)}</span><span class="v">${esc(v)}</span></div>`).join("")}
+        <h2 style="margin-top:1.3rem">${esc(t.lleva)}</h2>
+        ${lleva.map(([n, v, d]) => `<div class="fil"><span class="n">${esc(n)}${d ? `<br><span class="sub">${esc(d)} m³</span>` : ""}</span><span class="v">${esc(v)}</span></div>`).join("")}
         ${precio ? `<h2 style="margin-top:1.3rem">${esc(t.precio)}</h2><div class="precio">${esc(precio)}</div>` : ""}
       </div>
       <div class="caja desc"><h2>${esc(t.descripcion)}</h2>${parrafos}
@@ -251,36 +298,53 @@ async function pintar() {
 }
 
 // Lo que se ve en cada modo: «terminada» con las lonas por fuera; «la
-// estructura», la madera sola. Las capas de adentro no se muestran.
+// estructura», la madera sola. Desde propuesta-2 cada componente se prende y
+// apaga en la lista (sólo los que tiene ESTE modelo).
 const MODOS = {
   terminada: (k, capa) => !capa || k === "lona_techo" || k === "lona_muro",
   estructura: (k, capa) => !capa,
 };
+let partes = [], vis = {};
 async function montar3d(P, C, t) {
   if (vista) { vista.destruir(); vista = null; }
-  marcarModo();
   try {
-    const { montar, PARTES } = await import("./calculo-3d.js");
-    const vis = {}; for (const [k, , capa] of PARTES) vis[k] = MODOS[modo](k, !!capa);
+    const { montar, PARTES, piezas3d } = await import("./calculo-3d.js");
+    const hay = new Set(piezas3d(P, C).piezas.map(p => p.g));
+    partes = PARTES.filter(([k]) => hay.has(k)).map(([k, nombre, capa]) => ({ k, nombre: (PARTES_T[lang] || {})[k] || nombre.replace(/ · (simple|2\.ª capa)$/, ""), capa: !!capa }));
+    vis = {}; for (const [k, , capa] of PARTES) vis[k] = MODOS[modo](k, !!capa);
+    pintarPartes(t);
     vista = await montar($("vista3d"), P, C, vis);
-    $("vista3d").dataset.partes = JSON.stringify(PARTES.map(p => [p[0], !!p[2]]));
   } catch (e) {
     console.error(e);
     $("vista3d").innerHTML = `<p class="nota" style="padding:1rem">${esc(t.sin3d)}</p>`;
   }
+  marcarModo();
 }
-function marcarModo() { document.querySelectorAll("[data-modo]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.modo === modo))); }
+function pintarPartes(t) {
+  const casilla = (p) => `<label><input type="checkbox" data-parte="${p.k}" ${vis[p.k] !== false ? "checked" : ""}> ${esc(p.nombre)}</label>`;
+  $("partes").innerHTML = `<b>${esc(t.estructura_t)}</b>` + partes.filter(p => !p.capa).map(casilla).join("")
+    + `<b>${esc(t.capas_t)}</b>` + partes.filter(p => p.capa).map(casilla).join("")
+    + `<b></b><span><button class="btn" type="button" data-todas="1">${esc(t.todas)}</button> <button class="btn" type="button" data-todas="0">${esc(t.ninguna)}</button></span>`;
+}
+function ver(k, on) { vis[k] = on; if (vista) vista.ver(k, on); const c = document.querySelector(`#partes [data-parte="${k}"]`); if (c) c.checked = on; }
+function marcarModo() {
+  const coincide = (m) => partes.length && partes.every(p => (vis[p.k] !== false) === MODOS[m](p.k, p.capa));
+  document.querySelectorAll("[data-modo]").forEach(b => b.setAttribute("aria-pressed", String(coincide(b.dataset.modo))));
+}
 
 document.addEventListener("click", (ev) => {
   const l = ev.target.closest("#lang button");
   if (l) { lang = l.dataset.l; pintar(); return; }
   const m = ev.target.closest("[data-modo]");
-  if (m && vista) {
-    modo = m.dataset.modo; marcarModo();
-    for (const [k, capa] of JSON.parse($("vista3d").dataset.partes || "[]")) vista.ver(k, MODOS[modo](k, capa));
-    return;
-  }
+  if (m) { modo = m.dataset.modo; for (const p of partes) ver(p.k, MODOS[modo](p.k, p.capa)); marcarModo(); return; }
+  if (ev.target.closest("#partes-b")) { $("partes").classList.toggle("hide"); return; }
+  const td = ev.target.closest("[data-todas]");
+  if (td) { for (const p of partes) ver(p.k, td.dataset.todas === "1"); marcarModo(); return; }
   if (ev.target.closest("#encuadrar") && vista) vista.encuadrar();
+});
+document.addEventListener("change", (ev) => {
+  const k = ev.target.dataset && ev.target.dataset.parte; if (!k) return;
+  ver(k, ev.target.checked); marcarModo();
 });
 
 E = await traer();

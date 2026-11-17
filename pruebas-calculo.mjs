@@ -7,7 +7,7 @@
 
 import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
-import { calc, corte, cuerdas, pilares, montaje, escuadraSimple } from "./calculo-geo.js";
+import { calc, corte, cuerdas, pilares, montaje, escuadraSimple, resumen } from "./calculo-geo.js";
 import { piezas3d, arriostramiento, geodesica, PARTES, CAMPO_PARTES } from "./calculo-3d.js";
 
 let bien = 0, mal = 0;
@@ -142,7 +142,7 @@ ok("3D: el toono lleva 5 coronas de relleno (0,187)", T3.nCor === 5 && cerca(T3.
 ok("3D: con el toono de 0,502 no hay perchas radiales", piezas3d({ ...P, r_toono: 0.502 }, calc({ ...P, r_toono: 0.502 })).piezas.filter(p => p.g === "radiales").length === 0);
 // Las partes salen de las cuatro combinaciones (doble/simple × domo/sobrealto, 3d-11).
 ok("3D: cada parte tiene su casilla, y cada casilla su parte", (() => { const g = new Set();
-  for (const Q of [P, { ...P, tipo: 2, tono_tipo: 2 }]) piezas3d(Q, calc(Q)).piezas.forEach(p => g.add(p.g));
+  for (const Q of [P, { ...P, tipo: 2, tono_tipo: 2, n_vt: 2 }]) piezas3d(Q, calc(Q)).piezas.forEach(p => g.add(p.g));
   return [...g].every(x => PARTES.some(([k]) => k === x)) && PARTES.every(([k]) => g.has(k)); })());
 ok("3D: lo que resalta cada medida son partes que existen", Object.values(CAMPO_PARTES).flat().every(x => PARTES.some(([k]) => k === x)));
 ok("3D: cada medida que resalta es un campo de la página", Object.keys(CAMPO_PARTES).every(k => k in PORDEF));
@@ -152,7 +152,8 @@ for (const [nom, Q] of [["Christine", P], ["4 m", { ...P, D: 4 }], ["12 m", { ..
   ["sin aberturas", { ...P, n_ab: 0 }], ["domo media esfera, 5V", { ...P, dom_ang: 90, dom_frec: 5 }], ["domo bajo", { ...P, dom_ang: 30, dom_frec: 1 }], ["tapa a medio camino", { ...P, ts_giro: 0.5 }], ["una abertura", { ...P, n_ab: 1, n_gr: 1 }], ["aberturas bajas", { ...P, alt_ab: 1.9 }], ["simple", { ...P, tipo: 2 }], ["simple con sobrealto", { ...P, tipo: 2, tono_tipo: 2 }], ["doble con sobrealto", { ...P, tono_tipo: 2 }],
   ["simple 4 m, 3 ventanas cerradas", { ...P, D: 4, tipo: 2, tono_tipo: 2, sa_vent: 3, sa_abre: 0 }], ["simple 12 m, 12 ventanas", { ...P, D: 12, tipo: 2, tono_tipo: 2, sa_vent: 12 }],
   ["simple con anillo", { ...P, tipo: 2, s_anillo: 1 }], ["piso de una capa", { ...P, piso_tipo: 2 }], ["simple, una capa, 4 m", { ...P, tipo: 2, piso_tipo: 2, D: 4 }],
-  ["sin campos nuevos", Object.fromEntries(Object.entries(P).filter(([k]) => !["s_anillo","cab_dist","piso_tipo","tipo","tono_tipo","esc","s_ais","sa_alto","sa_vent","sa_desb","sa_ang","sa_abre","anc_ab","sep_mon","umb_esp","umb_vuelo","umb_caida","lona_baja","diente","tapa_cam","tapa_vuelo","dom_ang","dom_frec","tapa_ranura","ts_giro","ts_esp","ts_rendija"].includes(k)))]]) {
+  ["con ventanas", { ...P, n_vt: 3 }], ["6 m, 1 puerta y 2 ventanas", { ...P, D: 6, tipo: 2, tono_tipo: 2, r_toono: 0.5, n_ab: 1, n_gr: 1, n_vt: 2 }], ["ventana hasta arriba", { ...P, n_vt: 1, vt_alto: 3 }],
+  ["sin campos nuevos", Object.fromEntries(Object.entries(P).filter(([k]) => !["n_vt","vt_anc","vt_alto","vt_ant","s_anillo","cab_dist","piso_tipo","tipo","tono_tipo","esc","s_ais","sa_alto","sa_vent","sa_desb","sa_ang","sa_abre","anc_ab","sep_mon","umb_esp","umb_vuelo","umb_caida","lona_baja","diente","tapa_cam","tapa_vuelo","dom_ang","dom_frec","tapa_ranura","ts_giro","ts_esp","ts_rendija"].includes(k)))]]) {
   const K = piezas3d(Q, calc(Q));
   ok(`3D ${nom}: sin NaN`, !/null|NaN|Infinity/.test(JSON.stringify(K)));
 }
@@ -304,6 +305,30 @@ ok("calculo.html ya no pide el cable (el doble techo no lo lleva)", !/faltan los
   ok("calculo.html: el piso tiene dos opciones, doble con aislación o simple sin", /\[\[1, "Doble capa con aislación"\], \[2, "Simple · sin aislación"\]\]/.test(html) && !/Doble capa sin aislación/.test(html));
   ok("piso doble: la aislación es del alto del tirante", C.piso_aislado && cerca(C.cel_bruto, C.area * P.tir_alt, 1e-12) && calc({ ...P, piso_tipo: 3 }).piso_aislado);
   ok("piso de una capa: el corte no dibuja el OSB de abajo", (corte(Q, Cq).svg2.match(/class="osb"/g) || []).length === 1 && (corte(P, C).svg2.match(/class="osb"/g) || []).length === 2);
+}
+// ── las ventanas (geo-9, 3d-13, Mauro, 17-nov-2026: «el modelo de 6 m tiene una puerta y dos ventanas») ──
+{
+  const Q = { ...P, D: 6, tipo: 2, tono_tipo: 2, r_toono: 0.5, n_ab: 1, n_gr: 1, n_vt: 2 }, Cq = calc(Q), K = piezas3d(Q, Cq), de = (g) => K.piezas.filter(p => p.g === g);
+  const G = Cq.mon.grupos;
+  ok("ventanas: una puerta y dos ventanas, repartidas a 120°", G.length === 3 && G.map(g => g.tipo).join() === "puerta,ventana,ventana"
+    && G.every((g, i) => cerca(g.c, 2 * Math.PI * i / 3, 1e-12)));
+  ok("ventanas: dos montantes por ventana, del ancho pedido en el trei", Cq.mon.ventanas.length === 2 && Cq.mon.ventanas.every(([a, b]) => cerca((b - a) * Cq.r_trei_int, P.vt_anc, 1e-9))
+    && G.filter(g => g.tipo === "ventana").every(g => g.montantes.length === 2));
+  ok("ventanas: las aberturas de piso siguen siendo sólo las puertas", Cq.mon.aberturas.length === 1);
+  ok("3D ventanas: un vidrio por ventana, entre el antepecho y el alto", (() => { const v = de("vidrios")[0].v; if (v.length !== 2 * 18) return false;
+    const ys = []; for (let i = 1; i < v.length; i += 3) ys.push(v[i]); const yP = P.tir_alt + P.osb_sup;
+    return cerca(Math.min(...ys), yP + P.vt_ant, 1e-9) && cerca(Math.max(...ys), yP + P.vt_ant + P.vt_alto, 1e-9); })());
+  ok("3D ventanas: el trei sigue debajo del alféizar y se corta en el hueco", (() => { const am = Cq.mon.ventanas[0], c = (am[0] + am[1]) / 2, yP = P.tir_alt + P.osb_sup;
+    const en = (y0, y1) => de("trei").filter(p => { const m = [(p.a[0] + p.b[0]) / 2, (p.a[1] + p.b[1]) / 2, (p.a[2] + p.b[2]) / 2], a = Math.atan2(m[2], m[0]);
+      return Math.abs(Math.atan2(Math.sin(a - c), Math.cos(a - c))) < 0.05 && m[1] > y0 && m[1] < y1; }).length;
+    return en(yP, yP + P.vt_ant - P.esp_mon - 0.05) > 0 && en(yP + P.vt_ant, yP + P.vt_ant + P.vt_alto) === 0; })());
+  ok("3D ventanas: el piso de la abertura va sólo en la puerta", (() => { const v = de("suelo_ab")[0].v; let aMax = -9;
+    for (let i = 0; i < v.length; i += 3) aMax = Math.max(aMax, Math.abs(Math.atan2(v[i + 2], v[i]))); return aMax < 0.5; })());
+  ok("3D ventanas: alféizar y dintel por ventana", de("montantes").filter(p => p.a[1] === p.b[1]).length === 2 * 2 + (K.conDintel ? 1 : 0));
+  const Rs = resumen(Q, Cq);
+  ok("resumen: la madera es la suma de sus partes, y las telas salen del cálculo", cerca(Rs.madera_total, Object.values(Rs.madera).reduce((a, b) => a + b, 0), 1e-12)
+    && Rs.madera_total > 1 && Rs.madera_total < 4 && cerca(Rs.lona_techo, Cq.lona_area, 1e-12) && Rs.puertas === 1 && Rs.ventanas === 2 && Rs.placas === 2 * Cq.placas_capa);
+  ok("resumen: en la simple no entra la madera de la primera capa", resumen(P, C).madera.techo > Rs.madera.techo);
 }
 // ── el toono en sobrealto (geo-5, 3d-11) ──
 {

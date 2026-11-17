@@ -143,6 +143,7 @@
         <button class="btn" data-caso="christine">Christine</button>
         <button class="btn" data-caso="g6">6 m</button>
         <button class="btn" data-caso="simple">Simple con sobrealto</button>
+        <button class="btn" data-caso="simple6">Simple 6 m · 1 puerta y 2 ventanas</button>
       </div>
     </div>
 
@@ -227,7 +228,7 @@ import { CY } from "./nucleo.js";
 import { calc as calcGeo, corte } from "./calculo-geo.js";
 import { montar as montar3d, PARTES as PARTES3D, CAMPO_PARTES } from "./calculo-3d.js";
 
-CY.PANEL = "calculo-26";
+CY.PANEL = "calculo-27";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 // ── El SDK se baja acá, y recién después arranca la pantalla ────────────────
@@ -306,12 +307,16 @@ const CAMPOS = [
   ["cab_dist", "Cable · desde la cabeza del trei",0.100, "m · pasa por una perforación de cada percha"],
   ["s_ais",    "Aislación sobre las perchas",     0.040, "m · fieltro o guata, entre el freno y el Tyvek"],
   ["·","LAS ABERTURAS"],
-  ["n_ab",     "Aberturas",                       5,     "unidades"],
+  ["n_ab",     "Aberturas de piso (puertas)",     5,     "unidades · del piso hasta arriba"],
   ["n_gr",     "Grupos contiguos",                3,     "las juntas comparten montante"],
   ["alt_ab",   "Alto de la abertura",             2.280, "m"],
   ["esp_mon",  "Espesor del montante",            0.080, "m · el ancho se deriva"],
   ["anc_ab",   "Ancho libre de la abertura",      0.900, "m · entre montantes"],
   ["sep_mon",  "Montante suelto cada",            3.000, "m de perímetro, como mucho"],
+  ["n_vt",     "Ventanas",                        0,     "unidades · cada una con sus dos montantes; se reparten parejo con las puertas"],
+  ["vt_anc",   "Ventana · ancho libre",           0.800, "m · entre montantes"],
+  ["vt_alto",  "Ventana · alto",                  1.000, "m · del alféizar al dintel"],
+  ["vt_ant",   "Ventana · antepecho",             0.900, "m · del piso al alféizar"],
   ["umb_esp",  "Piso de la abertura · espesor",   0.045, "m · una sola pieza"],
   ["umb_vuelo","Piso de la abertura · vuelo",     0.050, "m · pasa el borde, redondeado"],
   ["umb_caida","Piso de la abertura · caída",     0.010, "m · pendiente hacia afuera"],
@@ -340,12 +345,14 @@ const SOLO = {
   simple: ["esc", "s_ais", "s_anillo", "cab_dist"],
   cable: ["cab_dist"],                     // sólo con el cable (no con el anillo)
   piso2: ["osb_inf"],                      // sólo con el piso de doble capa
+  ventanas: ["vt_anc", "vt_alto", "vt_ant"],
   domo: ["dom_ang", "dom_frec"],
   sobre: ["sa_alto", "sa_vent", "sa_desb", "sa_ang", "sa_abre"],
 };
 const usa = (k) => !((SOLO.doble.includes(k) && P.tipo === 2) || (SOLO.simple.includes(k) && P.tipo !== 2)
   || (SOLO.domo.includes(k) && P.tono_tipo === 2) || (SOLO.sobre.includes(k) && P.tono_tipo !== 2)
-  || (SOLO.cable.includes(k) && P.s_anillo === 1) || (SOLO.piso2.includes(k) && P.piso_tipo === 2));
+  || (SOLO.cable.includes(k) && P.s_anillo === 1) || (SOLO.piso2.includes(k) && P.piso_tipo === 2)
+  || (SOLO.ventanas.includes(k) && !(P.n_vt > 0)));
 const CLAVES = CAMPOS.filter(c => c[0] !== "·").map(c => c[0]);
 const PORDEF = {}; CAMPOS.forEach(c => { if (c[0] !== "·") PORDEF[c[0]] = c[2]; });
 
@@ -357,6 +364,9 @@ const CASOS = {
   // calculo-23: la propuesta para la simple (Mauro, 17-nov-2026): Christine con
   // una percha por cruce del trei y el toono en sobrealto con 8 ventanas de 30 cm.
   simple:    { ...PORDEF, tipo: 2, tono_tipo: 2 },
+  // calculo-27: la simple de 6 m con una puerta y dos ventanas (el modelo de la consulta del 17-nov).
+  simple6:   { ...PORDEF, D:6, ais_nom:.120, ais_techo:.120, E:.050, e_mad:.040, e_trei:.016, T:.042, anc_per:.040, tri_anc:.080, tri_esp:.040,
+              alto:2.280, n_per_r:30, desb:.450, tipo: 2, tono_tipo: 2, r_toono: .500, n_ab: 1, n_gr: 1, n_vt: 2 },
   g6:        {D:6, ais_nom:.120, ais_techo:.120, E:.050, e_mad:.040, e_trei:.016, T:.042, anc_per:.040, tri_anc:.080, tri_esp:.040,
               alto:2.280, n_per_r:30, desb:.450, r_toono:.900},
 };
@@ -595,7 +605,9 @@ function pintarPiezas() {
   h += tarjeta("Montantes", "Del borde exterior del plancher a la cara interior del trei. Las aberturas van " +
     "en grupos repartidos parejo; en un grupo, dos aberturas seguidas comparten el montante del medio. " +
     `Donde no hay abertura va un montante suelto, de modo que ninguno quede a más de ${m(P.sep_mon)}.`, [
-    ["", "Aberturas · grupos", "", `${un(P.n_ab)} · ${un(C.mon.grupos.length)}`, ""],
+    ["", "Aberturas de piso · grupos", "", `${un(P.n_ab)} · ${un(C.mon.grupos.filter(g => g.tipo !== "ventana").length)}`, ""],
+    ...(P.n_vt > 0 ? [["", "Ventanas", `${m(P.vt_anc)} × ${m(P.vt_alto)}, antepecho ${m(P.vt_ant)}`, un(P.n_vt), "d"],
+      ["", "Montantes de las ventanas", "dos por ventana", un(2 * P.n_vt), "d"]] : []),
     ["", "Montantes de las aberturas", "aberturas + grupos", un(C.n_mon_ab), "d"],
     ["", "Montantes sueltos", `cada ${m(P.sep_mon)} como mucho`, un(C.n_mon_sueltos), "d"],
     ["", "Montantes en total", "", un(C.n_mon), "d"],
@@ -1056,7 +1068,7 @@ function descripcionDe() {
   L.push(`Yurta de ${n(P.D, 1)} m de diámetro (${n(C.area, 1)} m² de piso), con el muro de ${n(P.alto)} m de altura y el techo a ${Math.round(P.ang)}°.`);
   L.push("");
   const sinAnillo = simple && P.s_anillo !== 1;
-  L.push(`Piso: plancher de madera sobre pilares, ${P.piso_tipo === 2 ? "con una capa de OSB sobre los tirantes, sin aislación" : `con dos capas de OSB y ${Math.round(P.tir_alt * 100)} cm de celulosa entre tirantes`}. Muro: trei, celosía de madera a 60° abulonada cada ${Math.round(P.bul * 100)} cm, ${sinAnillo ? "sobre el anillo de madera colada del piso" : "con el anillo periférico de madera colada arriba y abajo"}. ${un(P.n_ab)} aberturas de ${n(P.anc_ab)} × ${n(P.alt_ab)} m, con su piso de una pieza.`);
+  L.push(`Piso: plancher de madera sobre pilares, ${P.piso_tipo === 2 ? "con una capa de OSB sobre los tirantes, sin aislación" : `con dos capas de OSB y ${Math.round(P.tir_alt * 100)} cm de celulosa entre tirantes`}. Muro: trei, celosía de madera a 60° abulonada cada ${Math.round(P.bul * 100)} cm, ${sinAnillo ? "sobre el anillo de madera colada del piso" : "con el anillo periférico de madera colada arriba y abajo"}. ${un(P.n_ab)} ${P.n_ab == 1 ? "puerta" : "aberturas"} de ${n(P.anc_ab)} × ${n(P.alt_ab)} m, con su piso de una pieza${P.n_vt > 0 ? `, y ${un(P.n_vt)} ${P.n_vt == 1 ? "ventana" : "ventanas"} de ${n(P.vt_anc)} × ${n(P.vt_alto)} m` : ""}.`);
   L.push("");
   L.push(simple
     ? `Techo simple: ${un(C.simple.n_perchas)} perchas de ${Math.round(P.p_anc * 1000)} × ${Math.round(P.p_alt * 1000)} mm, una en cada cruce de arriba del trei, tomada por una escuadra metálica, del toono hasta ${Math.round(P.desb * 100)} cm de alero; ${sinAnillo ? "un cable de acero por todo el borde" : "el anillo periférico"} toma el empuje. Encima, algodón, freno de vapor, aislación, Tyvek y lona de PVC.`

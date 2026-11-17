@@ -114,6 +114,8 @@
 // v80 (2-nov-2026) — calculo-20 + 3d-8: la tapa aislante del toono, con bisagra y manivela.
 // v81 (2-nov-2026) — calculo-21 + 3d-9: las sogas por las aristas del triángulo; la cara vista adentro.
 // v82 (2-nov-2026) — calculo-22 + 3d-10: las sogas escondidas detrás de la tela, un orificio por enganche.
+// v93 (17-nov-2026) — calculo-27 + 3d-13 + geo-9: ventanas en el muro (n_vt) y el resumen de
+//   materiales; propuesta-2 (fuera del SHELL) muestra el resumen y cada componente del 3D.
 // v92 (17-nov-2026) — calculo-26 + geo-8: el piso en dos opciones (doble con la aislación del
 //   alto del tirante, o simple sin aislación); sale la doble sin aislación de la v91.
 // v91 (17-nov-2026) — calculo-25 + geo-7: el piso en tres opciones (doble con aislación, doble
@@ -140,7 +142,7 @@
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v92';
+const VERSION = 'cy-shell-v93';
 
 // v69 · 29-oct-2026 · `nucleo.js` (nucleo-32, general:C7): CY.explicar usa la tabla
 //   común de `errores.js` del panel (datos) y le suma sus dos causas propias.

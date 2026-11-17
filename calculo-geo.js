@@ -1,5 +1,11 @@
 // calculo-geo.js — la geometría de la yurta, sin navegador y sin Firebase.
-// Sello: geo-8 (17-nov-2026): el piso en DOS opciones (Mauro: «doble capa sin aislación no
+// Sello: geo-9 (17-nov-2026): VENTANAS además de las aberturas de piso (P.n_vt, con
+// su ancho, alto y antepecho; cada una es un grupo con sus dos montantes, y todos
+// los grupos se reparten parejo: una puerta y dos ventanas quedan a 120°), y
+// `resumen(P, C)`: la madera, las placas y las telas de la obra, para mostrarle
+// al cliente (Mauro, 17-nov-2026: «un resumen de cuánto se pide de madera, cuánto
+// de lona»).
+// geo-8 (17-nov-2026): el piso en DOS opciones (Mauro: «doble capa sin aislación no
 // tiene sentido. Se hace con aislación, definiendo el ancho por la sección de la madera
 // de la tirantería, o sin aislación, sólo la capa superior»): 1 doble capa con la
 // aislación del alto del tirante, 2 simple, de una capa. (geo-7 tuvo una tercera, retirada.)
@@ -35,7 +41,7 @@
 // TODO lo que se elige por diseño es un campo de la página: si cambia una
 // medida, cambian los números y el dibujo.
 
-export const SELLO_GEO = "geo-8";
+export const SELLO_GEO = "geo-9";
 
 // El tirante, la viga: cuerdas paralelas del círculo de radio R, con una en el
 // centro y cada `paso` a los dos lados. Devuelve [{x, L, n}] con n = 1 para la
@@ -74,31 +80,67 @@ export function montaje(P, R, rIn) {
   const da = (P.anc_ab || 0) / rIn, dm = (P.esp_mon || 0) / rIn;
   const nab = Math.max(0, Math.round(P.n_ab || 0));
   const ngr = nab ? Math.max(1, Math.min(nab, Math.round(P.n_gr || 1))) : 0;
+  // geo-9: cada ventana es un grupo propio (dos montantes), y los grupos de las
+  // aberturas de piso y las ventanas se reparten parejo alrededor.
+  const nvt = Math.max(0, Math.round(P.n_vt || 0)), dv = (P.vt_anc || 0) / rIn;
+  const G = ngr + nvt;
   const grupos = [];
-  for (let g = 0; g < ngr; g++) {
-    const k = Math.floor(nab / ngr) + (g < nab % ngr ? 1 : 0);
-    const c = 2 * Math.PI * g / ngr, paso = da + dm, ini = c - k * paso / 2;
+  for (let g = 0; g < G; g++) {
+    const ventana = g >= ngr;
+    const k = ventana ? 1 : Math.floor(nab / ngr) + (g < nab % ngr ? 1 : 0);
+    const ancho = ventana ? dv : da;
+    const c = 2 * Math.PI * g / G, paso = ancho + dm, ini = c - k * paso / 2;
     const montantes = [], aberturas = [];
     for (let i = 0; i <= k; i++) montantes.push(ini + i * paso);
     for (let i = 0; i < k; i++) aberturas.push([ini + i * paso + dm / 2, ini + (i + 1) * paso - dm / 2]);
-    grupos.push({ k, c, montantes, aberturas });
+    grupos.push({ k, c, montantes, aberturas, tipo: ventana ? "ventana" : "puerta" });
   }
   const sueltos = [];
   const sep = P.sep_mon > 0 ? P.sep_mon : Infinity;
-  if (!ngr) {
+  if (!G) {
     const n = Math.max(3, Math.ceil(2 * Math.PI * R / sep - 1e-9));
     for (let i = 0; i < n; i++) sueltos.push(2 * Math.PI * i / n);
-  } else for (let g = 0; g < ngr; g++) {
+  } else for (let g = 0; g < G; g++) {
     const a = grupos[g].montantes[grupos[g].montantes.length - 1];
-    const b = grupos[(g + 1) % ngr].montantes[0] + (g + 1 === ngr ? 2 * Math.PI : 0);
+    const b = grupos[(g + 1) % G].montantes[0] + (g + 1 === G ? 2 * Math.PI : 0);
     const n = Math.max(0, Math.ceil((b - a) * R / sep - 1e-9) - 1);
     for (let j = 1; j <= n; j++) sueltos.push(a + (b - a) * j / (n + 1));
   }
   const de_ab = grupos.reduce((s, g) => s + g.k + 1, 0);
+  const puertas = grupos.filter(g => g.tipo === "puerta"), ventanas = grupos.filter(g => g.tipo === "ventana");
   return { grupos, sueltos, de_ab, n_mon: de_ab + sueltos.length, dm,
-    aberturas: grupos.flatMap(g => g.aberturas), montantes: grupos.flatMap(g => g.montantes).concat(sueltos),
+    // `aberturas` son las de PISO (como hasta geo-8); las ventanas van aparte.
+    aberturas: puertas.flatMap(g => g.aberturas), ventanas: ventanas.flatMap(g => g.aberturas),
+    montantes: grupos.flatMap(g => g.montantes).concat(sueltos),
     max_sep: (() => { const t = grupos.flatMap(g => g.montantes).concat(sueltos).map(x => ((x % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI)).sort((x, y) => x - y);
       let m = 0; for (let i = 0; i < t.length; i++) m = Math.max(m, ((i + 1 < t.length ? t[i + 1] : t[0] + 2 * Math.PI) - t[i]) * R); return m; })() };
+}
+
+// ── EL RESUMEN DE MATERIALES (geo-9), lo que ve el cliente: la madera en m³ por
+// parte de la obra, las placas, la lona del techo y la tela del muro. Sale de
+// las mismas cuentas de calc(); no tiene precios. ──
+export function resumen(P, C) {
+  const simple = P.tipo === 2, conAnillo = !simple || P.s_anillo === 1;
+  const v = (x) => (isFinite(x) && x > 0 ? x : 0);
+  const sobre = P.tono_tipo === 2;
+  // el toono: dos capas coladas del alto de la percha, 10 cm de ancho (como en el pedido)
+  const toono = Math.PI * (P.r_toono ** 2 - Math.max(0, P.r_toono - 0.10) ** 2) * Math.max(P.p_anc, 2 * (P.e_mad || 0.04));
+  const nMonV = (C.mon ? C.mon.grupos.filter(g => g.tipo === "ventana").length * 2 : 0);
+  const montantes = (C.n_mon - nMonV) * C.mon_ancho * (P.alt_ab || 0) * (P.esp_mon || 0)
+    + nMonV * C.mon_ancho * P.alto * (P.esp_mon || 0);
+  const piso = v(C.vol_tir) + v(C.vol_vig) + v(C.vol_anillo_piso);
+  const muro = v(C.vol_trei) + v(montantes) + v(2 * C.zocalo * P.anc_int * P.e_int) + (conAnillo ? v(C.vol_an) : 0);
+  const techo = simple ? v(C.simple.vol_perchas)
+    : v(C.vol_perchas) + v(C.vol_tri) + (C.con_radial ? v(C.nt * C.largo_radial * P.tri_anc * P.tri_esp) : 0) + v(P.n_per_r * C.tri_base * (C.h0 + C.tri_tr) / 2 * P.p_alt);   // la cal: un trapecio por percha
+  const remate = toono + (sobre ? v(C.sobrealto.n_vent * (2 * 2 * C.sobrealto.r_aro * Math.sin(Math.PI / C.sobrealto.n_vent) + P.sa_alto + C.sobrealto.slant_techito) * 0.05 * 0.05) : 0);
+  const madera = { piso, muro, techo, toono: remate };
+  return {
+    madera, madera_total: piso + muro + techo + remate,
+    placas: C.capas_osb * C.placas_capa,
+    lona_techo: C.lona_area,                                   // la pieza plana entera
+    tela_muro: 2 * Math.PI * C.R * (P.alto + C.alto_piso + 0.1), // del borde del piso a la cabeza, más el solape abajo
+    puertas: Math.max(0, Math.round(P.n_ab || 0)), ventanas: Math.max(0, Math.round(P.n_vt || 0)),
+  };
 }
 
 export function calc(P) {

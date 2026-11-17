@@ -1,5 +1,8 @@
 // calculo-3d.js — el modelo en 3D de la estructura, con las medidas del cálculo.
-// Sello: 3d-12 (17-nov-2026). 3d-12: la escuadra de la simple es METÁLICA (pata
+// Sello: 3d-13 (17-nov-2026). 3d-13: las VENTANAS del muro (P.n_vt): el trei se corta
+// entre el alféizar y el dintel, con sus dos montantes, el vidrio, y debajo el muro
+// sigue (zócalo y capas).
+// 3d-12 (17-nov-2026). 3d-12: la escuadra de la simple es METÁLICA (pata
 // por fuera del trei tomada del bulón del último agujero, ala doblada hacia el
 // desborde con su tornillo 6×40); el borde de la simple lo toma un CABLE de acero
 // por las perchas, o el anillo periférico si se elige (P.s_anillo); el piso de
@@ -52,7 +55,7 @@
 // de abajo (donde apoyan los tirantes). Todo sale de calc(P): si cambia una
 // medida, cambia el modelo.
 
-export const SELLO_3D = "3d-12";
+export const SELLO_3D = "3d-13";
 import { escuadraSimple } from "./calculo-geo.js";
 export const THREE_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/+esm";
 export const ORBIT_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js/+esm";
@@ -87,6 +90,7 @@ export const PARTES = [
   ["tapa_sol",    "Toono · tapa aislante"],
   ["montantes",   "Montantes"],
   ["suelo_ab",    "Piso de las aberturas"],
+  ["vidrios",     "Vidrio de las ventanas"],
   // Las capas: el tercer dato las marca, y arrancan apagadas.
   ["algodon_techo",   "Techo · algodón", "capa"],
   ["freno_techo",     "Techo · freno de vapor", "capa"],
@@ -123,6 +127,7 @@ export const CAMPO_PARTES = {
   n_per_r: ["perchas", "cal"], desb: ["perchas"], p_anc: ["perchas"], p_alt: ["perchas", "cal"],
   r_toono: ["toono", "triangulos", "radiales", "tapa"], sep_max: ["radiales"],
   n_ab: ["montantes", "suelo_ab", "trei"], n_gr: ["montantes", "suelo_ab", "trei"],
+  n_vt: ["montantes", "vidrios", "trei"], vt_anc: ["montantes", "vidrios", "trei"], vt_alto: ["montantes", "vidrios", "trei"], vt_ant: ["montantes", "vidrios", "trei"],
   alt_ab: ["montantes", "trei"], esp_mon: ["montantes", "suelo_ab"], anc_ab: ["montantes", "suelo_ab", "trei", "zocalos"],
   sep_mon: ["montantes"], umb_esp: ["suelo_ab", "montantes"], umb_vuelo: ["suelo_ab"], umb_caida: ["suelo_ab"],
   lona_baja: ["lona_techo"],
@@ -249,12 +254,15 @@ export function piezas3d(P, C) {
 
   // ── los montantes y las aberturas (calc → montaje) ──
   const mon = C.mon || { aberturas: [], grupos: [], sueltos: [], montantes: [], dm: 0 };
-  const aberturas = mon.aberturas.map(([a0, a1]) => [norm(a0), norm(a0) + (a1 - a0)]).sort((x, y) => x[0] - y[0]);
-  // Los tramos de muro entre aberturas (con ninguna, el círculo entero).
-  const tramosMuro = aberturas.length ? aberturas.map((ab, i) => {
-    const sig = aberturas[(i + 1) % aberturas.length];
-    return [ab[1], sig[0] + (i + 1 === aberturas.length ? TAU : 0)];
+  const normAb = (xs) => (xs || []).map(([a0, a1]) => [norm(a0), norm(a0) + (a1 - a0)]).sort((x, y) => x[0] - y[0]);
+  const aberturas = normAb(mon.aberturas), ventanas = normAb(mon.ventanas);
+  // Los tramos de muro entre huecos (con ninguno, el círculo entero).
+  const tramosEntre = (xs) => xs.length ? xs.map((ab, i) => {
+    const sig = xs[(i + 1) % xs.length];
+    return [ab[1], sig[0] + (i + 1 === xs.length ? TAU : 0)];
   }).filter(([a, b]) => b - a > 1e-6) : [[0, TAU]];
+  const todos = [...aberturas, ...ventanas].sort((x, y) => x[0] - y[0]);
+  const tramosMuro = tramosEntre(todos), tramosPiso = tramosEntre(aberturas);
 
   // ── el plancher ──
   const yTir = P.tir_alt, yPiso = yTir + P.osb_sup;
@@ -287,6 +295,11 @@ export function piezas3d(P, C) {
   // En la simple sin anillo, si no entra un dintel entero debajo de las perchas, no va.
   const conDintel = yAbre < yTope - (conAnillo ? 0.01 : (P.esp_mon || 0));
   const yLibre = conDintel ? Math.min(yTope, yAbre + (P.esp_mon || 0)) : yTope;
+  // 3d-13: la ventana, entre el alféizar y el dintel (si el dintel no entra bajo el tope, sube hasta él).
+  const esp = P.esp_mon || 0, yv0 = yPiso + (P.vt_ant ?? 0.9), yv1 = Math.min(yv0 + (P.vt_alto ?? 1), yTope);
+  const dintelV = yv1 + esp < yTope - 0.01;
+  const huecos = [...aberturas.map(ab => ({ ab, yLo: -Infinity, yHi: yLibre })),
+                  ...ventanas.map(ab => ({ ab, yLo: yv0 - esp, yHi: dintelV ? yv1 + esp : yTope }))];
   const rT = C.r_trei - P.e_trei;
   const mitadMon = (P.esp_mon || 0) / 2 / rT + P.anc_trei / 2 / rT;   // lo que el montante le corta al trei
   const span = P.alto / Math.tan(Math.PI / 3);    // avance horizontal de un listón
@@ -300,7 +313,7 @@ export function piezas3d(P, C) {
       const m = (th0 + (f1 + f2) / 2 * dth), ym = yPiso + (f1 + f2) / 2 * P.alto;
       // El trei se corta en los montantes y en las aberturas (debajo del dintel).
       if (mon.montantes.some(a => dentro(m, [a - mitadMon, a + mitadMon]))) continue;
-      if (ym < yLibre && aberturas.some(ab => dentro(m, ab))) continue;
+      if (huecos.some(h => ym > h.yLo && ym < h.yHi && dentro(m, h.ab))) continue;
       barra("trei", p(f1), p(f2), P.anc_trei, P.e_trei, [Math.cos(m), 0, Math.sin(m)], "trei");
     }
   }
@@ -309,7 +322,7 @@ export function piezas3d(P, C) {
     const v = [], z1 = C.r_trei_int - P.e_int, z2 = C.r_trei_int;
     for (const [ya, yb] of [[yPiso, yPiso + P.anc_int], [yt - P.anc_int, yt]]) {
       const pf = [[z1, ya], [z2, ya], [z2, yb], [z1, yb], [z1, ya]];
-      const tramos = (ya < yLibre) ? tramosMuro : [[0, TAU]];
+      const tramos = (ya < yLibre) ? tramosPiso : [[0, TAU]];
       for (const [a, b] of tramos) { revolver(v, pf, a, b); if (b - a < TAU - 1e-6) { tapar(v, pf, a); tapar(v, pf, b); } }
     }
     malla("zocalos", "madera", v);
@@ -320,7 +333,7 @@ export function piezas3d(P, C) {
   //    piso (o del piso de la abertura) hasta debajo del anillo ──
   {
     const rm = (C.R + C.r_trei_int) / 2, anchoR = C.R - C.r_trei_int;
-    const deAbertura = new Set(mon.grupos.flatMap(g => g.montantes));
+    const deAbertura = new Set(mon.grupos.filter(g => g.tipo !== "ventana").flatMap(g => g.montantes));
     for (const a of mon.montantes) {
       const y0 = deAbertura.has(a) ? yPiso + umb : yPiso;
       barra("montantes", pol(rm, a, y0), pol(rm, a, yTope), P.esp_mon, anchoR, [Math.cos(a), 0, Math.sin(a)], "montante");
@@ -330,6 +343,14 @@ export function piezas3d(P, C) {
       barra("montantes", pol(rm, a0, yd), pol(rm, a1, yd), anchoR, P.esp_mon, [0, 1, 0], "montante");
       void am;
     }
+    // Las ventanas: alféizar, dintel (si entra) y el vidrio entre los montantes.
+    const vv = [];
+    for (const [a0, a1] of ventanas) {
+      barra("montantes", pol(rm, a0, yv0 - esp / 2), pol(rm, a1, yv0 - esp / 2), anchoR, esp, [0, 1, 0], "montante");
+      if (dintelV) barra("montantes", pol(rm, a0, yv1 + esp / 2), pol(rm, a1, yv1 + esp / 2), anchoR, esp, [0, 1, 0], "montante");
+      quad(vv, pol(rm, a0, yv0), pol(rm, a1, yv0), pol(rm, a1, yv1), pol(rm, a0, yv1));
+    }
+    malla("vidrios", "vidrio", vv);
     // El piso de la abertura: UNA pieza por grupo, sobre la que se paran los
     // montantes, del zócalo hasta pasar el borde, con caída hacia afuera y la
     // punta redondeada para que gotee lejos del muro.
@@ -340,7 +361,7 @@ export function piezas3d(P, C) {
     for (let i = 1; i < 8; i++) { const f = -Math.PI / 2 + Math.PI * i / 8; pf.push([cx + rho * Math.cos(f), cy + rho * Math.sin(f)]); }
     pf.push([cx, yOut], [rIn, yIn], [rIn, yPiso]);
     const v = [];
-    for (const g of mon.grupos) {
+    for (const g of mon.grupos.filter(g => g.tipo !== "ventana")) {
       const a = g.montantes[0] - mon.dm / 2, b = g.montantes[g.montantes.length - 1] + mon.dm / 2;
       revolver(v, pf, a, b); tapar(v, pf, a); tapar(v, pf, b);
     }
@@ -632,7 +653,10 @@ export function piezas3d(P, C) {
     const v = [];
     const f = (ya, yb) => perfil(ya, yb);
     const tramos = [...tramosMuro.map(t => [t, y0, y1])];
-    if (aberturas.length && y1 > yLibre + 0.001) for (const ab of aberturas) tramos.push([ab, Math.max(y0, yLibre), y1]);
+    for (const h of huecos) {                        // debajo y encima de cada hueco, el muro sigue
+      if (h.yLo > y0 + 0.001) tramos.push([h.ab, y0, Math.min(y1, h.yLo)]);
+      if (y1 > h.yHi + 0.001) tramos.push([h.ab, Math.max(y0, h.yHi), y1]);
+    }
     for (const [[a, b], ya, yb] of tramos) {
       const pf = f(ya, yb); revolver(v, pf, a, b);
       if (cerrado && b - a < TAU - 1e-6) { tapar(v, pf, a); tapar(v, pf, b); }
