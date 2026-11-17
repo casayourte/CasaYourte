@@ -1,7 +1,8 @@
 // calculo-geo.js — la geometría de la yurta, sin navegador y sin Firebase.
-// Sello: geo-7 (17-nov-2026): el piso en TRES opciones (P.piso_tipo): 1 doble capa con
-// aislación, 3 doble capa sin aislación, 2 simple, de una capa (Mauro: «o simple el
-// piso también como opción»).
+// Sello: geo-8 (17-nov-2026): el piso en DOS opciones (Mauro: «doble capa sin aislación no
+// tiene sentido. Se hace con aislación, definiendo el ancho por la sección de la madera
+// de la tirantería, o sin aislación, sólo la capa superior»): 1 doble capa con la
+// aislación del alto del tirante, 2 simple, de una capa. (geo-7 tuvo una tercera, retirada.)
 // geo-6 (17-nov-2026): la escuadra de la simple es METÁLICA, como la
 // del piso, por fuera del trei y tomada del bulón del último agujero, doblada al
 // ángulo del techo y con un tornillo 6×40 a la percha; el borde de la simple lo
@@ -34,7 +35,7 @@
 // TODO lo que se elige por diseño es un campo de la página: si cambia una
 // medida, cambian los números y el dibujo.
 
-export const SELLO_GEO = "geo-7";
+export const SELLO_GEO = "geo-8";
 
 // El tirante, la viga: cuerdas paralelas del círculo de radio R, con una en el
 // centro y cada `paso` a los dos lados. Devuelve [{x, L, n}] con n = 1 para la
@@ -158,9 +159,9 @@ export function calc(P) {
   const placas_capa = placa > 0 ? Math.ceil(area * P.desp / placa - 1e-9) : 0;
   const vol_anillo_piso = per_med * P.E * alto_an;
   // geo-6: el piso de UNA capa no lleva el OSB de abajo ni la celulosa.
-  // geo-7: 3 = doble capa SIN aislación (las dos placas, sin la celulosa).
+  // geo-8: la doble capa va SIEMPRE con aislación, y su espesor es el alto del tirante.
   const piso_doble = P.piso_tipo !== 2, osb_inf_e = piso_doble ? P.osb_inf : 0;
-  const piso_aislado = piso_doble && P.piso_tipo !== 3;
+  const piso_aislado = piso_doble;
   const capas_osb = piso_doble ? 2 : 1;
   const cel_bruto = piso_aislado ? area * P.tir_alt : 0;
   const cel_neto = piso_aislado ? cel_bruto - m_tir * P.tir_alt * P.tir_anc - vol_anillo_piso : 0;

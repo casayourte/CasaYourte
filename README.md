@@ -30,7 +30,7 @@ menú ⋮ → *Agregar a la pantalla principal*.
 |---|---|
 | `admin.html` | los álbumes de obra |
 | `editar.html` | el editor: la página real, tocás un texto o una foto y la cambiás |
-| `calculo.html` | los cálculos de taller, uno por cliente, con el corte del borde a escala. Dos yurtas (doble techo o **simple**: una percha por cruce del trei, tomada por una escuadra metálica como la del piso —por fuera del trei, del bulón del último agujero, doblada al ángulo del techo, con un tornillo 6×40—, y el borde con un cable de acero o, a elección, el anillo periférico), el piso de doble capa con aislación, de doble capa sin aislación o simple (una capa), y dos remates del toono (cuarto de domo o **sobrealto con ventanas**). La pestaña «Para el cliente» arma el link de la propuesta |
+| `calculo.html` | los cálculos de taller, uno por cliente, con el corte del borde a escala. Dos yurtas (doble techo o **simple**: una percha por cruce del trei, tomada por una escuadra metálica como la del piso —por fuera del trei, del bulón del último agujero, doblada al ángulo del techo, con un tornillo 6×40—, y el borde con un cable de acero o, a elección, el anillo periférico), el piso de doble capa con aislación (del alto del tirante) o simple, sólo la capa de arriba y sin aislación, y dos remates del toono (cuarto de domo o **sobrealto con ventanas**). La pestaña «Para el cliente» arma el link de la propuesta |
 | `propuesta.html` | **pública, por link** (`?p=<token>`): la propuesta para un cliente con la descripción, las medidas, el precio si se puso y el 3D de su yurta; vence. Sin SDK ni sesión (REST), `noindex`, fuera del SHELL. El token es la llave (`entregas/` en `REGLAS.txt`) |
 | `usuarios.html` | quién entra y qué puede hacer |
 | `diagnostico.html` | las pruebas de conexión |
@@ -789,12 +789,12 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-34` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `cy-shell-v91` |
+| `sw.js` | `VERSION` | `cy-shell-v92` |
 | `admin.html` | `PANEL` | `admin-20` |
 | `editar.html` | `EDITOR` | `editar-23` |
 | `taller.html` | `SELLO` | `andamio-3` |
-| `calculo.html` | `CY.PANEL` | `calculo-25` |
-| `calculo-geo.js` | `SELLO_GEO` | `geo-7` |
+| `calculo.html` | `CY.PANEL` | `calculo-26` |
+| `calculo-geo.js` | `SELLO_GEO` | `geo-8` |
 | `calculo-3d.js` | `SELLO_3D` | `3d-12` |
 | `propuesta.html` | (en el comentario) | `propuesta-1` |
 | `consultas.html` | `CY.PANEL` | `consultas-4` |
