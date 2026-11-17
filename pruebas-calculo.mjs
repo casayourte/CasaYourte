@@ -7,7 +7,7 @@
 
 import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
-import { calc, corte, cuerdas, pilares, montaje, escuadraSimple, resumen } from "./calculo-geo.js";
+import { calc, corte, cuerdas, pilares, montaje, escuadraSimple, resumen, vanos } from "./calculo-geo.js";
 import { piezas3d, arriostramiento, geodesica, PARTES, CAMPO_PARTES } from "./calculo-3d.js";
 
 let bien = 0, mal = 0;
@@ -322,9 +322,22 @@ ok("calculo.html ya no pide el cable (el doble techo no lo lleva)", !/faltan los
     const en = (y0, y1) => de("trei").filter(p => { const m = [(p.a[0] + p.b[0]) / 2, (p.a[1] + p.b[1]) / 2, (p.a[2] + p.b[2]) / 2], a = Math.atan2(m[2], m[0]);
       return Math.abs(Math.atan2(Math.sin(a - c), Math.cos(a - c))) < 0.05 && m[1] > y0 && m[1] < y1; }).length;
     return en(yP, yP + P.vt_ant - P.esp_mon - 0.05) > 0 && en(yP + P.vt_ant, yP + P.vt_ant + P.vt_alto) === 0; })());
-  ok("3D ventanas: el piso de la abertura va sólo en la puerta", (() => { const v = de("suelo_ab")[0].v; let aMax = -9;
-    for (let i = 0; i < v.length; i += 3) aMax = Math.max(aMax, Math.abs(Math.atan2(v[i + 2], v[i]))); return aMax < 0.5; })());
-  ok("3D ventanas: alféizar y dintel por ventana", de("montantes").filter(p => p.a[1] === p.b[1]).length === 2 * 2 + (K.conDintel ? 1 : 0));
+  // 3d-14 (Mauro: «la puerta y las ventanas se consiguen aparte… sólo prever los montantes»)
+  const yP = P.tir_alt + P.osb_sup;
+  ok("3D vanos: cada abertura, puerta o ventana, lleva su piso; el de la ventana, en el antepecho", (() => { const v = de("suelo_ab")[0].v; const ys = new Set();
+    for (let i = 1; i < v.length; i += 3) ys.add(Math.round(v[i] * 1000)); return [...ys].some(y => Math.abs(y / 1000 - (yP + P.vt_ant)) < 0.002)
+      && [...ys].some(y => Math.abs(y / 1000 - (yP + P.umb_esp)) < 0.002); })());
+  ok("3D vanos: los montantes de la ventana se paran en su piso", G.filter(g => g.tipo === "ventana").every(g => g.montantes.every(a =>
+    de("montantes").some(p => p.a[1] !== p.b[1] && cerca(Math.min(p.a[1], p.b[1]), yP + P.vt_ant, 1e-9) && cerca(Math.atan2(p.a[2], p.a[0]), Math.atan2(Math.sin(a), Math.cos(a)), 1e-9)))));
+  ok("3D vanos: dos tapas por montante de abertura (interior y exterior), ninguna en los sueltos", de("tapas").length === 2 * 2 * G.length
+    && de("tapas").every(p => p.ancho === P.tapa_anc && p.alto === P.tapa_esp));
+  ok("3D vanos: la tapa interior contra el trei, la exterior por fuera de la lona", (() => { const rs = de("tapas").map(p => Math.hypot(p.a[0], p.a[2]));
+    return rs.filter(r => r < Cq.r_trei_int).length === 2 * G.length && rs.filter(r => r > Cq.R + 0.003).length === 2 * G.length; })());
+  ok("3D vanos: sin alféizar suelto; sólo los dinteles", de("montantes").filter(p => p.a[1] === p.b[1]).length === 2 + (K.conDintel ? 1 : 0));
+  const V = vanos(Q, Cq);
+  ok("vanos: por abertura un piso, dos montantes y cuatro tapas", V.pisos.length === 3 && V.montantes.length === 6 && V.tapas.length === 12
+    && V.montantes.every(m => m.ancho === Cq.mon_ancho && m.esp === P.esp_mon) && P.esp_mon === 0.04);
+  ok("vanos: el montante de la ventana es más corto que el de la puerta", V.montantes.find(m => m.tipo === "ventana").largo < V.montantes.find(m => m.tipo === "puerta").largo);
   const Rs = resumen(Q, Cq);
   ok("resumen: la madera es la suma de sus partes, y las telas salen del cálculo", cerca(Rs.madera_total, Object.values(Rs.madera).reduce((a, b) => a + b, 0), 1e-12)
     && Rs.madera_total > 1 && Rs.madera_total < 4 && cerca(Rs.lona_techo, Cq.lona_area, 1e-12) && Rs.puertas === 1 && Rs.ventanas === 2 && Rs.placas === 2 * Cq.placas_capa);

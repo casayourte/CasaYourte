@@ -1,5 +1,9 @@
 // calculo-geo.js — la geometría de la yurta, sin navegador y sin Firebase.
-// Sello: geo-9 (17-nov-2026): VENTANAS además de las aberturas de piso (P.n_vt, con
+// Sello: geo-10 (17-nov-2026): `vanos(P, C)`, la madera de cada abertura (que se compra
+// hecha): dos montantes parados en su piso, el piso que drena hacia afuera y las dos
+// tapas de cada montante (la interior toma los bulones del trei; la exterior sujeta
+// la lona y termina). En eucalipto de unos 4 cm. El resumen la suma.
+// geo-9 (17-nov-2026): VENTANAS además de las aberturas de piso (P.n_vt, con
 // su ancho, alto y antepecho; cada una es un grupo con sus dos montantes, y todos
 // los grupos se reparten parejo: una puerta y dos ventanas quedan a 120°), y
 // `resumen(P, C)`: la madera, las placas y las telas de la obra, para mostrarle
@@ -41,7 +45,7 @@
 // TODO lo que se elige por diseño es un campo de la página: si cambia una
 // medida, cambian los números y el dibujo.
 
-export const SELLO_GEO = "geo-9";
+export const SELLO_GEO = "geo-10";
 
 // El tirante, la viga: cuerdas paralelas del círculo de radio R, con una en el
 // centro y cada `paso` a los dos lados. Devuelve [{x, L, n}] con n = 1 para la
@@ -116,6 +120,35 @@ export function montaje(P, R, rIn) {
       let m = 0; for (let i = 0; i < t.length; i++) m = Math.max(m, ((i + 1 < t.length ? t[i + 1] : t[0] + 2 * Math.PI) - t[i]) * R); return m; })() };
 }
 
+// ── LOS VANOS (geo-10, Mauro, 17-nov-2026: «la puerta y las ventanas se consiguen
+// aparte… sólo tengo que prever los montantes para instalarla: un suelo para drenar
+// el agua hacia afuera, un montante en cada costado de ese suelo apoyado en el suelo;
+// el trei va fijado al montante a través de una tapa interior que agarra los
+// bulones; el ancho del montante es el espesor de los dos palos del trei más el
+// aislante del muro comprimido, para fijar al exterior la lona y tener otra tapa de
+// terminación al exterior; en eucalipto, de unos 4 cm»). Por abertura, puerta o
+// ventana: su piso, dos montantes y cuatro tapas. Los largos van del piso de la
+// abertura a la cabeza del muro (el tope de los montantes).
+export function vanos(P, C) {
+  const grupos = C.mon ? C.mon.grupos : [];
+  const yTope = P.alto - P.e_mad;                       // debajo del anillo (sin anillo, ≈ la cabeza)
+  const umb = P.umb_esp || 0, prof = (C.R + (P.umb_vuelo || 0)) - C.r_int_lito;
+  const out = { pisos: [], montantes: [], tapas: [], vol: 0 };
+  for (const g of grupos) {
+    const ventana = g.tipo === "ventana";
+    const largoMon = yTope - (ventana ? (P.vt_ant ?? 0.9) : umb);
+    const anchoPiso = (g.montantes[g.montantes.length - 1] - g.montantes[0]) * C.r_int_lito + (P.esp_mon || 0) + 0.02;
+    out.pisos.push({ tipo: g.tipo, largo: anchoPiso, prof, esp: umb });
+    for (let i = 0; i < g.montantes.length; i++) {
+      out.montantes.push({ tipo: g.tipo, largo: largoMon, ancho: C.mon_ancho, esp: P.esp_mon || 0 });
+      out.tapas.push({ tipo: g.tipo, largo: largoMon, ancho: P.tapa_anc ?? 0.12, esp: P.tapa_esp ?? 0.02 }, { tipo: g.tipo, largo: largoMon, ancho: P.tapa_anc ?? 0.12, esp: P.tapa_esp ?? 0.02 });
+    }
+  }
+  out.vol = out.pisos.reduce((s, p) => s + p.largo * p.prof * p.esp, 0) + out.montantes.reduce((s, m) => s + m.largo * m.ancho * m.esp, 0)
+    + out.tapas.reduce((s, t) => s + t.largo * t.ancho * t.esp, 0);
+  return out;
+}
+
 // ── EL RESUMEN DE MATERIALES (geo-9), lo que ve el cliente: la madera en m³ por
 // parte de la obra, las placas, la lona del techo y la tela del muro. Sale de
 // las mismas cuentas de calc(); no tiene precios. ──
@@ -125,9 +158,9 @@ export function resumen(P, C) {
   const sobre = P.tono_tipo === 2;
   // el toono: dos capas coladas del alto de la percha, 10 cm de ancho (como en el pedido)
   const toono = Math.PI * (P.r_toono ** 2 - Math.max(0, P.r_toono - 0.10) ** 2) * Math.max(P.p_anc, 2 * (P.e_mad || 0.04));
-  const nMonV = (C.mon ? C.mon.grupos.filter(g => g.tipo === "ventana").length * 2 : 0);
-  const montantes = (C.n_mon - nMonV) * C.mon_ancho * (P.alt_ab || 0) * (P.esp_mon || 0)
-    + nMonV * C.mon_ancho * P.alto * (P.esp_mon || 0);
+  const V = vanos(P, C);
+  const sueltos = (C.mon ? C.mon.sueltos.length : 0) * C.mon_ancho * P.alto * (P.esp_mon || 0);
+  const montantes = V.vol + sueltos;
   const piso = v(C.vol_tir) + v(C.vol_vig) + v(C.vol_anillo_piso);
   const muro = v(C.vol_trei) + v(montantes) + v(2 * C.zocalo * P.anc_int * P.e_int) + (conAnillo ? v(C.vol_an) : 0);
   const techo = simple ? v(C.simple.vol_perchas)

@@ -1,5 +1,11 @@
 // calculo-3d.js — el modelo en 3D de la estructura, con las medidas del cálculo.
-// Sello: 3d-13 (17-nov-2026). 3d-13: las VENTANAS del muro (P.n_vt): el trei se corta
+// Sello: 3d-14 (17-nov-2026). 3d-14: las aberturas se compran hechas; lo nuestro es
+// el VANO (Mauro: «sólo tengo que prever los montantes para instalarla»): cada una,
+// puerta o ventana, con su PISO que drena hacia afuera, un montante a cada lado
+// parado sobre él, la TAPA INTERIOR que toma los bulones del trei y la EXTERIOR de
+// terminación, que sujeta la lona. La ventana: su piso a la altura del antepecho,
+// y el trei sigue debajo.
+// 3d-13 (17-nov-2026). 3d-13: las VENTANAS del muro (P.n_vt): el trei se corta
 // entre el alféizar y el dintel, con sus dos montantes, el vidrio, y debajo el muro
 // sigue (zócalo y capas).
 // 3d-12 (17-nov-2026). 3d-12: la escuadra de la simple es METÁLICA (pata
@@ -55,7 +61,7 @@
 // de abajo (donde apoyan los tirantes). Todo sale de calc(P): si cambia una
 // medida, cambia el modelo.
 
-export const SELLO_3D = "3d-13";
+export const SELLO_3D = "3d-14";
 import { escuadraSimple } from "./calculo-geo.js";
 export const THREE_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/+esm";
 export const ORBIT_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js/+esm";
@@ -91,6 +97,7 @@ export const PARTES = [
   ["montantes",   "Montantes"],
   ["suelo_ab",    "Piso de las aberturas"],
   ["vidrios",     "Vidrio de las ventanas"],
+  ["tapas",       "Tapas de los montantes"],
   // Las capas: el tercer dato las marca, y arrancan apagadas.
   ["algodon_techo",   "Techo · algodón", "capa"],
   ["freno_techo",     "Techo · freno de vapor", "capa"],
@@ -128,7 +135,7 @@ export const CAMPO_PARTES = {
   r_toono: ["toono", "triangulos", "radiales", "tapa"], sep_max: ["radiales"],
   n_ab: ["montantes", "suelo_ab", "trei"], n_gr: ["montantes", "suelo_ab", "trei"],
   n_vt: ["montantes", "vidrios", "trei"], vt_anc: ["montantes", "vidrios", "trei"], vt_alto: ["montantes", "vidrios", "trei"], vt_ant: ["montantes", "vidrios", "trei"],
-  alt_ab: ["montantes", "trei"], esp_mon: ["montantes", "suelo_ab"], anc_ab: ["montantes", "suelo_ab", "trei", "zocalos"],
+  alt_ab: ["montantes", "trei"], esp_mon: ["montantes", "suelo_ab", "tapas"], tapa_anc: ["tapas"], tapa_esp: ["tapas"], anc_ab: ["montantes", "suelo_ab", "trei", "zocalos"],
   sep_mon: ["montantes"], umb_esp: ["suelo_ab", "montantes"], umb_vuelo: ["suelo_ab"], umb_caida: ["suelo_ab"],
   lona_baja: ["lona_techo"],
   diente: ["toono"], tapa_cam: ["tapa"], tapa_vuelo: ["tapa", "domo"], tapa_ranura: ["tapa"], dom_ang: ["domo"], dom_frec: ["domo"],
@@ -298,8 +305,12 @@ export function piezas3d(P, C) {
   // 3d-13: la ventana, entre el alféizar y el dintel (si el dintel no entra bajo el tope, sube hasta él).
   const esp = P.esp_mon || 0, yv0 = yPiso + (P.vt_ant ?? 0.9), yv1 = Math.min(yv0 + (P.vt_alto ?? 1), yTope);
   const dintelV = yv1 + esp < yTope - 0.01;
+  const yvB = yv0 - umb;                          // 3d-14: la cara de abajo del piso de la ventana
   const huecos = [...aberturas.map(ab => ({ ab, yLo: -Infinity, yHi: yLibre })),
-                  ...ventanas.map(ab => ({ ab, yLo: yv0 - esp, yHi: dintelV ? yv1 + esp : yTope }))];
+                  ...ventanas.map(ab => ({ ab, yLo: yvB, yHi: dintelV ? yv1 + esp : yTope }))];
+  // Dónde corta el trei cada montante: el de una ventana, sólo arriba de su piso.
+  const deVentana = new Set(mon.grupos.filter(g => g.tipo === "ventana").flatMap(g => g.montantes));
+  const cortesMon = mon.montantes.map(a => ({ a, yLo: deVentana.has(a) ? yvB : -Infinity }));
   const rT = C.r_trei - P.e_trei;
   const mitadMon = (P.esp_mon || 0) / 2 / rT + P.anc_trei / 2 / rT;   // lo que el montante le corta al trei
   const span = P.alto / Math.tan(Math.PI / 3);    // avance horizontal de un listón
@@ -312,7 +323,7 @@ export function piezas3d(P, C) {
       const p = (f) => v3(r * Math.cos(th0 + f * dth), yPiso + f * P.alto, r * Math.sin(th0 + f * dth));
       const m = (th0 + (f1 + f2) / 2 * dth), ym = yPiso + (f1 + f2) / 2 * P.alto;
       // El trei se corta en los montantes y en las aberturas (debajo del dintel).
-      if (mon.montantes.some(a => dentro(m, [a - mitadMon, a + mitadMon]))) continue;
+      if (cortesMon.some(c => ym > c.yLo && dentro(m, [c.a - mitadMon, c.a + mitadMon]))) continue;
       if (huecos.some(h => ym > h.yLo && ym < h.yHi && dentro(m, h.ab))) continue;
       barra("trei", p(f1), p(f2), P.anc_trei, P.e_trei, [Math.cos(m), 0, Math.sin(m)], "trei");
     }
@@ -334,19 +345,26 @@ export function piezas3d(P, C) {
   {
     const rm = (C.R + C.r_trei_int) / 2, anchoR = C.R - C.r_trei_int;
     const deAbertura = new Set(mon.grupos.filter(g => g.tipo !== "ventana").flatMap(g => g.montantes));
+    const te = P.tapa_esp ?? 0.02, ta = P.tapa_anc ?? 0.12;
     for (const a of mon.montantes) {
-      const y0 = deAbertura.has(a) ? yPiso + umb : yPiso;
-      barra("montantes", pol(rm, a, y0), pol(rm, a, yTope), P.esp_mon, anchoR, [Math.cos(a), 0, Math.sin(a)], "montante");
+      const y0 = deAbertura.has(a) ? yPiso + umb : deVentana.has(a) ? yv0 : yPiso;
+      const rad_ = [Math.cos(a), 0, Math.sin(a)];
+      barra("montantes", pol(rm, a, y0), pol(rm, a, yTope), P.esp_mon, anchoR, rad_, "montante");
+      // Las tapas de los montantes de una abertura: la interior, contra el trei,
+      // toma sus bulones; la exterior, por fuera de la lona, la sujeta y termina.
+      if (deAbertura.has(a) || deVentana.has(a)) {
+        barra("tapas", pol(C.r_trei_int - te / 2, a, y0), pol(C.r_trei_int - te / 2, a, yTope), ta, te, rad_, "madera");
+        barra("tapas", pol(C.R + 0.004 + te / 2, a, y0), pol(C.R + 0.004 + te / 2, a, yTope), ta, te, rad_, "madera");
+      }
     }
     if (conDintel) for (const [a0, a1] of aberturas) {
       const yd = yAbre + P.esp_mon / 2, am = (a0 + a1) / 2;
       barra("montantes", pol(rm, a0, yd), pol(rm, a1, yd), anchoR, P.esp_mon, [0, 1, 0], "montante");
       void am;
     }
-    // Las ventanas: alféizar, dintel (si entra) y el vidrio entre los montantes.
+    // Las ventanas: el dintel (si entra) y el vidrio entre los montantes; su piso va abajo, con el de las puertas.
     const vv = [];
     for (const [a0, a1] of ventanas) {
-      barra("montantes", pol(rm, a0, yv0 - esp / 2), pol(rm, a1, yv0 - esp / 2), anchoR, esp, [0, 1, 0], "montante");
       if (dintelV) barra("montantes", pol(rm, a0, yv1 + esp / 2), pol(rm, a1, yv1 + esp / 2), anchoR, esp, [0, 1, 0], "montante");
       quad(vv, pol(rm, a0, yv0), pol(rm, a1, yv0), pol(rm, a1, yv1), pol(rm, a0, yv1));
     }
@@ -354,14 +372,19 @@ export function piezas3d(P, C) {
     // El piso de la abertura: UNA pieza por grupo, sobre la que se paran los
     // montantes, del zócalo hasta pasar el borde, con caída hacia afuera y la
     // punta redondeada para que gotee lejos del muro.
+    // 3d-14: las ventanas llevan el mismo piso, a la altura del antepecho.
     const rIn = C.r_int_lito, rOut = C.R + (P.umb_vuelo || 0);
-    const yIn = yPiso + umb, yOut = yIn - (P.umb_caida || 0);
-    const rho = Math.max(0.002, (yOut - yPiso) / 2), cx = rOut - rho, cy = yPiso + rho;
-    const pf = [[rIn, yPiso], [cx, yPiso]];
-    for (let i = 1; i < 8; i++) { const f = -Math.PI / 2 + Math.PI * i / 8; pf.push([cx + rho * Math.cos(f), cy + rho * Math.sin(f)]); }
-    pf.push([cx, yOut], [rIn, yIn], [rIn, yPiso]);
+    const perfil = (yb) => {
+      const yIn = yb + umb, yOut = yIn - (P.umb_caida || 0);
+      const rho = Math.max(0.002, (yOut - yb) / 2), cx = rOut - rho, cy = yb + rho;
+      const pf = [[rIn, yb], [cx, yb]];
+      for (let i = 1; i < 8; i++) { const f = -Math.PI / 2 + Math.PI * i / 8; pf.push([cx + rho * Math.cos(f), cy + rho * Math.sin(f)]); }
+      pf.push([cx, yOut], [rIn, yIn], [rIn, yb]);
+      return pf;
+    };
     const v = [];
-    for (const g of mon.grupos.filter(g => g.tipo !== "ventana")) {
+    for (const g of mon.grupos) {
+      const pf = perfil(g.tipo === "ventana" ? yvB : yPiso);
       const a = g.montantes[0] - mon.dm / 2, b = g.montantes[g.montantes.length - 1] + mon.dm / 2;
       revolver(v, pf, a, b); tapar(v, pf, a); tapar(v, pf, b);
     }

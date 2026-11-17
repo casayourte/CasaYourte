@@ -225,10 +225,10 @@ import { cargarFirebase,
          db, auth, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, addDoc,
          collection, serverTimestamp, onAuthStateChanged, signOut } from "./firebase-init.js";
 import { CY } from "./nucleo.js";
-import { calc as calcGeo, corte } from "./calculo-geo.js";
+import { calc as calcGeo, corte, vanos } from "./calculo-geo.js";
 import { montar as montar3d, PARTES as PARTES3D, CAMPO_PARTES } from "./calculo-3d.js";
 
-CY.PANEL = "calculo-27";
+CY.PANEL = "calculo-28";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 // ── El SDK se baja acá, y recién después arranca la pantalla ────────────────
@@ -310,7 +310,9 @@ const CAMPOS = [
   ["n_ab",     "Aberturas de piso (puertas)",     5,     "unidades · del piso hasta arriba"],
   ["n_gr",     "Grupos contiguos",                3,     "las juntas comparten montante"],
   ["alt_ab",   "Alto de la abertura",             2.280, "m"],
-  ["esp_mon",  "Espesor del montante",            0.080, "m · el ancho se deriva"],
+  ["esp_mon",  "Espesor del montante",            0.040, "m · eucalipto; el ancho se deriva (2 listones del trei + la aislación)"],
+  ["tapa_anc", "Tapas del montante · ancho",      0.120, "m · la interior toma los bulones del trei; la exterior sujeta la lona"],
+  ["tapa_esp", "Tapas del montante · espesor",    0.020, "m · eucalipto"],
   ["anc_ab",   "Ancho libre de la abertura",      0.900, "m · entre montantes"],
   ["sep_mon",  "Montante suelto cada",            3.000, "m de perímetro, como mucho"],
   ["n_vt",     "Ventanas",                        0,     "unidades · cada una con sus dos montantes; se reparten parejo con las puertas"],
@@ -616,8 +618,9 @@ function pintarPiezas() {
     ["", "Espesor", "se decide", mm(P.esp_mon), ""],
     ["", "Ancho libre de la abertura", "entre montantes, en el trei", m(P.anc_ab), ""],
     ["", "Alto libre de la abertura", "del piso de la abertura", m(P.alt_ab), ""],
-    ["", "Volumen", "", m3(C.n_mon * C.mon_ancho * P.alt_ab * P.esp_mon), ""],
+    ["", "Volumen de los sueltos", "del piso a la cabeza", m3(C.n_mon_sueltos * C.mon_ancho * P.alto * P.esp_mon), ""],
   ], [
+    ["", `<b>Las puertas y las ventanas se compran hechas</b>: lo que se fabrica es el vano (abajo, «Los vanos»).`],
     ["", `El ancho <b>no se elige</b>: tiene que cubrir la aislación comprimida más los dos
       listones del trei. Con listones de ${mm(P.e_trei)} son ${mm(C.mon_ancho)}; si el
       aserradero trae de 22 mm serían ${mm(C.A + 0.044)}.`],
@@ -628,6 +631,25 @@ function pintarPiezas() {
       yurta ${mm(P.umb_vuelo)}, con ${mm(P.umb_caida)} de caída hacia afuera y la punta
       redondeada, para que el agua gotee lejos del muro.`],
   ]);
+  {
+    const V = vanos(P, C), agrupar = (xs) => { const g = {}; for (const x of xs) { const k = x.tipo + "|" + x.largo.toFixed(2); g[k] = (g[k] || 0) + 1; } return g; };
+    const filas = [];
+    for (const [k, n] of Object.entries(agrupar(V.pisos))) { const [t, L] = k.split("|");
+      filas.push(["", `Piso de ${t}`, `${mm(V.pisos[0].esp)} × ${mm(V.pisos[0].prof)} de fondo · drena hacia afuera`, `${n} × ${m(+L)}`, "d"]); }
+    for (const [k, n] of Object.entries(agrupar(V.montantes))) { const [t, L] = k.split("|");
+      filas.push(["", `Montantes de ${t}`, `${mm(P.esp_mon)} × ${mm(C.mon_ancho)}, parados en el piso`, `${n} × ${m(+L)}`, "d"]); }
+    for (const [k, n] of Object.entries(agrupar(V.tapas))) { const [t, L] = k.split("|");
+      filas.push(["", `Tapas de ${t}`, `${mm(P.tapa_esp)} × ${mm(P.tapa_anc)}, interior y exterior`, `${n} × ${m(+L)}`, "d"]); }
+    filas.push(["", "Volumen de los vanos", "pisos + montantes + tapas", m3(V.vol), ""]);
+    h += tarjeta("Los vanos · puertas y ventanas se compran hechas",
+      "Por cada abertura, puerta o ventana: su piso, que drena el agua hacia afuera; un montante a cada " +
+      "costado, parado sobre él; y en cada montante dos tapas: la interior toma los bulones del trei, y la " +
+      "exterior sujeta la lona y termina. En eucalipto.", filas, [
+      ["", `El ancho del montante es el espesor de los dos listones del trei más la aislación comprimida
+        (${mm(C.mon_ancho)}): así la lona se fija afuera, sobre él, y la tapa exterior la cubre.`],
+      P.n_vt > 0 && ["", `El piso de la ventana va a ${m(P.vt_ant)} del piso, y el trei sigue debajo.`],
+    ]);
+  }
 
   h += `<h2 style="margin:1.2rem 0 .5rem">Las capas</h2>`;
   h += tarjeta("De adentro hacia afuera", "Se prenden y apagan en el 3D, cada una por separado.", simple ? [
