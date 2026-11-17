@@ -1,5 +1,6 @@
 // calculo-geo.js — la geometría de la yurta, sin navegador y sin Firebase.
-// Sello: geo-10 (17-nov-2026): `vanos(P, C)`, la madera de cada abertura (que se compra
+// Sello: geo-11 (17-nov-2026): el sobrealto dice cuántas ventanas se abren (n_abiertas).
+// geo-10 (17-nov-2026): `vanos(P, C)`, la madera de cada abertura (que se compra
 // hecha): dos montantes parados en su piso, el piso que drena hacia afuera y las dos
 // tapas de cada montante (la interior toma los bulones del trei; la exterior sujeta
 // la lona y termina). En eucalipto de unos 4 cm. El resumen la suma.
@@ -45,7 +46,7 @@
 // TODO lo que se elige por diseño es un campo de la página: si cambia una
 // medida, cambian los números y el dibujo.
 
-export const SELLO_GEO = "geo-10";
+export const SELLO_GEO = "geo-11";
 
 // El tirante, la viga: cuerdas paralelas del círculo de radio R, con una en el
 // centro y cada `paso` a los dos lados. Devuelve [{x, L, n}] con n = 1 para la
@@ -337,7 +338,7 @@ export function calc(P) {
       const r_aro = P.r_toono + (P.tapa_vuelo ?? 0.05) - 0.02, r_techito = r_aro + (P.sa_desb ?? 0.15);
       const a = (P.sa_ang ?? 25) * Math.PI / 180;
       const ancho_vent = 2 * r_aro * Math.sin(Math.PI / n) - 0.05;   // entre parantes de 5 cm
-      return { n_vent: n, alto, r_aro, r_techito, ancho_vent,
+      return { n_vent: n, alto, r_aro, r_techito, ancho_vent, n_abiertas: Math.max(0, Math.min(n, Math.round(P.sa_abiertas ?? 2))),
         area_vidrio: n * ancho_vent * alto,
         cumbrera: r_aro * Math.tan(a),                // del cabezal a la punta
         slant_techito: r_techito / Math.cos(a) / Math.cos(Math.PI / n),   // la limatesa, del vértice a la punta

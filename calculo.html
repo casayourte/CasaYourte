@@ -38,7 +38,8 @@
   .seg button{flex:1;min-width:8rem;padding:.5rem .6rem;border:1px solid var(--line);border-radius:var(--r-s);
     background:var(--ink2);color:var(--dim);font:inherit;font-size:.84rem}
   .seg button.on{border-color:var(--blond);color:var(--ink);background:var(--blond);font-weight:600}
-  .campos label.apagado{opacity:.38}
+  .campos .apagado{opacity:.38}
+  .campos .apagado input, .campos .apagado button{cursor:not-allowed}
   .ent{display:grid;gap:.55rem;max-width:44rem}
   .ent .dos{display:grid;grid-template-columns:1fr 1fr;gap:.55rem}
   .ent-link{background:var(--ink2);border:1px solid var(--line);border-radius:var(--r);padding:.7rem .8rem;
@@ -230,7 +231,7 @@ import { CY } from "./nucleo.js";
 import { calc as calcGeo, corte, vanos } from "./calculo-geo.js";
 import { montar as montar3d, PARTES as PARTES3D, CAMPO_PARTES } from "./calculo-3d.js";
 
-CY.PANEL = "calculo-29";
+CY.PANEL = "calculo-30";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 // ── El SDK se baja acá, y recién después arranca la pantalla ────────────────
@@ -277,7 +278,7 @@ const CAMPOS = [
   ["b_borde",  "Del bulón al borde del listón",   0.020, "m"],
   ["e_int",    "Espesor del zócalo interior",     0.010, "m · abajo y arriba"],
   ["anc_int",  "Ancho del zócalo interior",       0.040, "m"],
-  ["·","EL PLANCHER"],
+  ["·","EL PISO"],
   ["piso_tipo","Piso",                            1,     "1 = doble capa con aislación (del alto del tirante) · 2 = simple, sólo la capa de arriba, sin aislación", [[1, "Doble capa con aislación"], [2, "Simple · sin aislación"]]],
   ["paso_t",   "Entreeje de los tirantes",        0.400, "m · con uno central"],
   ["tir_alt",  "Alto del tirante",                0.140, "m"],
@@ -341,7 +342,8 @@ const CAMPOS = [
   ["sa_vent",  "Sobrealto · ventanas",            8,     "una por cara del prisma"],
   ["sa_desb",  "Sobrealto · desborde del techito",0.150, "m · más allá del aro"],
   ["sa_ang",   "Sobrealto · pendiente del techito",25,   "grados"],
-  ["sa_abre",  "Sobrealto · ventanas abiertas",   30,    "grados · abisagradas arriba, abren hacia afuera · 0 = cerradas"],
+  ["sa_abre",  "Sobrealto · apertura",            30,    "grados · abisagradas arriba, abren hacia afuera"],
+  ["sa_abiertas","Sobrealto · ventanas que se abren",2,   "repartidas parejo: 2 = dos opuestas; las demás quedan fijas"],
 ];
 // Qué medidas usa cada elección (las demás quedan apagadas en la pantalla).
 const SOLO = {
@@ -351,12 +353,19 @@ const SOLO = {
   piso2: ["osb_inf"],                      // sólo con el piso de doble capa
   ventanas: ["vt_anc", "vt_alto", "vt_ant"],
   domo: ["dom_ang", "dom_frec"],
-  sobre: ["sa_alto", "sa_vent", "sa_desb", "sa_ang", "sa_abre"],
+  sobre: ["sa_alto", "sa_vent", "sa_desb", "sa_ang", "sa_abre", "sa_abiertas"],
+  // calculo-30 (Mauro: «se deshabiliten las opciones de los cálculos que no corresponden»)
+  arriba: ["n_partes"],                    // las partes para el transporte son del anillo de ARRIBA
+  puertas: ["n_gr", "alt_ab", "anc_ab"],   // sin aberturas de piso
+  vanos: ["umb_esp", "umb_vuelo", "umb_caida", "tapa_anc", "tapa_esp"],   // sin ninguna abertura
 };
 const usa = (k) => !((SOLO.doble.includes(k) && P.tipo === 2) || (SOLO.simple.includes(k) && P.tipo !== 2)
   || (SOLO.domo.includes(k) && P.tono_tipo === 2) || (SOLO.sobre.includes(k) && P.tono_tipo !== 2)
   || (SOLO.cable.includes(k) && P.s_anillo === 1) || (SOLO.piso2.includes(k) && P.piso_tipo === 2)
-  || (SOLO.ventanas.includes(k) && !(P.n_vt > 0)));
+  || (SOLO.ventanas.includes(k) && !(P.n_vt > 0))
+  || (SOLO.arriba.includes(k) && P.tipo === 2 && P.s_anillo !== 1)
+  || (SOLO.puertas.includes(k) && !(P.n_ab > 0))
+  || (SOLO.vanos.includes(k) && !(P.n_ab > 0) && !(P.n_vt > 0)));
 const CLAVES = CAMPOS.filter(c => c[0] !== "·").map(c => c[0]);
 const PORDEF = {}; CAMPOS.forEach(c => { if (c[0] !== "·") PORDEF[c[0]] = c[2]; });
 
@@ -370,7 +379,7 @@ const CASOS = {
   simple:    { ...PORDEF, tipo: 2, tono_tipo: 2 },
   // calculo-27: la simple de 6 m con una puerta y dos ventanas (el modelo de la consulta del 17-nov).
   simple6:   { ...PORDEF, D:6, ais_nom:.120, ais_techo:.120, E:.050, e_mad:.040, e_trei:.016, T:.042, anc_per:.040, tri_anc:.080, tri_esp:.040,
-              alto:2.280, n_per_r:30, desb:.450, tipo: 2, tono_tipo: 2, r_toono: .500, n_ab: 1, n_gr: 1, n_vt: 2 },
+              alto:2.280, n_per_r:30, desb:.450, tipo: 2, tono_tipo: 2, r_toono: .800, sa_alto: .350, n_ab: 1, n_gr: 1, n_vt: 2 },
   g6:        {D:6, ais_nom:.120, ais_techo:.120, E:.050, e_mad:.040, e_trei:.016, T:.042, anc_per:.040, tri_anc:.080, tri_esp:.040,
               alto:2.280, n_per_r:30, desb:.450, r_toono:.900},
 };
@@ -606,7 +615,7 @@ function pintarPiezas() {
   }
 
   h += `<h2 style="margin:1.2rem 0 .5rem">Aberturas</h2>`;
-  h += tarjeta("Montantes", "Del borde exterior del plancher a la cara interior del trei. Las aberturas van " +
+  h += tarjeta("Montantes", "Del borde exterior del piso a la cara interior del trei. Las aberturas van " +
     "en grupos repartidos parejo; en un grupo, dos aberturas seguidas comparten el montante del medio. " +
     `Donde no hay abertura va un montante suelto, de modo que ninguno quede a más de ${m(P.sep_mon)}.`, [
     ["", "Aberturas de piso · grupos", "", `${un(P.n_ab)} · ${un(C.mon.grupos.filter(g => g.tipo !== "ventana").length)}`, ""],
@@ -717,6 +726,7 @@ function pintarPiezas() {
       abre hacia arriba y hacia afuera (la parte de abajo sale), con su compás. Arriba, un techito
       piramidal con una limatesa por vértice y su desborde.`, [
       ["", "Ventanas", "una por cara", un(A.n_vent), "d"],
+      ["", "Se abren", "repartidas parejo; las demás, fijas", un(A.n_abiertas), "d"],
       ["", "Alto de la ventana", "", m(A.alto), "d"],
       ["", "Ancho de la ventana", "entre parantes", m(A.ancho_vent), "d"],
       ["", "Vidrio en total", "", m2(A.area_vidrio), ""],
@@ -747,7 +757,7 @@ function pintarPiezas() {
     ["H", "Aislación del techo, ⊥ a la percha", "", mm(C.H), "d"],
   ]);
 
-  h += `<h2 style="margin:1.2rem 0 .5rem">El plancher</h2>`;
+  h += `<h2 style="margin:1.2rem 0 .5rem">El piso</h2>`;
   h += tarjeta("Tirantes",
     `Cada ${m(P.paso_t)}, con uno en el centro, de borde a borde. Cada uno es una cuerda
     del círculo: 2·√(R² − x²).`,
@@ -984,7 +994,7 @@ $("campos").innerHTML = CAMPOS.map(c =>
   c[0] === "·"
     ? `<div class="gt">${c[1]}</div>`
     : c[4]
-    ? `<div class="elige"><span class="k">${c[1]}</span><div class="seg" data-seg="${c[0]}">${c[4].map(([v, t]) =>
+    ? `<div class="elige" data-campo="${c[0]}"><span class="k">${c[1]}</span><div class="seg" data-seg="${c[0]}">${c[4].map(([v, t]) =>
         `<button type="button" data-k="${c[0]}" data-v="${v}">${t}</button>`).join("")}</div></div>`
     : `<label data-campo="${c[0]}"><span class="k">${c[1]}</span>
        <input type="number" step="any" inputmode="decimal" data-k="${c[0]}" value="${c[2]}">
@@ -995,7 +1005,12 @@ $("campos").innerHTML = CAMPOS.map(c =>
 function refrescarCampos() {
   document.querySelectorAll("#campos input").forEach(i => { i.value = P[i.dataset.k]; });
   document.querySelectorAll("#campos .seg button").forEach(b => b.classList.toggle("on", Number(P[b.dataset.k]) === Number(b.dataset.v)));
-  document.querySelectorAll("#campos label[data-campo]").forEach(l => l.classList.toggle("apagado", !usa(l.dataset.campo)));
+  // Lo que no usa la configuración elegida queda gris y DESHABILITADO (se habilita solo al cambiarla).
+  document.querySelectorAll("#campos [data-campo]").forEach(l => {
+    const off = !usa(l.dataset.campo);
+    l.classList.toggle("apagado", off);
+    l.querySelectorAll("input, button").forEach(x => { x.disabled = off; });
+  });
 }
 refrescarCampos();
 
@@ -1095,14 +1110,14 @@ function descripcionDe() {
   L.push(`Yurta de ${n(P.D, 1)} m de diámetro (${n(C.area, 1)} m² de piso), con el muro de ${n(P.alto)} m de altura y el techo a ${Math.round(P.ang)}°.`);
   L.push("");
   const sinAnillo = simple && P.s_anillo !== 1;
-  L.push(`Piso: plancher de madera sobre pilares, ${P.piso_tipo === 2 ? "con una capa de OSB sobre los tirantes, sin aislación" : `con dos capas de OSB y ${Math.round(P.tir_alt * 100)} cm de celulosa entre tirantes`}. Muro: trei, celosía de madera a 60° abulonada cada ${Math.round(P.bul * 100)} cm, ${sinAnillo ? "sobre el anillo de madera colada del piso" : "con el anillo periférico de madera colada arriba y abajo"}. ${un(P.n_ab)} ${P.n_ab == 1 ? "puerta" : "aberturas"} de ${n(P.anc_ab)} × ${n(P.alt_ab)} m, con su piso de una pieza${P.n_vt > 0 ? `, y ${un(P.n_vt)} ${P.n_vt == 1 ? "ventana" : "ventanas"} de ${n(P.vt_anc)} × ${n(P.vt_alto)} m` : ""}.`);
+  L.push(`Piso de madera sobre pilares, ${P.piso_tipo === 2 ? "con una capa de OSB sobre los tirantes, sin aislación" : `con dos capas de OSB y ${Math.round(P.tir_alt * 100)} cm de celulosa entre tirantes`}. Muro: trei, celosía de madera a 60° abulonada cada ${Math.round(P.bul * 100)} cm, ${sinAnillo ? "sobre el anillo de madera colada del piso" : "con el anillo periférico de madera colada arriba y abajo"}. ${un(P.n_ab)} ${P.n_ab == 1 ? "puerta" : "aberturas"} de ${n(P.anc_ab)} × ${n(P.alt_ab)} m, con su piso de una pieza${P.n_vt > 0 ? `, y ${un(P.n_vt)} ${P.n_vt == 1 ? "ventana" : "ventanas"} de ${n(P.vt_anc)} × ${n(P.vt_alto)} m` : ""}.`);
   L.push("");
   L.push(simple
     ? `Techo simple: ${un(C.simple.n_perchas)} perchas de ${Math.round(P.p_anc * 1000)} × ${Math.round(P.p_alt * 1000)} mm, una en cada cruce de arriba del trei, tomada por una escuadra metálica, del toono hasta ${Math.round(P.desb * 100)} cm de alero; ${sinAnillo ? "un cable de acero por todo el borde" : "el anillo periférico"} toma el empuje. Encima, algodón, freno de vapor, aislación, Tyvek y lona de PVC.`
     : `Doble techo ventilado: una primera capa de ${un(C.nt)} triángulos estructurales y una segunda de ${un(P.n_per_r)} perchas con ${Math.round(P.desb * 100)} cm de alero. Entre las dos, ${Math.round(C.H * 1000)} mm de aislación de PET reciclado; arriba, una cámara de aire que ventila por el toono, y la lona de PVC.`);
   L.push("");
   L.push(sobre
-    ? `Toono de ${n(2 * P.r_toono)} m de diámetro en sobrealto: ${un(C.sobrealto.n_vent)} ventanas de ${Math.round(C.sobrealto.alto * 100)} cm de alto que se abren hacia afuera y hacia arriba, bajo un techito con ${Math.round((P.sa_desb || 0) * 100)} cm de desborde.`
+    ? `Toono de ${n(2 * P.r_toono)} m de diámetro en sobrealto: ${un(C.sobrealto.n_vent)} ventanas de ${Math.round(C.sobrealto.alto * 100)} cm de alto${C.sobrealto.n_abiertas ? `, de las que ${C.sobrealto.n_abiertas === 2 ? "dos opuestas se abren" : un(C.sobrealto.n_abiertas) + " se abren"} hacia afuera y hacia arriba` : ", fijas"}, bajo un techito con ${Math.round((P.sa_desb || 0) * 100)} cm de desborde.`
     : `Toono de ${n(2 * P.r_toono)} m de diámetro, cerrado con un cuarto de domo geodésico.`);
   L.push("");
   L.push(`Muro con algodón, aislación de ${Math.round(C.A * 1000)} mm y tela náutica que respira.`);

@@ -351,15 +351,21 @@ ok("calculo.html ya no pide el cable (el doble techo no lo lleva)", !/faltan los
   ok("sobrealto: el techito pasa el aro el desborde", cerca(A.r_techito - A.r_aro, P.sa_desb, 1e-9));
   ok("3D sobrealto: sin domo; solera, cabezal, parante y limatesa por cara", de("domo").length === 0 && de("sobrealto").filter(p => p.tipo === "barra").length === 8 * 4);
   ok("3D sobrealto: una ventana por cara, con marco, vidrio y compás", de("ventanas").filter(p => p.mat === "madera").length === 8 * 4
-    && de("ventanas").filter(p => p.mat === "tapa").length === 8 && de("ventanas").find(p => p.mat === "vidrio").v.length === 8 * 18);
+    && de("ventanas").filter(p => p.mat === "tapa").length === 2 && de("ventanas").find(p => p.mat === "vidrio").v.length === 8 * 18);
   const radioAbajo = (Qx) => { const v = piezas3d(Qx, calc(Qx)).piezas.find(p => p.g === "ventanas" && p.mat === "vidrio").v;
     let rMin = 9, rMax = 0, yMin = 9, rDeYmin = 0;
     for (let i = 0; i < v.length; i += 3) { const r = Math.hypot(v[i], v[i + 2]); rMin = Math.min(rMin, r); rMax = Math.max(rMax, r); if (v[i + 1] < yMin) { yMin = v[i + 1]; rDeYmin = r; } }
     return { rMin, rMax, yMin, rDeYmin }; };
   ok("3D sobrealto: las ventanas se abren hacia arriba y hacia afuera (cerradas, a plomo)", (() => {
-    const c = radioAbajo({ ...Q, sa_abre: 0 }), a = radioAbajo({ ...Q, sa_abre: 30 });
+    const c = radioAbajo({ ...Q, sa_abre: 0 }), a = radioAbajo({ ...Q, sa_abre: 30, sa_abiertas: 8 });
     return a.yMin > c.yMin + 0.01 && a.rDeYmin > c.rDeYmin + 0.05; })());
-  ok("3D sobrealto: el techito cubre las ventanas abiertas", (() => { const a = radioAbajo(Q); const t = de("sobrealto").find(p => p.tipo === "malla").v;
+  ok("3D sobrealto: se abren sólo dos, opuestas (3d-15)", (() => { const v = de("ventanas").filter(p => p.mat === "tapa");
+    const ang = v.map(p => Math.atan2(p.a[2], p.a[0])); const d = Math.abs(Math.atan2(Math.sin(ang[0] - ang[1]), Math.cos(ang[0] - ang[1])));
+    return v.length === 2 && cerca(d, Math.PI, 0.05) && Cs.sobrealto.n_abiertas === 2; })());
+  ok("3D: el OSB es opaco (semitransparente parecía que iba debajo de los tirantes)", !/osb: 0\.\d/.test(readFileSync(new URL("./calculo-3d.js", import.meta.url), "utf8").match(/const OPACIDAD = \{[^}]*\}/)[0]));
+  ok("calculo.html: en castellano el piso se llama piso, no plancher", !/plancher/i.test(html.replace(/\/\/[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "")));
+  ok("calculo.html: lo que no corresponde queda deshabilitado, no sólo gris", /x\.disabled = off/.test(html) && /arriba: \["n_partes"\]/.test(html));
+  ok("3D sobrealto: el techito cubre las ventanas abiertas", (() => { const a = radioAbajo({ ...Q, sa_abiertas: 8 }); const t = de("sobrealto").find(p => p.tipo === "malla").v;
     let r = 0; for (let i = 0; i < t.length; i += 3) r = Math.max(r, Math.hypot(t[i], t[i + 2])); return r > a.rMax && cerca(r, A.r_techito, 1e-6); })());
   ok("3D sobrealto: el modelo crece con el sobrealto", K.alto > piezas3d({ ...Q, tono_tipo: 1 }, calc({ ...Q, tono_tipo: 1 })).alto - 0.5);
   ok("3D: en el doble techo el sobrealto va sobre el anillo tapa", (() => { const Qd = { ...P, tono_tipo: 2 }, Kd = piezas3d(Qd, calc(Qd));

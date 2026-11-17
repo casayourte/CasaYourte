@@ -1,5 +1,9 @@
 // calculo-3d.js — el modelo en 3D de la estructura, con las medidas del cálculo.
-// Sello: 3d-14 (17-nov-2026). 3d-14: las aberturas se compran hechas; lo nuestro es
+// Sello: 3d-15 (17-nov-2026). 3d-15: del sobrealto se abren sólo `sa_abiertas` ventanas,
+// opuestas y repartidas parejo (Mauro: «no todas sino sólo dos opuestas»); el OSB se
+// dibuja opaco (semitransparente, los tirantes se veían a través y parecía que el OSB
+// iba debajo).
+// 3d-14 (17-nov-2026). 3d-14: las aberturas se compran hechas; lo nuestro es
 // el VANO (Mauro: «sólo tengo que prever los montantes para instalarla»): cada una,
 // puerta o ventana, con su PISO que drena hacia afuera, un montante a cada lado
 // parado sobre él, la TAPA INTERIOR que toma los bulones del trei y la EXTERIOR de
@@ -61,7 +65,7 @@
 // de abajo (donde apoyan los tirantes). Todo sale de calc(P): si cambia una
 // medida, cambia el modelo.
 
-export const SELLO_3D = "3d-14";
+export const SELLO_3D = "3d-15";
 import { escuadraSimple } from "./calculo-geo.js";
 export const THREE_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/+esm";
 export const ORBIT_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js/+esm";
@@ -145,7 +149,7 @@ export const CAMPO_PARTES = {
   esc: ["escuadras"], s_ais: ["aislacion_techo"],
   s_anillo: ["anillo", "cable", "escuadras", "perchas"], cab_dist: ["cable"], piso_tipo: ["osb_inf", "osb_sup"],
   sa_alto: ["sobrealto", "ventanas"], sa_vent: ["sobrealto", "ventanas"], sa_desb: ["sobrealto"],
-  sa_ang: ["sobrealto"], sa_abre: ["ventanas"],
+  sa_ang: ["sobrealto"], sa_abre: ["ventanas"], sa_abiertas: ["ventanas"],
 };
 for (const k of ["ais_techo", "rel", "ang"]) CAMPO_PARTES[k].push("aislacion_techo", "tyvek", "lona_techo");
 for (const k of ["ais_nom", "rel", "alto"]) CAMPO_PARTES[k].push("aislacion_muro", "lona_muro");
@@ -641,7 +645,10 @@ export function piezas3d(P, C) {
     const n = Math.max(3, Math.round(P.sa_vent ?? 8)), hV = Math.max(0.1, P.sa_alto ?? 0.30);
     const rS = rT1 - 0.02, e = 0.05, rTe = rS + (P.sa_desb ?? 0.15);
     const tT = Math.tan(Math.max(5, Math.min(60, P.sa_ang ?? 25)) * Math.PI / 180);
-    const abre = Math.max(0, Math.min(80, P.sa_abre ?? 30)) * Math.PI / 180;
+    const abreMax = Math.max(0, Math.min(80, P.sa_abre ?? 30)) * Math.PI / 180;
+    // Las que se abren: `sa_abiertas`, repartidas parejo (dos = opuestas); las demás, cerradas.
+    const nAb = Math.max(0, Math.min(n, Math.round(P.sa_abiertas ?? 2)));
+    const abiertas = new Set(Array.from({ length: nAb }, (_, j) => Math.round(j * n / nAb) % n));
     const y0 = yBase, y1 = y0 + e, y2 = y1 + hV, y3 = y2 + e;
     const V = (i, r, y) => pol(r, TAU * i / n, y), sn = Math.sin(Math.PI / n), cs = Math.cos(Math.PI / n);
     const vv = [], vt = [];
@@ -655,7 +662,7 @@ export function piezas3d(P, C) {
       const top = (r) => yR(r) + 0.073;
       tri(vt, [0, top(0), 0], V(i, rTe, top(rTe)), V(i + 1, rTe, top(rTe)));
       // La ventana: marco de 3,5 cm y vidrio, colgada del cabezal por afuera.
-      const w = 2 * rS * sn - e - 0.01, h = hV - 0.01, fr = 0.035;
+      const w = 2 * rS * sn - e - 0.01, h = hV - 0.01, fr = 0.035, abre = abiertas.has(i) ? abreMax : 0;
       const H0 = addv(mul(nrm, rS * cs + 0.012), [0, y2 - 0.005, 0]);
       const baja = addv([0, -Math.cos(abre), 0], mul(nrm, Math.sin(abre)));
       const Q = (s, d) => addv(H0, addv(mul(tg, s), mul(baja, d)));
@@ -762,7 +769,7 @@ const COLORES = {
   metal: 0x9aa1a8, cable: 0x5c6166, lona: 0x5f6b5a, lona2: 0x4b5547, cordon: 0x1e1e1e, oculto: 0x9a3a2a, lona_muro: 0x8f8a72,
 };
 // Las membranas finas se ven a través: el freno y el Tyvek dejan ver lo de abajo.
-const OPACIDAD = { osb: 0.55, freno: 0.6, tyvek: 0.75, vidrio: 0.3 };
+const OPACIDAD = { freno: 0.6, tyvek: 0.75, vidrio: 0.3 };   // el OSB, opaco desde 3d-15
 
 // El dibujo. Devuelve { actualizar, ver, resaltar, encuadrar, destruir } o
 // tira si three.js no bajó: quien llama lo ataja y lo dice en la página.
