@@ -409,6 +409,9 @@ ok("calculo.html ya no pide el cable (el doble techo no lo lleva)", !/faltan los
   ok("reglas: la forma de una entrega es fija (sin costos ni contacto)", /hasOnly\(\['titulo', 'para', 'idioma', 'descripcion', 'incluye',\s*'no_incluye', 'precio', 'moneda', 'datos', 'vence', 'activo', 'actualizado'\]\)/.test(bl));
   ok("calculo.html escribe la entrega con esas claves y nada más", (() => { const m = html.match(/const pub = \{([\s\S]*?)\n  \};/); if (!m) return false;
     const ks = [...m[1].matchAll(/^\s{4}(\w+)[,:]/gm)].map(x => x[1]); return ks.length >= 10 && ks.every(k => ["titulo","para","idioma","descripcion","incluye","no_incluye","precio","moneda","datos","vence","activo","actualizado"].includes(k)); })());
+  ok("calculo.html: la lista de links para clientes con copiar, ver, +30 días, desactivar y pasar a un cálculo (calculo-32)",
+    /getDocs\(collection\(db, "entregas"\)\)/.test(html) && ["copiar", "mas30", "apagar", "prender", "calculo"].every(k => html.includes(`data-link="${k}"`))
+    && /addDoc\(collection\(db, "calculos"\), cuerpo\)/.test(html));
   ok("el token del link son 16 bytes al azar (22 caracteres)", /new Uint8Array\(16\); crypto\.getRandomValues/.test(html));
   ok("propuesta.html no carga el SDK de Firebase ni pide sesión", !/firebase-init|gstatic\.com\/firebasejs|signIn/.test(pr) && /firestore\.googleapis\.com/.test(pr));
   ok("propuesta.html no se indexa y no está en el SHELL", /<meta name="robots" content="noindex,nofollow">/.test(pr) && !/'\.\/propuesta\.html'/.test(sw));

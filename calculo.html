@@ -41,6 +41,8 @@
   .campos .apagado{opacity:.38}
   .campos .apagado input, .campos .apagado button{cursor:not-allowed}
   .ent{display:grid;gap:.55rem;max-width:44rem}
+  .link-acc{display:flex;flex-wrap:wrap;gap:.35rem}
+  .link-acc .btn{flex:0 0 auto;width:auto;padding:.42rem .7rem;font-size:.82rem;text-decoration:none}
   .ent .dos{display:grid;grid-template-columns:1fr 1fr;gap:.55rem}
   .ent-link{background:var(--ink2);border:1px solid var(--line);border-radius:var(--r);padding:.7rem .8rem;
     font-family:var(--mono);font-size:.74rem;word-break:break-all}
@@ -116,6 +118,12 @@
     <p class="gris">Un cálculo por cliente, guardado y accesible. Antes hacías una planilla
     para cada uno: esto es lo mismo, con las medidas ya verificadas contra el modelo.</p>
     <div id="proyectos"><div class="empty">Cargando…</div></div>
+
+    <h2 style="margin:1.6rem 0 .3rem">Links para clientes</h2>
+    <p class="gris">Cada propuesta mandada, con su estado. Desde acá se copia, se ve como el cliente,
+    se extiende o se desactiva; y si un link no tiene cálculo (lo armó Claude desde el chat), «Pasar
+    a un cálculo» lo trae a la lista, con el cliente y los detalles, para seguir desde «Para el cliente».</p>
+    <div id="links"><div class="empty">Cargando…</div></div>
   </section>
 
   <section id="v-proy" class="hide">
@@ -231,7 +239,7 @@ import { CY } from "./nucleo.js";
 import { calc as calcGeo, corte, vanos, materiales, NOMBRES_MAT, renglonMat } from "./calculo-geo.js";
 import { montar as montar3d, PARTES as PARTES3D, CAMPO_PARTES } from "./calculo-3d.js";
 
-CY.PANEL = "calculo-31";
+CY.PANEL = "calculo-32";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 // ── El SDK se baja acá, y recién después arranca la pantalla ────────────────
@@ -847,7 +855,94 @@ async function cargarProyectos() {
   } catch (e) {
     $("proyectos").innerHTML = `<div class="empty">${esc(CY.explicar(e))}</div>`;
   }
+  cargarLinks();
 }
+
+/* ═══ los links para clientes (calculo-32) ══════════════════
+   Mauro, 17-nov-2026: «no me apareció cliente ni detalles del proyecto que le
+   presento a Tamara; tampoco veo dónde encuentro la configuración del link para
+   copiarlo, anularlo o extenderlo». Un link armado desde el chat no tiene
+   cálculo: acá se ven TODOS los de `entregas/` (la regla deja listarlos con el
+   permiso 'calculo'), con sus acciones, y «Pasar a un cálculo» crea el cálculo
+   con las medidas, el cliente y lo escrito del link. */
+let links = [];
+const fechaCorta = (d) => d ? d.toLocaleDateString("es-UY", { day: "numeric", month: "short", year: "numeric" }) : "—";
+const isoLocal = (d) => d.toLocaleDateString("sv");   // AAAA-MM-DD en la hora de acá
+const calculoDe = (token) => proyectos.find(p => p.entrega && p.entrega.token === token);
+async function cargarLinks() {
+  try {
+    const s = await getDocs(collection(db, "entregas"));
+    links = s.docs.map(d => { const x = d.data(); return { id: d.id, ...x, venceD: x.vence && x.vence.toDate ? x.vence.toDate() : null }; })
+      .sort((a, b) => String(b.actualizado || "").localeCompare(String(a.actualizado || "")));
+    const hoy = new Date();
+    $("links").innerHTML = links.length ? links.map(l => {
+      const estado = l.activo === false ? ["Desactivado", "q"] : (l.venceD && l.venceD < hoy) ? ["Vencido", "q"] : ["Activo hasta el " + fechaCorta(l.venceD), "d"];
+      const c = calculoDe(l.id);
+      return `<div class="tarj">
+        <h3>${esc(l.titulo || "(sin título)")}</h3>
+        <div class="sub">${esc(l.para ? "Para " + l.para : "sin destinatario")} · <span class="${estado[1] === "d" ? "" : "q"}">${esc(estado[0])}</span>${c ? " · cálculo «" + esc(c.nombre || "") + "»" : " · sin cálculo"}</div>
+        <div class="ent-link" style="margin:.5rem 0">${esc(urlEntrega(l.id))}</div>
+        <div class="link-acc">
+          <button class="btn" data-link="copiar" data-id="${esc(l.id)}">Copiar</button>
+          <a class="btn" href="${esc(urlEntrega(l.id))}" target="_blank" rel="noopener">Ver</a>
+          <button class="btn" data-link="mas30" data-id="${esc(l.id)}">+30 días</button>
+          ${l.activo === false ? `<button class="btn" data-link="prender" data-id="${esc(l.id)}">Activar</button>`
+            : `<button class="btn d" data-link="apagar" data-id="${esc(l.id)}">Desactivar</button>`}
+          <button class="btn p" data-link="calculo" data-id="${esc(l.id)}">${c ? "Abrir el cálculo" : "Pasar a un cálculo"}</button>
+        </div></div>`; }).join("")
+      : '<div class="empty">Todavía no hay links. Se crean en la pestaña «Para el cliente» de un cálculo.</div>';
+  } catch (e) {
+    $("links").innerHTML = `<div class="empty">${esc(CY.explicar(e))}</div>`;
+  }
+}
+// Cambia el link y, si tiene cálculo, lo que el cálculo recuerda de él.
+async function cambiarLink(l, cambios) {
+  await updateDoc(doc(db, "entregas", l.id), { ...cambios, actualizado: new Date().toISOString() });
+  const c = calculoDe(l.id);
+  if (c) {
+    const e = { ...c.entrega };
+    if ("activo" in cambios) e.activo = cambios.activo;
+    if (cambios.vence) e.vence_iso = isoLocal(cambios.vence);
+    await updateDoc(doc(db, "calculos", c.id), { entrega: e });
+    c.entrega = e;
+  }
+}
+document.addEventListener("click", async (ev) => {
+  const b = ev.target.closest("[data-link]"); if (!b) return;
+  const l = links.find(x => x.id === b.dataset.id); if (!l) return;
+  try {
+    if (b.dataset.link === "copiar") {
+      await navigator.clipboard.writeText(urlEntrega(l.id)); CY.aviso("Link copiado"); return;
+    }
+    b.disabled = true;
+    if (b.dataset.link === "mas30") {
+      const base = l.venceD && l.venceD > new Date() ? new Date(l.venceD) : new Date();
+      base.setDate(base.getDate() + 30); base.setHours(23, 59, 59, 0);
+      await cambiarLink(l, { vence: base, activo: true }); CY.aviso("Vale hasta el " + fechaCorta(base));
+    } else if (b.dataset.link === "apagar") {
+      if (!confirm(`¿Desactivar el link de «${l.titulo || ""}»? El cliente va a ver que no está disponible.`)) { b.disabled = false; return; }
+      await cambiarLink(l, { activo: false }); CY.aviso("Link desactivado");
+    } else if (b.dataset.link === "prender") {
+      await cambiarLink(l, { activo: true }); CY.aviso("Link activado");
+    } else if (b.dataset.link === "calculo") {
+      let c = calculoDe(l.id);
+      if (!c) {
+        const ahora = new Date().toISOString();
+        const entrega = { token: l.id, titulo: l.titulo || "", para: l.para || "", idioma: l.idioma || "es", descripcion: l.descripcion || "",
+          incluye: l.incluye || [], no_incluye: l.no_incluye || [], precio: typeof l.precio === "number" ? l.precio : null, moneda: l.moneda || "USD",
+          vence_iso: l.venceD ? isoLocal(l.venceD) : masDias(30), activo: l.activo !== false };
+        const cuerpo = { nombre: l.titulo || "(sin nombre)", cliente: l.para || "", lugar: "", contacto: "", notas: "",
+          datos: { ...PORDEF, ...(l.datos || {}) }, entrega,
+          creado: serverTimestamp(), creadoPor: yo.email, creadoISO: ahora, actualizado: serverTimestamp(), actualizadoPor: yo.email, actualizadoISO: ahora };
+        const r = await addDoc(collection(db, "calculos"), cuerpo);
+        c = { id: r.id, ...cuerpo }; proyectos.unshift(c);
+        CY.aviso("Pasado a un cálculo");
+      }
+      b.disabled = false; abrir(c); return;
+    }
+    await cargarLinks();
+  } catch (e) { CY.aviso(CY.explicar(e), true); b.disabled = false; }
+});
 
 document.addEventListener("click", (ev) => {
   const a = ev.target.closest("[data-abrir]");

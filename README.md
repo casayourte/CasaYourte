@@ -770,6 +770,8 @@ remate taller».
   `calculo-geo.js` y el 3D con `calculo-3d.js`: terminada, la estructura, o componente por
   componente. No muestra los cálculos: un resumen de cuánta madera, placas, lona y tela lleva.
   No se indexa y no está en el SHELL.
+- **«Links para clientes»**, debajo de la lista de Cálculos (`calculo-32`): todos los links con su estado,
+  y copiar, ver, +30 días, desactivar o activar, y «Pasar a un cálculo» para el que armó Claude sin cálculo.
 - **El agente también lo crea y lo actualiza** (17-nov, tarde: «incluye el agente»), con la misma forma
   y sin borrar; su herramienta le pide la autorización de Mauro citada para crear uno.
 - **Hay que publicar `REGLAS.txt`** para que el link ande (sin la regla de `entregas/`, crear el link
@@ -792,11 +794,11 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-34` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `cy-shell-v97` |
+| `sw.js` | `VERSION` | `cy-shell-v98` |
 | `admin.html` | `PANEL` | `admin-20` |
 | `editar.html` | `EDITOR` | `editar-23` |
 | `taller.html` | `SELLO` | `andamio-3` |
-| `calculo.html` | `CY.PANEL` | `calculo-31` |
+| `calculo.html` | `CY.PANEL` | `calculo-32` |
 | `calculo-geo.js` | `SELLO_GEO` | `geo-12` |
 | `calculo-3d.js` | `SELLO_3D` | `3d-15` |
 | `propuesta.html` | (en el comentario) | `propuesta-4` |
