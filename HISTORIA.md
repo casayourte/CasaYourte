@@ -863,3 +863,15 @@ Efecto en la lista de madera de eucalipto: los 4 montantes de ventana pasan de 1
 del sobrante de otro) y aparecen 2 cabezales de ventana de 0,88 m; las tapas exteriores de ventana, de
 1,36 a 2,21 m; las interiores, de 1,34 a 1,38 m.
 
+## 18-nov-2026 · El anillo del piso, de listones curvados (`geo-16`, `3d-19`, `calculo-36`, `propuesta-7`)
+
+Mauro: «Vamos a cambiar esa propuesta por listones de un centímetro iguales a los que usaríamos para el borde de
+las perchas, de un centímetro de espesor por 4 de ancho, que queden la vuelta insertándose en una ranura que se
+genere en los tirantes antes de la colocación del OSB, para hacer algo parecido al anillo periférico pero con
+listones que se curvan y se cuelan. Usaremos tres listones completando tres vueltas coladas, en las cuales se va a
+fijar el trei luego de colocar el piso de OSB.» Antes el anillo del piso era el sándwich de 2 capas de 50 × 40
+(17 tablas de 70×40 en el pedido). Ahora `ap_tipo` 2: 3 vueltas de 40 × 10 = 53,7 m de listón en la simple de
+6 m, que se suman a los zócalos y la cinta del alero (el listón de 40 × 10 sale a 128 m en total). El caso «Simple
+6 m» ya viene con `ap_tipo` 2; el resto de los casos, con el sándwich. El radio (bajo el pie del trei) y el ancho de
+la ranura (30 mm) son una elección mía, sin confirmar.
+

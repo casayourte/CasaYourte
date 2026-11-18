@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tu yurta · CasaYourte</title>
-<!-- propuesta-6 (18-nov-2026): el chasis del vano (geo-14 / 3d-17): cabezales, tapas interiores y exteriores,
+<!-- propuesta-7 (18-nov-2026): el anillo del piso de listones curvados (geo-16): «Anillo del piso: listones curvados…» y la unidad «vueltas», en los cuatro idiomas.
+     propuesta-6 (18-nov-2026): el chasis del vano (geo-14 / 3d-17): cabezales, tapas interiores y exteriores,
      montantes sueltos y suelos de los vanos, en la lista y en el 3D, en los cuatro idiomas.
      propuesta-5 (17-nov-2026): las piezas del sobrealto en la lista, en los cuatro idiomas.
      propuesta-4 (17-nov-2026): debajo, la LISTA DE MATERIALES del modelo, sin precios
@@ -168,7 +169,7 @@ const T = {
 // La lista de materiales en los otros idiomas (en castellano, NOMBRES_MAT de calculo-geo.js).
 const MAT_T = {
   fr: { grupos: { piso: "Le plancher", muro: "Le mur", techo: "Le toit", toono: "Le toono", telas: "Toiles et couches", herrajes: "Quincaillerie" },
-    pilares: "Poteaux", vigas: "Poutres", tirantes: "Solives", anillo_piso: "Anneau du plancher, lamellé-collé", osb: "Panneaux OSB", celulosa: "Ouate de cellulose (isolant du plancher)",
+    pilares: "Poteaux", vigas: "Poutres", tirantes: "Solives", anillo_piso: "Anneau du plancher, lamellé-collé", anillo_piso_lis: "Anneau du plancher : lattes cintrées et collées, dans une rainure des solives", osb: "Panneaux OSB", celulosa: "Ouate de cellulose (isolant du plancher)",
     trei: "Lattes du treillis", bulones: "Boulons du treillis", zocalos: "Plinthes", anillo: "Anneau périphérique, lamellé-collé", montantes: "Montants",
     tapas: "Couvre-joints intérieurs", tapas_ext: "Couvre-joints extérieurs, à rainure", cabezales: "Linteaux des baies", montantes_sueltos: "Montants isolés du mur", pisos_ab: "Seuils des baies", puertas: "Portes", ventanas: "Fenêtres",
     perchas: "Perches", cable: "Câble d'acier", triangulos: "Triangles de la première couche", radiales: "Perches radiales", cal: "Cales",
@@ -177,10 +178,10 @@ const MAT_T = {
     sob_marcos: "Lanterneau : cadres des fenêtres", techito_capas: "Petit toit : coton, isolant et bâche", bisagras: "Charnières (fenêtres ouvrantes)", compases: "Compas (fenêtres ouvrantes)", domo: "Dôme géodésique", policarbonato: "Polycarbonate du dôme", lona_techo: "Bâche PVC du toit",
     tela_muro: "Toile du mur", algodon: "Coton (toit et mur)", freno: "Pare-vapeur (toit et mur)", aislacion_techo: "Isolant du toit",
     aislacion_muro: "Isolant du mur", tyvek: "Tyvek du toit", escuadras: "Équerres métalliques", tornillos_640: "Vis 6 × 40", tornillos_690: "Vis 6 × 90",
-    u: { u: "u", pz: "pièces", capas: "couches", placas: "panneaux", m: "m", m2: "m²", m3: "m³" },
+    u: { u: "u", pz: "pièces", capas: "couches", vueltas: "tours", placas: "panneaux", m: "m", m2: "m²", m3: "m³" },
     palabras: { cu: "chacune", total: "au total", abren: "s'ouvrent :", compra: "achetées toutes faites", aprox: "≈" } },
   en: { grupos: { piso: "The floor", muro: "The wall", techo: "The roof", toono: "The toono", telas: "Fabrics and layers", herrajes: "Hardware" },
-    pilares: "Posts", vigas: "Beams", tirantes: "Joists", anillo_piso: "Floor ring, glue-laminated", osb: "OSB boards", celulosa: "Cellulose (floor insulation)",
+    pilares: "Posts", vigas: "Beams", tirantes: "Joists", anillo_piso: "Floor ring, glue-laminated", anillo_piso_lis: "Floor ring: bent, glued battens in a groove cut into the joists", osb: "OSB boards", celulosa: "Cellulose (floor insulation)",
     trei: "Lattice wall slats", bulones: "Lattice bolts", zocalos: "Skirting", anillo: "Perimeter ring, glue-laminated", montantes: "Door posts",
     tapas: "Inner cover boards", tapas_ext: "Outer cover boards, grooved", cabezales: "Opening headers", montantes_sueltos: "Single wall posts", pisos_ab: "Opening sills", puertas: "Doors", ventanas: "Windows",
     perchas: "Rafters", cable: "Steel cable", triangulos: "First-layer triangles", radiales: "Radial rafters", cal: "Wedges",
@@ -189,10 +190,10 @@ const MAT_T = {
     sob_marcos: "Lantern: window frames", techito_capas: "Lantern roof: cotton, insulation and cover", bisagras: "Hinges (opening windows)", compases: "Window stays (opening windows)", domo: "Geodesic dome", policarbonato: "Dome polycarbonate", lona_techo: "PVC roof cover",
     tela_muro: "Wall fabric", algodon: "Cotton (roof and wall)", freno: "Vapour barrier (roof and wall)", aislacion_techo: "Roof insulation",
     aislacion_muro: "Wall insulation", tyvek: "Roof Tyvek", escuadras: "Steel brackets", tornillos_640: "6 × 40 screws", tornillos_690: "6 × 90 screws",
-    u: { u: "u", pz: "pieces", capas: "layers", placas: "boards", m: "m", m2: "m²", m3: "m³" },
+    u: { u: "u", pz: "pieces", capas: "layers", vueltas: "turns", placas: "boards", m: "m", m2: "m²", m3: "m³" },
     palabras: { cu: "each", total: "in total", abren: "opening:", compra: "bought ready-made", aprox: "≈" } },
   pt: { grupos: { piso: "O piso", muro: "A parede", techo: "O telhado", toono: "O toono", telas: "Tecidos e camadas", herrajes: "Ferragens" },
-    pilares: "Pilares", vigas: "Vigas", tirantes: "Barrotes", anillo_piso: "Anel do piso, laminado colado", osb: "Placas de OSB", celulosa: "Celulose (isolamento do piso)",
+    pilares: "Pilares", vigas: "Vigas", tirantes: "Barrotes", anillo_piso: "Anel do piso, laminado colado", anillo_piso_lis: "Anel do piso: ripas curvadas e coladas, em um rasgo dos barrotes", osb: "Placas de OSB", celulosa: "Celulose (isolamento do piso)",
     trei: "Ripas da treliça", bulones: "Parafusos da treliça", zocalos: "Rodapés", anillo: "Anel periférico, laminado colado", montantes: "Montantes",
     tapas: "Tampas interiores", tapas_ext: "Tampas exteriores, com ranhura", cabezales: "Vergas dos vãos", montantes_sueltos: "Montantes avulsos do muro", pisos_ab: "Soleiras dos vãos", puertas: "Portas", ventanas: "Janelas",
     perchas: "Caibros", cable: "Cabo de aço", triangulos: "Triângulos da primeira camada", radiales: "Caibros radiais", cal: "Calços",
@@ -201,7 +202,7 @@ const MAT_T = {
     sob_marcos: "Lanternim: caixilhos das janelas", techito_capas: "Telhadinho: algodão, isolamento e lona", bisagras: "Dobradiças (janelas que abrem)", compases: "Compassos (janelas que abrem)", domo: "Domo geodésico", policarbonato: "Policarbonato do domo", lona_techo: "Lona de PVC do telhado",
     tela_muro: "Tecido da parede", algodon: "Algodão (telhado e parede)", freno: "Barreira de vapor (telhado e parede)", aislacion_techo: "Isolamento do telhado",
     aislacion_muro: "Isolamento da parede", tyvek: "Tyvek do telhado", escuadras: "Esquadros metálicos", tornillos_640: "Parafusos 6 × 40", tornillos_690: "Parafusos 6 × 90",
-    u: { u: "u", pz: "peças", capas: "camadas", placas: "placas", m: "m", m2: "m²", m3: "m³" },
+    u: { u: "u", pz: "peças", capas: "camadas", vueltas: "voltas", placas: "placas", m: "m", m2: "m²", m3: "m³" },
     palabras: { cu: "cada", total: "no total", abren: "abrem:", compra: "compradas prontas", aprox: "≈" } },
 };
 const PARTES_T = {

@@ -1,5 +1,6 @@
 // calculo-3d.js — el modelo en 3D de la estructura, con las medidas del cálculo.
-// Sello: 3d-18 (18-nov-2026): la ventana llega al tope del muro (ver abajo).
+// Sello: 3d-19 (18-nov-2026): el anillo del piso de listones curvados, tres vueltas en la ranura de los tirantes (geo-16).
+// 3d-18 (18-nov-2026): la ventana llega al tope del muro (ver abajo).
 // 3d-17 (18-nov-2026). 3d-17: EL CHASIS DEL VANO (geo-14, `chasis()`): cada abertura
 // tiene su chasis recto —suelo recto adentro y en arco afuera, con el tope de atrás, los topes
 // laterales, las cajas de los montantes, la caída y el goterón; dos montantes paralelos con los
@@ -77,7 +78,7 @@
 // de abajo (donde apoyan los tirantes). Todo sale de calc(P): si cambia una
 // medida, cambia el modelo.
 
-export const SELLO_3D = "3d-18";
+export const SELLO_3D = "3d-19";
 import { escuadraSimple, chasis } from "./calculo-geo.js";
 export const THREE_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/+esm";
 export const ORBIT_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js/+esm";
@@ -138,7 +139,7 @@ export const CAMPO_PARTES = {
   ais_techo: ["cal", "perchas", "toono"],
   rel: ["cal", "cinta", "anillo", "perchas"],
   E: ["anillo", "anillo_piso"], e_mad: ["anillo", "anillo_piso", "toono"],
-  n_cap: ["anillo", "anillo_piso"], n_partes: ["anillo"], T: ["trei"],
+  n_cap: ["anillo", "anillo_piso"], ap_tipo: ["anillo_piso"], ap_vueltas: ["anillo_piso"], ap_esp: ["anillo_piso"], ap_alto: ["anillo_piso"], n_partes: ["anillo"], T: ["trei"],
   e_per: ["cinta"], anc_per: ["cinta"],
   e_trei: ["trei"], anc_trei: ["trei"], bul: ["trei"], b_borde: ["trei"],
   e_int: ["zocalos"], anc_int: ["zocalos"],
@@ -304,7 +305,9 @@ export function piezas3d(P, C) {
   if (osbI > 0) disco("osb_inf", C.R, -osbI, 0, "osb");
   for (const t of (C.tirantes || [])) for (const sz of (t.n === 1 ? [0] : [-1, 1]))
     barra("tirantes", v3(-t.L / 2, yTir / 2, sz * t.x), v3(t.L / 2, yTir / 2, sz * t.x), P.tir_anc, P.tir_alt, [0, 1, 0], "madera");
-  anillo("anillo_piso", C.Rint, C.Rext, yTir - C.alto_an, yTir, "anillo");
+  // 3d-19: el anillo del piso de listones curvados (3 vueltas de canto, en la ranura de los tirantes) o el sándwich de siempre
+  if (C.ap.on) anillo("anillo_piso", C.ap.r1, C.ap.r2, yTir - C.ap.alto, yTir, "anillo");
+  else anillo("anillo_piso", C.Rint, C.Rext, yTir - C.alto_an, yTir, "anillo");
   disco("osb_sup", C.R, yTir, yPiso, "osb");
 
   // ── el trei: dos familias de listones a 60°, sobre su radio medio ──

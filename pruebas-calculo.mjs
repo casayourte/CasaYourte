@@ -366,6 +366,21 @@ ok("calculo.html ya no pide el cable (el doble techo no lo lleva)", !/faltan los
     && Rs.madera_total > 1 && Rs.madera_total < 4 && cerca(Rs.lona_techo, Cq.lona_area, 1e-12) && Rs.puertas === 1 && Rs.ventanas === 2 && Rs.placas === 2 * Cq.placas_capa);
   ok("resumen: en la simple no entra la madera de la primera capa", resumen(P, C).madera.techo > Rs.madera.techo);
 }
+// ── el anillo del piso de listones curvados (geo-16, Mauro, 18-nov-2026) ──
+{
+  const Q = { ...P, D: 6, tipo: 2, tono_tipo: 2, r_toono: 0.8, sa_alto: 0.35, n_ab: 1, n_gr: 1, n_vt: 2, piso_tipo: 2, ap_tipo: 2 }, Cq = calc(Q), L = materiales(Q, Cq);
+  const de = (k) => L.find(x => x.k === k), A = Cq.ap, rM = Cq.r_trei - Q.e_trei;
+  ok("anillo del piso (geo-16): tres vueltas de listón de 40 × 10, de canto: 30 de grosor y 40 de alto", A.on && A.vueltas === 3 && cerca(A.ancho, 0.03, 1e-12) && cerca(A.alto, 0.04, 1e-12) && cerca(A.esp, 0.01, 1e-12));
+  ok("anillo del piso: va bajo el pie del trei, a su radio medio, y el listón es tres perímetros", cerca(A.r_med, rM, 1e-12) && cerca(A.r1, rM - 0.015, 1e-12) && cerca(A.r2, rM + 0.015, 1e-12) && cerca(A.largo, 3 * 2 * Math.PI * rM, 1e-9));
+  ok("anillo del piso: la ranura de los tirantes es del grosor del anillo, de su alto, al ras de arriba", cerca(A.ranura[0], 0.03, 1e-12) && cerca(A.ranura[1], 0.04, 1e-12) && cerca(Cq.encastre, 0.04, 1e-12) && cerca(Cq.bajo_encastre, Q.tir_alt - 0.04, 1e-12));
+  ok("materiales: el anillo del piso es «vueltas» de 40 × 10, y ya no el sándwich", de("anillo_piso_lis") && de("anillo_piso_lis").n === 3 && de("anillo_piso_lis").u === "vueltas" && de("anillo_piso_lis").sec.join() === "40,10"
+    && cerca(de("anillo_piso_lis").ml, A.largo, 1e-9) && !de("anillo_piso") && NOMBRES_MAT.anillo_piso_lis && NOMBRES_MAT.u.vueltas);
+  ok("anillo del piso: el volumen es perímetro × grosor × alto", cerca(Cq.vol_anillo_piso, 2 * Math.PI * rM * 0.03 * 0.04, 1e-9));
+  const a3 = piezas3d(Q, Cq).piezas.find(p => p.g === "anillo_piso");
+  ok("3D: el anillo del piso, de canto, al ras del tirante: sus radios y su alto", a3 && cerca(a3.r1, A.r1, 1e-12) && cerca(a3.r2, A.r2, 1e-12) && cerca(a3.y2, Q.tir_alt, 1e-12) && cerca(a3.y2 - a3.y1, 0.04, 1e-12));
+  const Cd = calc(P), Ld = materiales(P, Cd), a0 = piezas3d(P, Cd).piezas.find(p => p.g === "anillo_piso");
+  ok("anillo del piso: por defecto sigue el sándwich colado (el de Christine no cambia)", !Cd.ap.on && Ld.find(x => x.k === "anillo_piso") && !Ld.find(x => x.k === "anillo_piso_lis") && cerca(a0.r1, Cd.Rint, 1e-12) && cerca(a0.r2, Cd.Rext, 1e-12));
+}
 // ── la lista de materiales (geo-12) ──
 {
   const Q = { ...P, D: 6, tipo: 2, tono_tipo: 2, r_toono: 0.8, sa_alto: 0.35, n_ab: 1, n_gr: 1, n_vt: 2, piso_tipo: 2 }, Cq = calc(Q), L = materiales(Q, Cq);

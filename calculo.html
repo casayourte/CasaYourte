@@ -239,7 +239,7 @@ import { CY } from "./nucleo.js";
 import { calc as calcGeo, corte, vanos, materiales, NOMBRES_MAT, renglonMat } from "./calculo-geo.js";
 import { montar as montar3d, PARTES as PARTES3D, CAMPO_PARTES } from "./calculo-3d.js";
 
-CY.PANEL = "calculo-35";
+CY.PANEL = "calculo-36";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 // ── El SDK se baja acá, y recién después arranca la pantalla ────────────────
@@ -288,6 +288,10 @@ const CAMPOS = [
   ["anc_int",  "Ancho del zócalo interior",       0.040, "m"],
   ["·","EL PISO"],
   ["piso_tipo","Piso",                            1,     "1 = doble capa con aislación (del alto del tirante) · 2 = simple, sólo la capa de arriba, sin aislación", [[1, "Doble capa con aislación"], [2, "Simple · sin aislación"]]],
+  ["ap_tipo",  "Anillo del piso",                 1,     "1 = sándwich colado (E × capas) · 2 = listones curvados y colados (3 vueltas) en una ranura de los tirantes", [[1, "Sándwich colado"], [2, "Listones curvados, 3 vueltas"]]],
+  ["ap_vueltas","Anillo del piso · vueltas coladas", 3,    "unidades · cada vuelta es un listón entero, curvado y colado con los otros"],
+  ["ap_esp",   "Anillo del piso · espesor del listón", 0.010, "m · el mismo listón de la cinta del alero"],
+  ["ap_alto",  "Anillo del piso · ancho del listón", 0.040, "m · entra de canto en la ranura: es el alto del anillo"],
   ["paso_t",   "Entreeje de los tirantes",        0.400, "m · con uno central"],
   ["tir_alt",  "Alto del tirante",                0.140, "m"],
   ["tir_anc",  "Ancho del tirante",               0.040, "m"],
@@ -363,6 +367,7 @@ const SOLO = {
   simple: ["desb_s", "esc", "s_ais", "s_anillo", "cab_dist"],
   cable: ["cab_dist"],                     // sólo con el cable (no con el anillo)
   piso2: ["osb_inf"],                      // sólo con el piso de doble capa
+  apis: ["ap_vueltas", "ap_esp", "ap_alto"],   // sólo con el anillo de listones curvados
   ventanas: ["vt_anc", "vt_ant"],
   domo: ["dom_ang", "dom_frec"],
   sobre: ["sa_alto", "sa_vent", "sa_desb", "sa_ang", "sa_abre", "sa_abiertas"],
@@ -373,7 +378,7 @@ const SOLO = {
 };
 const usa = (k) => !((SOLO.doble.includes(k) && P.tipo === 2) || (SOLO.simple.includes(k) && P.tipo !== 2)
   || (SOLO.domo.includes(k) && P.tono_tipo === 2) || (SOLO.sobre.includes(k) && P.tono_tipo !== 2)
-  || (SOLO.cable.includes(k) && P.s_anillo === 1) || (SOLO.piso2.includes(k) && P.piso_tipo === 2)
+  || (SOLO.cable.includes(k) && P.s_anillo === 1) || (SOLO.piso2.includes(k) && P.piso_tipo === 2) || (SOLO.apis.includes(k) && P.ap_tipo !== 2)
   || (SOLO.ventanas.includes(k) && !(P.n_vt > 0))
   || (SOLO.arriba.includes(k) && P.tipo === 2 && P.s_anillo !== 1)
   || (SOLO.puertas.includes(k) && !(P.n_ab > 0))
@@ -391,7 +396,7 @@ const CASOS = {
   simple:    { ...PORDEF, tipo: 2, tono_tipo: 2 },
   // calculo-27: la simple de 6 m con una puerta y dos ventanas (el modelo de la consulta del 17-nov).
   simple6:   { ...PORDEF, D:6, ais_nom:.120, ais_techo:.120, E:.050, e_mad:.040, e_trei:.020, T:.042, anc_per:.040, tri_anc:.080, tri_esp:.040,
-              alto:2.280, n_per_r:30, desb:.450, desb_s: .100, tipo: 2, tono_tipo: 2, r_toono: .800, sa_alto: .350, n_ab: 1, n_gr: 1, n_vt: 2, piso_tipo: 2 },
+              alto:2.280, n_per_r:30, desb:.450, desb_s: .100, tipo: 2, tono_tipo: 2, r_toono: .800, sa_alto: .350, n_ab: 1, n_gr: 1, n_vt: 2, piso_tipo: 2, ap_tipo: 2 },
   g6:        {D:6, ais_nom:.120, ais_techo:.120, E:.050, e_mad:.040, e_trei:.020, T:.042, anc_per:.040, tri_anc:.080, tri_esp:.040,
               alto:2.280, n_per_r:30, desb:.450, r_toono:.900},
 };
@@ -813,14 +818,20 @@ function pintarPiezas() {
         "al ras de su borde de arriba; la celulosa entre las dos capas, del alto del tirante: el " +
         "espesor de la aislación lo define la sección de la madera de la tirantería."
       : "Una sola capa de OSB, arriba de los tirantes, sin aislación; el anillo del piso, encastrado " +
-        "en los tirantes al ras de su borde de arriba.", [
+        "en los tirantes al ras de su borde de arriba." + (C.ap.on ? " <b>Criterio de diseño · el anillo del piso</b> (Mauro, 18-nov-2026): en vez del sándwich, tres vueltas " +
+        "de listón de 40 × 10 —el de la cinta del alero—, curvadas y coladas entre sí; entran de canto en una ranura que se talla en los tirantes ANTES de " +
+        "colocar el OSB, y el trei se fija a esas vueltas DESPUÉS de colocar el piso. Es lo mismo que el anillo periférico, pero con listones que se curvan." : ""), [
     ["", "Superficie", "π R²", m2(C.area), ""],
     ["", "Placas por capa", `× ${P.desp} ÷ ${m(P.placa_a)} × ${m(P.placa_l)}`, un(C.placas_capa), "d"],
     ["", "Placas en total", C.piso_doble ? `OSB ${mm(P.osb_inf)} + OSB ${mm(P.osb_sup)}` : `OSB ${mm(P.osb_sup)}`, un(C.capas_osb * C.placas_capa), "d"],
     ["", "Alto del piso", C.piso_doble ? "OSB + tirante + OSB" : "tirante + OSB", mm(C.alto_piso), ""],
     ["", "Encastre del anillo", "su alto entero", mm(C.encastre), "d"],
     ["", "Queda de tirante debajo", "", mm(C.bajo_encastre), ""],
-    ["", "Anillo del piso · volumen", "como el de arriba", m3(C.vol_anillo_piso), ""],
+    ...(C.ap.on ? [["", "Anillo del piso", `${un(C.ap.vueltas)} vueltas de ${mm(C.ap.alto)} × ${mm(C.ap.esp)}, curvadas y coladas`, `${mm(C.ap.ancho)} × ${mm(C.ap.alto)}`, "d"],
+      ["", "Radio del anillo", "debajo del pie del trei (su radio medio)", `${m(C.ap.r1)} a ${m(C.ap.r2)}`, ""],
+      ["", "Ranura en los tirantes", "de canto, al ras de su borde de arriba", `${mm(C.ap.ranura[0])} × ${mm(C.ap.ranura[1])}`, "d"],
+      ["", "Listón en total", `${un(C.ap.vueltas)} × 2π r medio`, m(C.ap.largo), ""]] : []),
+    ["", "Anillo del piso · volumen", C.ap.on ? "perímetro × grosor × alto" : "como el de arriba", m3(C.vol_anillo_piso), ""],
     ...(C.piso_doble ? [["", "Espesor de la aislación", "= alto del tirante", mm(P.tir_alt), "d"], ["", "Celulosa · bruta", "π R² × alto del tirante", m3(C.cel_bruto), ""],
       ["", "Celulosa · neta", "− tirantes − anillo del piso", m3(C.cel_neto), "d"]] : []),
   ], [C.piso_doble && ["", `Los kilos de celulosa salen de la densidad de colocación del fabricante, que todavía
@@ -1239,7 +1250,7 @@ function descripcionDe() {
   L.push(`Yurta de ${n(P.D, 1)} m de diámetro (${n(C.area, 1)} m² de piso), con el muro de ${n(P.alto)} m de altura y el techo a ${Math.round(P.ang)}°.`);
   L.push("");
   const sinAnillo = simple && P.s_anillo !== 1;
-  L.push(`Piso de madera sobre pilares, ${P.piso_tipo === 2 ? "con una capa de OSB sobre los tirantes, sin aislación" : `con dos capas de OSB y ${Math.round(P.tir_alt * 100)} cm de celulosa entre tirantes`}. Muro: trei, celosía de madera a 60° abulonada cada ${Math.round(P.bul * 100)} cm, ${sinAnillo ? "sobre el anillo de madera colada del piso" : "con el anillo periférico de madera colada arriba y abajo"}. ${un(P.n_ab)} ${P.n_ab == 1 ? "puerta" : "aberturas"} de ${n(P.anc_ab)} × ${n(P.alt_ab)} m, con su piso de una pieza${P.n_vt > 0 ? `, y ${un(P.n_vt)} ${P.n_vt == 1 ? "ventana" : "ventanas"} de ${n(P.vt_anc)} × ${n(P.vt_alto)} m` : ""}.`);
+  L.push(`Piso de madera sobre pilares, ${P.piso_tipo === 2 ? "con una capa de OSB sobre los tirantes, sin aislación" : `con dos capas de OSB y ${Math.round(P.tir_alt * 100)} cm de celulosa entre tirantes`}. Muro: trei, celosía de madera a 60° abulonada cada ${Math.round(P.bul * 100)} cm, ${sinAnillo ? (C.ap.on ? `sobre el anillo del piso, de ${un(C.ap.vueltas)} vueltas de listón curvado y colado en una ranura de los tirantes, al que se fija una vez colocado el OSB` : "sobre el anillo de madera colada del piso") : "con el anillo periférico de madera colada arriba y abajo"}. ${un(P.n_ab)} ${P.n_ab == 1 ? "puerta" : "aberturas"} de ${n(P.anc_ab)} × ${n(P.alt_ab)} m, con su piso de una pieza${P.n_vt > 0 ? `, y ${un(P.n_vt)} ${P.n_vt == 1 ? "ventana" : "ventanas"} de ${n(P.vt_anc)} × ${n(P.alto - P.e_mad - P.vt_ant)} m, del antepecho al tope del muro` : ""}.`);
   L.push("");
   L.push(simple
     ? `Techo simple: ${un(C.simple.n_perchas)} perchas de ${Math.round(P.p_anc * 1000)} × ${Math.round(P.p_alt * 1000)} mm, una en cada cruce de arriba del trei, tomada por una escuadra metálica, del toono hasta ${Math.round(C.desb_e * 100)} cm de alero; ${sinAnillo ? "un cable de acero por el extremo de las perchas, en todo el borde," : "el anillo periférico"} toma el empuje. Encima, algodón, freno de vapor, aislación, Tyvek y lona de PVC.`

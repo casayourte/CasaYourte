@@ -807,6 +807,13 @@ misma tanda.**
   trei). Por eso **no hay dintel ni «alto de la ventana» que elegir**: la ventana mide del antepecho al tope
   de los montantes. La tapa interior sólo cubre el vano (del alféizar al cabezal). El trei sigue debajo del
   alféizar y entre los montantes.
+- **El anillo del piso, de listones curvados (`geo-16`)**: en lugar del sándwich colado de 50 × 80 (`ap_tipo` 1, el
+  de Christine, que sigue siendo el valor por defecto), `ap_tipo` 2 pone **tres vueltas de listón de 40 × 10** —los
+  mismos de la cinta del alero—, **curvadas y coladas entre sí**: un anillo de 30 mm de grosor y 40 de alto que
+  entra **de canto en una ranura que se talla en los tirantes ANTES de colocar el OSB**, al ras de su borde de
+  arriba. **El trei se fija a esas vueltas DESPUÉS de colocar el piso.** Es parecido al anillo periférico, pero con
+  listones que se curvan. Va debajo del pie del trei (a su radio medio): ese radio y el ancho de la ranura están
+  **sin confirmar**.
 - Dos cosas **sin confirmar** (marcadas): el espesor del suelo (50 mm por defecto; 45 es lo comercial) y el
   ancho libre de las aberturas.
 
@@ -826,14 +833,14 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-34` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `cy-shell-v102` |
+| `sw.js` | `VERSION` | `cy-shell-v103` |
 | `admin.html` | `PANEL` | `admin-20` |
 | `editar.html` | `EDITOR` | `editar-23` |
 | `taller.html` | `SELLO` | `andamio-3` |
-| `calculo.html` | `CY.PANEL` | `calculo-35` |
-| `calculo-geo.js` | `SELLO_GEO` | `geo-15` |
-| `calculo-3d.js` | `SELLO_3D` | `3d-18` |
-| `propuesta.html` | (en el comentario) | `propuesta-6` |
+| `calculo.html` | `CY.PANEL` | `calculo-36` |
+| `calculo-geo.js` | `SELLO_GEO` | `geo-16` |
+| `calculo-3d.js` | `SELLO_3D` | `3d-19` |
+| `propuesta.html` | (en el comentario) | `propuesta-7` |
 | `consultas.html` | `CY.PANEL` | `consultas-4` |
 | `consultas-ia.js` | `VERSION_CONSULTAS_IA` | `consultas-ia-2` |
 | `presupuestos.html` | `CY.PANEL` | `presupuestos-3` |

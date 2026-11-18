@@ -1,5 +1,10 @@
 // calculo-geo.js — la geometría de la yurta, sin navegador y sin Firebase.
-// Sello: geo-15 (18-nov-2026): LA VENTANA LLEGA AL TOPE DEL MURO (Mauro, 18-nov): «los montantes de la
+// Sello: geo-16 (18-nov-2026): EL ANILLO DEL PISO, DE LISTONES CURVADOS (Mauro, 18-nov): en lugar del sándwich
+// colado de 50 × 80, TRES VUELTAS de listón de 40 × 10 (los mismos de la cinta del alero), curvados y colados, que
+// entran de canto en una RANURA que se talla en los tirantes antes de colocar el OSB (al ras de su borde de arriba);
+// el trei se fija a esas vueltas después de colocar el piso. `ap_tipo` 2 lo elige; el 1 sigue siendo el sándwich.
+// Quedan sin confirmar el radio donde va (acá, debajo del pie del trei, a su radio medio) y el ancho de la ranura.
+// geo-15 (18-nov-2026): LA VENTANA LLEGA AL TOPE DEL MURO (Mauro, 18-nov): «los montantes de la
 // ventana van de piso a techo igual que la puerta, con la diferencia que el suelo va SUSPENDIDO a la
 // altura de la base de la ventana y en la parte alta lleva otra pieza igual (el cabezal de la puerta)
 // para la lona y recibir las perchas, ya que las ventanas irán hasta el límite superior del muro».
@@ -75,7 +80,7 @@
 // TODO lo que se elige por diseño es un campo de la página: si cambia una
 // medida, cambian los números y el dibujo.
 
-export const SELLO_GEO = "geo-15";
+export const SELLO_GEO = "geo-16";
 
 // El tirante, la viga: cuerdas paralelas del círculo de radio R, con una en el
 // centro y cada `paso` a los dos lados. Devuelve [{x, L, n}] con n = 1 para la
@@ -228,7 +233,7 @@ export function sobrealtoPiezas(P, C) {
 // Los nombres de la lista, en castellano (los otros idiomas, en propuesta.html).
 export const NOMBRES_MAT = {
   grupos: { piso: "El piso", muro: "El muro", techo: "El techo", toono: "El toono", telas: "Telas y capas", herrajes: "Herrajes" },
-  pilares: "Pilares", vigas: "Vigas", tirantes: "Tirantes", anillo_piso: "Anillo del piso, colado", osb: "Placas de OSB", celulosa: "Celulosa (aislación del piso)",
+  pilares: "Pilares", vigas: "Vigas", tirantes: "Tirantes", anillo_piso: "Anillo del piso, colado", anillo_piso_lis: "Anillo del piso: listones curvados y colados, en una ranura de los tirantes", osb: "Placas de OSB", celulosa: "Celulosa (aislación del piso)",
   trei: "Listones del trei", bulones: "Bulones del trei", zocalos: "Zócalos", anillo: "Anillo periférico, colado", montantes: "Montantes",
   tapas: "Tapas interiores", tapas_ext: "Tapas exteriores, con ranura", cabezales: "Cabezales de los vanos",
   montantes_sueltos: "Montantes sueltos del muro", pisos_ab: "Suelos de los vanos", puertas: "Puertas", ventanas: "Ventanas",
@@ -240,7 +245,7 @@ export const NOMBRES_MAT = {
   tela_muro: "Tela del muro", algodon: "Algodón (techo y muro)", freno: "Freno de vapor (techo y muro)", aislacion_techo: "Aislación del techo",
   aislacion_muro: "Aislación del muro", tyvek: "Tyvek del techo", escuadras: "Escuadras metálicas", tornillos_640: "Tornillos 6 × 40",
   tornillos_690: "Tornillos 6 × 90",
-  u: { u: "u", pz: "piezas", capas: "capas", placas: "placas", m: "m", m2: "m²", m3: "m³" },
+  u: { u: "u", pz: "piezas", capas: "capas", vueltas: "vueltas", placas: "placas", m: "m", m2: "m²", m3: "m³" },
   palabras: { cu: "c/u", total: "en total", abren: "se abren", compra: "se compran hechas", aprox: "≈" },
 };
 // Un renglón de la lista, en texto, con los nombres que se le pasen (N) y el formato de número (f).
@@ -272,7 +277,8 @@ export function materiales(P, C) {
   add("piso", "pilares", C.n_pil, "u");
   add("piso", "vigas", C.n_vig, "pz", { sec: mm(P.viga_alt, P.viga_anc), ml: C.m_vig });
   add("piso", "tirantes", C.n_tir, "pz", { sec: mm(P.tir_alt, P.tir_anc), ml: C.m_tir });
-  add("piso", "anillo_piso", P.n_cap, "capas", { sec: mm(P.E, P.e_mad), ml: P.n_cap * C.per_med });
+  if (C.ap.on) add("piso", "anillo_piso_lis", C.ap.vueltas, "vueltas", { sec: mm(C.ap.alto, C.ap.esp), ml: C.ap.largo });   // geo-16
+  else add("piso", "anillo_piso", P.n_cap, "capas", { sec: mm(P.E, P.e_mad), ml: P.n_cap * C.per_med });
   add("piso", "osb", C.capas_osb * C.placas_capa, "placas", { esp: C.piso_doble ? [Math.round(P.osb_inf * 1000), Math.round(P.osb_sup * 1000)] : [Math.round(P.osb_sup * 1000)] });
   if (C.piso_doble) add("piso", "celulosa", C.cel_neto, "m3");
   // EL MURO
@@ -383,6 +389,12 @@ export function calc(P) {
   const barrido = c * tan;
   const per_med = 2 * Math.PI * (Rint + P.E / 2);
   const alto_an = P.e_mad * P.n_cap;
+  // geo-16: el anillo del piso de listones curvados (ap_tipo 2): n vueltas de ap_alto × ap_esp, bajo el pie del trei
+  const ap_on = P.ap_tipo === 2, ap_vueltas = Math.max(1, Math.round(P.ap_vueltas ?? 3));
+  const ap_esp = P.ap_esp ?? 0.01, ap_alto = P.ap_alto ?? 0.04, ap_ancho = ap_vueltas * ap_esp;
+  const ap_r_med = r_trei - P.e_trei, ap_per = 2 * Math.PI * ap_r_med;
+  const ap = { on: ap_on, vueltas: ap_vueltas, esp: ap_esp, alto: ap_alto, ancho: ap_ancho, r_med: ap_r_med, per: ap_per,
+    r1: ap_r_med - ap_ancho / 2, r2: ap_r_med + ap_ancho / 2, largo: ap_vueltas * ap_per, ranura: [ap_ancho, ap_alto] };
   const r_trei_med = r_trei - P.e_trei;
   const alfa = 2 * Math.asin(Math.min(1, P.bul / (2 * r_trei_med)));
   const n_pts = Math.round(2 * Math.PI / alfa);  // puntos de abajo (y de arriba) del trei
@@ -420,7 +432,7 @@ export function calc(P) {
   const area = Math.PI * R * R;
   const placa = P.placa_a * P.placa_l;
   const placas_capa = placa > 0 ? Math.ceil(area * P.desp / placa - 1e-9) : 0;
-  const vol_anillo_piso = per_med * P.E * alto_an;
+  const vol_anillo_piso = ap_on ? ap_per * ap_ancho * ap_alto : per_med * P.E * alto_an;
   // geo-6: el piso de UNA capa no lleva el OSB de abajo ni la celulosa.
   // geo-8: la doble capa va SIEMPRE con aislación, y su espesor es el alto del tirante.
   const piso_doble = P.piso_tipo !== 2, osb_inf_e = piso_doble ? P.osb_inf : 0;
@@ -431,7 +443,7 @@ export function calc(P) {
   const alto_piso = osb_inf_e + P.tir_alt + P.osb_sup;
   const por_placa = P.paso_t > 0 ? P.placa_a / P.paso_t : 0;
   const placa_ok = Math.abs(por_placa - Math.round(por_placa)) < 0.01;
-  const encastre = alto_an;                    // el anillo del piso, al ras del tirante
+  const encastre = ap_on ? ap_alto : alto_an;  // el anillo del piso, al ras del tirante
   const bajo_encastre = P.tir_alt - encastre;
 
   // ── EL TREI · herrajes y zócalos ──
@@ -486,7 +498,7 @@ export function calc(P) {
     tirantes, n_tir, m_tir, vol_tir: m_tir * P.tir_alt * P.tir_anc,
     vigas, n_vig, m_vig, n_pil, vol_vig: m_vig * P.viga_alt * P.viga_anc,
     area, placas_capa, vol_anillo_piso, cel_bruto, cel_neto, alto_piso, piso_doble, piso_aislado, osb_inf_e, capas_osb,
-    por_placa, placa_ok, encastre, bajo_encastre,
+    por_placa, placa_ok, encastre, bajo_encastre, ap,
     circ_trazo: 2 * Math.PI * r_trei,
     // trei
     zocalo, grip_cruce, grip_abajo,
