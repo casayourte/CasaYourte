@@ -1,5 +1,13 @@
 // calculo-geo.js — la geometría de la yurta, sin navegador y sin Firebase.
-// Sello: geo-14 (18-nov-2026): EL CHASIS DEL VANO (Mauro, 18-nov-2026, a lo largo de una charla con
+// Sello: geo-15 (18-nov-2026): LA VENTANA LLEGA AL TOPE DEL MURO (Mauro, 18-nov): «los montantes de la
+// ventana van de piso a techo igual que la puerta, con la diferencia que el suelo va SUSPENDIDO a la
+// altura de la base de la ventana y en la parte alta lleva otra pieza igual (el cabezal de la puerta)
+// para la lona y recibir las perchas, ya que las ventanas irán hasta el límite superior del muro».
+// Así: la ventana mide del antepecho al tope de los montantes (ya no hay dintel ni `vt_alto`), sus dos
+// montantes y sus dos tapas exteriores son IGUALES a los de la puerta, el suelo es el alféizar (tallado
+// con las dos cajas, que lo cruzan de lado a lado) y la tapa interior sólo cubre el vano, del alféizar
+// hacia arriba. El trei sigue debajo del alféizar y entre los montantes.
+// geo-14 (18-nov-2026): EL CHASIS DEL VANO (Mauro, 18-nov-2026, a lo largo de una charla con
 // el esquema y el 3D): cada abertura comprada recibe un chasis RECTO — suelo, dos montantes paralelos y,
 // en la simple sin anillo, un cabezal — y la curva de la yurta se resuelve en los CANTOS de los
 // montantes, cortados al ángulo atan((vano/2 + espesor del montante/2) / radio interior del trei).
@@ -67,7 +75,7 @@
 // TODO lo que se elige por diseño es un campo de la página: si cambia una
 // medida, cambian los números y el dibujo.
 
-export const SELLO_GEO = "geo-14";
+export const SELLO_GEO = "geo-15";
 
 // El tirante, la viga: cuerdas paralelas del círculo de radio R, con una en el
 // centro y cada `paso` a los dos lados. Devuelve [{x, L, n}] con n = 1 para la
@@ -145,7 +153,8 @@ export function montaje(P, R, rIn) {
 // ── EL CHASIS DE UN VANO (geo-14). Coordenadas LOCALES del grupo (el centro del vano en el ángulo
 // g.c): x a lo largo de la cuerda (0 en el medio), z hacia afuera desde O (el radio del canto de
 // adentro del montante en la cara del vano), y alturas desde la cara de abajo del suelo (yBase sobre
-// el piso terminado: 0 en la puerta, el antepecho menos el suelo en la ventana). Lo usan la lista de
+// el piso terminado: 0 en la puerta, el antepecho menos el suelo en la ventana; sólo el SUELO parte de ahí:
+// los montantes y las tapas exteriores van siempre de piso a tope, la ventana igual que la puerta). Lo usan la lista de
 // madera y el 3D, así los dos dicen lo mismo.
 export function chasis(P, C, g) {
   const simple = P.tipo === 2, conAnillo = !simple || P.s_anillo === 1, ventana = g.tipo === "ventana";
@@ -164,7 +173,7 @@ export function chasis(P, C, g) {
   const hc = h(MF);                                                    // el piso de las cajas, plano
   const zi = (x) => (Math.abs(x) > e ? -(Math.abs(x) - e) * tn : 0);   // el canto de adentro, al ángulo
   const yBase = ventana ? (P.vt_ant ?? 0.9) - esp : 0;
-  const yTope = P.alto - P.e_mad, cab = !conAnillo && !ventana ? P.e_mad : 0;
+  const yTope = P.alto - P.e_mad, cab = !conAnillo ? P.e_mad : 0;           // geo-15: el cabezal, también en la ventana
   const tanAng = Math.tan(P.ang * Math.PI / 180), zTr = C.r_trei - RTI, zCab = zTr + P.e_mad / tanAng;
   // La arista donde apoyan las perchas sigue el radio de la cara de afuera del trei (como sus cabezas):
   // el cabezal es recto, pero ese canto se cepilla en curva para que cada percha apoye a la misma altura.
@@ -173,13 +182,16 @@ export function chasis(P, C, g) {
   return { tipo: g.tipo, k, ancho, W, e, a, tn, grados: a * 180 / Math.PI, O, ME, MF, nariz, te, lat, tE, zIn, Ra, zArc, esp, tope, caida, h, hc, zi,
     yBase, yTope, cab, tanAng, zTr, zCab, zTrX, zCabX, conAnillo, tapaExt, ranura: [ME + 0.005, nariz],
     fondoCentro: f0 - zIn, fondoPunta: zArc(tE) - zIn, largoSuelo: 2 * tE,
-    largoMon: yTope - (yBase + hc), largoCab: cab ? 2 * (e + ME) : 0,
-    largoTapaInt: yTope + cab - (yBase + esp), largoTapaExt: yTope - (yBase + hc) };
+    // geo-15: el montante y la tapa exterior van del piso al tope (puerta y ventana iguales); la tapa interior
+    // sólo cubre el vano: del alféizar (o del suelo, en la puerta) hasta el cabezal.
+    largoMon: yTope - hc, largoCab: cab ? 2 * (e + ME) : 0,
+    largoTapaInt: yTope + cab - (yBase + esp), largoTapaExt: yTope - hc,
+    antepecho: yBase + esp, hVano: yTope - (yBase + esp) };
 }
 
 // ── LOS VANOS: la madera de cada chasis (geo-10, rehecho en geo-14). Por grupo: un suelo, k + 1
-// montantes, el cabezal (en la simple sin anillo, sólo en las puertas: en la ventana el trei sigue
-// arriba del dintel), dos tapas interiores y dos exteriores.
+// montantes (de piso a tope, también en la ventana), el cabezal (en la simple sin anillo, puerta y
+// ventana: la ventana llega al tope del muro), dos tapas interiores y dos exteriores.
 export function vanos(P, C) {
   const grupos = C.mon ? C.mon.grupos : [];
   const out = { pisos: [], montantes: [], cabezales: [], tapas: [], tapas_ext: [], chasis: [], vol: 0 };

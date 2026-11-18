@@ -848,3 +848,18 @@ verdad después del cambio.
   la prueba de que las reglas están vivas (desactivarse a uno mismo,
   `GUIA-ANDROID.md` E4) y el blindaje de `.material-icons` contra la regla de
   contenedor que le gana en especificidad.
+
+## 18-nov-2026 · La ventana llega al tope del muro (`geo-15`, `3d-18`, `calculo-35`)
+
+Mauro, sobre el chasis del vano: «Yo prefiero que los montantes de la ventana vayan de piso a techo igual que
+la puerta, con la diferencia que el suelo va suspendido a la altura de la base de la ventana y en la parte alta
+lleva otra pieza igual para la lona y recibir las perchas. Ya que las ventanas irán hasta el límite superior del
+muro.» Antes (geo-14) los montantes de la ventana arrancaban en su suelo-alféizar (1,36 m) y el trei seguía
+arriba, con un dintel si entraba. Ahora los de la ventana miden lo mismo que los de la puerta (2,21 m), el
+suelo es el alféizar cruzado por las dos cajas, y arriba va el cabezal de la puerta (en la simple sin anillo);
+`vt_alto` se fue de los campos (la ventana mide del antepecho al tope). Interpretación: «otra pieza igual» =
+el cabezal de la puerta; si Mauro quiso decir otra cosa, el cambio es de `chasis()` (una línea: `cab`).
+Efecto en la lista de madera de eucalipto: los 4 montantes de ventana pasan de 1,36 a 2,21 m (ya no salen
+del sobrante de otro) y aparecen 2 cabezales de ventana de 0,88 m; las tapas exteriores de ventana, de
+1,36 a 2,21 m; las interiores, de 1,34 a 1,38 m.
+

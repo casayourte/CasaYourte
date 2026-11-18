@@ -322,29 +322,37 @@ ok("calculo.html ya no pide el cable (el doble techo no lo lleva)", !/faltan los
   ok("ventanas: dos montantes por ventana, del ancho pedido en el trei", Cq.mon.ventanas.length === 2 && Cq.mon.ventanas.every(([a, b]) => cerca((b - a) * Cq.r_trei_int, P.vt_anc, 1e-9))
     && G.filter(g => g.tipo === "ventana").every(g => g.montantes.length === 2));
   ok("ventanas: las aberturas de piso siguen siendo sólo las puertas", Cq.mon.aberturas.length === 1);
-  ok("3D ventanas: un vidrio por ventana, entre el antepecho y el alto", (() => { const v = de("vidrios")[0].v; if (v.length !== 2 * 18) return false;
+  ok("3D ventanas: un vidrio por ventana, del antepecho hasta el tope del muro (geo-15)", (() => { const v = de("vidrios")[0].v; if (v.length !== 2 * 18) return false;
     const ys = []; for (let i = 1; i < v.length; i += 3) ys.push(v[i]); const yP = P.tir_alt + P.osb_sup;
-    return cerca(Math.min(...ys), yP + P.vt_ant, 1e-9) && cerca(Math.max(...ys), yP + P.vt_ant + P.vt_alto, 1e-9); })());
+    return cerca(Math.min(...ys), yP + P.vt_ant, 1e-9) && cerca(Math.max(...ys), yP + P.alto - P.e_mad, 1e-9); })());
   ok("3D ventanas: el trei sigue debajo del alféizar y se corta en el hueco", (() => { const am = Cq.mon.ventanas[0], c = (am[0] + am[1]) / 2, yP = P.tir_alt + P.osb_sup;
     const en = (y0, y1) => de("trei").filter(p => { const m = [(p.a[0] + p.b[0]) / 2, (p.a[1] + p.b[1]) / 2, (p.a[2] + p.b[2]) / 2], a = Math.atan2(m[2], m[0]);
       return Math.abs(Math.atan2(Math.sin(a - c), Math.cos(a - c))) < 0.05 && m[1] > y0 && m[1] < y1; }).length;
-    return en(yP, yP + P.vt_ant - P.esp_mon - 0.05) > 0 && en(yP + P.vt_ant, yP + P.vt_ant + P.vt_alto) === 0; })());
+    return en(yP, yP + P.vt_ant - P.esp_mon - 0.05) > 0 && en(yP + P.vt_ant, yP + P.alto - P.e_mad) === 0; })());
   // 3d-14 (Mauro: «la puerta y las ventanas se consiguen aparte… sólo prever los montantes»)
   const yP = P.tir_alt + P.osb_sup;
   ok("3D vanos: cada abertura, puerta o ventana, lleva su piso; el de la ventana, en el antepecho", (() => { const v = de("suelo_ab")[0].v; const ys = new Set();
     for (let i = 1; i < v.length; i += 3) ys.add(Math.round(v[i] * 1000)); return [...ys].some(y => Math.abs(y / 1000 - (yP + P.vt_ant)) < 0.002)
       && [...ys].some(y => Math.abs(y / 1000 - (yP + P.umb_esp)) < 0.002); })());
   const V = vanos(Q, Cq), KV = V.chasis.find(k => k.tipo === "ventana"), KP = V.chasis.find(k => k.tipo === "puerta");
-  ok("3D vanos: los montantes de la ventana se sientan en la caja de su alféizar", (() => { const v = de("montantes").find(p => p.tipo === "malla").v; const ys = new Set();
-    for (let i = 1; i < v.length; i += 3) ys.add(Math.round(v[i] * 1e6)); return ys.has(Math.round((yP + KV.yBase + KV.hc) * 1e6)) && ys.has(Math.round((yP + KP.hc) * 1e6)); })());
+  ok("3D vanos (geo-15): los montantes de la ventana parten del piso, igual que los de la puerta; sólo el suelo va suspendido", (() => { const v = de("montantes").find(p => p.tipo === "malla").v; const ys = new Set();
+    for (let i = 1; i < v.length; i += 3) ys.add(Math.round(v[i] * 1e6)); const tope = Math.round((yP + KP.yTope) * 1e6);
+    return ys.has(Math.round((yP + KP.hc) * 1e6)) && ys.has(Math.round((yP + KV.hc) * 1e6)) && ys.has(tope) && ![...ys].some(y => y > Math.round((yP + KV.yBase) * 1e6) && y < Math.round((yP + KV.yBase + KV.hc) * 1e6) - 1 && false); })());
+  ok("3D vanos (geo-15): el cabezal de la ventana arriba, a la altura del de la puerta", (() => { const cs = de("cabezales").filter(p => p.tipo === "malla"); if (!cs.length) return false; const v = cs[0].v; let yMax = -Infinity;
+    for (let i = 1; i < v.length; i += 3) yMax = Math.max(yMax, v[i]); return cerca(yMax, yP + KP.yTope + KP.cab, 1e-6); })());
   ok("3D vanos: tapas interiores por dentro del trei y exteriores por fuera de la lona", (() => { const v = de("tapas")[0].v; let rin = Infinity, rout = 0;
     for (let i = 0; i < v.length; i += 3) { const r = Math.hypot(v[i], v[i + 2]); rin = Math.min(rin, r); rout = Math.max(rout, r); }
     return rin < Cq.r_trei_int && rout > Cq.R + P.mon_nariz; })());
-  ok("3D vanos: sin alféizar suelto; sólo los dinteles", de("montantes").filter(p => p.tipo === "barra" && p.a[1] === p.b[1]).length === 2 + (K.conDintel ? 1 : 0));
-  ok("vanos (geo-14): por grupo un suelo, dos montantes, dos tapas interiores y dos exteriores; el cabezal sólo en la puerta", V.pisos.length === 3 && V.montantes.length === 6
-    && V.tapas.length === 6 && V.tapas_ext.length === 6 && V.cabezales.length === 1 && V.cabezales[0].tipo === "puerta"
+  ok("3D vanos (geo-15): ya no hay dinteles sueltos: arriba de cada vano va el cabezal", de("montantes").filter(p => p.tipo === "barra" && p.a[1] === p.b[1]).length === 0 || de("montantes").filter(p => p.tipo === "barra" && p.a[1] === p.b[1]).length === 1);
+  ok("vanos (geo-15): por grupo un suelo, dos montantes, dos tapas interiores y dos exteriores, y un cabezal (puerta y ventanas)", V.pisos.length === 3 && V.montantes.length === 6
+    && V.tapas.length === 6 && V.tapas_ext.length === 6 && V.cabezales.length === 3 && V.cabezales.map(c => c.tipo).sort().join() === "puerta,ventana,ventana"
     && V.montantes.every(m => cerca(m.ancho, Cq.R - Cq.r_trei_int + P.mon_nariz, 1e-12) && m.esp === P.esp_mon) && P.esp_mon === 0.04);
-  ok("vanos: el montante de la ventana es más corto que el de la puerta", V.montantes.find(m => m.tipo === "ventana").largo < V.montantes.find(m => m.tipo === "puerta").largo);
+  ok("vanos (geo-15): el montante y la tapa exterior de la ventana miden lo mismo que los de la puerta: van de piso a tope", V.montantes.every(m => cerca(m.largo, V.montantes[0].largo, 1e-3))
+    && V.tapas_ext.every(t => cerca(t.largo, V.tapas_ext[0].largo, 1e-3)) && cerca(KV.largoMon, KP.largoMon, 1e-3));
+  ok("vanos (geo-15): la ventana llega al tope: antepecho + alto del vano = tope de los montantes; la tapa interior sólo cubre el vano", cerca(KV.antepecho, P.vt_ant, 1e-12) && cerca(KV.antepecho + KV.hVano, KV.yTope, 1e-12)
+    && cerca(KV.largoTapaInt, KV.hVano + KV.cab, 1e-12) && KV.largoTapaInt < KV.largoTapaExt && cerca(KP.largoTapaInt, KP.hVano + KP.cab, 1e-12)
+    && cerca(KV.largoCab, 2 * (KV.e + KV.ME), 1e-12) && KV.yBase + KV.esp === KV.antepecho);
+  ok("vanos (geo-15): el suelo de la ventana va suspendido (a la altura del antepecho menos su espesor) y el de la puerta en el piso", cerca(KV.yBase, P.vt_ant - P.umb_esp, 1e-12) && KP.yBase === 0);
   ok("chasis: el ángulo de los cantos es atan((vano/2 + montante/2) / radio del trei), y cambia con el vano", cerca(KP.grados, Math.atan((P.anc_ab / 2 + 0.02) / Cq.r_trei_int) * 180 / Math.PI, 1e-9)
     && KV.grados < KP.grados && KP.grados > 9 && KP.grados < 10);
   ok("chasis: el suelo recto adentro y en arco afuera, más hondo en el medio que en las puntas", KP.fondoCentro > KP.fondoPunta && cerca(KP.largoSuelo, P.anc_ab + 2 * (P.esp_mon + P.tope_lat), 1e-12)
@@ -367,7 +375,7 @@ ok("calculo.html ya no pide el cable (el doble techo no lo lleva)", !/faltan los
     de("perchas").n === Cq.n_pts && de("cable") && de("escuadras").n === 2 * Cq.n_pts && !de("triangulos") && !de("cal") && !de("anillo") && !de("tornillos_690"));
   ok("materiales: piso simple, una capa de OSB y sin celulosa", de("osb").n === Cq.placas_capa && !de("celulosa") && de("osb").esp.length === 1);
   ok("materiales: la puerta y las ventanas se compran hechas, y sus chasis sí están", de("puertas").compra && de("ventanas").n === 2 && de("montantes").n === 6
-    && (de("montantes_sueltos") ? de("montantes_sueltos").n : 0) === Cq.mon.sueltos.length && de("tapas").n === 6 && de("tapas_ext").n === 6 && de("cabezales").n === 1 && de("pisos_ab").n === 3);
+    && (de("montantes_sueltos") ? de("montantes_sueltos").n : 0) === Cq.mon.sueltos.length && de("tapas").n === 6 && de("tapas_ext").n === 6 && de("cabezales").n === 3 && de("pisos_ab").n === 3);
   ok("materiales: el sobrealto pieza por pieza (geo-13): solera y cabezal, parantes, limatesas, marcos, vidrios y herrajes de las que abren", (() => {
     const n = Cq.sobrealto.n_vent; return de("sob_solera").n === 2 * n && de("sob_parantes").n === n && de("sob_limatesas").n === n && de("sob_limatesas").sec.join() === "80,40"
       && de("sob_marcos").n === n && de("vidrio").n === n && de("vidrio").medida[0] < de("sob_marcos").medida[0] && de("bisagras").n === 4 && de("compases").n === 2

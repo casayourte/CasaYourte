@@ -157,7 +157,10 @@
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v101';
+// v102 (18-nov-2026) — calculo-35 + geo-15 + 3d-18: la ventana llega al tope del muro (Mauro): sus montantes
+//   y tapas exteriores, de piso a tope como los de la puerta; el suelo suspendido a la altura del antepecho
+//   (alféizar con sus dos cajas) y el cabezal arriba, igual al de la puerta. Sin dintel ni «alto de la ventana».
+const VERSION = 'cy-shell-v102';
 
 // v69 · 29-oct-2026 · `nucleo.js` (nucleo-32, general:C7): CY.explicar usa la tabla
 //   común de `errores.js` del panel (datos) y le suma sus dos causas propias.

@@ -778,6 +778,38 @@ remate taller».
   da «sin permiso» y la página dice que no está disponible).
 - Uso: un documento chico por propuesta y una lectura por visita: nada contra el cupo gratuito.
 
+## El chasis de los vanos: criterios de diseño (`geo-14` y `geo-15`, 18-nov-2026)
+
+Lo diseñó Mauro a lo largo de una charla con el esquema y el modelo 3D; vive en `chasis()` de
+`calculo-geo.js` (una sola copia: la lista de madera y el 3D salen de ahí) y se explica a quien arma, en
+la tarjeta «Los vanos» de `calculo.html`. **Si un criterio cambia, cambia `chasis()` y esta lista en la
+misma tanda.**
+
+- **Las aberturas se compran hechas; lo nuestro es el chasis** que las recibe, **recto** (el vano es un
+  rectángulo) y **en función de la abertura**: suelo, dos montantes paralelos, cabezal, dos tapas
+  interiores y dos exteriores. Todo en **eucalipto**.
+- **La curva de la yurta se resuelve en los CANTOS de los montantes**, cortados al ángulo
+  `atan((vano/2 + montante/2) / radio interior del trei)`: el ángulo cambia con el ancho de cada abertura.
+- **El montante** = trei + aislación + 1 cm de **nariz** afuera de la lona; la lona se tensa en la nariz y se
+  engrampa en la cara del vano.
+- **La tapa interior** va en el canto de adentro, **al ras del vano**, y sigue sobre el trei (la toma el último
+  bulón). **La tapa exterior** de 6 × 2 cm lleva una ranura de 1 cm (montante + 5 mm) que abraza la nariz y
+  tensa la lona; **va atornillada sólo al montante** (no hay segunda fijación en la aislación).
+- **El suelo** es **recto del lado de adentro** (ahí topea el marco de la abertura, que abre hacia adentro,
+  con las bisagras en esa línea) y **en arco del lado de afuera**, volando 2 cm parejo. Un **tope de atrás** y
+  un **tope lateral** (2 cm), tallados en la misma pieza, cierran cada caja de montante: el agua nunca
+  escurre hacia la aislación. Cae 1 cm hacia el borde, con goterón. La lona exterior baja hasta el fondo del piso.
+- **La ventana llega al límite superior del muro (`geo-15`)**: **los montantes de la ventana van de piso a
+  tope, iguales a los de la puerta** (y sus tapas exteriores también). Lo que cambia es el **suelo, que va
+  suspendido a la altura de la base de la ventana** (su antepecho, `vt_ant`): hace de alféizar y lo cruzan
+  de lado a lado las dos cajas de los montantes. **Arriba lleva otra pieza igual a la de la puerta, el
+  cabezal**, que sostiene la lona y recibe las perchas (cepillado a 30° afuera, con la arista en la curva del
+  trei). Por eso **no hay dintel ni «alto de la ventana» que elegir**: la ventana mide del antepecho al tope
+  de los montantes. La tapa interior sólo cubre el vano (del alféizar al cabezal). El trei sigue debajo del
+  alféizar y entre los montantes.
+- Dos cosas **sin confirmar** (marcadas): el espesor del suelo (50 mm por defecto; 45 es lo comercial) y el
+  ancho libre de las aberturas.
+
 ## Los sellos de versión
 
 Cada archivo con lógica propia lleva su número, visible en el panel abajo del nombre. **Al
@@ -794,13 +826,13 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-34` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `cy-shell-v101` |
+| `sw.js` | `VERSION` | `cy-shell-v102` |
 | `admin.html` | `PANEL` | `admin-20` |
 | `editar.html` | `EDITOR` | `editar-23` |
 | `taller.html` | `SELLO` | `andamio-3` |
-| `calculo.html` | `CY.PANEL` | `calculo-34` |
-| `calculo-geo.js` | `SELLO_GEO` | `geo-14` |
-| `calculo-3d.js` | `SELLO_3D` | `3d-17` |
+| `calculo.html` | `CY.PANEL` | `calculo-35` |
+| `calculo-geo.js` | `SELLO_GEO` | `geo-15` |
+| `calculo-3d.js` | `SELLO_3D` | `3d-18` |
 | `propuesta.html` | (en el comentario) | `propuesta-6` |
 | `consultas.html` | `CY.PANEL` | `consultas-4` |
 | `consultas-ia.js` | `VERSION_CONSULTAS_IA` | `consultas-ia-2` |
