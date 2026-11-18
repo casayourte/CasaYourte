@@ -167,14 +167,15 @@ ok("el ancho libre entre montantes es el pedido, en el trei", MO.aberturas.every
 ok("sin aberturas: uno cada 3 m, 8 en un perímetro de 22", montaje({ ...P, n_ab: 0 }, 3.5, 3.3).n_mon === 8);
 ok("más grupos que aberturas no inventa grupos", montaje({ ...P, n_ab: 2, n_gr: 5 }, 3.5, 3.3).grupos.length === 2);
 ok("sin sep_mon no cuelga", montaje({ ...P, sep_mon: 0 }, 3.5, 3.3).sueltos.length === 0);
-ok("3D: 11 montantes (y los dinteles si la abertura es más baja que el anillo)", cuenta("montantes", "barra") === 11 + (T3.conDintel ? 5 : 0));
+ok("3D: los sueltos son barras, los de los vanos van en el chasis (y los dinteles si la abertura es más baja)", cuenta("montantes", "barra") === C.n_mon_sueltos + (T3.conDintel ? 5 : 0)
+  && T3.piezas.some(p => p.g === "montantes" && p.tipo === "malla"));
 ok("3D: una abertura del alto del muro no lleva dintel", (() => { const Q = { ...P, alt_ab: 3 }; const K = piezas3d(Q, calc(Q));
-  return !K.conDintel && K.piezas.filter(p => p.g === "montantes").length === 11; })());
+  return !K.conDintel && K.piezas.filter(p => p.g === "montantes" && p.tipo === "barra").length === 3; })());
 ok("3D: un piso de abertura por grupo, con su caída hacia afuera", (() => { const v = T3.piezas.filter(p => p.g === "suelo_ab");
   if (v.length !== 1) return false; const ys = []; for (let i = 1; i < v[0].v.length; i += 3) ys.push(v[0].v[i]);
   const yP = P.tir_alt + P.osb_sup; return cerca(Math.max(...ys), yP + P.umb_esp, 1e-6) && cerca(Math.min(...ys), yP, 1e-6); })());
-ok("3D: el piso de la abertura pasa el borde", (() => { const v = T3.piezas.find(p => p.g === "suelo_ab").v; let r = 0;
-  for (let i = 0; i < v.length; i += 3) r = Math.max(r, Math.hypot(v[i], v[i + 2])); return cerca(r, C.R + P.umb_vuelo, 0.002); })());
+ok("3D: el suelo del vano vuela parejo más allá de la nariz (su arco, en el radio R + nariz + vuelo)", (() => { const v = T3.piezas.find(p => p.g === "suelo_ab").v; let r = 0;
+  for (let i = 0; i < v.length; i += 3) r = Math.max(r, Math.hypot(v[i], v[i + 2])); return cerca(r, C.R + P.mon_nariz + P.umb_vuelo, 1e-6); })());
 // ── las capas ──
 const capas = PARTES.filter(p => p[2] === "capa").map(p => p[0]);
 ok("3D: nueve capas, techo y muro", capas.length === 9 && capas.filter(k => /techo|tyvek/.test(k)).length === 5);
@@ -280,7 +281,12 @@ ok("calculo.html ya no pide el cable (el doble techo no lo lleva)", !/faltan los
       && cerca(Math.hypot(rb - ra, yb - ya), P.esc, 1e-12); })());
   ok("escuadra: el tornillo 6×40 entra en la percha, a 35 mm del doblez", (() => { const t = de("escuadras").filter(p => p.ancho === 0.006)[0];
     const L = Math.hypot(t.b[0] - t.a[0], t.b[1] - t.a[1], t.b[2] - t.a[2]); return t && cerca(L, 0.04, 1e-9) && t.b[1] > t.a[1] && Cs.simple.tornillos === 63; })());
-  ok("3D simple: sin anillo, los montantes no se meten en las perchas", de("montantes").every(p => Math.max(p.a[1], p.b[1]) + (p.a[1] === p.b[1] ? P.esp_mon / 2 : 0) <= yt + ES.bajo((Cs.R + Cs.r_trei_int) / 2) + 1e-9));
+  ok("3D simple: sin anillo, los montantes no se meten en las perchas", de("montantes").filter(p => p.tipo === "barra").every(p => Math.max(p.a[1], p.b[1]) + (p.a[1] === p.b[1] ? P.esp_mon / 2 : 0) <= yt + ES.bajo((Cs.R + Cs.r_trei_int) / 2) + 1e-9));
+  ok("3D simple (geo-14): ni el chasis ni el cabezal se meten en las perchas, y el cabezal llega a la cabeza del trei", (() => {
+    let ok_ = true, alto = -Infinity;
+    for (const p of [...de("montantes"), ...de("cabezales"), ...de("tapas")].filter(q => q.tipo === "malla")) for (let i = 0; i < p.v.length; i += 3) {
+      const r = Math.hypot(p.v[i], p.v[i + 2]), y = p.v[i + 1]; if (y > yt + ES.bajo(r) + 2e-3) ok_ = false; if (p.g === "cabezales") alto = Math.max(alto, y); }
+    return ok_ && cerca(alto, yt, 1e-9) && de("cabezales").length === 1; })());
   ok("3D simple con anillo: va el anillo, no el cable, y la percha apoya en su canto de afuera", (() => {
     const Qa = { ...Q, s_anillo: 1 }, Ca = calc(Qa), Ka = piezas3d(Qa, Ca), q = Ka.piezas.find(p => p.g === "perchas"), r = Math.hypot(q.a[0], q.a[2]);
     const yAb = q.a[1] - P.p_anc / 2 / Math.cos(P.ang * Math.PI / 180);
@@ -328,17 +334,25 @@ ok("calculo.html ya no pide el cable (el doble techo no lo lleva)", !/faltan los
   ok("3D vanos: cada abertura, puerta o ventana, lleva su piso; el de la ventana, en el antepecho", (() => { const v = de("suelo_ab")[0].v; const ys = new Set();
     for (let i = 1; i < v.length; i += 3) ys.add(Math.round(v[i] * 1000)); return [...ys].some(y => Math.abs(y / 1000 - (yP + P.vt_ant)) < 0.002)
       && [...ys].some(y => Math.abs(y / 1000 - (yP + P.umb_esp)) < 0.002); })());
-  ok("3D vanos: los montantes de la ventana se paran en su piso", G.filter(g => g.tipo === "ventana").every(g => g.montantes.every(a =>
-    de("montantes").some(p => p.a[1] !== p.b[1] && cerca(Math.min(p.a[1], p.b[1]), yP + P.vt_ant, 1e-9) && cerca(Math.atan2(p.a[2], p.a[0]), Math.atan2(Math.sin(a), Math.cos(a)), 1e-9)))));
-  ok("3D vanos: dos tapas por montante de abertura (interior y exterior), ninguna en los sueltos", de("tapas").length === 2 * 2 * G.length
-    && de("tapas").every(p => p.ancho === P.tapa_anc && p.alto === P.tapa_esp));
-  ok("3D vanos: la tapa interior contra el trei, la exterior por fuera de la lona", (() => { const rs = de("tapas").map(p => Math.hypot(p.a[0], p.a[2]));
-    return rs.filter(r => r < Cq.r_trei_int).length === 2 * G.length && rs.filter(r => r > Cq.R + 0.003).length === 2 * G.length; })());
-  ok("3D vanos: sin alféizar suelto; sólo los dinteles", de("montantes").filter(p => p.a[1] === p.b[1]).length === 2 + (K.conDintel ? 1 : 0));
-  const V = vanos(Q, Cq);
-  ok("vanos: por abertura un piso, dos montantes y cuatro tapas", V.pisos.length === 3 && V.montantes.length === 6 && V.tapas.length === 12
-    && V.montantes.every(m => m.ancho === Cq.mon_ancho && m.esp === P.esp_mon) && P.esp_mon === 0.04);
+  const V = vanos(Q, Cq), KV = V.chasis.find(k => k.tipo === "ventana"), KP = V.chasis.find(k => k.tipo === "puerta");
+  ok("3D vanos: los montantes de la ventana se sientan en la caja de su alféizar", (() => { const v = de("montantes").find(p => p.tipo === "malla").v; const ys = new Set();
+    for (let i = 1; i < v.length; i += 3) ys.add(Math.round(v[i] * 1e6)); return ys.has(Math.round((yP + KV.yBase + KV.hc) * 1e6)) && ys.has(Math.round((yP + KP.hc) * 1e6)); })());
+  ok("3D vanos: tapas interiores por dentro del trei y exteriores por fuera de la lona", (() => { const v = de("tapas")[0].v; let rin = Infinity, rout = 0;
+    for (let i = 0; i < v.length; i += 3) { const r = Math.hypot(v[i], v[i + 2]); rin = Math.min(rin, r); rout = Math.max(rout, r); }
+    return rin < Cq.r_trei_int && rout > Cq.R + P.mon_nariz; })());
+  ok("3D vanos: sin alféizar suelto; sólo los dinteles", de("montantes").filter(p => p.tipo === "barra" && p.a[1] === p.b[1]).length === 2 + (K.conDintel ? 1 : 0));
+  ok("vanos (geo-14): por grupo un suelo, dos montantes, dos tapas interiores y dos exteriores; el cabezal sólo en la puerta", V.pisos.length === 3 && V.montantes.length === 6
+    && V.tapas.length === 6 && V.tapas_ext.length === 6 && V.cabezales.length === 1 && V.cabezales[0].tipo === "puerta"
+    && V.montantes.every(m => cerca(m.ancho, Cq.R - Cq.r_trei_int + P.mon_nariz, 1e-12) && m.esp === P.esp_mon) && P.esp_mon === 0.04);
   ok("vanos: el montante de la ventana es más corto que el de la puerta", V.montantes.find(m => m.tipo === "ventana").largo < V.montantes.find(m => m.tipo === "puerta").largo);
+  ok("chasis: el ángulo de los cantos es atan((vano/2 + montante/2) / radio del trei), y cambia con el vano", cerca(KP.grados, Math.atan((P.anc_ab / 2 + 0.02) / Cq.r_trei_int) * 180 / Math.PI, 1e-9)
+    && KV.grados < KP.grados && KP.grados > 9 && KP.grados < 10);
+  ok("chasis: el suelo recto adentro y en arco afuera, más hondo en el medio que en las puntas", KP.fondoCentro > KP.fondoPunta && cerca(KP.largoSuelo, P.anc_ab + 2 * (P.esp_mon + P.tope_lat), 1e-12)
+    && cerca(Math.hypot(KP.O + KP.zArc(0.3), 0.3), KP.Ra, 1e-12));
+  ok("chasis: el tope arriba, el piso de la caja más abajo y la caída hacia afuera", cerca(KP.h(0), P.umb_esp - P.umb_tope, 1e-12) && cerca(KP.h(KP.zArc(0)), P.umb_esp - P.umb_tope - P.umb_caida, 1e-12)
+    && KP.hc < KP.h(0) && KP.hc > KP.h(KP.zArc(0)));
+  ok("chasis: la tapa exterior con su ranura (montante + 5 mm, de la nariz) y de 6 cm", cerca(KP.ranura[0], P.esp_mon + 0.005, 1e-12) && KP.ranura[1] === P.mon_nariz && KP.tapaExt === 0.06);
+  ok("chasis: con anillo (doble techo) no hay cabezal: las perchas apoyan en el anillo", vanos(P, C).cabezales.length === 0 && piezas3d(P, C).piezas.every(p => p.g !== "cabezales"));
   const Rs = resumen(Q, Cq);
   ok("resumen: la madera es la suma de sus partes, y las telas salen del cálculo", cerca(Rs.madera_total, Object.values(Rs.madera).reduce((a, b) => a + b, 0), 1e-12)
     && Rs.madera_total > 1 && Rs.madera_total < 4 && cerca(Rs.lona_techo, Cq.lona_area, 1e-12) && Rs.puertas === 1 && Rs.ventanas === 2 && Rs.placas === 2 * Cq.placas_capa);
@@ -352,7 +366,8 @@ ok("calculo.html ya no pide el cable (el doble techo no lo lleva)", !/faltan los
   ok("materiales: la simple de 6 m lleva perchas, cable y escuadras arriba y abajo, y no lleva primera capa ni anillo de arriba",
     de("perchas").n === Cq.n_pts && de("cable") && de("escuadras").n === 2 * Cq.n_pts && !de("triangulos") && !de("cal") && !de("anillo") && !de("tornillos_690"));
   ok("materiales: piso simple, una capa de OSB y sin celulosa", de("osb").n === Cq.placas_capa && !de("celulosa") && de("osb").esp.length === 1);
-  ok("materiales: la puerta y las ventanas se compran hechas, y sus vanos sí están", de("puertas").compra && de("ventanas").n === 2 && de("montantes").n === 6 + Cq.mon.sueltos.length && de("tapas").n === 12);
+  ok("materiales: la puerta y las ventanas se compran hechas, y sus chasis sí están", de("puertas").compra && de("ventanas").n === 2 && de("montantes").n === 6
+    && (de("montantes_sueltos") ? de("montantes_sueltos").n : 0) === Cq.mon.sueltos.length && de("tapas").n === 6 && de("tapas_ext").n === 6 && de("cabezales").n === 1 && de("pisos_ab").n === 3);
   ok("materiales: el sobrealto pieza por pieza (geo-13): solera y cabezal, parantes, limatesas, marcos, vidrios y herrajes de las que abren", (() => {
     const n = Cq.sobrealto.n_vent; return de("sob_solera").n === 2 * n && de("sob_parantes").n === n && de("sob_limatesas").n === n && de("sob_limatesas").sec.join() === "80,40"
       && de("sob_marcos").n === n && de("vidrio").n === n && de("vidrio").medida[0] < de("sob_marcos").medida[0] && de("bisagras").n === 4 && de("compases").n === 2

@@ -239,7 +239,7 @@ import { CY } from "./nucleo.js";
 import { calc as calcGeo, corte, vanos, materiales, NOMBRES_MAT, renglonMat } from "./calculo-geo.js";
 import { montar as montar3d, PARTES as PARTES3D, CAMPO_PARTES } from "./calculo-3d.js";
 
-CY.PANEL = "calculo-33";
+CY.PANEL = "calculo-34";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 // ── El SDK se baja acá, y recién después arranca la pantalla ────────────────
@@ -322,18 +322,22 @@ const CAMPOS = [
   ["n_ab",     "Aberturas de piso (puertas)",     5,     "unidades · del piso hasta arriba"],
   ["n_gr",     "Grupos contiguos",                3,     "las juntas comparten montante"],
   ["alt_ab",   "Alto de la abertura",             2.280, "m"],
-  ["esp_mon",  "Espesor del montante",            0.040, "m · eucalipto; el ancho se deriva (2 listones del trei + la aislación)"],
-  ["tapa_anc", "Tapas del montante · ancho",      0.120, "m · la interior toma los bulones del trei; la exterior sujeta la lona"],
-  ["tapa_esp", "Tapas del montante · espesor",    0.020, "m · eucalipto"],
+  ["esp_mon",  "Espesor del montante",            0.040, "m · eucalipto; el fondo se deriva (trei + aislación + nariz)"],
+  ["mon_nariz","Montante · nariz afuera de la lona",0.010,"m · ahí se tensa y se engrampa la lona"],
+  ["tapa_anc", "Tapa interior · ancho",           0.120, "m · en el canto de adentro, al ras del vano; toma el último bulón del trei"],
+  ["tapa_esp", "Tapas · espesor",                 0.020, "m · eucalipto, interior y exterior"],
+  ["tapa_ext_anc","Tapa exterior · ancho",        0.060, "m · con la ranura que abraza la nariz (montante + 5 mm, 1 cm de profundidad)"],
   ["anc_ab",   "Ancho libre de la abertura",      0.900, "m · entre montantes"],
   ["sep_mon",  "Montante suelto cada",            3.000, "m de perímetro, como mucho"],
   ["n_vt",     "Ventanas",                        0,     "unidades · cada una con sus dos montantes; se reparten parejo con las puertas"],
   ["vt_anc",   "Ventana · ancho libre",           0.800, "m · entre montantes"],
   ["vt_alto",  "Ventana · alto",                  1.000, "m · del alféizar al dintel"],
   ["vt_ant",   "Ventana · antepecho",             0.900, "m · del piso al alféizar"],
-  ["umb_esp",  "Piso de la abertura · espesor",   0.045, "m · una sola pieza"],
-  ["umb_vuelo","Piso de la abertura · vuelo",     0.050, "m · pasa el borde, redondeado"],
-  ["umb_caida","Piso de la abertura · caída",     0.010, "m · pendiente hacia afuera"],
+  ["umb_esp",  "Suelo del vano · espesor",        0.050, "m · una sola pieza tallada, recta adentro y en arco afuera"],
+  ["umb_tope", "Suelo del vano · alto del tope",  0.015, "m · el de atrás (donde topea el marco) y los laterales"],
+  ["tope_lat", "Suelo del vano · tope lateral",   0.020, "m · cierra la caja del montante del lado del muro"],
+  ["umb_vuelo","Suelo del vano · vuelo",          0.020, "m · más allá de la nariz de los montantes, parejo en el arco"],
+  ["umb_caida","Suelo del vano · caída",          0.010, "m · del tope al borde de afuera, con goterón"],
   ["·","LAS CAPAS"],
   ["lona_baja","Lona del techo · bajada",         0.100, "m · pasa la cinta del alero, urlete"],
   ["·","EL TOONO · VENTILACIÓN Y CIERRE"],
@@ -366,7 +370,7 @@ const SOLO = {
   // calculo-30 (Mauro: «se deshabiliten las opciones de los cálculos que no corresponden»)
   arriba: ["n_partes"],                    // las partes para el transporte son del anillo de ARRIBA
   puertas: ["n_gr", "alt_ab", "anc_ab"],   // sin aberturas de piso
-  vanos: ["umb_esp", "umb_vuelo", "umb_caida", "tapa_anc", "tapa_esp"],   // sin ninguna abertura
+  vanos: ["umb_esp", "umb_tope", "tope_lat", "umb_vuelo", "umb_caida", "tapa_anc", "tapa_esp", "tapa_ext_anc", "mon_nariz"],   // sin ninguna abertura
 };
 const usa = (k) => !((SOLO.doble.includes(k) && P.tipo === 2) || (SOLO.simple.includes(k) && P.tipo !== 2)
   || (SOLO.domo.includes(k) && P.tono_tipo === 2) || (SOLO.sobre.includes(k) && P.tono_tipo !== 2)
@@ -649,28 +653,40 @@ function pintarPiezas() {
       aserradero trae de 22 mm serían ${mm(C.A + 0.044)}.`],
     ["", `Y <b>no depende del diámetro</b>: son los mismos ${mm(C.mon_ancho)} en 4, 7 o 12
       metros. Sólo cambia dónde empieza.`],
-    ["", `<b>El piso de la abertura es de una sola pieza</b> por grupo, de ${mm(P.umb_esp)}: los
-      montantes se paran sobre él y escurren sobre él. Va del zócalo hasta pasar el borde de la
-      yurta ${mm(P.umb_vuelo)}, con ${mm(P.umb_caida)} de caída hacia afuera y la punta
-      redondeada, para que el agua gotee lejos del muro.`],
+    ["", `Los montantes de los vanos son del <b>chasis</b> de cada abertura (abajo, «Los vanos»): más hondos
+      (llegan a la lona y sobresalen ${mm(P.mon_nariz ?? 0.01)}) y con los cantos al ángulo de la curva.`],
   ]);
   {
     const V = vanos(P, C), agrupar = (xs) => { const g = {}; for (const x of xs) { const k = x.tipo + "|" + x.largo.toFixed(2); g[k] = (g[k] || 0) + 1; } return g; };
-    const filas = [];
+    const filas = [], gr = (v) => v.toFixed(1).replace(".", ",") + "°";
+    for (const K of V.chasis) filas.push(["", `Chasis de ${K.tipo}`, `vano de ${m(K.W)} · cantos de los montantes a ${gr(K.grados)}`,
+      `suelo ${m(K.largoSuelo)} × ${m(K.fondoCentro)}`, "d"]);
     for (const [k, n] of Object.entries(agrupar(V.pisos))) { const [t, L] = k.split("|");
-      filas.push(["", `Piso de ${t}`, `${mm(V.pisos[0].esp)} × ${mm(V.pisos[0].prof)} de fondo · drena hacia afuera`, `${n} × ${m(+L)}`, "d"]); }
+      filas.push(["", `Suelo de ${t}`, `${mm(V.pisos[0].esp)}: recto adentro, en arco afuera, topes de atrás y laterales, caída y goterón`, `${n} × ${m(+L)}`, "d"]); }
     for (const [k, n] of Object.entries(agrupar(V.montantes))) { const [t, L] = k.split("|");
-      filas.push(["", `Montantes de ${t}`, `${mm(P.esp_mon)} × ${mm(C.mon_ancho)}, parados en el piso`, `${n} × ${m(+L)}`, "d"]); }
+      filas.push(["", `Montantes de ${t}`, `${mm(V.montantes[0].esp)} × ${mm(V.montantes[0].ancho)}, cantos al ángulo, en su caja`, `${n} × ${m(+L)}`, "d"]); }
+    for (const [k, n] of Object.entries(agrupar(V.cabezales))) { const [t, L] = k.split("|");
+      filas.push(["", `Cabezal de ${t}`, `${mm(V.cabezales[0].ancho)} × ${mm(V.cabezales[0].esp)}, cepillado a ${un(P.ang)}° afuera: apoyan las perchas`, `${n} × ${m(+L)}`, "d"]); }
     for (const [k, n] of Object.entries(agrupar(V.tapas))) { const [t, L] = k.split("|");
-      filas.push(["", `Tapas de ${t}`, `${mm(P.tapa_esp)} × ${mm(P.tapa_anc)}, interior y exterior`, `${n} × ${m(+L)}`, "d"]); }
-    filas.push(["", "Volumen de los vanos", "pisos + montantes + tapas", m3(V.vol), ""]);
-    h += tarjeta("Los vanos · puertas y ventanas se compran hechas",
-      "Por cada abertura, puerta o ventana: su piso, que drena el agua hacia afuera; un montante a cada " +
-      "costado, parado sobre él; y en cada montante dos tapas: la interior toma los bulones del trei, y la " +
-      "exterior sujeta la lona y termina. En eucalipto.", filas, [
-      ["", `El ancho del montante es el espesor de los dos listones del trei más la aislación comprimida
-        (${mm(C.mon_ancho)}): así la lona se fija afuera, sobre él, y la tapa exterior la cubre.`],
-      P.n_vt > 0 && ["", `El piso de la ventana va a ${m(P.vt_ant)} del piso, y el trei sigue debajo.`],
+      filas.push(["", `Tapas interiores de ${t}`, `${mm(P.tapa_esp)} × ${mm(P.tapa_anc)}, al ras del vano`, `${n} × ${m(+L)}`, "d"]); }
+    for (const [k, n] of Object.entries(agrupar(V.tapas_ext))) { const [t, L] = k.split("|");
+      filas.push(["", `Tapas exteriores de ${t}`, `${mm(V.tapas_ext[0].ancho)} × ${mm(P.tapa_esp)}, ranura de ${mm((P.esp_mon || 0.04) + 0.005)} × ${mm(P.mon_nariz ?? 0.01)}`, `${n} × ${m(+L)}`, "d"]); }
+    filas.push(["", "Volumen de los vanos", "suelos + montantes + cabezales + tapas", m3(V.vol), ""]);
+    h += tarjeta("Los vanos · el chasis que recibe cada abertura",
+      "Las puertas y las ventanas se compran hechas. Cada una recibe un chasis RECTO, que se arma en la mesa: " +
+      "el suelo, dos montantes paralelos (el vano es un rectángulo) y, en la simple sin anillo, el cabezal donde " +
+      "apoyan las perchas. La curva de la yurta se resuelve en los cantos de los montantes. Todo en eucalipto.", filas, [
+      ["", `<b>El suelo</b>: recto del lado de adentro (ahí topea el marco de la abertura, que abre hacia adentro con las
+        bisagras en esa línea) y en arco del lado de afuera, volando ${mm(P.umb_vuelo)} parejo más allá de la nariz. El tope
+        de atrás y un tope lateral de ${mm(P.tope_lat)} tallados en la misma pieza cierran cada caja de montante por detrás y
+        por el costado: aunque la yurta se mueva, el agua sale hacia el vano o hacia afuera, nunca hacia la aislación.
+        Cae ${mm(P.umb_caida)} hasta el borde, con goterón.`],
+      ["", `<b>El montante</b>: cara del vano a escuadra, cantos de adentro y de afuera al ángulo (tangentes a la curva).
+        Su fondo es el trei más la aislación más ${mm(P.mon_nariz)} de nariz afuera de la lona: ahí se tensa la lona y se engrampa
+        en la cara del vano. La tapa exterior, con su ranura, abraza la nariz y la tensa al atornillarla, sólo al montante.`],
+      ["", `<b>La tapa interior</b> va en el canto de adentro, al ras del vano, y sigue sobre el trei: la toma el último bulón.`],
+      P.n_vt > 0 && ["", `El suelo de la ventana es su alféizar, a ${m(P.vt_ant)} del piso; el trei sigue debajo.`],
+      ["", `El esquema y el modelo 3D de una pieza por vez: el chasis del vano (18-nov-2026).`],
     ]);
   }
 

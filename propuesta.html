@@ -4,7 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tu yurta · CasaYourte</title>
-<!-- propuesta-5 (17-nov-2026): las piezas del sobrealto en la lista, en los cuatro idiomas.
+<!-- propuesta-6 (18-nov-2026): el chasis del vano (geo-14 / 3d-17): cabezales, tapas interiores y exteriores,
+     montantes sueltos y suelos de los vanos, en la lista y en el 3D, en los cuatro idiomas.
+     propuesta-5 (17-nov-2026): las piezas del sobrealto en la lista, en los cuatro idiomas.
      propuesta-4 (17-nov-2026): debajo, la LISTA DE MATERIALES del modelo, sin precios
      (`materiales()` de calculo-geo.js), en los cuatro idiomas.
      propuesta-3 (17-nov-2026): «Tapas de los montantes» en los cuatro idiomas.
@@ -168,7 +170,7 @@ const MAT_T = {
   fr: { grupos: { piso: "Le plancher", muro: "Le mur", techo: "Le toit", toono: "Le toono", telas: "Toiles et couches", herrajes: "Quincaillerie" },
     pilares: "Poteaux", vigas: "Poutres", tirantes: "Solives", anillo_piso: "Anneau du plancher, lamellé-collé", osb: "Panneaux OSB", celulosa: "Ouate de cellulose (isolant du plancher)",
     trei: "Lattes du treillis", bulones: "Boulons du treillis", zocalos: "Plinthes", anillo: "Anneau périphérique, lamellé-collé", montantes: "Montants",
-    tapas: "Couvre-joints des montants", pisos_ab: "Seuils des ouvertures", puertas: "Portes", ventanas: "Fenêtres",
+    tapas: "Couvre-joints intérieurs", tapas_ext: "Couvre-joints extérieurs, à rainure", cabezales: "Linteaux des baies", montantes_sueltos: "Montants isolés du mur", pisos_ab: "Seuils des baies", puertas: "Portes", ventanas: "Fenêtres",
     perchas: "Perches", cable: "Câble d'acier", triangulos: "Triangles de la première couche", radiales: "Perches radiales", cal: "Cales",
     cinta: "Double lisse du mur", cinta_alero: "Lisse de l'avant-toit", toono: "Toono, lamellé-collé", sobrealto: "Lanterneau : fenêtres", vidrio: "Vitres du lanterneau",
     sob_solera: "Lanterneau : sablière et chapeau", sob_parantes: "Lanterneau : poteaux", sob_limatesas: "Lanterneau : arêtiers du petit toit",
@@ -180,7 +182,7 @@ const MAT_T = {
   en: { grupos: { piso: "The floor", muro: "The wall", techo: "The roof", toono: "The toono", telas: "Fabrics and layers", herrajes: "Hardware" },
     pilares: "Posts", vigas: "Beams", tirantes: "Joists", anillo_piso: "Floor ring, glue-laminated", osb: "OSB boards", celulosa: "Cellulose (floor insulation)",
     trei: "Lattice wall slats", bulones: "Lattice bolts", zocalos: "Skirting", anillo: "Perimeter ring, glue-laminated", montantes: "Door posts",
-    tapas: "Post cover boards", pisos_ab: "Opening sills", puertas: "Doors", ventanas: "Windows",
+    tapas: "Inner cover boards", tapas_ext: "Outer cover boards, grooved", cabezales: "Opening headers", montantes_sueltos: "Single wall posts", pisos_ab: "Opening sills", puertas: "Doors", ventanas: "Windows",
     perchas: "Rafters", cable: "Steel cable", triangulos: "First-layer triangles", radiales: "Radial rafters", cal: "Wedges",
     cinta: "Double wall band", cinta_alero: "Eave band", toono: "Toono, glue-laminated", sobrealto: "Lantern: windows", vidrio: "Lantern glass panes",
     sob_solera: "Lantern: sill and head plates", sob_parantes: "Lantern: posts", sob_limatesas: "Lantern: hip rafters",
@@ -192,7 +194,7 @@ const MAT_T = {
   pt: { grupos: { piso: "O piso", muro: "A parede", techo: "O telhado", toono: "O toono", telas: "Tecidos e camadas", herrajes: "Ferragens" },
     pilares: "Pilares", vigas: "Vigas", tirantes: "Barrotes", anillo_piso: "Anel do piso, laminado colado", osb: "Placas de OSB", celulosa: "Celulose (isolamento do piso)",
     trei: "Ripas da treliça", bulones: "Parafusos da treliça", zocalos: "Rodapés", anillo: "Anel periférico, laminado colado", montantes: "Montantes",
-    tapas: "Tampas dos montantes", pisos_ab: "Soleiras das aberturas", puertas: "Portas", ventanas: "Janelas",
+    tapas: "Tampas interiores", tapas_ext: "Tampas exteriores, com ranhura", cabezales: "Vergas dos vãos", montantes_sueltos: "Montantes avulsos do muro", pisos_ab: "Soleiras dos vãos", puertas: "Portas", ventanas: "Janelas",
     perchas: "Caibros", cable: "Cabo de aço", triangulos: "Triângulos da primeira camada", radiales: "Caibros radiais", cal: "Calços",
     cinta: "Fita dupla da parede", cinta_alero: "Fita do beiral", toono: "Toono, laminado colado", sobrealto: "Lanternim: janelas", vidrio: "Vidros do lanternim",
     sob_solera: "Lanternim: soleira e travessa", sob_parantes: "Lanternim: montantes", sob_limatesas: "Lanternim: espigões do telhadinho",
@@ -207,19 +209,19 @@ const PARTES_T = {
     trei: "Treillis (khana)", zocalos: "Plinthes", anillo: "Anneau périphérique", cal: "Cales", cinta: "Double lisse", triangulos: "Triangles",
     radiales: "Perches radiales", toono: "Toono", perchas: "Perches", escuadras: "Équerres métalliques", cable: "Câble d'acier", cinta_alero: "Lisse de l'avant-toit",
     tapa: "Toono · anneau couvercle", domo: "Toono · dôme géodésique", sobrealto: "Toono · lanterneau", ventanas: "Lanterneau · fenêtres", tapa_sol: "Toono · volet isolant",
-    montantes: "Montants", suelo_ab: "Seuils", vidrios: "Vitrage des fenêtres", tapas: "Couvre-joints des montants", algodon_techo: "Toit · coton", freno_techo: "Toit · pare-vapeur", aislacion_techo: "Toit · isolant",
+    montantes: "Montants", cabezales: "Linteaux des baies", suelo_ab: "Seuils", vidrios: "Vitrage des fenêtres", tapas: "Couvre-joints des montants", algodon_techo: "Toit · coton", freno_techo: "Toit · pare-vapeur", aislacion_techo: "Toit · isolant",
     tyvek: "Toit · Tyvek", lona_techo: "Toit · bâche PVC", algodon_muro: "Mur · coton", freno_muro: "Mur · pare-vapeur", aislacion_muro: "Mur · isolant", lona_muro: "Mur · toile" },
   en: { pilares: "Posts", vigas: "Beams", osb_inf: "Lower OSB", tirantes: "Joists", anillo_piso: "Floor ring", osb_sup: "Upper OSB",
     trei: "Lattice wall (khana)", zocalos: "Skirting", anillo: "Perimeter ring", cal: "Wedges", cinta: "Double band", triangulos: "Triangles",
     radiales: "Radial rafters", toono: "Toono", perchas: "Rafters", escuadras: "Steel brackets", cable: "Steel cable", cinta_alero: "Eave band",
     tapa: "Toono · cap ring", domo: "Toono · geodesic dome", sobrealto: "Toono · lantern", ventanas: "Lantern · windows", tapa_sol: "Toono · insulated lid",
-    montantes: "Door posts", suelo_ab: "Thresholds", vidrios: "Window glass", tapas: "Post cover boards", algodon_techo: "Roof · cotton", freno_techo: "Roof · vapour barrier", aislacion_techo: "Roof · insulation",
+    montantes: "Door posts", cabezales: "Opening headers", suelo_ab: "Thresholds", vidrios: "Window glass", tapas: "Post cover boards", algodon_techo: "Roof · cotton", freno_techo: "Roof · vapour barrier", aislacion_techo: "Roof · insulation",
     tyvek: "Roof · Tyvek", lona_techo: "Roof · PVC cover", algodon_muro: "Wall · cotton", freno_muro: "Wall · vapour barrier", aislacion_muro: "Wall · insulation", lona_muro: "Wall · fabric" },
   pt: { pilares: "Pilares", vigas: "Vigas", osb_inf: "OSB de baixo", tirantes: "Barrotes", anillo_piso: "Anel do piso", osb_sup: "OSB de cima",
     trei: "Treliça (khana)", zocalos: "Rodapés", anillo: "Anel periférico", cal: "Calços", cinta: "Fita dupla", triangulos: "Triângulos",
     radiales: "Caibros radiais", toono: "Toono", perchas: "Caibros", escuadras: "Esquadros metálicos", cable: "Cabo de aço", cinta_alero: "Fita do beiral",
     tapa: "Toono · anel tampa", domo: "Toono · domo geodésico", sobrealto: "Toono · lanternim", ventanas: "Lanternim · janelas", tapa_sol: "Toono · tampa isolante",
-    montantes: "Montantes", suelo_ab: "Soleiras", vidrios: "Vidro das janelas", tapas: "Tampas dos montantes", algodon_techo: "Telhado · algodão", freno_techo: "Telhado · barreira de vapor", aislacion_techo: "Telhado · isolamento",
+    montantes: "Montantes", cabezales: "Vergas dos vãos", suelo_ab: "Soleiras", vidrios: "Vidro das janelas", tapas: "Tampas dos montantes", algodon_techo: "Telhado · algodão", freno_techo: "Telhado · barreira de vapor", aislacion_techo: "Telhado · isolamento",
     tyvek: "Telhado · Tyvek", lona_techo: "Telhado · lona de PVC", algodon_muro: "Parede · algodão", freno_muro: "Parede · barreira de vapor", aislacion_muro: "Parede · isolamento", lona_muro: "Parede · tecido" },
 };
 const $ = (id) => document.getElementById(id);

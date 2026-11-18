@@ -1,5 +1,17 @@
 // calculo-geo.js — la geometría de la yurta, sin navegador y sin Firebase.
-// Sello: geo-13 (17-nov-2026): el sobrealto entra pieza por pieza en la lista y en la madera
+// Sello: geo-14 (18-nov-2026): EL CHASIS DEL VANO (Mauro, 18-nov-2026, a lo largo de una charla con
+// el esquema y el 3D): cada abertura comprada recibe un chasis RECTO — suelo, dos montantes paralelos y,
+// en la simple sin anillo, un cabezal — y la curva de la yurta se resuelve en los CANTOS de los
+// montantes, cortados al ángulo atan((vano/2 + espesor del montante/2) / radio interior del trei).
+// El suelo es recto adentro («para recibir la puerta») y en arco afuera («para desbordar del piso
+// redondo»), con el tope de atrás y un tope LATERAL tallados en la misma pieza: cada montante entra en
+// una caja cerrada por detrás y por el costado («la yurta puede tener movimiento… eso garantiza que no
+// haya ningún escurrimiento hacia el lateral donde está el aislante»), y cae hacia el borde de afuera,
+// con goterón. Montante = trei + aislación + 1 cm de nariz afuera de la lona; tapa interior en el canto
+// de adentro, al ras del vano; tapa exterior de 6 × 2 con una ranura de 1 cm (montante + 5 mm) que
+// abraza la nariz y tensa la lona, atornillada sólo al montante. Todo en función de la abertura:
+// `chasis(P, C, grupo)`.
+// geo-13 (17-nov-2026): el sobrealto entra pieza por pieza en la lista y en la madera
 // (Mauro: «las fabricamos nosotros, techito con el mismo sistema de la yurta con algodón,
 // aislante y lona, eucalipto para la estructura, y un presupuesto de vidriería»): solera y
 // cabezal, parantes, limatesas (de la sección de la percha), los marcos de las ventanas, los
@@ -55,7 +67,7 @@
 // TODO lo que se elige por diseño es un campo de la página: si cambia una
 // medida, cambian los números y el dibujo.
 
-export const SELLO_GEO = "geo-13";
+export const SELLO_GEO = "geo-14";
 
 // El tirante, la viga: cuerdas paralelas del círculo de radio R, con una en el
 // centro y cada `paso` a los dos lados. Devuelve [{x, L, n}] con n = 1 para la
@@ -130,32 +142,61 @@ export function montaje(P, R, rIn) {
       let m = 0; for (let i = 0; i < t.length; i++) m = Math.max(m, ((i + 1 < t.length ? t[i + 1] : t[0] + 2 * Math.PI) - t[i]) * R); return m; })() };
 }
 
-// ── LOS VANOS (geo-10, Mauro, 17-nov-2026: «la puerta y las ventanas se consiguen
-// aparte… sólo tengo que prever los montantes para instalarla: un suelo para drenar
-// el agua hacia afuera, un montante en cada costado de ese suelo apoyado en el suelo;
-// el trei va fijado al montante a través de una tapa interior que agarra los
-// bulones; el ancho del montante es el espesor de los dos palos del trei más el
-// aislante del muro comprimido, para fijar al exterior la lona y tener otra tapa de
-// terminación al exterior; en eucalipto, de unos 4 cm»). Por abertura, puerta o
-// ventana: su piso, dos montantes y cuatro tapas. Los largos van del piso de la
-// abertura a la cabeza del muro (el tope de los montantes).
+// ── EL CHASIS DE UN VANO (geo-14). Coordenadas LOCALES del grupo (el centro del vano en el ángulo
+// g.c): x a lo largo de la cuerda (0 en el medio), z hacia afuera desde O (el radio del canto de
+// adentro del montante en la cara del vano), y alturas desde la cara de abajo del suelo (yBase sobre
+// el piso terminado: 0 en la puerta, el antepecho menos el suelo en la ventana). Lo usan la lista de
+// madera y el 3D, así los dos dicen lo mismo.
+export function chasis(P, C, g) {
+  const simple = P.tipo === 2, conAnillo = !simple || P.s_anillo === 1, ventana = g.tipo === "ventana";
+  const ME = P.esp_mon || 0.04, RTI = C.r_trei_int, te = P.tapa_esp ?? 0.02;
+  const ancho = ventana ? (P.vt_anc || 0) : (P.anc_ab || 0), k = g.k || 1;
+  const W = k * ancho + (k - 1) * ME, e = W / 2;
+  const a = Math.atan((e + ME / 2) / RTI), tn = Math.tan(a);
+  const O = Math.sqrt(RTI * RTI - (e + ME / 2) ** 2) + (ME / 2) * tn;
+  const nariz = P.mon_nariz ?? 0.01, MF = (C.R - RTI) + nariz;        // del canto de adentro a la nariz
+  const lat = P.tope_lat ?? 0.02, tE = e + ME + lat;
+  const zIn = Math.sqrt(RTI * RTI - tE * tE) - te - O;                // el borde recto de adentro
+  const Ra = RTI + MF + (P.umb_vuelo ?? 0.02);                        // el arco de afuera
+  const zArc = (x) => Math.sqrt(Math.max(0, Ra * Ra - x * x)) - O;
+  const esp = P.umb_esp ?? 0.05, tope = P.umb_tope ?? 0.015, caida = P.umb_caida ?? 0.01, f0 = zArc(0);
+  const h = (z) => (esp - tope) - caida * z / f0;                     // la cara de arriba, del tope al borde
+  const hc = h(MF);                                                    // el piso de las cajas, plano
+  const zi = (x) => (Math.abs(x) > e ? -(Math.abs(x) - e) * tn : 0);   // el canto de adentro, al ángulo
+  const yBase = ventana ? (P.vt_ant ?? 0.9) - esp : 0;
+  const yTope = P.alto - P.e_mad, cab = !conAnillo && !ventana ? P.e_mad : 0;
+  const tanAng = Math.tan(P.ang * Math.PI / 180), zTr = C.r_trei - RTI, zCab = zTr + P.e_mad / tanAng;
+  // La arista donde apoyan las perchas sigue el radio de la cara de afuera del trei (como sus cabezas):
+  // el cabezal es recto, pero ese canto se cepilla en curva para que cada percha apoye a la misma altura.
+  const zTrX = (x) => Math.sqrt(Math.max(0, C.r_trei ** 2 - x * x)) - O, zCabX = (x) => zTrX(x) + P.e_mad / tanAng;
+  const tapaExt = P.tapa_ext_anc ?? 0.06;
+  return { tipo: g.tipo, k, ancho, W, e, a, tn, grados: a * 180 / Math.PI, O, ME, MF, nariz, te, lat, tE, zIn, Ra, zArc, esp, tope, caida, h, hc, zi,
+    yBase, yTope, cab, tanAng, zTr, zCab, zTrX, zCabX, conAnillo, tapaExt, ranura: [ME + 0.005, nariz],
+    fondoCentro: f0 - zIn, fondoPunta: zArc(tE) - zIn, largoSuelo: 2 * tE,
+    largoMon: yTope - (yBase + hc), largoCab: cab ? 2 * (e + ME) : 0,
+    largoTapaInt: yTope + cab - (yBase + esp), largoTapaExt: yTope - (yBase + hc) };
+}
+
+// ── LOS VANOS: la madera de cada chasis (geo-10, rehecho en geo-14). Por grupo: un suelo, k + 1
+// montantes, el cabezal (en la simple sin anillo, sólo en las puertas: en la ventana el trei sigue
+// arriba del dintel), dos tapas interiores y dos exteriores.
 export function vanos(P, C) {
   const grupos = C.mon ? C.mon.grupos : [];
-  const yTope = P.alto - P.e_mad;                       // debajo del anillo (sin anillo, ≈ la cabeza)
-  const umb = P.umb_esp || 0, prof = (C.R + (P.umb_vuelo || 0)) - C.r_int_lito;
-  const out = { pisos: [], montantes: [], tapas: [], vol: 0 };
+  const out = { pisos: [], montantes: [], cabezales: [], tapas: [], tapas_ext: [], chasis: [], vol: 0 };
   for (const g of grupos) {
-    const ventana = g.tipo === "ventana";
-    const largoMon = yTope - (ventana ? (P.vt_ant ?? 0.9) : umb);
-    const anchoPiso = (g.montantes[g.montantes.length - 1] - g.montantes[0]) * C.r_int_lito + (P.esp_mon || 0) + 0.02;
-    out.pisos.push({ tipo: g.tipo, largo: anchoPiso, prof, esp: umb });
-    for (let i = 0; i < g.montantes.length; i++) {
-      out.montantes.push({ tipo: g.tipo, largo: largoMon, ancho: C.mon_ancho, esp: P.esp_mon || 0 });
-      out.tapas.push({ tipo: g.tipo, largo: largoMon, ancho: P.tapa_anc ?? 0.12, esp: P.tapa_esp ?? 0.02 }, { tipo: g.tipo, largo: largoMon, ancho: P.tapa_anc ?? 0.12, esp: P.tapa_esp ?? 0.02 });
+    const K = chasis(P, C, g);
+    out.chasis.push(K);
+    out.pisos.push({ tipo: g.tipo, largo: K.largoSuelo, prof: K.fondoCentro, esp: K.esp });
+    for (let i = 0; i <= K.k; i++) out.montantes.push({ tipo: g.tipo, largo: K.largoMon, ancho: K.MF, esp: K.ME, grados: K.grados });
+    if (K.cab) out.cabezales.push({ tipo: g.tipo, largo: K.largoCab, ancho: K.MF, esp: K.cab });
+    for (let i = 0; i < 2; i++) {
+      out.tapas.push({ tipo: g.tipo, largo: K.largoTapaInt, ancho: P.tapa_anc ?? 0.12, esp: K.te });
+      out.tapas_ext.push({ tipo: g.tipo, largo: K.largoTapaExt, ancho: K.tapaExt, esp: K.te });
     }
   }
-  out.vol = out.pisos.reduce((s, p) => s + p.largo * p.prof * p.esp, 0) + out.montantes.reduce((s, m) => s + m.largo * m.ancho * m.esp, 0)
-    + out.tapas.reduce((s, t) => s + t.largo * t.ancho * t.esp, 0);
+  const v = (xs, f) => xs.reduce((s, x) => s + f(x), 0);
+  out.vol = v(out.pisos, (p) => p.largo * p.prof * p.esp) + v(out.montantes, (m) => m.largo * m.ancho * m.esp)
+    + v(out.cabezales, (c) => c.largo * c.ancho * c.esp) + v([...out.tapas, ...out.tapas_ext], (t) => t.largo * t.ancho * t.esp);
   return out;
 }
 
@@ -177,7 +218,8 @@ export const NOMBRES_MAT = {
   grupos: { piso: "El piso", muro: "El muro", techo: "El techo", toono: "El toono", telas: "Telas y capas", herrajes: "Herrajes" },
   pilares: "Pilares", vigas: "Vigas", tirantes: "Tirantes", anillo_piso: "Anillo del piso, colado", osb: "Placas de OSB", celulosa: "Celulosa (aislación del piso)",
   trei: "Listones del trei", bulones: "Bulones del trei", zocalos: "Zócalos", anillo: "Anillo periférico, colado", montantes: "Montantes",
-  tapas: "Tapas de los montantes", pisos_ab: "Pisos de las aberturas", puertas: "Puertas", ventanas: "Ventanas",
+  tapas: "Tapas interiores", tapas_ext: "Tapas exteriores, con ranura", cabezales: "Cabezales de los vanos",
+  montantes_sueltos: "Montantes sueltos del muro", pisos_ab: "Suelos de los vanos", puertas: "Puertas", ventanas: "Ventanas",
   perchas: "Perchas", cable: "Cable de acero", triangulos: "Triángulos de la primera capa", radiales: "Perchas radiales", cal: "Cales",
   cinta: "Doble cinta del muro", cinta_alero: "Cinta del alero", toono: "Toono, colado", sobrealto: "Sobrealto: ventanas", vidrio: "Vidrios del sobrealto",
   sob_solera: "Sobrealto: solera y cabezal", sob_parantes: "Sobrealto: parantes", sob_limatesas: "Sobrealto: limatesas del techito",
@@ -228,9 +270,14 @@ export function materiales(P, C) {
   add("muro", "zocalos", 2, "pz", { sec: mm(P.anc_int, P.e_int), ml: 2 * C.zocalo });
   if (conAnillo) add("muro", "anillo", P.n_cap, "capas", { sec: mm(P.E, P.e_mad), ml: P.n_cap * C.per_med });
   const V = vanos(P, C), nSueltos = C.mon ? C.mon.sueltos.length : 0;
-  add("muro", "montantes", V.montantes.length + nSueltos, "pz", { sec: mm(C.mon_ancho, P.esp_mon || 0), ml: V.montantes.reduce((s, m) => s + m.largo, 0) + nSueltos * (P.alto - P.e_mad) });
-  add("muro", "tapas", V.tapas.length, "pz", { sec: mm(P.tapa_anc ?? 0.12, P.tapa_esp ?? 0.02), ml: V.tapas.reduce((s, t) => s + t.largo, 0) });
-  add("muro", "pisos_ab", V.pisos.length, "pz", { sec: mm(V.pisos[0] ? V.pisos[0].prof : 0, P.umb_esp || 0), ml: V.pisos.reduce((s, p) => s + p.largo, 0) });
+  const sum = (xs) => xs.reduce((s, x) => s + x.largo, 0);
+  // geo-14: el chasis de cada vano
+  if (V.montantes.length) add("muro", "montantes", V.montantes.length, "pz", { sec: mm(V.montantes[0].ancho, V.montantes[0].esp), ml: sum(V.montantes) });
+  add("muro", "montantes_sueltos", nSueltos, "pz", { sec: mm(C.mon_ancho, P.esp_mon || 0), ml: nSueltos * (P.alto - P.e_mad) });
+  if (V.cabezales.length) add("muro", "cabezales", V.cabezales.length, "pz", { sec: mm(V.cabezales[0].ancho, V.cabezales[0].esp), ml: sum(V.cabezales) });
+  if (V.tapas.length) add("muro", "tapas", V.tapas.length, "pz", { sec: mm(P.tapa_anc ?? 0.12, P.tapa_esp ?? 0.02), ml: sum(V.tapas) });
+  if (V.tapas_ext.length) add("muro", "tapas_ext", V.tapas_ext.length, "pz", { sec: mm(V.tapas_ext[0].ancho, V.tapas_ext[0].esp), ml: sum(V.tapas_ext) });
+  if (V.pisos.length) add("muro", "pisos_ab", V.pisos.length, "pz", { sec: mm(Math.max(...V.pisos.map(p => p.prof)), V.pisos[0].esp), ml: sum(V.pisos) });
   add("muro", "puertas", Math.round(P.n_ab || 0), "u", { compra: true });
   add("muro", "ventanas", Math.round(P.n_vt || 0), "u", { compra: true });
   // EL TECHO

@@ -1,5 +1,10 @@
 // calculo-3d.js — el modelo en 3D de la estructura, con las medidas del cálculo.
-// Sello: 3d-16 (17-nov-2026). 3d-16: las limatesas del techito del sobrealto son de la sección de
+// Sello: 3d-17 (18-nov-2026). 3d-17: EL CHASIS DEL VANO (geo-14, `chasis()`): cada abertura
+// tiene su chasis recto —suelo recto adentro y en arco afuera, con el tope de atrás, los topes
+// laterales, las cajas de los montantes, la caída y el goterón; dos montantes paralelos con los
+// cantos al ángulo de la curva; el cabezal cepillado a 30° en la simple sin anillo; las tapas
+// interiores al ras del vano y las exteriores con su ranura—, dibujado en coordenadas del vano.
+// 3d-16 (17-nov-2026). 3d-16: las limatesas del techito del sobrealto son de la sección de
 // la percha (el mismo sistema de la yurta: perchas, algodón, aislación y lona).
 // 3d-15 (17-nov-2026). 3d-15: del sobrealto se abren sólo `sa_abiertas` ventanas,
 // opuestas y repartidas parejo (Mauro: «no todas sino sólo dos opuestas»); el OSB se
@@ -67,8 +72,8 @@
 // de abajo (donde apoyan los tirantes). Todo sale de calc(P): si cambia una
 // medida, cambia el modelo.
 
-export const SELLO_3D = "3d-16";
-import { escuadraSimple } from "./calculo-geo.js";
+export const SELLO_3D = "3d-17";
+import { escuadraSimple, chasis } from "./calculo-geo.js";
 export const THREE_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/+esm";
 export const ORBIT_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js/+esm";
 // Las dos con «/+esm»: jsDelivr reescribe el «import from \"three\"» de OrbitControls a
@@ -101,7 +106,8 @@ export const PARTES = [
   ["ventanas",    "Sobrealto · ventanas"],
   ["tapa_sol",    "Toono · tapa aislante"],
   ["montantes",   "Montantes"],
-  ["suelo_ab",    "Piso de las aberturas"],
+  ["cabezales",   "Cabezales de los vanos"],
+  ["suelo_ab",    "Suelos de los vanos"],
   ["vidrios",     "Vidrio de las ventanas"],
   ["tapas",       "Tapas de los montantes"],
   // Las capas: el tercer dato las marca, y arrancan apagadas.
@@ -140,9 +146,10 @@ export const CAMPO_PARTES = {
   n_per_r: ["perchas", "cal"], desb: ["perchas"], p_anc: ["perchas"], p_alt: ["perchas", "cal"],
   r_toono: ["toono", "triangulos", "radiales", "tapa"], sep_max: ["radiales"],
   n_ab: ["montantes", "suelo_ab", "trei"], n_gr: ["montantes", "suelo_ab", "trei"],
-  n_vt: ["montantes", "vidrios", "trei"], vt_anc: ["montantes", "vidrios", "trei"], vt_alto: ["montantes", "vidrios", "trei"], vt_ant: ["montantes", "vidrios", "trei"],
-  alt_ab: ["montantes", "trei"], esp_mon: ["montantes", "suelo_ab", "tapas"], tapa_anc: ["tapas"], tapa_esp: ["tapas"], anc_ab: ["montantes", "suelo_ab", "trei", "zocalos"],
-  sep_mon: ["montantes"], umb_esp: ["suelo_ab", "montantes"], umb_vuelo: ["suelo_ab"], umb_caida: ["suelo_ab"],
+  n_vt: ["montantes", "suelo_ab", "tapas", "vidrios", "trei"], vt_anc: ["montantes", "suelo_ab", "tapas", "vidrios", "trei"], vt_alto: ["montantes", "vidrios", "trei"], vt_ant: ["montantes", "suelo_ab", "tapas", "vidrios", "trei"],
+  alt_ab: ["montantes", "trei"], esp_mon: ["montantes", "cabezales", "suelo_ab", "tapas"], tapa_anc: ["tapas"], tapa_esp: ["tapas", "suelo_ab"], anc_ab: ["montantes", "cabezales", "suelo_ab", "tapas", "trei", "zocalos"],
+  sep_mon: ["montantes"], umb_esp: ["suelo_ab", "montantes", "tapas"], umb_vuelo: ["suelo_ab"], umb_caida: ["suelo_ab", "montantes", "tapas"],
+  umb_tope: ["suelo_ab", "montantes", "tapas"], tope_lat: ["suelo_ab"], mon_nariz: ["montantes", "cabezales", "suelo_ab", "tapas"], tapa_ext_anc: ["tapas"],
   lona_baja: ["lona_techo"],
   diente: ["toono"], tapa_cam: ["tapa"], tapa_vuelo: ["tapa", "domo"], tapa_ranura: ["tapa"], dom_ang: ["domo"], dom_frec: ["domo"],
   ts_giro: ["tapa_sol"], ts_esp: ["tapa_sol"], ts_rendija: ["tapa_sol"],
@@ -346,55 +353,82 @@ export function piezas3d(P, C) {
   }
   if (conAnillo) anillo("anillo", C.Rint, C.Rext, yA0, yA, "anillo");
 
-  // ── los montantes: del borde del plancher a la cara interior del trei, del
-  //    piso (o del piso de la abertura) hasta debajo del anillo ──
+  // ── 3d-17: el chasis de cada vano (geo-14) y los montantes sueltos ──
   {
     const rm = (C.R + C.r_trei_int) / 2, anchoR = C.R - C.r_trei_int;
-    const deAbertura = new Set(mon.grupos.filter(g => g.tipo !== "ventana").flatMap(g => g.montantes));
-    const te = P.tapa_esp ?? 0.02, ta = P.tapa_anc ?? 0.12;
-    for (const a of mon.montantes) {
-      const y0 = deAbertura.has(a) ? yPiso + umb : deVentana.has(a) ? yv0 : yPiso;
-      const rad_ = [Math.cos(a), 0, Math.sin(a)];
-      barra("montantes", pol(rm, a, y0), pol(rm, a, yTope), P.esp_mon, anchoR, rad_, "montante");
-      // Las tapas de los montantes de una abertura: la interior, contra el trei,
-      // toma sus bulones; la exterior, por fuera de la lona, la sujeta y termina.
-      if (deAbertura.has(a) || deVentana.has(a)) {
-        barra("tapas", pol(C.r_trei_int - te / 2, a, y0), pol(C.r_trei_int - te / 2, a, yTope), ta, te, rad_, "madera");
-        barra("tapas", pol(C.R + 0.004 + te / 2, a, y0), pol(C.R + 0.004 + te / 2, a, yTope), ta, te, rad_, "madera");
+    // Los sueltos, como siempre: radiales, del piso al tope.
+    const deVano = new Set(mon.grupos.flatMap(g => g.montantes));
+    for (const a of mon.montantes) if (!deVano.has(a))
+      barra("montantes", pol(rm, a, yPiso), pol(rm, a, yTope), P.esp_mon, anchoR, [Math.cos(a), 0, Math.sin(a)], "montante");
+    // Un prisma de planta convexa [[x, z], …] entre dos alturas (funciones de x y z), llevado al mundo.
+    const prisma = (v, poly, top, bot, W) => {
+      const T = poly.map(([x, z]) => W(x, top(x, z), z)), B = poly.map(([x, z]) => W(x, bot(x, z), z)), k = poly.length;
+      for (let i = 1; i + 1 < k; i++) { tri(v, T[0], T[i], T[i + 1]); tri(v, B[0], B[i + 1], B[i]); }
+      for (let i = 0; i < k; i++) { const j = (i + 1) % k; quad(v, B[i], B[j], T[j], T[i]); }
+    };
+    const arcoL = (K, x0, x1, n) => Array.from({ length: n + 1 }, (_, i) => { const x = x0 + (x1 - x0) * i / n; return [x, K.zArc(x)]; });
+    const vS = [], vM = [], vC = [], vT = [];
+    for (const g of mon.grupos) {
+      const K = chasis(P, C, g), c = g.c, cs = Math.cos(c), sn = Math.sin(c), y0 = yPiso + K.yBase;
+      const W = (x, y, z) => [(K.O + z) * cs - x * sn, y0 + y, (K.O + z) * sn + x * cs];
+      const Wc = (sh) => (x, y, z) => W(x, y, z + sh(x));
+      const { e, ME, MF, tE, zIn, zi, esp, hc, h } = K;
+      const yT = (yPiso + K.yTope) - y0;                         // el tope de los montantes, desde la base del suelo
+      const plano = (y) => () => y, bajo0 = () => 0;
+      // el suelo: una pieza tallada
+      prisma(vS, [[-e, 0], [e, 0], ...arcoL(K, e, -e, 24)], (x, z) => h(z), bajo0, W);
+      prisma(vS, [[-e, zIn], [e, zIn], [e, 0], [-e, 0]], plano(esp), bajo0, W);
+      for (const s of [1, -1]) {
+        const X = (x) => s * x, zE = zi(e + ME);
+        prisma(vS, [[X(e), zIn], [X(tE), zIn], [X(tE), zE], [X(e + ME), zE], [X(e), 0]], plano(esp), bajo0, W);     // el tope de atrás
+        prisma(vS, [[X(e), 0], [X(e + ME), zE], [X(e + ME), zE + MF], [X(e), MF]], plano(hc), bajo0, W);            // la caja del montante
+        prisma(vS, [[X(e), MF], [X(e + ME), zE + MF], ...arcoL(K, X(e + ME), X(e), 4)], (x, z) => h(z), bajo0, W);  // la caída delante
+        prisma(vS, [[X(e + ME), zE], [X(tE), zE], ...arcoL(K, X(tE), X(e + ME), 4)], plano(esp), bajo0, W);        // el tope lateral
+        // el montante: paralelogramo (cara del vano a escuadra, cantos al ángulo), la cabeza a 30° afuera
+        const sh = (x) => zi(x), Wm = Wc(sh);
+        // la cabeza sigue la cara de abajo de la percha (en la simple sin anillo); z local = zl + zi(x)
+        const tope30 = (x, zl) => K.conAnillo ? yT : yT - Math.max(0, zl + zi(x) - K.zCabX(x)) * K.tanAng;
+        const zc = Math.min(MF, K.zCabX(e + ME / 2) - zi(e + ME / 2));
+        prisma(vM, [[X(e), 0], [X(e + ME), 0], [X(e + ME), zc], [X(e), zc]], plano(yT), plano(hc), Wm);
+        if (zc < MF) prisma(vM, [[X(e), zc], [X(e + ME), zc], [X(e + ME), MF], [X(e), MF]], (x, z) => tope30(x, z), plano(hc), Wm);
+        // la tapa interior: en el canto de adentro, al ras del vano, sobre el trei
+        const ta = P.tapa_anc ?? 0.12;
+        prisma(vT, [[X(e), -K.te], [X(e + ta), -K.te], [X(e + ta), 0], [X(e), 0]], plano(yT + K.cab), plano(esp), Wm);
+        // la tapa exterior: labio, fondo de la ranura (abraza la nariz) y el resto sobre la lona
+        const g0 = e - 0.0025, g1 = e + ME + 0.0025, L0 = g0 - 0.005, L1 = L0 + K.tapaExt, zl = MF - K.nariz, zo = zl + K.te;
+        const tE30 = (x) => tope30(x, zo);
+        for (const [xa, xb, za] of [[L0, g0, zl], [g0, g1, MF], [g1, L1, zl]])
+          prisma(vT, [[X(xa), za], [X(xb), za], [X(xb), zo], [X(xa), zo]], tE30, plano(hc), Wm);
+      }
+      // los montantes del medio de un grupo de varias aberturas: rectos
+      for (let i = 1; i < K.k; i++) {
+        const x0 = -e + i * K.ancho + (i - 1) * ME;
+        prisma(vM, [[x0, 0], [x0 + ME, 0], [x0 + ME, MF], [x0, MF]], plano(yT), plano(hc), W);
+      }
+      // el cabezal: arriba de los montantes, plano adentro y cepillado a 30° afuera
+      if (K.cab) {
+        // recto, de punta a punta de los montantes; la arista de afuera, en curva (la del trei)
+        const n = 12, xs = Array.from({ length: n + 1 }, (_, i) => -(e + ME) + 2 * (e + ME) * i / n);
+        for (let i = 0; i < n; i++) {
+          const xa = xs[i], xb = xs[i + 1], tA = K.zTrX(xa), tB = K.zTrX(xb), cA = K.zCabX(xa), cB = K.zCabX(xb);
+          const zT = (x) => tA + (tB - tA) * (x - xa) / (xb - xa);
+          prisma(vC, [[xa, zi(xa)], [xb, zi(xb)], [xb, tB], [xa, tA]], plano(yT + K.cab), plano(yT), W);
+          prisma(vC, [[xa, tA], [xb, tB], [xb, cB], [xa, cA]], (x, z) => yT + K.cab - (z - zT(x)) * K.tanAng, plano(yT), W);
+        }
       }
     }
+    malla("suelo_ab", "umbral", vS); malla("montantes", "montante", vM); malla("cabezales", "montante", vC); malla("tapas", "madera", vT);
     if (conDintel) for (const [a0, a1] of aberturas) {
-      const yd = yAbre + P.esp_mon / 2, am = (a0 + a1) / 2;
+      const yd = yAbre + P.esp_mon / 2;
       barra("montantes", pol(rm, a0, yd), pol(rm, a1, yd), anchoR, P.esp_mon, [0, 1, 0], "montante");
-      void am;
     }
-    // Las ventanas: el dintel (si entra) y el vidrio entre los montantes; su piso va abajo, con el de las puertas.
+    // Las ventanas: el dintel (si entra) y el vidrio entre los montantes.
     const vv = [];
     for (const [a0, a1] of ventanas) {
       if (dintelV) barra("montantes", pol(rm, a0, yv1 + esp / 2), pol(rm, a1, yv1 + esp / 2), anchoR, esp, [0, 1, 0], "montante");
       quad(vv, pol(rm, a0, yv0), pol(rm, a1, yv0), pol(rm, a1, yv1), pol(rm, a0, yv1));
     }
     malla("vidrios", "vidrio", vv);
-    // El piso de la abertura: UNA pieza por grupo, sobre la que se paran los
-    // montantes, del zócalo hasta pasar el borde, con caída hacia afuera y la
-    // punta redondeada para que gotee lejos del muro.
-    // 3d-14: las ventanas llevan el mismo piso, a la altura del antepecho.
-    const rIn = C.r_int_lito, rOut = C.R + (P.umb_vuelo || 0);
-    const perfil = (yb) => {
-      const yIn = yb + umb, yOut = yIn - (P.umb_caida || 0);
-      const rho = Math.max(0.002, (yOut - yb) / 2), cx = rOut - rho, cy = yb + rho;
-      const pf = [[rIn, yb], [cx, yb]];
-      for (let i = 1; i < 8; i++) { const f = -Math.PI / 2 + Math.PI * i / 8; pf.push([cx + rho * Math.cos(f), cy + rho * Math.sin(f)]); }
-      pf.push([cx, yOut], [rIn, yIn], [rIn, yb]);
-      return pf;
-    };
-    const v = [];
-    for (const g of mon.grupos) {
-      const pf = perfil(g.tipo === "ventana" ? yvB : yPiso);
-      const a = g.montantes[0] - mon.dm / 2, b = g.montantes[g.montantes.length - 1] + mon.dm / 2;
-      revolver(v, pf, a, b); tapar(v, pf, a); tapar(v, pf, b);
-    }
-    malla("suelo_ab", "umbral", v);
   }
 
   // ── la cal (un calce por percha) y la doble cinta ──

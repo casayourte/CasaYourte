@@ -114,6 +114,8 @@
 // v80 (2-nov-2026) — calculo-20 + 3d-8: la tapa aislante del toono, con bisagra y manivela.
 // v81 (2-nov-2026) — calculo-21 + 3d-9: las sogas por las aristas del triángulo; la cara vista adentro.
 // v82 (2-nov-2026) — calculo-22 + 3d-10: las sogas escondidas detrás de la tela, un orificio por enganche.
+// v101 (18-nov-2026) — calculo-34 + geo-14 + 3d-17: el chasis del vano (suelo tallado en arco, montantes
+//   con los cantos al ángulo, cabezal, tapas interiores y exteriores con ranura), en el cálculo y el 3D.
 // v100 (17-nov-2026) — calculo-33: el trei de 40 × 20 como mínimo, cepillado (los casos traían 16).
 // v99 (17-nov-2026) — geo-13 + 3d-16 + presupuestos-js-3: el sobrealto pieza por pieza en la lista
 //   de materiales (estructura, marcos, vidrios, capas del techito, herrajes) y el rubro «vidrios».
@@ -155,7 +157,7 @@
 //     No se inventan: quedan como hueco a la vista.
 //   · había una segunda entrada 'v3' al final de la lista, fuera de orden,
 //     que repetía y contradecía a la de arriba. Se retiró en la v25.
-const VERSION = 'cy-shell-v100';
+const VERSION = 'cy-shell-v101';
 
 // v69 · 29-oct-2026 · `nucleo.js` (nucleo-32, general:C7): CY.explicar usa la tabla
 //   común de `errores.js` del panel (datos) y le suma sus dos causas propias.
