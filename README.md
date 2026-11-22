@@ -66,6 +66,7 @@ menú ⋮ → *Agregar a la pantalla principal*.
 |---|---|
 | `README.md` | este archivo |
 | `GUIA-ANDROID.md` | configuración paso a paso desde el celular |
+| `CONTEXTO.md` | **para una sesión nueva sin conocimiento del ecosistema**: qué es, cómo funciona, mapa de archivos, flujos, datos, reglas con su porqué, cómo se verifica y despliega, estado y glosario |
 | `CAMBIOS.md` | qué se cambió en la última entrega y qué había que subir |
 
 ---
