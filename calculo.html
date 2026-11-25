@@ -253,7 +253,7 @@ import { montar as montar3d, PARTES as PARTES3D, CAMPO_PARTES } from "./calculo-
 import { CAPAS, CRITERIOS } from "./capas.js";
 import { costoDeMateriales } from "./presupuestos.js";
 
-CY.PANEL = "calculo-39";
+CY.PANEL = "calculo-40";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 // ── El SDK se baja acá, y recién después arranca la pantalla ────────────────
@@ -356,6 +356,7 @@ const CAMPOS = [
   ["umb_vuelo","Suelo del vano · vuelo",          0.020, "m · más allá de la nariz de los montantes, parejo en el arco"],
   ["umb_caida","Suelo del vano · caída",          0.010, "m · del tope al borde de afuera, con goterón"],
   ["·","LAS CAPAS"],
+  ["lona_tipo","Lona del techo",                  1,     "1 = una pieza en cono, cerrada con un cordón en zigzag (como una zapatilla) · 2 = en paños solapados, sin costura ni cordón", [[1, "Una pieza, acordonada"], [2, "En paños, sin costura"]]],
   ["lona_baja","Lona del techo · bajada",         0.100, "m · pasa la cinta del alero, urlete"],
   ["·","EL TOONO · VENTILACIÓN Y CIERRE"],
   ["diente",   "Diente de las cámaras",           0.015, "m · cerrado hacia adentro, a confirmar"],
@@ -364,7 +365,7 @@ const CAMPOS = [
   ["tapa_ranura","Anillo tapa · ranura sobre la lona",0.030,"m · por donde sale el aire"],
   ["dom_ang",  "Domo · fracción de esfera",       60,    "grados desde arriba · 60 = un tercio, 90 = media"],
   ["dom_frec", "Domo · frecuencia geodésica",     3,     "2 a 5"],
-  ["ts_giro",  "Tapa aislante · abierta",         1,     "1 = contra el techo, 0 = cerrada"],
+  ["ts_giro",  "Tapa aislante · abierta",         1,     "1 = contra el techo, 0 = cerrada · sólo con el domo: con el sobrealto no va (las ventanas son laterales, no entra el sol cenital)"],
   ["ts_esp",   "Tapa aislante · espesor",         0.060, "m · aislante y cara vista"],
   ["ts_rendija","Tapa aislante · rendija cerrada",0.020, "m · ventilación con la tapa cerrada"],
   ["·","EL TOONO · SOBREALTO CON VENTANAS"],
@@ -383,7 +384,7 @@ const SOLO = {
   piso2: ["osb_inf"],                      // sólo con el piso de doble capa
   apis: ["ap_vueltas", "ap_esp", "ap_alto"],   // sólo con el anillo de listones curvados
   ventanas: ["vt_anc", "vt_ant"],
-  domo: ["dom_ang", "dom_frec"],
+  domo: ["dom_ang", "dom_frec", "ts_giro", "ts_esp", "ts_rendija"],   // calculo-40: la tapa aislante sólo va con el domo
   sobre: ["sa_alto", "sa_vent", "sa_desb", "sa_ang", "sa_abre", "sa_abiertas"],
   // calculo-30 (Mauro: «se deshabiliten las opciones de los cálculos que no corresponden»)
   arriba: ["n_partes"],                    // las partes para el transporte son del anillo de ARRIBA
@@ -756,7 +757,13 @@ function pintarPiezas() {
       <b>no hace falta el cable</b> de las yurtas comunes (una eslinga de acero de 6 mm que
       pasa por una perforación cerca del borde de las perchas).`],
   ]);
-  h += tarjeta("La lona del techo, cortada plana",
+  if (P.lona_tipo === 2) h += tarjeta("La lona del techo, en paños",
+    `En paños solapados de la bobina, del toono al alero, <b>sin costura y sin cordón</b>: no hay un cono
+    que cerrar, así que no lleva la banda con anillas ni el zigzag. Cerca del toono los paños se pisan más
+    (en un cono, las tiras rectas se superponen): se cuentan en tiras, no en superficie.`, [
+    ["", "Superficie del techo, del toono al alero", "π (Rp + r toono) × largo", m2(C.area_techo), "d"],
+  ]);
+  else h += tarjeta("La lona del techo, cortada plana",
     `Una pieza plana con el agujero del toono, cortada en un radio. Se cierra en cono acordonando
     en zigzag —como una zapatilla— las anillas de una banda termosoldada que baja sobre la línea
     de una percha con las del borde cortado. <b>La pieza es el círculo entero</b>: la lengüeta que

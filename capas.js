@@ -1,5 +1,6 @@
 // capas.js — las capas del muro y del techo, y los criterios que las deciden.
-// Sello: capas-1 (25-nov-2026)
+// Sello: capas-2 (26-nov-2026: la tapa aislante sólo con el domo; la lona en paños, sin cordón)
+// capas-1 (25-nov-2026)
 //
 // Mauro, 25-nov-2026: «dejemos un registro de estos conceptos y criterios,
 // decisiones de las capas, visible en la pestaña del administrador en Cálculos».
@@ -12,7 +13,7 @@
 //
 // Sin DOM y sin Firebase: lo revisa `node pruebas-calculo.mjs`.
 
-export const SELLO_CAPAS = "capas-1";
+export const SELLO_CAPAS = "capas-2";
 
 // De ADENTRO hacia AFUERA, en el muro y en el techo.
 export const CAPAS = [
@@ -30,6 +31,10 @@ export const CAPAS = [
 
 // Las decisiones, cada una con su porqué. La más nueva, arriba.
 export const CRITERIOS = [
+  { fecha: "26-nov-2026", titulo: "Con el sobrealto no va la tapa aislante del toono",
+    texto: "La tapa redonda interior (con su bisagra, su soga y su manivela) está para cortar el sol que entra de arriba por el domo. Con el sobrealto las ventanas son laterales y no hay sol cenital: no hace falta. Cada vez que la propuesta lleve sobrealto, la tapa sale (Cálculos la apaga sola)." },
+  { fecha: "26-nov-2026", titulo: "La lona en paños no lleva el cierre de zapatilla",
+    texto: "Cuando la lona del techo va en paños solapados, sin costura, no hay un cono que cerrar: no lleva la banda con anillas ni el cordón en zigzag de la lona de una pieza («Lona del techo» en Medidas)." },
   { fecha: "25-nov-2026", titulo: "El orden de montaje: primero el muro, después el techo",
     texto: "El Tyvek del muro se cierra primero, y abajo termina por fuera del borde del piso. Después el del techo, SIN desborde: del toono hasta el borde del muro y 20 cm más, bajando por FUERA del Tyvek del muro. Así una gota de condensación que corre por el techo cae afuera del muro y nunca adentro de la lana." },
   { fecha: "25-nov-2026", titulo: "La ranura de respiración, debajo de las ventanas del sobrealto",

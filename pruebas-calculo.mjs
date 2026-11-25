@@ -428,7 +428,7 @@ ok("calculo.html ya no pide el cable (el doble techo no lo lleva)", !/faltan los
   ok("3D sobrealto: el modelo crece con el sobrealto", K.alto > piezas3d({ ...Q, tono_tipo: 1 }, calc({ ...Q, tono_tipo: 1 })).alto - 0.5);
   ok("3D: en el doble techo el sobrealto va sobre el anillo tapa", (() => { const Qd = { ...P, tono_tipo: 2 }, Kd = piezas3d(Qd, calc(Qd));
     const tapa = Kd.piezas.filter(p => p.g === "tapa" && p.tipo === "anillo"), yTapa = Math.max(...tapa.map(p => p.y2));
-    const sol = Kd.piezas.filter(p => p.g === "sobrealto" && p.tipo === "barra"); return Math.min(...sol.map(p => Math.min(p.a[1], p.b[1]))) >= yTapa - 0.03 && Kd.piezas.some(p => p.g === "tapa_sol"); })());
+    const sol = Kd.piezas.filter(p => p.g === "sobrealto" && p.tipo === "barra"); return Math.min(...sol.map(p => Math.min(p.a[1], p.b[1]))) >= yTapa - 0.03 && !Kd.piezas.some(p => p.g === "tapa_sol"); })());   // 3d-20: y sin tapa aislante
 }
 // ── los colores (3d-11, Mauro: «corrige los colores azules de los listones…»
 //    y «la madera que va entre los triángulos está roja… también color madera») ──
@@ -475,6 +475,25 @@ ok("calculo-3d.js parsea como módulo", parsea(readFileSync(new URL("./calculo-3
 ok("calculo.html importa calculo-3d.js", /from "\.\/calculo-3d\.js"/.test(html));
 ok("three.js se pide diferido, nunca con un import estático", !/^import[^\n]*three/m.test(readFileSync(new URL("./calculo-3d.js", import.meta.url), "utf8")) && /await import\(THREE_URL\)/.test(readFileSync(new URL("./calculo-3d.js", import.meta.url), "utf8")));
 ok("calculo-3d.js está en el SHELL", /'\.\/calculo-3d\.js'/.test(sw));
+
+// 3d-20 / calculo-40 (26-nov-2026, Mauro): sin tapa aislante con el sobrealto; la lona en paños sin cordón;
+// la manivela de la tapa nunca en un vano.
+{
+  const Qs = { ...P, tono_tipo: 2 };
+  ok("3D: con el sobrealto no hay tapa aislante (ni manivela)", piezas3d(Qs, calc(Qs)).piezas.filter(p => p.g === "tapa_sol").length === 0);
+  ok("3D: con el domo, la tapa aislante sigue", T3.piezas.some(p => p.g === "tapa_sol"));
+  const Ql = { ...P, lona_tipo: 2 }, lonaL = piezas3d(Ql, calc(Ql)).piezas.filter(p => p.g === "lona_techo");
+  ok("3D: la lona en paños no lleva ni la banda ni el cordón del cierre", lonaL.length > 0 && !lonaL.some(p => p.mat === "cordon" || p.mat === "lona2"));
+  ok("3D: la lona de una pieza sí lleva el cordón en zigzag", T3.piezas.some(p => p.g === "lona_techo" && p.mat === "cordon"));
+  for (const Q of [P, { ...P, n_ab: 2, n_gr: 2, n_vt: 2 }, { ...P, n_ab: 1, n_gr: 1 }]) {
+    const Cq = calc(Q), man = piezas3d(Q, Cq).piezas.find(p => p.g === "tapa_sol" && p.tipo === "barra" && p.ancho === 0.18);
+    const th = Math.atan2(man.a[2], man.a[0]), norm = (x) => ((x % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+    const enVano = Cq.mon.grupos.some(g => { const a0 = g.montantes[0], a1 = g.montantes[g.montantes.length - 1]; return norm(th - a0) <= a1 - a0; });
+    ok(`3D: la manivela de la tapa queda fuera de los vanos (${Q.n_ab} puertas, ${Q.n_vt || 0} ventanas)`, !enVano);
+  }
+  ok("Medidas: la tapa aislante se apaga con el sobrealto", /domo: \["dom_ang", "dom_frec", "ts_giro", "ts_esp", "ts_rendija"\]/.test(html));
+  ok("Medidas: «Lona del técho» tiene las dos formas".replace("é", "e"), /\["lona_tipo","Lona del techo"/.test(html) && /P\.lona_tipo === 2\) h \+= tarjeta\("La lona del techo, en paños"/.test(html));
+}
 
 // calculo-37 · las capas y sus criterios (capas.js, 25-nov-2026)
 {

@@ -169,7 +169,10 @@
 //   calculo-38: la lista de Cálculos muestra los presupuestos de obra (costo de materiales, lo que falta, opcionales).
 // v106 (26-nov-2026) — calculo-39 + presupuestos-6: si llega un presupuestos.js viejo de la caché, se pide recargar
 //   en vez de romper («Cannot read properties of undefined (reading 'map')» en la lista de Cálculos).
-const VERSION = 'cy-shell-v106';
+// v107 (26-nov-2026) — calculo-40 + 3d-20 + capas-2 (Mauro): con el sobrealto no va la tapa aislante del toono (ni su
+//   manivela, que quedaba flotando en una puerta: ahora va en el medio del primer arco libre); «Lona del techo» en
+//   paños, sin la banda ni el cordón en zigzag del cierre en cono.
+const VERSION = 'cy-shell-v107';
 
 // v69 · 29-oct-2026 · `nucleo.js` (nucleo-32, general:C7): CY.explicar usa la tabla
 //   común de `errores.js` del panel (datos) y le suma sus dos causas propias.

@@ -1,5 +1,9 @@
 // calculo-3d.js — el modelo en 3D de la estructura, con las medidas del cálculo.
-// Sello: 3d-19 (18-nov-2026): el anillo del piso de listones curvados, tres vueltas en la ranura de los tirantes (geo-16).
+// Sello: 3d-20 (26-nov-2026, Mauro): con el SOBREALTO no va la tapa aislante (las ventanas son laterales: no entra
+// el sol cenital), y con ella se va la manivela, que además ya no se pone en el ángulo 0 sino en el medio del primer
+// arco libre del muro (en la propuesta de Anita quedaba flotando en una puerta); la lona EN PAÑOS (`lona_tipo` 2,
+// solapados y sin costura) no lleva la banda ni el cordón en zigzag del cierre del cono.
+// 3d-19 (18-nov-2026): el anillo del piso de listones curvados, tres vueltas en la ranura de los tirantes (geo-16).
 // 3d-18 (18-nov-2026): la ventana llega al tope del muro (ver abajo).
 // 3d-17 (18-nov-2026). 3d-17: EL CHASIS DEL VANO (geo-14, `chasis()`): cada abertura
 // tiene su chasis recto —suelo recto adentro y en arco afuera, con el tope de atrás, los topes
@@ -78,7 +82,7 @@
 // de abajo (donde apoyan los tirantes). Todo sale de calc(P): si cambia una
 // medida, cambia el modelo.
 
-export const SELLO_3D = "3d-19";
+export const SELLO_3D = "3d-20";
 import { escuadraSimple, chasis } from "./calculo-geo.js";
 export const THREE_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/+esm";
 export const ORBIT_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js/+esm";
@@ -87,6 +91,16 @@ export const ORBIT_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js
 
 // Las partes que se prenden y apagan, en el orden de la obra. La clave es el
 // campo `g` de cada pieza de piezas3d.
+// 3d-20: el ángulo de la manivela de la tapa aislante: el medio del arco libre entre el primer vano y el
+// siguiente (o el opuesto al vano, si hay uno solo); sin vanos, 0.
+export function manivelaAng(mon) {
+  const g = (mon && mon.grupos) || [];
+  if (!g.length) return 0;
+  const a = g[0].montantes[g[0].montantes.length - 1];
+  const b = g.length > 1 ? g[1].montantes[0] : g[0].montantes[0] + 2 * Math.PI;
+  return (a + b) / 2;
+}
+
 export const PARTES = [
   ["pilares",     "Pilares"],
   ["vigas",       "Vigas"],
@@ -158,7 +172,7 @@ export const CAMPO_PARTES = {
   umb_tope: ["suelo_ab", "montantes", "tapas"], tope_lat: ["suelo_ab"], mon_nariz: ["montantes", "cabezales", "suelo_ab", "tapas"], tapa_ext_anc: ["tapas"],
   lona_baja: ["lona_techo"],
   diente: ["toono"], tapa_cam: ["tapa"], tapa_vuelo: ["tapa", "domo"], tapa_ranura: ["tapa"], dom_ang: ["domo"], dom_frec: ["domo"],
-  ts_giro: ["tapa_sol"], ts_esp: ["tapa_sol"], ts_rendija: ["tapa_sol"],
+  ts_giro: ["tapa_sol"], ts_esp: ["tapa_sol"], ts_rendija: ["tapa_sol"], lona_tipo: ["lona_techo"],
   // 3d-11: la simple y el sobrealto
   tipo: ["perchas", "escuadras", "triangulos", "cal"], tono_tipo: ["domo", "sobrealto", "ventanas"],
   esc: ["escuadras"], s_ais: ["aislacion_techo"],
@@ -615,8 +629,9 @@ export function piezas3d(P, C) {
     // el cordón la cose en zigzag con las del borde de la lona.
     const th = th0P + 2 * Math.PI * Math.round(nPer / 8) / nPer;
     const arriba = nor([Math.sin(rad) * Math.cos(th), Math.cos(rad), Math.sin(rad) * Math.sin(th)]);
-    barra("lona_techo", sube(pol(r1, th, yLona(r1)), 0.004), sube(pol(rOut, th, yLona(rOut)), 0.004), 0.08, 0.004, arriba, "lona2");
-    const pasos = Math.max(2, Math.round((rOut - r1) / cos / 0.25));
+    // 3d-20: la lona EN PAÑOS (lona_tipo 2) no se cierra en cono: ni banda ni cordón.
+    if (P.lona_tipo !== 2) barra("lona_techo", sube(pol(r1, th, yLona(r1)), 0.004), sube(pol(rOut, th, yLona(rOut)), 0.004), 0.08, 0.004, arriba, "lona2");
+    const pasos = P.lona_tipo === 2 ? 0 : Math.max(2, Math.round((rOut - r1) / cos / 0.25));
     const lado = (i) => (i % 2 ? 1 : -1) * 0.035;
     for (let i = 0; i < pasos; i++) {
       const ra = r1 + (rOut - r1) * i / pasos, rb = r1 + (rOut - r1) * (i + 1) / pasos;
@@ -754,8 +769,10 @@ export function piezas3d(P, C) {
   //    gira, se engancha a la cuerda que pasa por roldanas del lado opuesto
   //    hasta una manivela en el trei, y al girar la manivela sube y cierra
   //    como una tapa, dejando una rendija de ventilación. `ts_giro`: 0 cerrada,
-  //    1 abierta contra el techo. Es del doble techo: la simple no la lleva. ──
-  if (!simple) {
+  //    1 abierta contra el techo. Es del doble techo: la simple no la lleva. Y con el SOBREALTO
+  //    tampoco (3d-20, Mauro, 26-nov-2026: «las ventanas son laterales y no tiene la llegada cenital
+  //    del sol»): sólo va con el domo. ──
+  if (!simple && P.tono_tipo !== 2) {
     const rI = P.r_toono - 0.03, gap = P.ts_rendija ?? 0.02, e = P.ts_esp ?? 0.06;
     const Rt = rI - 0.01, thH = Math.PI;                       // la bisagra, del lado de atrás
     const yH = ySuj0 - gap;                                    // cara de arriba de la tapa, cerrada
@@ -797,8 +814,11 @@ export function piezas3d(P, C) {
     // escondidas detrás de la tela de terminación (3d-10) y desde 3d-11 no se
     // dibujan (Mauro, 17-nov-2026): del recorrido se ocupa la obra.
     barra("tapa_sol", pol(rI + 0.02, thH, ySuj0), pol(rI + 0.02, thH, yH - e), 0.05, 0.03, [Math.cos(thH), 0, Math.sin(thH)], "tapa");
-    barra("tapa_sol", pol(C.r_trei_int, 0, yPiso + 1.4), pol(C.r_trei_int - 0.05, 0, yPiso + 1.4), 0.18, 0.18, [0, 1, 0], "tapa"); // la manivela
-    barra("tapa_sol", pol(C.r_trei_int - 0.05, 0.02, yPiso + 1.4), pol(C.r_trei_int - 0.05, 0.02, yPiso + 1.52), 0.02, 0.02, [1, 0, 0], "tapa"); // la traba
+    // La manivela, en el medio del primer arco libre del muro (3d-20): en el ángulo 0 está el primer vano.
+    const thM = manivelaAng(mon);
+    const pM = (r, y) => pol(r, thM, y), tg = [-Math.sin(thM), 0, Math.cos(thM)];
+    barra("tapa_sol", pM(C.r_trei_int, yPiso + 1.4), pM(C.r_trei_int - 0.05, yPiso + 1.4), 0.18, 0.18, [0, 1, 0], "tapa"); // la manivela
+    barra("tapa_sol", pol(C.r_trei_int - 0.05, thM + 0.02 / C.r_trei_int, yPiso + 1.4), pol(C.r_trei_int - 0.05, thM + 0.02 / C.r_trei_int, yPiso + 1.52), 0.02, 0.02, tg, "tapa"); // la traba
   }
 
   return { piezas: out, alto: Math.max(yPerchaToono + 0.1, cima), suelo: yViga - P.viga_alt - 0.6, yt, yA, yC, nCor, relleno, yAbre, conDintel };
