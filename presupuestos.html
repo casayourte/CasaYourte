@@ -337,8 +337,7 @@ function pintarObra() {
     cm.secciones.map((x) => `<tr><td colspan="3" class="rubro">${esc(RUBRO[x.rubro] || x.rubro)}</td></tr>` +
       x.filas.map(({ material: m, costo }) => `<tr class="${costo.tipo === "falta" ? "falta" : ""}"><td>${esc(m.nombre)}${m.especificacion ? `<div class="gris" style="font-size:.78rem">${esc(m.especificacion)}</div>` : ""}</td>
         <td class="n">${esc(String(m.cantidad))} ${esc(m.unidad || "")}</td>
-        <td class="n">${costo.tipo === "falta" ? "" : esc(plataRedonda(costo.total, costo.moneda))}<div><span class="chip ${esc(costo.tipo)}">${esc(TIPO[costo.tipo])}</span></div>${
-          costo.fuente ? `<div class="gris" style="font-size:.7rem;white-space:normal;max-width:14rem;margin-left:auto">${esc(costo.fuente)}</div>` : ""}</td></tr>`).join("") +
+        <td class="n">${costo.tipo === "falta" ? "" : esc(plataRedonda(costo.total, costo.moneda))}<div><span class="chip ${esc(costo.tipo)}"${costo.fuente ? ` title="${esc(costo.fuente)}"` : ""}>${esc(TIPO[costo.tipo])}</span></div></td></tr>`).join("") +
       `<tr class="subtotal"><td>Subtotal ${esc(RUBRO[x.rubro] || x.rubro)}</td><td></td><td class="n">${porMoneda(x.total)}</td></tr>`).join("") +
     `<tr class="subtotal"><td><b>Costo de materiales</b></td><td></td><td class="n"><b>${porMoneda(cm.total)}</b></td></tr></table></div>`;
 
