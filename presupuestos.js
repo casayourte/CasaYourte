@@ -1,6 +1,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // presupuestos.js — Pedir precio de materiales a proveedores y compararlos.
-// Sello: presupuestos-js-3 (17-nov-2026: entra el rubro «vidrios», para la vidriería del sobrealto)
+// Sello: presupuestos-js-4 (25-nov-2026: entra el REAL (BRL) y el COSTO DE MATERIALES por sección:
+//   lo cotizado por un proveedor, y si no hay, un precio de referencia; lo que no tiene ninguno, a la vista)
+// presupuestos-js-3 (17-nov-2026: entra el rubro «vidrios», para la vidriería del sobrealto)
 //
 // 3-nov-2026, Mauro: «hacer un envío de mails consultando precios para los
 // materiales… busquemos un presupuesto para una yurta de 5 m de diámetro… haz en
@@ -24,7 +26,7 @@
 // Sin Firebase y sin DOM: lo prueba `node pruebas-presupuestos.mjs`.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const VERSION_PRESUPUESTOS = "presupuestos-js-3";
+export const VERSION_PRESUPUESTOS = "presupuestos-js-4";
 
 export const ESTADOS = [
   ["por_pedir", "Por pedir: el mail está listo y sin mandar"],
@@ -35,7 +37,8 @@ export const ESTADOS = [
   ["descartado", "Descartado"],
 ];
 export const ESTADO_IDS = ESTADOS.map((e) => e[0]);
-export const MONEDAS = ["UYU", "USD"];
+// BRL desde presupuestos-js-4 (25-nov-2026, la primera obra en Brasil). Es un sistema aparte, como las otras dos.
+export const MONEDAS = ["UYU", "USD", "BRL"];
 export const IVA = ["incluido", "mas_iva", "no_dice"];
 
 export const RUBROS = [
@@ -186,4 +189,55 @@ export function respuestasRecientes(pedidos, uid) {
     .map((p) => ({ pedido: p, respuesta: ultimaRespuesta(p), nueva: esNueva(p, uid) }))
     .filter((x) => x.respuesta)
     .sort((a, b) => (b.nueva - a.nueva) || String(b.respuesta.en).localeCompare(String(a.respuesta.en)));
+}
+
+/* ── El COSTO DE MATERIALES (presupuestos-js-4, 25-nov-2026) ─────────────────
+   Mauro: «visibles todos los materiales por los cuales se tiene y se pide
+   presupuesto… con un resalte en los que falta conseguir presupuesto; un total
+   por sección o por partes, y aclarar que es costo de materiales».
+   Cada material cuesta, en este orden:
+     1. lo COTIZADO: el mejor precio comparable de un pedido (en la moneda de la
+        referencia si la hay; si no, la primera que aparezca);
+     2. si no hay cotización, su REFERENCIA (`material.ref` = {total, moneda,
+        fuente}: un precio de lista o de tabla, no una oferta);
+     3. si no tiene ninguno, FALTA: no entra en ningún total y se marca.
+   Los totales son por sección (rubro) y por moneda: nunca se suman monedas. */
+export function leerRef(r) {
+  if (!r || typeof r !== "object") return null;
+  const total = typeof r.total === "number" ? r.total : Number(String(r.total ?? "").replace(/\./g, "").replace(",", "."));
+  if (!(total > 0) || !isFinite(total)) return null;
+  const moneda = String(r.moneda || "").toUpperCase();
+  if (!MONEDAS.includes(moneda)) return null;
+  return { total, moneda, fuente: txt(r.fuente) };
+}
+
+export function costoDe(fila) {
+  const m = fila.material, ref = leerRef(m.ref);
+  const monedas = Object.keys(fila.mejor || {});
+  if (monedas.length) {
+    const mo = ref && monedas.includes(ref.moneda) ? ref.moneda : monedas[0];
+    const o = fila.mejor[mo];
+    return { tipo: "cotizado", moneda: mo, total: o.total, fuente: o.nombre };
+  }
+  if (ref) return { tipo: "referencia", moneda: ref.moneda, total: ref.total, fuente: ref.fuente };
+  return { tipo: "falta" };
+}
+
+export function costoDeMateriales(pres, pedidos, proveedores) {
+  const secciones = [];
+  const total = {}, cuenta = { cotizado: 0, referencia: 0, falta: 0 };
+  for (const fila of comparativa(pres, pedidos, proveedores)) {
+    const costo = costoDe(fila);
+    cuenta[costo.tipo]++;
+    let sec = secciones[secciones.length - 1];
+    if (!sec || sec.rubro !== fila.material.rubro) {
+      sec = { rubro: fila.material.rubro, filas: [], total: {}, faltan: 0 };
+      secciones.push(sec);
+    }
+    sec.filas.push({ material: fila.material, costo });
+    if (costo.tipo === "falta") { sec.faltan++; continue; }
+    sec.total[costo.moneda] = (sec.total[costo.moneda] || 0) + costo.total;
+    total[costo.moneda] = (total[costo.moneda] || 0) + costo.total;
+  }
+  return { secciones, total, cuenta, faltan: secciones.flatMap((x) => x.filas.filter((f) => f.costo.tipo === "falta").map((f) => f.material)) };
 }

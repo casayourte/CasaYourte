@@ -476,5 +476,18 @@ ok("calculo.html importa calculo-3d.js", /from "\.\/calculo-3d\.js"/.test(html))
 ok("three.js se pide diferido, nunca con un import estático", !/^import[^\n]*three/m.test(readFileSync(new URL("./calculo-3d.js", import.meta.url), "utf8")) && /await import\(THREE_URL\)/.test(readFileSync(new URL("./calculo-3d.js", import.meta.url), "utf8")));
 ok("calculo-3d.js está en el SHELL", /'\.\/calculo-3d\.js'/.test(sw));
 
+// calculo-37 · las capas y sus criterios (capas.js, 25-nov-2026)
+{
+  const cap = await import("./capas.js");
+  const txt = readFileSync(new URL("./capas.js", import.meta.url), "utf8");
+  ok("capas.js parsea como módulo", parsea(txt));
+  ok("las capas van de adentro hacia afuera: algodón primero, la lona última", cap.CAPAS[0].capa.startsWith("Algodón") && /lona/i.test(cap.CAPAS[cap.CAPAS.length - 1].capa));
+  ok("el Tyvek va entre la lana y la lona", cap.CAPAS.findIndex(c => c.capa === "Tyvek") > cap.CAPAS.findIndex(c => /PET/.test(c.capa)));
+  ok("cada criterio tiene fecha, título y texto", cap.CRITERIOS.length >= 5 && cap.CRITERIOS.every(c => /\d{1,2}-\w{3}-\d{4}/.test(c.fecha) && c.titulo && c.texto.length > 40));
+  ok("capas.js no lleva precios ni proveedores (el repo es público)", !/R\$|US\$|\bUYU\b|\bBRL\b|Viniplast|Trisoft|Placo/.test(txt));
+  ok("calculo.html importa capas.js y tiene la pestaña Capas", /from "\.\/capas\.js"/.test(html) && /\["capas","Capas"\]/.test(html) && /id="t-capas"/.test(html));
+  ok("capas.js está en el SHELL", /'\.\/capas\.js'/.test(sw));
+}
+
 console.log(`\n${bien} bien, ${mal} mal`);
 process.exit(mal ? 1 : 0);

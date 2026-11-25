@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
 <link rel="icon" href="./icono-192.png">
 <!--
-  presupuestos.html — Presupuestos y proveedores. Sello: presupuestos-1
+  presupuestos.html — Presupuestos y proveedores. Sello: presupuestos-4 (ver CY.PANEL)
 
   3-nov-2026, Mauro: «una lista que sea presupuestos y proveedores contando el
   estado del pedido, lo que fue solicitado y esperando, seguir ahí la línea de
@@ -24,6 +24,12 @@
   qué se le pidió, en qué estado está, el hilo de lo que se mandó y contestó, y
   el precio que dio para cada material. «Comparar» pone los precios lado a
   lado, por moneda y sin sumar UYU con USD (presupuestos.js).
+
+  presupuestos-4 (25-nov-2026, Mauro: «visibles todos los materiales… con un resalte en los que falta
+  conseguir presupuesto; un total por sección y aclarar que es costo de materiales»): la pestaña Materiales
+  muestra el COSTO DE MATERIALES de cada uno —lo cotizado, o si no su precio de referencia— con el total por
+  sección y el general, por moneda (UYU, USD y desde ahora BRL, nunca sumadas), y marca en ámbar lo que no
+  tiene ningún precio. No incluye mano de obra, flete ni herramientas.
 
   PRIVADO: precios y proveedores no van nunca al repositorio. Lo ve y lo escribe
   quien tiene el permiso `presupuestos`. El agente lo lee y lo crea o completa
@@ -68,6 +74,15 @@
   .resp .snip{font-size:.82rem;color:var(--dim);margin-top:.2rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .resp.leida{opacity:.7}
   .sabemos{white-space:pre-wrap;font-size:.86rem}
+  tr.falta td{background:rgba(214,163,60,.13)}
+  tr.falta td:first-child{box-shadow:inset 3px 0 0 var(--wip, #d6a33c)}
+  .chip.falta{color:var(--wip, #d6a33c);border-color:var(--wip, #d6a33c)}
+  .chip.referencia{color:var(--dim)}
+  tr.subtotal td{font-family:var(--mono);font-size:.78rem;color:var(--dim);border-bottom:1px solid var(--line)}
+  .costo{border:1px solid var(--blond);border-radius:var(--r);padding:.7rem .8rem;margin:.6rem 0;background:var(--ink2)}
+  .costo .t{font-family:var(--mono);font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:var(--dim2)}
+  .costo .n{font-family:var(--mono);font-size:1.15rem;margin:.2rem 0}
+  .costo table td{padding:.15rem .3rem;font-size:.82rem}
 </style>
 </head>
 <body>
@@ -181,11 +196,11 @@ import { cargarFirebase,
          db, auth, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc,
          collection, Bytes, onAuthStateChanged, signOut } from "./firebase-init.js";
 import { CY } from "./nucleo.js";
-import { ESTADOS, RUBROS, MONEDAS, materialesDe, comparativa, totalesPorProveedor, sinCotizar,
+import { ESTADOS, RUBROS, MONEDAS, materialesDe, comparativa, totalesPorProveedor, sinCotizar, costoDeMateriales,
          estadoTrasHilo, estadoTrasPrecios, leerPrecio, mailDePedido,
          ultimaRespuesta, esNueva, respuestasRecientes } from "./presupuestos.js";
 
-CY.PANEL = "presupuestos-3";
+CY.PANEL = "presupuestos-4";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 if (!await CY.conFirebase(cargarFirebase)) throw new Error("sin SDK");
@@ -199,7 +214,9 @@ const QUIEN = { nosotros: "Le mandamos", proveedor: "Contestó", nota: "Nota" };
 const CANAL = { mail: "✉ mail", whatsapp: "💬 WhatsApp", telefono: "📞 teléfono", persona: "🤝 en persona" };
 const quien = () => yo.nombre || yo.email || yo.uid;
 const fecha = (iso) => { const d = new Date(iso); return isNaN(d) ? (iso || "") : d.toLocaleString("es-UY", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" }); };
-const plata = (n, m) => (m === "USD" ? "US$ " : "$ ") + (Math.round(n * 100) / 100).toLocaleString("es-UY");
+const plata = (n, m) => ({ USD: "US$ ", BRL: "R$ " }[m] || "$ ") + (Math.round(n * 100) / 100).toLocaleString("es-UY");
+const plataRedonda = (n, m) => ({ USD: "US$ ", BRL: "R$ " }[m] || "$ ") + Math.round(n).toLocaleString("es-UY");
+const porMoneda = (t) => Object.keys(t).length ? Object.entries(t).map(([m, n]) => esc(plataRedonda(n, m))).join(" · ") : "—";
 
 let obras = [], proveedores = [], pedidos = [], obra = null, pedido = null, prov = null, listaVista = "obras";
 
@@ -304,11 +321,26 @@ function pintarObra() {
   document.querySelectorAll("#tabsObra button").forEach((b) => b.classList.toggle("on", b.dataset.tab === tab));
   ["materiales", "pedidos", "comparar"].forEach((t) => $("t-" + t).classList.toggle("hide", t !== tab));
   const mats = materialesDe(obra);
-  let r = "";
-  $("t-materiales").innerHTML = `<div class="desliza"><table class="t"><tr><th>Material</th><th>Cantidad</th></tr>` +
-    mats.map((m) => { const h = m.rubro !== r ? `<tr><td colspan="2" class="rubro">${esc(RUBRO[m.rubro] || m.rubro)}</td></tr>` : ""; r = m.rubro;
-      return h + `<tr><td>${esc(m.nombre)}${m.especificacion ? `<div class="gris" style="font-size:.78rem">${esc(m.especificacion)}</div>` : ""}</td>
-        <td class="n">${esc(String(m.cantidad))} ${esc(m.unidad || "")}</td></tr>`; }).join("") + "</table></div>";
+  // presupuestos-4: el COSTO DE MATERIALES por sección (presupuestos.js), con lo que falta a la vista.
+  const cm = costoDeMateriales(obra, pedidos, proveedores);
+  const TIPO = { cotizado: "cotizado", referencia: "referencia", falta: "falta precio" };
+  $("t-materiales").innerHTML = `<div class="costo">
+      <div class="t">Costo de materiales · no incluye mano de obra, flete ni herramientas</div>
+      <div class="n">${porMoneda(cm.total)}</div>
+      <div class="gris" style="font-size:.8rem">${cm.cuenta.cotizado} cotizados por un proveedor · ${cm.cuenta.referencia} con precio de referencia${
+        cm.cuenta.falta ? ` · <b style="color:var(--wip, #d6a33c)">${cm.cuenta.falta} sin ningún precio</b>` : ""}</div>
+      <table>${cm.secciones.map((x) => `<tr><td>${esc(RUBRO[x.rubro] || x.rubro)}</td><td class="n" style="text-align:right">${porMoneda(x.total)}</td><td class="gris">${
+        x.faltan ? `<span class="chip falta">faltan ${x.faltan}</span>` : ""}</td></tr>`).join("")}</table>
+    </div>
+    ${cm.faltan.length ? `<p style="color:var(--wip, #d6a33c);font-size:.86rem"><b>Falta conseguir precio:</b> ${cm.faltan.map((m) => esc(m.nombre)).join(" · ")}</p>` : ""}
+    <div class="desliza"><table class="t"><tr><th>Material</th><th>Cantidad</th><th>Costo</th></tr>` +
+    cm.secciones.map((x) => `<tr><td colspan="3" class="rubro">${esc(RUBRO[x.rubro] || x.rubro)}</td></tr>` +
+      x.filas.map(({ material: m, costo }) => `<tr class="${costo.tipo === "falta" ? "falta" : ""}"><td>${esc(m.nombre)}${m.especificacion ? `<div class="gris" style="font-size:.78rem">${esc(m.especificacion)}</div>` : ""}</td>
+        <td class="n">${esc(String(m.cantidad))} ${esc(m.unidad || "")}</td>
+        <td class="n">${costo.tipo === "falta" ? "" : esc(plataRedonda(costo.total, costo.moneda))}<div><span class="chip ${esc(costo.tipo)}">${esc(TIPO[costo.tipo])}</span></div>${
+          costo.fuente ? `<div class="gris" style="font-size:.7rem;white-space:normal;max-width:14rem;margin-left:auto">${esc(costo.fuente)}</div>` : ""}</td></tr>`).join("") +
+      `<tr class="subtotal"><td>Subtotal ${esc(RUBRO[x.rubro] || x.rubro)}</td><td></td><td class="n">${porMoneda(x.total)}</td></tr>`).join("") +
+    `<tr class="subtotal"><td><b>Costo de materiales</b></td><td></td><td class="n"><b>${porMoneda(cm.total)}</b></td></tr></table></div>`;
 
   const ps = pedidos.filter((p) => p.presupuesto === obra.id);
   const nom = (id) => (proveedores.find((p) => p.id === id) || {}).nombre || id;

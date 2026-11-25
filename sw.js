@@ -162,7 +162,10 @@
 //   (alféizar con sus dos cajas) y el cabezal arriba, igual al de la puerta. Sin dintel ni «alto de la ventana».
 // v103 (18-nov-2026) — calculo-36 + geo-16 + 3d-19 + propuesta-7: el anillo del piso de listones curvados (Mauro):
 //   tres vueltas de 40 × 10 colados, de canto, en una ranura de los tirantes; el trei se fija a ellas después del OSB.
-const VERSION = 'cy-shell-v103';
+// v104 (25-nov-2026) — calculo-37 + capas-1 + presupuestos-4 + presupuestos-js-4 (Mauro): la pestaña «Capas» de
+//   Cálculos (las capas del muro y del techo y los criterios que las deciden, capas.js) y en Presupuestos el COSTO DE
+//   MATERIALES por sección, con lo cotizado o su referencia, lo que falta resaltado, y el real (BRL) como moneda.
+const VERSION = 'cy-shell-v104';
 
 // v69 · 29-oct-2026 · `nucleo.js` (nucleo-32, general:C7): CY.explicar usa la tabla
 //   común de `errores.js` del panel (datos) y le suma sus dos causas propias.
@@ -293,6 +296,7 @@ const SHELL = [
   './calculo.html',
   './calculo-geo.js',
   './calculo-3d.js',
+  './capas.js',
   './consultas.html',
   './consultas-ia.js',
   './presupuestos.html',

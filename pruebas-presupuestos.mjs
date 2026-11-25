@@ -3,7 +3,7 @@
 import fs from "node:fs";
 import { leerPrecio, materialesDe, comparativa, totalesPorProveedor, sinCotizar,
          estadoTrasHilo, estadoTrasPrecios, mailDePedido, ESTADO_IDS, RUBRO_IDS,
-         ultimaRespuesta, esNueva, respuestasRecientes } from "./presupuestos.js";
+         ultimaRespuesta, esNueva, respuestasRecientes, leerRef, costoDeMateriales, MONEDAS } from "./presupuestos.js";
 
 let bien = 0, mal = 0;
 const ok = (n, c) => { if (c) bien++; else { mal++; console.log("  ✗ " + n); } };
@@ -99,6 +99,32 @@ ok("la página pinta las últimas respuestas arriba y marca leído sólo con vis
   /id="respuestas"/.test(h) && /respuestasRecientes\(pedidos, yo\.uid\)/.test(h) && /`vistoPor\.\$\{yo\.uid\}`/.test(h));
 ok("la ficha del proveedor muestra lo que sabemos (catálogo, contacto…)", /id="pv-sabemos"/.test(h) && /prov\.catalogo/.test(h));
 ok("el JS de la página no lleva precios escritos", !/precio:\s*\d/.test(h));
+
+console.log("6 · el costo de materiales por sección (presupuestos-js-4)");
+ok("el real es una moneda más", MONEDAS.includes("BRL") && leerPrecio({ precio: 10, moneda: "brl" }).moneda === "BRL");
+ok("una referencia se lee con desconfianza", leerRef({ total: 0, moneda: "BRL" }) === null && leerRef({ total: 5, moneda: "EUR" }) === null && leerRef({ total: "1.234,5", moneda: "BRL" }).total === 1234.5);
+const obraB = { id: "rb", materiales: {
+  tir: { rubro: "madera", nombre: "Tirante", cantidad: 10, unidad: "u", ref: { total: 2000, moneda: "BRL", fuente: "tabla" } },
+  per: { rubro: "madera", nombre: "Percha", cantidad: 36, unidad: "u", ref: { total: 1500, moneda: "BRL" } },
+  osb: { rubro: "tableros", nombre: "OSB", cantidad: 15, unidad: "placa", ref: { total: 2900, moneda: "BRL" } },
+  pil: { rubro: "otros", nombre: "Pilares", cantidad: 23, unidad: "u" },
+  lona: { rubro: "lonas", nombre: "Lona", cantidad: 3, unidad: "bobina" },
+} };
+const pedB = [{ id: "q", presupuesto: "rb", proveedor: "a", estado: "cotizado", precios: {
+  osb: { precio: 180, moneda: "BRL", unidad: "placa" }, lona: { precio: 900, moneda: "USD", unidad: "bobina" } } }];
+const cmB = costoDeMateriales(obraB, pedB, provs);
+const filaB = (id) => cmB.secciones.flatMap((x) => x.filas).find((f) => f.material.id === id);
+ok("lo cotizado manda sobre la referencia", filaB("osb").costo.tipo === "cotizado" && filaB("osb").costo.total === 2700);
+ok("sin cotización, la referencia", filaB("tir").costo.tipo === "referencia" && filaB("tir").costo.total === 2000);
+ok("sin ningún precio: falta, y se lista", filaB("pil").costo.tipo === "falta" && cmB.faltan.map((m) => m.id).join() === "pil");
+ok("el subtotal de una sección suma sus materiales", cmB.secciones.find((x) => x.rubro === "madera").total.BRL === 3500);
+ok("las monedas no se suman: la lona en USD queda aparte", cmB.total.BRL === 6200 && cmB.total.USD === 2700);
+ok("una sección con un faltante lo cuenta", cmB.secciones.find((x) => x.rubro === "otros").faltan === 1);
+ok("la cuenta de cotizados, referencias y faltantes", cmB.cuenta.cotizado === 2 && cmB.cuenta.referencia === 2 && cmB.cuenta.falta === 1);
+ok("la página muestra el costo de materiales, aclara qué no incluye y resalta lo que falta",
+  /costoDeMateriales\(obra, pedidos, proveedores\)/.test(h) && /Costo de materiales · no incluye mano de obra, flete ni herramientas/.test(h)
+  && /tr\.falta td\{/.test(h) && /Falta conseguir precio:/.test(h) && /Subtotal /.test(h));
+ok("la página escribe el real como R$", /BRL: "R\$ "/.test(h));
 
 console.log(`\n${bien} pasadas, ${mal} fallidas`);
 process.exit(mal ? 1 : 0);

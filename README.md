@@ -40,8 +40,9 @@ menú ⋮ → *Agregar a la pantalla principal*.
 | Archivo | Qué es |
 |---|---|
 | `calculo-geo.js` | la geometría de Cálculos, sin navegador; su banco es `pruebas-calculo.mjs` |
-| `presupuestos.html` | presupuestos y proveedores: los materiales de una obra, un pedido de precio por proveedor con su hilo y sus precios, y la comparación por moneda. Privado (permiso `presupuestos`) |
-| `presupuestos.js` | la lógica de presupuestos, sin Firebase ni DOM: leer un precio, comparar, totales por moneda, el mail del pedido; su banco es `pruebas-presupuestos.mjs` |
+| `capas.js` | las capas del muro y del techo, de adentro hacia afuera, y los criterios que las deciden, con su fecha: la pestaña «Capas» de Cálculos los pinta tal cual. Sin precios ni proveedores |
+| `presupuestos.html` | presupuestos y proveedores: los materiales de una obra con su **costo de materiales** por sección (lo cotizado o, si no hay, su precio de referencia; lo que no tiene ninguno, resaltado), un pedido de precio por proveedor con su hilo y sus precios, y la comparación por moneda (UYU, USD, BRL, nunca sumadas). Privado (permiso `presupuestos`) |
+| `presupuestos.js` | la lógica de presupuestos, sin Firebase ni DOM: leer un precio, comparar, totales por moneda, el costo de materiales por sección (`costoDeMateriales`), el mail del pedido; su banco es `pruebas-presupuestos.mjs` |
 | `consultas-ia.js` | leer con IA (Gemini, por `claude-proxy`) la captura de una conversación y sumarla a la consulta sin repetir; su banco es `pruebas-consultas.mjs` |
 | `calculo-3d.js` | el modelo 3D de Cálculos, arriba de la pestaña «Medidas», con cada parte por separado y la que se mide resaltada: las piezas salen sin navegador (`piezas3d`) y three.js baja del CDN recién al abrir la pestaña |
 | `firebase-init.js` | único archivo que toca el SDK de Firebase. La versión vive acá, y **desde el sello `init-2` el SDK se baja diferido**: ver «El SDK no viene puesto» |
@@ -838,14 +839,15 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 | `admin.html` | `PANEL` | `admin-20` |
 | `editar.html` | `EDITOR` | `editar-23` |
 | `taller.html` | `SELLO` | `andamio-3` |
-| `calculo.html` | `CY.PANEL` | `calculo-36` |
+| `calculo.html` | `CY.PANEL` | `calculo-37` |
+| `capas.js` | `SELLO_CAPAS` | `capas-1` |
 | `calculo-geo.js` | `SELLO_GEO` | `geo-16` |
 | `calculo-3d.js` | `SELLO_3D` | `3d-19` |
 | `propuesta.html` | (en el comentario) | `propuesta-7` |
 | `consultas.html` | `CY.PANEL` | `consultas-4` |
 | `consultas-ia.js` | `VERSION_CONSULTAS_IA` | `consultas-ia-2` |
-| `presupuestos.html` | `CY.PANEL` | `presupuestos-3` |
-| `presupuestos.js` | `VERSION_PRESUPUESTOS` | `presupuestos-js-3` |
+| `presupuestos.html` | `CY.PANEL` | `presupuestos-4` |
+| `presupuestos.js` | `VERSION_PRESUPUESTOS` | `presupuestos-js-4` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-4` |
 | `diagnostico.html` | `CY.PANEL` | `diagnostico-8` |
 | `idiomas.js` | `SELLO` | `idiomas-5` |

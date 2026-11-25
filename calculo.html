@@ -18,6 +18,9 @@
     overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -1rem 1rem;padding:0 1rem}
   .pest button{flex:none;background:none;border:0;border-bottom:2px solid transparent;
     color:var(--dim);font-size:.82rem;padding:.75rem .7rem;white-space:nowrap}
+  ol.capas{padding-left:1.2rem;margin:.6rem 0}
+  ol.capas li{margin:.45rem 0;font-size:.9rem}
+  ol.capas li div{font-size:.85rem;color:var(--dim);margin-top:.15rem}
   .pest button.on{color:var(--blond);border-bottom-color:var(--blond)}
 
   .campos{display:grid;grid-template-columns:1fr 1fr;gap:.5rem .65rem}
@@ -213,6 +216,8 @@
       </div>
     </div>
 
+    <div id="t-capas" class="hide"></div>
+
     <div id="t-ficha" class="hide">
       <label><span class="k">Nombre del cálculo</span><input id="f-nombre" maxlength="80"></label>
       <label><span class="k">Cliente</span><input id="f-cliente" maxlength="80"></label>
@@ -238,8 +243,9 @@ import { cargarFirebase,
 import { CY } from "./nucleo.js";
 import { calc as calcGeo, corte, vanos, materiales, NOMBRES_MAT, renglonMat } from "./calculo-geo.js";
 import { montar as montar3d, PARTES as PARTES3D, CAMPO_PARTES } from "./calculo-3d.js";
+import { CAPAS, CRITERIOS } from "./capas.js";
 
-CY.PANEL = "calculo-36";
+CY.PANEL = "calculo-37";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 // ── El SDK se baja acá, y recién después arranca la pantalla ────────────────
@@ -1112,7 +1118,8 @@ async function abrir3d() {
 abrir3d();
 
 /* ═══ pestañas ═════════════════════════════════════════════ */
-const PEST = [["datos","Medidas"],["piezas","Piezas"],["corte","Corte"],["croquis","Croquis"],["cliente","Para el cliente"],["ficha","Ficha"]];
+// calculo-37 (25-nov-2026, Mauro): «Capas», el registro de las capas del muro y del techo y de los criterios que las deciden (capas.js).
+const PEST = [["datos","Medidas"],["piezas","Piezas"],["corte","Corte"],["croquis","Croquis"],["capas","Capas"],["cliente","Para el cliente"],["ficha","Ficha"]];
 $("pest").innerHTML = PEST.map(([k,t],i) =>
   `<button data-p="${k}" class="${i===0?"on":""}">${t}</button>`).join("");
 function verPestaña(k) {
@@ -1125,6 +1132,16 @@ function verPestaña(k) {
   if (k === "cliente") pintarEntrega();
   restituir("pest:" + k);
 }
+/* ═══ las capas (calculo-37) ══════════════════════════════════
+   Lo pinta tal cual de capas.js: una sola copia de los criterios. */
+$("t-capas").innerHTML = `<p class="ayuda">Las capas del muro y del techo, de ADENTRO hacia AFUERA, y las decisiones que las
+  sostienen, con su fecha. Los costos de cada obra están en <a href="./presupuestos.html">Presupuestos</a>: ahí la lista de
+  materiales tiene el total por sección y resalta lo que todavía no tiene precio.</p>
+  <ol class="capas">${CAPAS.map(c => `<li><b>${esc(c.capa)}</b> <span class="gris">· ${esc(c.donde)}</span><div>${esc(c.por)}</div></li>`).join("")}</ol>
+  <h2 style="margin-top:1.2rem">Criterios y decisiones</h2>
+  ${CRITERIOS.map(c => `<div class="card" style="margin:.5rem 0"><div class="gris" style="font-family:var(--mono);font-size:.62rem">${esc(c.fecha)}</div>
+    <h3 style="margin:.2rem 0 .3rem">${esc(c.titulo)}</h3><div style="font-size:.88rem">${esc(c.texto)}</div></div>`).join("")}`;
+
 $("pest").addEventListener("click", (ev) => {
   const b = ev.target.closest("button"); if (b) verPestaña(b.dataset.p);
 });
