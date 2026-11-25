@@ -253,7 +253,7 @@ import { montar as montar3d, PARTES as PARTES3D, CAMPO_PARTES } from "./calculo-
 import { CAPAS, CRITERIOS } from "./capas.js";
 import { costoDeMateriales } from "./presupuestos.js";
 
-CY.PANEL = "calculo-38";
+CY.PANEL = "calculo-39";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 // ── El SDK se baja acá, y recién después arranca la pantalla ────────────────
@@ -924,6 +924,9 @@ async function cargarObras() {
       .sort((x, y) => String(y.actualizadoISO || y.creadoISO || "").localeCompare(String(x.actualizadoISO || x.creadoISO || "")));
     $("obras").innerHTML = obras.length ? obras.map(o => {
       const cm = costoDeMateriales(o, peds, provs);
+      // calculo-39: si el navegador todavía tiene el presupuesto.js de antes (caché de 10 minutos de Pages),
+      // no hay opcionales y los totales no serían los de ahora: se pide recargar en vez de romper la lista.
+      if (!cm.opcionales) throw new Error("La página se está actualizando: recargala en un momento.");
       const ops = cm.opcionales.map(x => `${esc(x.opcion)}: ${esc(plataObra(x.total))}`).join(" · ");
       return `<a class="tarj card pulsa" href="./presupuestos.html?o=${encodeURIComponent(o.id)}" style="text-decoration:none;color:inherit">
         <div class="grow"><h3>${esc(o.titulo || o.id)}</h3>

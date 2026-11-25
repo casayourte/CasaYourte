@@ -167,7 +167,9 @@
 //   MATERIALES por sección, con lo cotizado o su referencia, lo que falta resaltado, y el real (BRL) como moneda.
 // v105 (25-nov-2026) — presupuestos-5 + presupuestos-js-5: los opcionales de una obra, aparte y sin sumar;
 //   calculo-38: la lista de Cálculos muestra los presupuestos de obra (costo de materiales, lo que falta, opcionales).
-const VERSION = 'cy-shell-v105';
+// v106 (26-nov-2026) — calculo-39 + presupuestos-6: si llega un presupuestos.js viejo de la caché, se pide recargar
+//   en vez de romper («Cannot read properties of undefined (reading 'map')» en la lista de Cálculos).
+const VERSION = 'cy-shell-v106';
 
 // v69 · 29-oct-2026 · `nucleo.js` (nucleo-32, general:C7): CY.explicar usa la tabla
 //   común de `errores.js` del panel (datos) y le suma sus dos causas propias.

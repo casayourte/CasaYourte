@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
 <link rel="icon" href="./icono-192.png">
 <!--
-  presupuestos.html — Presupuestos y proveedores. Sello: presupuestos-5 (ver CY.PANEL)
+  presupuestos.html — Presupuestos y proveedores. Sello: presupuestos-6 (ver CY.PANEL)
 
   3-nov-2026, Mauro: «una lista que sea presupuestos y proveedores contando el
   estado del pedido, lo que fue solicitado y esperando, seguir ahí la línea de
@@ -202,7 +202,7 @@ import { ESTADOS, RUBROS, MONEDAS, materialesDe, comparativa, totalesPorProveedo
          estadoTrasHilo, estadoTrasPrecios, leerPrecio, mailDePedido,
          ultimaRespuesta, esNueva, respuestasRecientes } from "./presupuestos.js";
 
-CY.PANEL = "presupuestos-5";
+CY.PANEL = "presupuestos-6";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 if (!await CY.conFirebase(cargarFirebase)) throw new Error("sin SDK");
@@ -325,6 +325,8 @@ function pintarObra() {
   const mats = materialesDe(obra);
   // presupuestos-4: el COSTO DE MATERIALES por sección (presupuestos.js), con lo que falta a la vista.
   const cm = costoDeMateriales(obra, pedidos, proveedores);
+  // presupuestos-6: con el presupuestos.js de antes en la caché (10 minutos de Pages) no hay opcionales.
+  if (!cm.opcionales) { $("t-materiales").innerHTML = '<div class="empty">La página se está actualizando: recargala en un momento.</div>'; return; }
   const TIPO = { cotizado: "cotizado", referencia: "referencia", falta: "falta precio" };
   $("t-materiales").innerHTML = `<div class="costo">
       <div class="t">Costo de materiales · no incluye mano de obra, flete ni herramientas</div>
