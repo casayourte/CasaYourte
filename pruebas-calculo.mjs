@@ -205,7 +205,8 @@ ok("3D: el muro se corta en las aberturas", (() => { const ab = C.mon.aberturas[
   const p = T3.piezas.find(q => q.g === "lona_muro"); for (let i = 0; i < p.v.length; i += 3) {
     const a = Math.atan2(p.v[i + 2], p.v[i]); if (Math.abs(Math.atan2(Math.sin(a - m), Math.cos(a - m))) < 0.05 && p.v[i + 1] < 1.5) return false; } return true; })());
 ok("3D: la cinta del alero, dos capas en la punta de las perchas", cuenta("cinta_alero", "anillo") === 2 && T3.piezas.filter(p => p.g === "cinta_alero").every(p => p.r1 >= C.Rp - 1e-9));
-ok("3D: las capas arrancan apagadas en la página", /visibles3d\[k\] = leer3d\("parte:" \+ k, !capa\)/.test(html));
+ok("3D: todo arranca prendido en la página, capas incluidas (calculo-41)", /visibles3d\[k\] = leer3d\("parte:" \+ k, true\)/.test(html) && /"cy-calc3d-2:"/.test(html));
+ok("3D: en la propuesta, «Terminada» prende todas las capas (propuesta-8)", /terminada: \(\) => true/.test(readFileSync(new URL("./propuesta.html", import.meta.url), "utf8")));
 // ── la lona plana ──
 ok("lona plana: el cono cerrado ocupa 360° × cos 30° = 311,8°", cerca(C.lona_ang_cono, 311.77, 0.01));
 ok("lona plana: radio exterior (Rp + c)/cos + bajada = 4,742", cerca(C.lona_r_ext, (4.0 + 0.02) / Math.cos(Math.PI / 6) + 0.1, 1e-6), C.lona_r_ext);

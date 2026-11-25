@@ -839,11 +839,11 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 | `admin.html` | `PANEL` | `admin-20` |
 | `editar.html` | `EDITOR` | `editar-23` |
 | `taller.html` | `SELLO` | `andamio-3` |
-| `calculo.html` | `CY.PANEL` | `calculo-40` |
+| `calculo.html` | `CY.PANEL` | `calculo-41` |
 | `capas.js` | `SELLO_CAPAS` | `capas-2` |
 | `calculo-geo.js` | `SELLO_GEO` | `geo-16` |
 | `calculo-3d.js` | `SELLO_3D` | `3d-20` |
-| `propuesta.html` | (en el comentario) | `propuesta-7` |
+| `propuesta.html` | (en el comentario) | `propuesta-8` |
 | `consultas.html` | `CY.PANEL` | `consultas-4` |
 | `consultas-ia.js` | `VERSION_CONSULTAS_IA` | `consultas-ia-2` |
 | `presupuestos.html` | `CY.PANEL` | `presupuestos-6` |

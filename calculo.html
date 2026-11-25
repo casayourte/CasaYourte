@@ -253,7 +253,7 @@ import { montar as montar3d, PARTES as PARTES3D, CAMPO_PARTES } from "./calculo-
 import { CAPAS, CRITERIOS } from "./capas.js";
 import { costoDeMateriales } from "./presupuestos.js";
 
-CY.PANEL = "calculo-40";
+CY.PANEL = "calculo-41";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 // ── El SDK se baja acá, y recién después arranca la pantalla ────────────────
@@ -1106,10 +1106,11 @@ $("volver").addEventListener("click", () => {
    resto de la página sigue igual. Cada parte se prende y apaga, y al tocar un
    campo se resalta lo que cambia con él (CAMPO_PARTES). */
 const visibles3d = {};
-const leer3d = (k, d) => { try { const v = localStorage.getItem("cy-calc3d:" + k); return v === null ? d : v === "1"; } catch { return d; } };
-const guardar3d = (k, v) => { try { localStorage.setItem("cy-calc3d:" + k, v ? "1" : "0"); } catch {} };
-// Las capas arrancan apagadas: prendidas tapan la estructura.
-for (const [k, , capa] of PARTES3D) visibles3d[k] = leer3d("parte:" + k, !capa);
+// calculo-41 (26-nov-2026, Mauro: «por defecto todas las capas activadas»): todo arranca prendido. La clave
+// cambia (cy-calc3d-2) para que lo que cada teléfono guardó con el criterio viejo (capas apagadas) no lo tape.
+const leer3d = (k, d) => { try { const v = localStorage.getItem("cy-calc3d-2:" + k); return v === null ? d : v === "1"; } catch { return d; } };
+const guardar3d = (k, v) => { try { localStorage.setItem("cy-calc3d-2:" + k, v ? "1" : "0"); } catch {} };
+for (const [k] of PARTES3D) visibles3d[k] = leer3d("parte:" + k, true);
 const casilla3d = ([k, t]) => `<label><input type="checkbox" data-parte="${k}" ${visibles3d[k] ? "checked" : ""}> ${t}</label>`;
 $("partes3d").innerHTML = `<b class="v3-tit">Estructura</b>` + PARTES3D.filter(p => !p[2]).map(casilla3d).join("") +
   `<b class="v3-tit">Las capas · de adentro hacia afuera</b>` + PARTES3D.filter(p => p[2]).map(casilla3d).join("") +

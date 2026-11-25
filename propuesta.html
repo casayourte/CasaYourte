@@ -4,7 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tu yurta · CasaYourte</title>
-<!-- propuesta-7 (18-nov-2026): el anillo del piso de listones curvados (geo-16): «Anillo del piso: listones curvados…» y la unidad «vueltas», en los cuatro idiomas.
+<!-- propuesta-8 (26-nov-2026, Mauro: «que por defecto tenga todas las capas activadas el render»): «Terminada»
+     prende la estructura y TODAS las capas (algodón, freno, aislación, Tyvek y lonas), no sólo las lonas.
+     propuesta-7 (18-nov-2026): el anillo del piso de listones curvados (geo-16): «Anillo del piso: listones curvados…» y la unidad «vueltas», en los cuatro idiomas.
      propuesta-6 (18-nov-2026): el chasis del vano (geo-14 / 3d-17): cabezales, tapas interiores y exteriores,
      montantes sueltos y suelos de los vanos, en la lista y en el 3D, en los cuatro idiomas.
      propuesta-5 (17-nov-2026): las piezas del sobrealto en la lista, en los cuatro idiomas.
@@ -357,7 +359,7 @@ async function pintar() {
 // estructura», la madera sola. Desde propuesta-2 cada componente se prende y
 // apaga en la lista (sólo los que tiene ESTE modelo).
 const MODOS = {
-  terminada: (k, capa) => !capa || k === "lona_techo" || k === "lona_muro",
+  terminada: () => true,   // propuesta-8: todas las capas, no sólo las lonas
   estructura: (k, capa) => !capa,
 };
 let partes = [], vis = {};
