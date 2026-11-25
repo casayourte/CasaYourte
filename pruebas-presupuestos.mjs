@@ -125,6 +125,19 @@ ok("la página muestra el costo de materiales, aclara qué no incluye y resalta 
   /costoDeMateriales\(obra, pedidos, proveedores\)/.test(h) && /Costo de materiales · no incluye mano de obra, flete ni herramientas/.test(h)
   && /tr\.falta td\{/.test(h) && /Falta conseguir precio:/.test(h) && /Subtotal /.test(h));
 ok("la página escribe el real como R$", /BRL: "R\$ "/.test(h));
+console.log("7 · los opcionales no suman (presupuestos-js-5)");
+const obraO = { id: "ro", materiales: {
+  osb: { rubro: "tableros", nombre: "OSB", cantidad: 15, ref: { total: 2900, moneda: "BRL" } },
+  lam: { rubro: "otros", nombre: "Laminado", cantidad: 37, opcional: "A · Parquet flotante", ref: { total: 2800, moneda: "BRL" } },
+  man: { rubro: "otros", nombre: "Manta", cantidad: 37, opcional: "A · Parquet flotante", ref: { total: 200, moneda: "BRL" } },
+  tab: { rubro: "madera", nombre: "Tablas de piso", cantidad: 37, opcional: "B · Parquet de madera", ref: { total: 9700, moneda: "BRL" } },
+  ver: { rubro: "otros", nombre: "Barniz", cantidad: 10, opcional: "B · Parquet de madera" },
+} };
+const cmO = costoDeMateriales(obraO, [], provs);
+ok("el total no lleva los opcionales", cmO.total.BRL === 2900 && cmO.secciones.length === 1);
+ok("cada opción tiene su total", cmO.opcionales.length === 2 && cmO.opcionales[0].opcion.startsWith("A") && cmO.opcionales[0].total.BRL === 3000 && cmO.opcionales[1].total.BRL === 9700);
+ok("lo que le falta a una opción no entra en lo que falta del presupuesto", cmO.faltan.length === 0 && cmO.opcionales[1].faltan === 1);
+ok("la página pinta los opcionales aparte, diciendo que no suman", /Opcionales · no suman al costo de materiales/.test(h) && /cm\.opcionales\.map/.test(h));
 
 console.log(`\n${bien} pasadas, ${mal} fallidas`);
 process.exit(mal ? 1 : 0);

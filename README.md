@@ -30,7 +30,7 @@ menú ⋮ → *Agregar a la pantalla principal*.
 |---|---|
 | `admin.html` | los álbumes de obra |
 | `editar.html` | el editor: la página real, tocás un texto o una foto y la cambiás |
-| `calculo.html` | los cálculos de taller, uno por cliente, con el corte del borde a escala. Dos yurtas (doble techo o **simple**: una percha por cruce del trei, tomada por una escuadra metálica como la del piso —por fuera del trei, del bulón del último agujero, doblada al ángulo del techo, con un tornillo 6×40—, y el borde con un cable de acero o, a elección, el anillo periférico), el piso de doble capa con aislación (del alto del tirante) o simple, sólo la capa de arriba y sin aislación, ventanas además de las aberturas de piso (que se compran hechas: cada una recibe un **chasis recto** de eucalipto, `chasis()` de `calculo-geo.js`: el suelo recto adentro y en arco afuera, con el tope de atrás y los laterales tallados, las cajas de los montantes, la caída y el goterón; dos montantes paralelos —el vano es un rectángulo— con los cantos de adentro y de afuera al ángulo de la curva, atan((vano/2 + montante/2)/radio del trei); en la simple sin anillo, el cabezal cepillado a 30° donde apoyan las perchas, con la arista en curva; la tapa interior en el canto de adentro, al ras del vano, y la exterior de 6 × 2 con la ranura que abraza la nariz y tensa la lona; geo-14 / 3d-17, 18-nov-2026), y dos remates del toono (cuarto de domo o **sobrealto con ventanas**). La pestaña «Para el cliente» arma el link de la propuesta |
+| `calculo.html` | los cálculos de taller, uno por cliente, con el corte del borde a escala. Dos yurtas (doble techo o **simple**: una percha por cruce del trei, tomada por una escuadra metálica como la del piso —por fuera del trei, del bulón del último agujero, doblada al ángulo del techo, con un tornillo 6×40—, y el borde con un cable de acero o, a elección, el anillo periférico), el piso de doble capa con aislación (del alto del tirante) o simple, sólo la capa de arriba y sin aislación, ventanas además de las aberturas de piso (que se compran hechas: cada una recibe un **chasis recto** de eucalipto, `chasis()` de `calculo-geo.js`: el suelo recto adentro y en arco afuera, con el tope de atrás y los laterales tallados, las cajas de los montantes, la caída y el goterón; dos montantes paralelos —el vano es un rectángulo— con los cantos de adentro y de afuera al ángulo de la curva, atan((vano/2 + montante/2)/radio del trei); en la simple sin anillo, el cabezal cepillado a 30° donde apoyan las perchas, con la arista en curva; la tapa interior en el canto de adentro, al ras del vano, y la exterior de 6 × 2 con la ranura que abraza la nariz y tensa la lona; geo-14 / 3d-17, 18-nov-2026), y dos remates del toono (cuarto de domo o **sobrealto con ventanas**). La pestaña «Para el cliente» arma el link de la propuesta; «Capas», las capas del muro y del techo con sus criterios (`capas.js`); y la lista muestra, con el permiso `presupuestos`, los **presupuestos de obra** con su costo de materiales |
 | `propuesta.html` | **pública, por link** (`?p=<token>`): la propuesta para un cliente: el 3D de su yurta con cada componente para prender y apagar, un resumen de lo que lleva (madera en m³, placas, lona y tela, de `resumen()`), la descripción, el precio si se puso y, debajo, la lista de materiales del modelo sin precios (`materiales()`, también en la pestaña «Piezas»); vence. Sin SDK ni sesión (REST), `noindex`, fuera del SHELL. El token es la llave (`entregas/` en `REGLAS.txt`) |
 | `usuarios.html` | quién entra y qué puede hacer |
 | `diagnostico.html` | las pruebas de conexión |
@@ -41,7 +41,7 @@ menú ⋮ → *Agregar a la pantalla principal*.
 |---|---|
 | `calculo-geo.js` | la geometría de Cálculos, sin navegador; su banco es `pruebas-calculo.mjs` |
 | `capas.js` | las capas del muro y del techo, de adentro hacia afuera, y los criterios que las deciden, con su fecha: la pestaña «Capas» de Cálculos los pinta tal cual. Sin precios ni proveedores |
-| `presupuestos.html` | presupuestos y proveedores: los materiales de una obra con su **costo de materiales** por sección (lo cotizado o, si no hay, su precio de referencia; lo que no tiene ninguno, resaltado), un pedido de precio por proveedor con su hilo y sus precios, y la comparación por moneda (UYU, USD, BRL, nunca sumadas). Privado (permiso `presupuestos`) |
+| `presupuestos.html` | presupuestos y proveedores: los materiales de una obra con su **costo de materiales** por sección (lo cotizado o, si no hay, su precio de referencia; lo que no tiene ninguno, resaltado; los opcionales aparte, con el total de cada opción y sin sumar), un pedido de precio por proveedor con su hilo y sus precios, y la comparación por moneda (UYU, USD, BRL, nunca sumadas). Privado (permiso `presupuestos`) |
 | `presupuestos.js` | la lógica de presupuestos, sin Firebase ni DOM: leer un precio, comparar, totales por moneda, el costo de materiales por sección (`costoDeMateriales`), el mail del pedido; su banco es `pruebas-presupuestos.mjs` |
 | `consultas-ia.js` | leer con IA (Gemini, por `claude-proxy`) la captura de una conversación y sumarla a la consulta sin repetir; su banco es `pruebas-consultas.mjs` |
 | `calculo-3d.js` | el modelo 3D de Cálculos, arriba de la pestaña «Medidas», con cada parte por separado y la que se mide resaltada: las piezas salen sin navegador (`piezas3d`) y three.js baja del CDN recién al abrir la pestaña |
@@ -839,15 +839,15 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 | `admin.html` | `PANEL` | `admin-20` |
 | `editar.html` | `EDITOR` | `editar-23` |
 | `taller.html` | `SELLO` | `andamio-3` |
-| `calculo.html` | `CY.PANEL` | `calculo-37` |
+| `calculo.html` | `CY.PANEL` | `calculo-38` |
 | `capas.js` | `SELLO_CAPAS` | `capas-1` |
 | `calculo-geo.js` | `SELLO_GEO` | `geo-16` |
 | `calculo-3d.js` | `SELLO_3D` | `3d-19` |
 | `propuesta.html` | (en el comentario) | `propuesta-7` |
 | `consultas.html` | `CY.PANEL` | `consultas-4` |
 | `consultas-ia.js` | `VERSION_CONSULTAS_IA` | `consultas-ia-2` |
-| `presupuestos.html` | `CY.PANEL` | `presupuestos-4` |
-| `presupuestos.js` | `VERSION_PRESUPUESTOS` | `presupuestos-js-4` |
+| `presupuestos.html` | `CY.PANEL` | `presupuestos-5` |
+| `presupuestos.js` | `VERSION_PRESUPUESTOS` | `presupuestos-js-5` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-4` |
 | `diagnostico.html` | `CY.PANEL` | `diagnostico-8` |
 | `idiomas.js` | `SELLO` | `idiomas-5` |

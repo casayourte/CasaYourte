@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
 <link rel="icon" href="./icono-192.png">
 <!--
-  presupuestos.html — Presupuestos y proveedores. Sello: presupuestos-4 (ver CY.PANEL)
+  presupuestos.html — Presupuestos y proveedores. Sello: presupuestos-5 (ver CY.PANEL)
 
   3-nov-2026, Mauro: «una lista que sea presupuestos y proveedores contando el
   estado del pedido, lo que fue solicitado y esperando, seguir ahí la línea de
@@ -30,6 +30,8 @@
   muestra el COSTO DE MATERIALES de cada uno —lo cotizado, o si no su precio de referencia— con el total por
   sección y el general, por moneda (UYU, USD y desde ahora BRL, nunca sumadas), y marca en ámbar lo que no
   tiene ningún precio. No incluye mano de obra, flete ni herramientas.
+  presupuestos-5 (25-nov-2026): los OPCIONALES (un material con `opcional`) van en su propia tabla, con el total
+  de cada opción, y no suman al costo de materiales.
 
   PRIVADO: precios y proveedores no van nunca al repositorio. Lo ve y lo escribe
   quien tiene el permiso `presupuestos`. El agente lo lee y lo crea o completa
@@ -200,7 +202,7 @@ import { ESTADOS, RUBROS, MONEDAS, materialesDe, comparativa, totalesPorProveedo
          estadoTrasHilo, estadoTrasPrecios, leerPrecio, mailDePedido,
          ultimaRespuesta, esNueva, respuestasRecientes } from "./presupuestos.js";
 
-CY.PANEL = "presupuestos-4";
+CY.PANEL = "presupuestos-5";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 if (!await CY.conFirebase(cargarFirebase)) throw new Error("sin SDK");
@@ -332,6 +334,7 @@ function pintarObra() {
       <table>${cm.secciones.map((x) => `<tr><td>${esc(RUBRO[x.rubro] || x.rubro)}</td><td class="n" style="text-align:right">${porMoneda(x.total)}</td><td class="gris">${
         x.faltan ? `<span class="chip falta">faltan ${x.faltan}</span>` : ""}</td></tr>`).join("")}</table>
     </div>
+    ${cm.opcionales.length ? `<p class="gris" style="font-size:.82rem">Opcionales, aparte (abajo): ${cm.opcionales.map((o) => `${esc(o.opcion)} ${porMoneda(o.total)}`).join(" · ")}</p>` : ""}
     ${cm.faltan.length ? `<p style="color:var(--wip, #d6a33c);font-size:.86rem"><b>Falta conseguir precio:</b> ${cm.faltan.map((m) => esc(m.nombre)).join(" · ")}</p>` : ""}
     <div class="desliza"><table class="t"><tr><th>Material</th><th>Cantidad</th><th>Costo</th></tr>` +
     cm.secciones.map((x) => `<tr><td colspan="3" class="rubro">${esc(RUBRO[x.rubro] || x.rubro)}</td></tr>` +
@@ -339,7 +342,15 @@ function pintarObra() {
         <td class="n">${esc(String(m.cantidad))} ${esc(m.unidad || "")}</td>
         <td class="n">${costo.tipo === "falta" ? "" : esc(plataRedonda(costo.total, costo.moneda))}<div><span class="chip ${esc(costo.tipo)}"${costo.fuente ? ` title="${esc(costo.fuente)}"` : ""}>${esc(TIPO[costo.tipo])}</span></div></td></tr>`).join("") +
       `<tr class="subtotal"><td>Subtotal ${esc(RUBRO[x.rubro] || x.rubro)}</td><td></td><td class="n">${porMoneda(x.total)}</td></tr>`).join("") +
-    `<tr class="subtotal"><td><b>Costo de materiales</b></td><td></td><td class="n"><b>${porMoneda(cm.total)}</b></td></tr></table></div>`;
+    `<tr class="subtotal"><td><b>Costo de materiales</b></td><td></td><td class="n"><b>${porMoneda(cm.total)}</b></td></tr></table></div>` +
+    // presupuestos-5: los OPCIONALES, aparte y sin sumar al costo de materiales.
+    (cm.opcionales.length ? `<h2 style="margin-top:1.2rem">Opcionales · no suman al costo de materiales</h2>
+      <div class="desliza"><table class="t"><tr><th>Material</th><th>Cantidad</th><th>Costo</th></tr>` +
+      cm.opcionales.map((o) => `<tr><td colspan="3" class="rubro">Opción ${esc(o.opcion)}</td></tr>` +
+        o.filas.map(({ material: m, costo }) => `<tr class="${costo.tipo === "falta" ? "falta" : ""}"><td>${esc(m.nombre)}${m.especificacion ? `<div class="gris" style="font-size:.78rem">${esc(m.especificacion)}</div>` : ""}</td>
+          <td class="n">${esc(String(m.cantidad))} ${esc(m.unidad || "")}</td>
+          <td class="n">${costo.tipo === "falta" ? "" : esc(plataRedonda(costo.total, costo.moneda))}<div><span class="chip ${esc(costo.tipo)}"${costo.fuente ? ` title="${esc(costo.fuente)}"` : ""}>${esc(TIPO[costo.tipo])}</span></div></td></tr>`).join("") +
+        `<tr class="subtotal"><td>Total de la opción ${esc(o.opcion)}</td><td></td><td class="n">${porMoneda(o.total)}</td></tr>`).join("") + "</table></div>" : "");
 
   const ps = pedidos.filter((p) => p.presupuesto === obra.id);
   const nom = (id) => (proveedores.find((p) => p.id === id) || {}).nombre || id;

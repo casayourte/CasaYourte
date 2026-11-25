@@ -122,6 +122,13 @@
     para cada uno: esto es lo mismo, con las medidas ya verificadas contra el modelo.</p>
     <div id="proyectos"><div class="empty">Cargando…</div></div>
 
+    <div id="obras-bloque" class="hide">
+      <h2 style="margin:1.6rem 0 .3rem">Presupuestos de obra</h2>
+      <p class="gris">El costo de materiales de cada obra (sin mano de obra, flete ni herramientas), con lo que
+      todavía no tiene precio y los opcionales aparte. Se abre en Presupuestos.</p>
+      <div id="obras"></div>
+    </div>
+
     <h2 style="margin:1.6rem 0 .3rem">Links para clientes</h2>
     <p class="gris">Cada propuesta mandada, con su estado. Desde acá se copia, se ve como el cliente,
     se extiende o se desactiva; y si un link no tiene cálculo (lo armó Claude desde el chat), «Pasar
@@ -244,8 +251,9 @@ import { CY } from "./nucleo.js";
 import { calc as calcGeo, corte, vanos, materiales, NOMBRES_MAT, renglonMat } from "./calculo-geo.js";
 import { montar as montar3d, PARTES as PARTES3D, CAMPO_PARTES } from "./calculo-3d.js";
 import { CAPAS, CRITERIOS } from "./capas.js";
+import { costoDeMateriales } from "./presupuestos.js";
 
-CY.PANEL = "calculo-37";
+CY.PANEL = "calculo-38";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 // ── El SDK se baja acá, y recién después arranca la pantalla ────────────────
@@ -897,6 +905,35 @@ async function cargarProyectos() {
     $("proyectos").innerHTML = `<div class="empty">${esc(CY.explicar(e))}</div>`;
   }
   cargarLinks();
+  cargarObras();
+}
+
+/* ═══ los presupuestos de obra (calculo-38) ═════════════════
+   Mauro, 25-nov-2026: «agrega el presupuesto de Rita en esta pantalla». Con el
+   permiso 'presupuestos', la lista de Cálculos muestra cada obra de
+   presupuestos/ con su costo de materiales (presupuestos.js, la misma cuenta que
+   la pestaña Materiales), lo que falta y los opcionales; el toque abre la obra. */
+const plataObra = (t) => Object.entries(t).map(([m, n]) => ({ USD: "US$ ", BRL: "R$ " }[m] || "$ ") + Math.round(n).toLocaleString("es-UY")).join(" · ") || "—";
+async function cargarObras() {
+  if (!CY.puede("presupuestos")) return;
+  $("obras-bloque").classList.remove("hide");
+  try {
+    const [a, b, c] = await Promise.all(["presupuestos", "presupuesto_pedidos", "proveedores"].map(n => getDocs(collection(db, n))));
+    const peds = b.docs.map(d => ({ id: d.id, ...d.data() })), provs = c.docs.map(d => ({ id: d.id, ...d.data() }));
+    const obras = a.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((x, y) => String(y.actualizadoISO || y.creadoISO || "").localeCompare(String(x.actualizadoISO || x.creadoISO || "")));
+    $("obras").innerHTML = obras.length ? obras.map(o => {
+      const cm = costoDeMateriales(o, peds, provs);
+      const ops = cm.opcionales.map(x => `${esc(x.opcion)}: ${esc(plataObra(x.total))}`).join(" · ");
+      return `<a class="tarj card pulsa" href="./presupuestos.html?o=${encodeURIComponent(o.id)}" style="text-decoration:none;color:inherit">
+        <div class="grow"><h3>${esc(o.titulo || o.id)}</h3>
+          <div class="sub">Costo de materiales: <b>${esc(plataObra(cm.total))}</b>${cm.faltan.length ? ` · <span style="color:var(--wip, #d6a33c)">sin precio: ${cm.faltan.length}</span>` : ""}</div>
+          ${ops ? `<div class="sub">Opcionales (no suman) · ${ops}</div>` : ""}</div>
+        <span class="material-icons" style="color:var(--dim)">chevron_right</span></a>`; }).join("")
+      : '<div class="empty">Todavía no hay presupuestos de obra.</div>';
+  } catch (e) {
+    $("obras").innerHTML = `<div class="empty">${esc(CY.explicar(e))}</div>`;
+  }
 }
 
 /* ═══ los links para clientes (calculo-32) ══════════════════
@@ -1118,7 +1155,7 @@ async function abrir3d() {
 abrir3d();
 
 /* ═══ pestañas ═════════════════════════════════════════════ */
-// calculo-37 (25-nov-2026, Mauro): «Capas», el registro de las capas del muro y del techo y de los criterios que las deciden (capas.js).
+// calculo-38 (25-nov-2026): en la lista, «Presupuestos de obra» (cargarObras). calculo-37 (25-nov-2026, Mauro): «Capas», el registro de las capas del muro y del techo y de los criterios que las deciden (capas.js).
 const PEST = [["datos","Medidas"],["piezas","Piezas"],["corte","Corte"],["croquis","Croquis"],["capas","Capas"],["cliente","Para el cliente"],["ficha","Ficha"]];
 $("pest").innerHTML = PEST.map(([k,t],i) =>
   `<button data-p="${k}" class="${i===0?"on":""}">${t}</button>`).join("");

@@ -487,6 +487,9 @@ ok("calculo-3d.js está en el SHELL", /'\.\/calculo-3d\.js'/.test(sw));
   ok("capas.js no lleva precios ni proveedores (el repo es público)", !/R\$|US\$|\bUYU\b|\bBRL\b|Viniplast|Trisoft|Placo/.test(txt));
   ok("calculo.html importa capas.js y tiene la pestaña Capas", /from "\.\/capas\.js"/.test(html) && /\["capas","Capas"\]/.test(html) && /id="t-capas"/.test(html));
   ok("capas.js está en el SHELL", /'\.\/capas\.js'/.test(sw));
+  // calculo-38: los presupuestos de obra en la lista, sólo con el permiso y con la cuenta de presupuestos.js
+  ok("la lista de Cálculos muestra los presupuestos de obra con su costo de materiales", /id="obras"/.test(html) && /from "\.\/presupuestos\.js"/.test(html)
+    && /if \(!CY\.puede\("presupuestos"\)\) return;/.test(html) && /costoDeMateriales\(o, peds, provs\)/.test(html) && /presupuestos\.html\?o=/.test(html));
 }
 
 console.log(`\n${bien} bien, ${mal} mal`);

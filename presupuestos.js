@@ -1,6 +1,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // presupuestos.js — Pedir precio de materiales a proveedores y compararlos.
-// Sello: presupuestos-js-4 (25-nov-2026: entra el REAL (BRL) y el COSTO DE MATERIALES por sección:
+// Sello: presupuestos-js-5 (25-nov-2026: los OPCIONALES —un material con `opcional: "<la opción>"`— se muestran
+//   aparte, con su subtotal por opción, y NO suman al costo de materiales; Mauro: «parquet flotante o de madera, como opcionales»)
+// presupuestos-js-4 (25-nov-2026: entra el REAL (BRL) y el COSTO DE MATERIALES por sección:
 //   lo cotizado por un proveedor, y si no hay, un precio de referencia; lo que no tiene ninguno, a la vista)
 // presupuestos-js-3 (17-nov-2026: entra el rubro «vidrios», para la vidriería del sobrealto)
 //
@@ -26,7 +28,7 @@
 // Sin Firebase y sin DOM: lo prueba `node pruebas-presupuestos.mjs`.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const VERSION_PRESUPUESTOS = "presupuestos-js-4";
+export const VERSION_PRESUPUESTOS = "presupuestos-js-5";
 
 export const ESTADOS = [
   ["por_pedir", "Por pedir: el mail está listo y sin mandar"],
@@ -224,10 +226,20 @@ export function costoDe(fila) {
 }
 
 export function costoDeMateriales(pres, pedidos, proveedores) {
-  const secciones = [];
+  const secciones = [], opcionales = [];
   const total = {}, cuenta = { cotizado: 0, referencia: 0, falta: 0 };
   for (const fila of comparativa(pres, pedidos, proveedores)) {
     const costo = costoDe(fila);
+    // Un OPCIONAL va a su opción, con su subtotal, y no toca el total ni la cuenta de lo que falta.
+    const op = txt(fila.material.opcional, 80);
+    if (op) {
+      let o = opcionales.find((x) => x.opcion === op);
+      if (!o) opcionales.push(o = { opcion: op, filas: [], total: {}, faltan: 0 });
+      o.filas.push({ material: fila.material, costo });
+      if (costo.tipo === "falta") o.faltan++;
+      else o.total[costo.moneda] = (o.total[costo.moneda] || 0) + costo.total;
+      continue;
+    }
     cuenta[costo.tipo]++;
     let sec = secciones[secciones.length - 1];
     if (!sec || sec.rubro !== fila.material.rubro) {
@@ -239,5 +251,6 @@ export function costoDeMateriales(pres, pedidos, proveedores) {
     sec.total[costo.moneda] = (sec.total[costo.moneda] || 0) + costo.total;
     total[costo.moneda] = (total[costo.moneda] || 0) + costo.total;
   }
-  return { secciones, total, cuenta, faltan: secciones.flatMap((x) => x.filas.filter((f) => f.costo.tipo === "falta").map((f) => f.material)) };
+  opcionales.sort((a, b) => a.opcion.localeCompare(b.opcion));
+  return { secciones, opcionales, total, cuenta, faltan: secciones.flatMap((x) => x.filas.filter((f) => f.costo.tipo === "falta").map((f) => f.material)) };
 }
