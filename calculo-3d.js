@@ -1,4 +1,7 @@
 // calculo-3d.js — el modelo en 3D de la estructura, con las medidas del cálculo.
+// Sello: 3d-21 (27-nov-2026, Mauro): el 3D POR PIEZA de la lista de materiales (pieza3d.js): `GRUPOS_MAT` dice qué partes del
+// modelo es cada renglón de la lista; `planoDe` saca la TELA DESPLEGADA (para el taller) con sus medidas, y `montar` la dibuja
+// echada en el piso con rótulos y cotas (4.º parámetro `planos`); `arriba()` mira el piso desde arriba.
 // Sello: 3d-20 (26-nov-2026, Mauro): con el SOBREALTO no va la tapa aislante (las ventanas son laterales: no entra
 // el sol cenital), y con ella se va la manivela, que además ya no se pone en el ángulo 0 sino en el medio del primer
 // arco libre del muro (en la propuesta de Anita quedaba flotando en una puerta); la lona EN PAÑOS (`lona_tipo` 2,
@@ -82,7 +85,7 @@
 // de abajo (donde apoyan los tirantes). Todo sale de calc(P): si cambia una
 // medida, cambia el modelo.
 
-export const SELLO_3D = "3d-20";
+export const SELLO_3D = "3d-21";
 import { escuadraSimple, chasis } from "./calculo-geo.js";
 export const THREE_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/+esm";
 export const ORBIT_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js/+esm";
@@ -142,6 +145,70 @@ export const PARTES = [
   ["lona_muro",       "Muro · tela náutica", "capa"],
 ];
 export const GRUPOS = PARTES;   // el nombre de 3d-1
+
+// Qué partes del modelo es cada renglón de `materiales()` (calculo-geo.js): la clave es la `k` del renglón y los valores,
+// las claves de PARTES. Lo que no tiene dibujo (celulosa, tornillos, bisagras, compases) no está.
+export const GRUPOS_MAT = {
+  pilares: ["pilares"], vigas: ["vigas"], tirantes: ["tirantes"], anillo_piso: ["anillo_piso"], anillo_piso_lis: ["anillo_piso"],
+  osb: ["osb_inf", "osb_sup"], trei: ["trei"], bulones: ["trei"], zocalos: ["zocalos"], anillo: ["anillo"],
+  montantes: ["montantes"], montantes_sueltos: ["montantes"], tapas: ["tapas"], tapas_ext: ["tapas"], cabezales: ["cabezales"],
+  pisos_ab: ["suelo_ab"], puertas: ["montantes", "suelo_ab"], ventanas: ["vidrios", "montantes"],
+  perchas: ["perchas"], cable: ["cable"], triangulos: ["triangulos"], radiales: ["radiales"], cal: ["cal"], cinta: ["cinta"],
+  cinta_alero: ["cinta_alero"], toono: ["toono"], sobrealto: ["sobrealto", "ventanas"], vidrio: ["ventanas"],
+  sob_solera: ["sobrealto"], sob_parantes: ["sobrealto"], sob_limatesas: ["sobrealto"], sob_marcos: ["ventanas"],
+  domo: ["domo"], policarbonato: ["domo"], escuadras: ["escuadras"],
+  lona_techo: ["lona_techo"], tela_muro: ["lona_muro"], algodon: ["algodon_techo", "algodon_muro"], freno: ["freno_techo", "freno_muro"],
+  aislacion_techo: ["aislacion_techo"], aislacion_muro: ["aislacion_muro"], tyvek: ["tyvek"],
+};
+
+// La TELA DESPLEGADA como dibujo plano (coordenadas en m, centrado), a partir de `desplegados()` de calculo-geo.js:
+// triángulos por color, cotas (segmentos) y rótulos con las medidas. Sin navegador.
+export function planoDe(d, fmt = (n, k = 2) => n.toLocaleString("es-UY", { minimumFractionDigits: k, maximumFractionDigits: k })) {
+  const m = (n) => fmt(n) + " m", grados = (n) => fmt(n, 1) + "°";
+  const matDe = (g) => g.startsWith("lona_muro") ? "lona_muro" : g.includes("algodon") ? "algodon" : g.includes("freno") ? "freno" : g.includes("aislacion") ? "aislacion" : g === "tyvek" ? "tyvek" : "lona";
+  const partes = [], cotas = [], rot = [];
+  const fan = (r1, r2, a0, a1, mat) => {
+    const n = Math.max(2, Math.ceil(Math.abs(a1 - a0) / 3)), tri = [];
+    for (let i = 0; i < n; i++) {
+      const t1 = (a0 + (a1 - a0) * i / n) * Math.PI / 180, t2 = (a0 + (a1 - a0) * (i + 1) / n) * Math.PI / 180;
+      const A = [r1 * Math.cos(t1), r1 * Math.sin(t1)], B = [r2 * Math.cos(t1), r2 * Math.sin(t1)];
+      const Cc = [r2 * Math.cos(t2), r2 * Math.sin(t2)], D = [r1 * Math.cos(t2), r1 * Math.sin(t2)];
+      tri.push(...A, ...B, ...Cc, ...A, ...Cc, ...D);
+    }
+    partes.push({ tri, mat });
+  };
+  if (d.forma === "sector") {
+    const mid = 90;
+    if (d.cono && d.cono < d.ang) {
+      fan(d.rInt, d.rExt, mid - d.cono / 2, mid + d.cono / 2, "lona");
+      fan(d.rInt, d.rExt, mid + d.cono / 2, mid - d.cono / 2 + d.ang, "lona2");   // la lengüeta, con todo el sobrante del cono
+    } else fan(d.rInt, d.rExt, mid - d.ang / 2, mid + d.ang / 2, matDe(d.g));
+    cotas.push([0, d.rInt, 0, d.rExt]);
+    rot.push({ p: [0, (d.rInt + d.rExt) / 2], t: "R " + m(d.rExt - 0) + (d.rInt > 0.05 ? "" : "") });
+    if (d.rInt > 0.05) rot.push({ p: [0, d.rInt * 0.5], t: "agujero R " + m(d.rInt) });
+    if (d.cono && d.cono < d.ang) {
+      rot.push({ p: [d.rExt * 0.5, d.rExt * 0.25], t: "cono cerrado " + grados(d.cono) });
+      rot.push({ p: [0, -(d.rInt + d.rExt) / 2], t: "lengüeta " + grados(d.ang - d.cono) });
+      rot.push({ p: [0, -d.rExt - 0.25 * Math.max(1, d.rExt / 4)], t: "borde ext. " + m(d.arcoExt) });
+    } else {
+      rot.push({ p: [0, d.rExt + 0.25 * Math.max(1, d.rExt / 4)], t: "arco ext. " + m(d.arcoExt) + " · abre " + grados(d.ang) });
+    }
+  } else {
+    const w = d.ancho, h = d.alto, x0 = -w / 2, x1 = w / 2, y0 = -h / 2, y1 = h / 2;
+    partes.push({ tri: [x0, y0, x1, y0, x1, y1, x0, y0, x1, y1, x0, y1], mat: matDe(d.g) });
+    cotas.push([x0, y0 - 0.1 * Math.max(1, h), x1, y0 - 0.1 * Math.max(1, h)], [x0 - 0.1 * Math.max(1, w / 8), y0, x0 - 0.1 * Math.max(1, w / 8), y1]);
+    rot.push({ p: [0, y0 - 0.25 * Math.max(1, h)], t: "ancho " + m(w) + " (2π R)" });
+    rot.push({ p: [x0 - 0.35 * Math.max(1, w / 8), 0], t: "alto " + m(h) });
+  }
+  // centrar en el origen (la caja de los triángulos)
+  let a = Infinity, b = Infinity, c = -Infinity, e = -Infinity;
+  for (const pt of partes) for (let i = 0; i < pt.tri.length; i += 2) { a = Math.min(a, pt.tri[i]); c = Math.max(c, pt.tri[i]); b = Math.min(b, pt.tri[i + 1]); e = Math.max(e, pt.tri[i + 1]); }
+  const cx = (a + c) / 2, cy = (b + e) / 2;
+  for (const pt of partes) pt.tri = pt.tri.map((v, i) => v - (i % 2 ? cy : cx));
+  const cotas2 = cotas.map(([p, q, r, s2]) => [p - cx, q - cy, r - cx, s2 - cy]);
+  const rot2 = rot.map(x => ({ t: x.t, p: [x.p[0] - cx, x.p[1] - cy] }));
+  return { partes, cotas: cotas2, rot: rot2, ancho: c - a, alto: e - b };
+}
 
 // Qué partes cambian con cada medida de la pestaña «Medidas»: al tocar un
 // campo, esas se resaltan y el resto queda en transparencia.
@@ -837,7 +904,7 @@ const OPACIDAD = { freno: 0.6, tyvek: 0.75, vidrio: 0.3 };   // el OSB, opaco de
 
 // El dibujo. Devuelve { actualizar, ver, resaltar, encuadrar, destruir } o
 // tira si three.js no bajó: quien llama lo ataja y lo dice en la página.
-export async function montar(caja, P, C, visibles) {
+export async function montar(caja, P, C, visibles, planos = {}) {
   const THREE = await import(THREE_URL);
   const { OrbitControls } = await import(ORBIT_URL);
   const ancho = () => Math.max(260, caja.clientWidth);
@@ -917,6 +984,28 @@ export async function montar(caja, P, C, visibles) {
       grupos[g].add(im);
     }
     for (const [k, g] of Object.entries(grupos)) { g.visible = visibles[k] !== false; esc.add(g); }
+    // 3d-21: las TELAS DESPLEGADAS, echadas en el piso y centradas, con sus cotas y rótulos. Cada una es el grupo
+    // «plano:<parte>» y arranca apagada (sólo se prende si `visibles` la pide).
+    for (const [pg, pl] of Object.entries(planos || {})) {
+      const grp = new THREE.Group(), y = suelo + 0.004, tam = Math.max(pl.ancho, pl.alto, 1);
+      for (const pt of pl.partes) {
+        const v = []; for (let i = 0; i < pt.tri.length; i += 2) v.push(pt.tri[i], y, -pt.tri[i + 1]);
+        const geo = new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.Float32BufferAttribute(v, 3)); geo.computeVertexNormals();
+        grp.add(new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: COLORES[pt.mat] || 0xcccccc, side: THREE.DoubleSide })));
+      }
+      const lv = []; for (const [x1, y1, x2, y2] of pl.cotas) lv.push(x1, y + 0.01, -y1, x2, y + 0.01, -y2);
+      const lg = new THREE.BufferGeometry(); lg.setAttribute("position", new THREE.Float32BufferAttribute(lv, 3));
+      grp.add(new THREE.LineSegments(lg, new THREE.LineBasicMaterial({ color: 0xf3e7cf })));
+      for (const r of pl.rot) {
+        const cv = document.createElement("canvas"); cv.width = 512; cv.height = 96;
+        const cx2 = cv.getContext("2d"); cx2.fillStyle = "rgba(20,18,16,.88)"; cx2.fillRect(0, 0, 512, 96);
+        cx2.fillStyle = "#f3e7cf"; cx2.font = "bold 40px sans-serif"; cx2.textAlign = "center"; cx2.textBaseline = "middle"; cx2.fillText(r.t, 256, 48, 496);
+        const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), depthTest: false, transparent: true }));
+        const ancho2 = Math.max(1.6, tam * 0.34); sp.scale.set(ancho2, ancho2 * 96 / 512, 1);
+        sp.position.set(r.p[0], y + 0.05, -r.p[1]); sp.renderOrder = 10; grp.add(sp);
+      }
+      grp.visible = visibles["plano:" + pg] === true; grupos["plano:" + pg] = grp; esc.add(grp);
+    }
     // La cuadrícula de 1 m, en el suelo: la escala a la vista.
     if (rejilla) { esc.remove(rejilla); rejilla.geometry.dispose(); }
     const lado = 2 * Math.ceil((C.Rp || C.R || 4) + 1);
@@ -949,6 +1038,8 @@ export async function montar(caja, P, C, visibles) {
     ver(k, on) { visibles[k] = on; if (grupos[k]) grupos[k].visible = on; pide = true; },
     resaltar(partes) { resaltadas = partes || []; aplicarResalte(); pide = true; },
     encuadrar() { encuadrar(); pide = true; },
+    // 3d-21: el piso visto desde arriba (la tela desplegada), a la distancia que pide su tamaño.
+    arriba(tam) { const d = Math.max(2, tam) * 1.25; cam.position.set(0, medida.suelo + d, d * 0.35); ctl.target.set(0, medida.suelo, 0); ctl.update(); pide = true; },
     mirar(desde, hacia) { cam.position.set(...desde); ctl.target.set(...hacia); ctl.update(); pide = true; },
     destruir() { vivo = false; ro.disconnect(); ren.dispose(); },
   };

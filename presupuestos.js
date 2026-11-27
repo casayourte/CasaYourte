@@ -254,3 +254,22 @@ export function costoDeMateriales(pres, pedidos, proveedores) {
   opcionales.sort((a, b) => a.opcion.localeCompare(b.opcion));
   return { secciones, opcionales, total, cuenta, faltan: secciones.flatMap((x) => x.filas.filter((f) => f.costo.tipo === "falta").map((f) => f.material)) };
 }
+
+
+// ── la pieza del 3D que es un material (presupuestos-js-6, 27-nov-2026, Mauro) ──
+// Un material de la obra es texto libre; la pieza del cálculo (la `k` de materiales() en calculo-geo.js) sale de
+// `material.pieza` si alguien la puso, y si no, de lo que dice el nombre. Devuelve la clave o null.
+const REGLAS_PIEZA = [
+  [/tela.*(muro|pared)|lona.*(muro|pared)/, "tela_muro"], [/tyvek/, "tyvek"], [/algod/, "algodon"], [/freno/, "freno"],
+  [/aislaci.*muro|lana.*muro/, "aislacion_muro"], [/aislaci|lana de|corcho/, "aislacion_techo"],
+  [/lona|pvc/, "lona_techo"], [/policarb/, "policarbonato"], [/domo/, "domo"], [/vidrio/, "vidrio"],
+  [/osb|tablero/, "osb"], [/tirante/, "tirantes"], [/percha/, "perchas"], [/viga/, "vigas"], [/pilar|poste/, "pilares"],
+  [/trei/, "trei"], [/zocalo/, "zocalos"], [/triangul/, "triangulos"], [/montante/, "montantes"], [/escuadra/, "escuadras"],
+  [/toono/, "toono"], [/cable/, "cable"], [/cinta/, "cinta"], [/radial/, "radiales"], [/bulon/, "bulones"],
+];
+export function piezaDe(m) {
+  if (m && typeof m.pieza === "string" && m.pieza) return m.pieza;
+  const n = String((m && m.nombre) || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  for (const [re, k] of REGLAS_PIEZA) if (re.test(n)) return k;
+  return null;
+}

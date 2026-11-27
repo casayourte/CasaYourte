@@ -1,4 +1,6 @@
 // calculo-geo.js — la geometría de la yurta, sin navegador y sin Firebase.
+// Sello: geo-17 (27-nov-2026, Mauro): `desplegados(P, C)`: cada TELA con su forma plana para el taller (la lona del techo en cono, abierta;
+//   las capas del techo, sectores; las del muro, rectángulos), con las medidas; el 3D por pieza de la lista de materiales las dibuja en el piso.
 // Sello: geo-16 (18-nov-2026): EL ANILLO DEL PISO, DE LISTONES CURVADOS (Mauro, 18-nov): en lugar del sándwich
 // colado de 50 × 80, TRES VUELTAS de listón de 40 × 10 (los mismos de la cinta del alero), curvados y colados, que
 // entran de canto en una RANURA que se talla en los tirantes antes de colocar el OSB (al ras de su borde de arriba);
@@ -80,7 +82,7 @@
 // TODO lo que se elige por diseño es un campo de la página: si cambia una
 // medida, cambian los números y el dibujo.
 
-export const SELLO_GEO = "geo-16";
+export const SELLO_GEO = "geo-17";
 
 // El tirante, la viga: cuerdas paralelas del círculo de radio R, con una en el
 // centro y cada `paso` a los dos lados. Devuelve [{x, L, n}] con n = 1 para la
@@ -695,4 +697,36 @@ export function corte(P, C, ancho = 680) {
   const svg2 = `<svg class="corte" viewBox="0 0 ${ancho} ${f(h2)}" role="img" aria-label="Corte del pie del muro y el piso, a escala">${t}</svg>`;
 
   return { svg1, svg2, escala: S };
+}
+
+
+// ── LAS TELAS DESPLEGADAS (geo-17, 27-nov-2026, Mauro: «el techo en un formato de cono… también en formato
+// desplegado en el piso para la confección en el taller, con las medidas»). Cada tela de la lista con su forma
+// PLANA, la que se corta en el taller; la clave es la parte del 3D (`g` de PARTES en calculo-3d.js).
+//   · sector: un anillo abierto con el vértice del cono en el origen. Un punto del techo a r del centro queda a
+//     r ÷ cos del vértice, y el cono cerrado ocupa 360° × cos (lo mismo que la lona plana de arriba).
+//   · rect: el muro desarrollado, 2π R de ancho por el alto.
+// La lona del techo de UNA pieza es el círculo entero (`ang` 360, con `cono` el ángulo que cierra y el resto de
+// lengüeta); en paños no hay cono que cerrar y se muestra la superficie del techo desarrollada.
+export function desplegados(P, C) {
+  const cos = Math.cos(P.ang * Math.PI / 180), out = {};
+  const sector = (g, nombre, extra = {}) => {
+    const d = { g, nombre, forma: "sector", rInt: P.r_toono / cos, rExt: C.Rp / cos, ang: 360 * cos, ...extra };
+    d.arcoExt = d.rExt * d.ang * Math.PI / 180;
+    return d;
+  };
+  const rect = (g, nombre, alto) => ({ g, nombre, forma: "rect", ancho: 2 * Math.PI * C.R, alto });
+  out.lona_techo = sector("lona_techo", P.lona_tipo === 2 ? "Lona del techo, en paños (superficie desarrollada)" : "Lona del techo, pieza plana",
+    P.lona_tipo === 2 ? { rInt: C.lona_r_int, rExt: C.lona_r_ext, ang: C.lona_ang_cono, panos: true }
+                      : { rInt: C.lona_r_int, rExt: C.lona_r_ext, ang: C.lona_ang, cono: C.lona_ang_cono });
+  out.lona_techo.arcoExt = out.lona_techo.rExt * out.lona_techo.ang * Math.PI / 180;
+  out.tyvek = sector("tyvek", "Tyvek del techo");
+  out.algodon_techo = sector("algodon_techo", "Algodón del techo");
+  out.freno_techo = sector("freno_techo", "Freno de vapor del techo");
+  out.aislacion_techo = sector("aislacion_techo", "Aislación del techo");
+  out.lona_muro = rect("lona_muro", "Tela del muro", P.alto + C.alto_piso + 0.1);
+  out.algodon_muro = rect("algodon_muro", "Algodón del muro", P.alto);
+  out.freno_muro = rect("freno_muro", "Freno de vapor del muro", P.alto);
+  out.aislacion_muro = rect("aislacion_muro", "Aislación del muro", P.alto);
+  return out;
 }

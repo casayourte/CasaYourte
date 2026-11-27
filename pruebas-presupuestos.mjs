@@ -3,7 +3,7 @@
 import fs from "node:fs";
 import { leerPrecio, materialesDe, comparativa, totalesPorProveedor, sinCotizar,
          estadoTrasHilo, estadoTrasPrecios, mailDePedido, ESTADO_IDS, RUBRO_IDS,
-         ultimaRespuesta, esNueva, respuestasRecientes, leerRef, costoDeMateriales, MONEDAS } from "./presupuestos.js";
+         ultimaRespuesta, esNueva, piezaDe, respuestasRecientes, leerRef, costoDeMateriales, MONEDAS } from "./presupuestos.js";
 
 let bien = 0, mal = 0;
 const ok = (n, c) => { if (c) bien++; else { mal++; console.log("  ✗ " + n); } };

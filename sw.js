@@ -173,7 +173,7 @@
 //   manivela, que quedaba flotando en una puerta: ahora va en el medio del primer arco libre); «Lona del techo» en
 //   paños, sin la banda ni el cordón en zigzag del cierre en cono.
 // v108 (26-nov-2026) — calculo-41 + propuesta-8: el 3D arranca con todas las capas prendidas (Mauro).
-const VERSION = 'cy-shell-v108';
+const VERSION = 'cy-shell-v109';
 
 // v69 · 29-oct-2026 · `nucleo.js` (nucleo-32, general:C7): CY.explicar usa la tabla
 //   común de `errores.js` del panel (datos) y le suma sus dos causas propias.
@@ -304,6 +304,7 @@ const SHELL = [
   './calculo.html',
   './calculo-geo.js',
   './calculo-3d.js',
+  './pieza3d.js',
   './capas.js',
   './consultas.html',
   './consultas-ia.js',

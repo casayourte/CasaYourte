@@ -512,5 +512,30 @@ ok("calculo-3d.js está en el SHELL", /'\.\/calculo-3d\.js'/.test(sw));
     && /if \(!CY\.puede\("presupuestos"\)\) return;/.test(html) && /costoDeMateriales\(o, peds, provs\)/.test(html) && /presupuestos\.html\?o=/.test(html));
 }
 
+// ── geo-17 / 3d-21 / pieza3d-1 (27-nov-2026, Mauro): el 3D de una pieza de la lista y las telas desplegadas ──
+{
+  const { desplegados, SELLO_GEO } = await import("./calculo-geo.js");
+  const { GRUPOS_MAT, planoDe } = await import("./calculo-3d.js");
+  const { fichaPieza, medidasTela } = await import("./pieza3d.js");
+  const Cx = calc({ ...P }), D = desplegados({ ...P }, Cx), cosA = Math.cos(P.ang * Math.PI / 180);
+  console.log("geo-17 · las telas desplegadas");
+  ok("geo-17: el sello subió", SELLO_GEO === "geo-17");
+  ok("cada tela desplegada es una parte del modelo", Object.keys(D).every(g => PARTES.some(([k]) => k === g)));
+  ok("cada parte de GRUPOS_MAT existe en el modelo", Object.values(GRUPOS_MAT).flat().every(g => PARTES.some(([k]) => k === g)));
+  ok("la lona de una pieza: el círculo entero, con el cono y la lengüeta", D.lona_techo.ang === 360 && cerca(D.lona_techo.cono, Cx.lona_ang_cono, 1e-9) && cerca(D.lona_techo.rExt, Cx.lona_r_ext, 1e-9));
+  ok("una capa del techo cierra 360° × cos", cerca(D.tyvek.ang, 360 * cosA, 1e-9) && cerca(D.tyvek.rExt * cosA, Cx.Rp, 1e-9));
+  ok("el muro desarrollado: 2π R por el alto", cerca(D.algodon_muro.ancho, 2 * Math.PI * Cx.R, 1e-9) && D.algodon_muro.alto === P.alto && cerca(D.lona_muro.alto, P.alto + Cx.alto_piso + 0.1, 1e-9));
+  const pl = planoDe(D.lona_techo), x0 = Math.min(...pl.partes.flatMap(q => q.tri.filter((_, i) => i % 2 === 0))), x1 = Math.max(...pl.partes.flatMap(q => q.tri.filter((_, i) => i % 2 === 0)));
+  ok("el plano de la lona queda centrado y mide el diámetro", cerca(x0 + x1, 0, 1e-6) && cerca(pl.ancho, 2 * Cx.lona_r_ext, 1e-2) && pl.rot.length >= 4);
+  ok("el plano del muro es un rectángulo con ancho y alto rotulados", planoDe(D.freno_muro).rot.some(r => /ancho/.test(r.t)) && planoDe(D.freno_muro).rot.some(r => /alto/.test(r.t)));
+  const fl = fichaPieza({ ...P }, "lona_techo"), ft = fichaPieza({ ...P }, "tirantes");
+  ok("la ficha de la lona trae su tela desplegada y sus medidas", fl.ok && fl.telas.length === 1 && medidasTela(fl.telas[0]).length >= 4 && fl.medidas.length >= 2);
+  ok("la ficha de una pieza de madera no lleva telas", ft.ok && ft.telas.length === 0 && ft.grupos.includes("tirantes"));
+  ok("una pieza sin dibujo lo dice, sin romper", fichaPieza({ ...P }, "tornillos").ok === false && fichaPieza({}, "tirantes").ok === false);
+  const sw = readFileSync(new URL("./sw.js", import.meta.url), "utf8"), pr = readFileSync(new URL("./presupuestos.html", import.meta.url), "utf8");
+  ok("pieza3d.js está en el SHELL", /'\.\/pieza3d\.js'/.test(sw));
+  ok("Presupuestos abre el 3D de una pieza con el cálculo vinculado, sólo con el permiso de cálculos", /import\("\.\/pieza3d\.js"\)/.test(pr) && /data-3d=/.test(pr) && /id="o-calculo"/.test(pr) && /CY\.puede\("calculo"\)/.test(pr));
+}
+
 console.log(`\n${bien} bien, ${mal} mal`);
 process.exit(mal ? 1 : 0);

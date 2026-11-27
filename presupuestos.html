@@ -76,6 +76,11 @@
   .resp .snip{font-size:.82rem;color:var(--dim);margin-top:.2rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .resp.leida{opacity:.7}
   .sabemos{white-space:pre-wrap;font-size:.86rem}
+  tr.ofs td{padding-top:0;border-bottom:1px solid var(--line)}
+  .of{display:flex;gap:.5rem;flex-wrap:wrap;align-items:baseline;font-size:.8rem;padding:.12rem 0;cursor:pointer}
+  .of .nom{min-width:6.5rem}
+  .vinculo{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin:.6rem 0;font-size:.82rem}
+  .vinculo select{background:var(--ink2);color:inherit;border:1px solid var(--line);border-radius:var(--r);padding:.3rem .5rem;font:inherit}
   tr.falta td{background:rgba(214,163,60,.13)}
   tr.falta td:first-child{box-shadow:inset 3px 0 0 var(--wip, #d6a33c)}
   .chip.falta{color:var(--wip, #d6a33c);border-color:var(--wip, #d6a33c)}
@@ -128,11 +133,16 @@
     <div class="tabs" id="tabsObra">
       <button data-tab="materiales" class="on">Materiales</button>
       <button data-tab="pedidos">Pedidos</button>
-      <button data-tab="comparar">Comparar</button>
     </div>
     <div id="t-materiales"></div>
     <div id="t-pedidos" class="hide"></div>
-    <div id="t-comparar" class="hide"></div>
+  </section>
+
+  <section id="v-pieza" class="hide">
+    <button class="btn" id="pz-volver" style="margin-bottom:.8rem"><span class="material-icons">arrow_back</span> Materiales</button>
+    <h1 id="pz-titulo">—</h1>
+    <p class="gris" id="pz-sub"></p>
+    <div id="pz-cuerpo"></div>
   </section>
 
   <section id="v-pedido" class="hide">
@@ -198,7 +208,7 @@ import { cargarFirebase,
          db, auth, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc,
          collection, Bytes, onAuthStateChanged, signOut } from "./firebase-init.js";
 import { CY } from "./nucleo.js";
-import { ESTADOS, RUBROS, MONEDAS, materialesDe, comparativa, totalesPorProveedor, sinCotizar, costoDeMateriales,
+import { ESTADOS, RUBROS, MONEDAS, piezaDe, materialesDe, comparativa, totalesPorProveedor, sinCotizar, costoDeMateriales,
          estadoTrasHilo, estadoTrasPrecios, leerPrecio, mailDePedido,
          ultimaRespuesta, esNueva, respuestasRecientes } from "./presupuestos.js";
 
@@ -222,7 +232,9 @@ const porMoneda = (t) => Object.keys(t).length ? Object.entries(t).map(([m, n]) 
 
 let obras = [], proveedores = [], pedidos = [], obra = null, pedido = null, prov = null, listaVista = "obras";
 
-const VISTAS = ["v-lista", "v-prov", "v-obra", "v-pedido"];
+// presupuestos-7: el cálculo (3D) del proyecto, para ver cada pieza; sólo con el permiso de cálculos.
+let calculos = null; const calcCache = {}; let visor = null;
+const VISTAS = ["v-lista", "v-prov", "v-obra", "v-pieza", "v-pedido"];
 const mostrar = (v) => { VISTAS.forEach((x) => $(x).classList.toggle("hide", x !== v)); window.scrollTo(0, 0); };
 
 async function cargar() {
@@ -321,12 +333,37 @@ function abrirObra(o) {
 }
 function pintarObra() {
   document.querySelectorAll("#tabsObra button").forEach((b) => b.classList.toggle("on", b.dataset.tab === tab));
-  ["materiales", "pedidos", "comparar"].forEach((t) => $("t-" + t).classList.toggle("hide", t !== tab));
+  ["materiales", "pedidos"].forEach((t) => $("t-" + t).classList.toggle("hide", t !== tab));
   const mats = materialesDe(obra);
   // presupuestos-4: el COSTO DE MATERIALES por sección (presupuestos.js), con lo que falta a la vista.
   const cm = costoDeMateriales(obra, pedidos, proveedores);
   // presupuestos-6: con el presupuestos.js de antes en la caché (10 minutos de Pages) no hay opcionales.
   if (!cm.opcionales) { $("t-materiales").innerHTML = '<div class="empty">La página se está actualizando: recargala en un momento.</div>'; return; }
+  const ps = pedidos.filter((p) => p.presupuesto === obra.id);
+  const nom = (id) => (proveedores.find((p) => p.id === id) || {}).nombre || id;
+  const filas = comparativa(obra, pedidos, proveedores);
+  const porId = Object.fromEntries(filas.map((x) => [x.material.id, x]));
+  const puedeCalc = CY.puede("calculo");
+  // Todo lo de un material junto: sus ofertas por proveedor (la mejor marcada) y los pedidos que esperan precio.
+  const ofertasDe = (m) => {
+    const x = porId[m.id], of = x ? x.ofertas : [], conPrecio = new Set(of.map((o) => o.pedido));
+    const estado = (id) => ((ps.find((q) => q.id === id) || {}).estado || "por_pedir");
+    const chip = (e) => `<span class="chip ${esc(e)}">${esc(e.replace("_", " "))}</span>`;
+    const lineas = of.map((o) => `<div class="of ${x.mejor[o.moneda] === o ? "mejor" : ""}" data-pedido="${esc(o.pedido)}"><span class="nom">${esc(o.nombre)}</span><span class="n">${esc(plata(o.precio, o.moneda))}${o.unidad ? " / " + esc(o.unidad) : ""}${o.iva === "mas_iva" ? " + IVA" : ""}${o.comparable ? "" : " · otra unidad"}</span>${chip(estado(o.pedido))}</div>`)
+      .concat(ps.filter((q) => (q.items || []).includes(m.id) && q.estado !== "descartado" && !conPrecio.has(q.id))
+        .map((q) => `<div class="of gris" data-pedido="${esc(q.id)}"><span class="nom">${esc(nom(q.proveedor))}</span><span>sin precio todavía</span>${chip(q.estado || "por_pedir")}</div>`));
+    return lineas.join("") || '<div class="gris" style="font-size:.78rem">Sin pedidos todavía</div>';
+  };
+  const boton3d = (m) => puedeCalc && obra.calculo && piezaDe(m)
+    ? `<button class="btn" data-3d="${esc(m.id)}" title="Ver esta pieza en 3D, con sus medidas"><span class="material-icons">view_in_ar</span> 3D</button>` : "";
+  const filaMat = ({ material: m, costo }) => `<tr class="${costo.tipo === "falta" ? "falta" : ""}"><td>${esc(m.nombre)}${m.especificacion ? `<div class="gris" style="font-size:.78rem">${esc(m.especificacion)}</div>` : ""}</td>
+        <td class="n">${esc(String(m.cantidad))} ${esc(m.unidad || "")}</td>
+        <td class="n">${costo.tipo === "falta" ? "" : esc(plataRedonda(costo.total, costo.moneda))}<div><span class="chip ${esc(costo.tipo)}"${costo.fuente ? ` title="${esc(costo.fuente)}"` : ""}>${esc(TIPO[costo.tipo])}</span></div></td>
+        <td>${boton3d(m)}</td></tr><tr class="ofs"><td colspan="4">${ofertasDe(m)}</td></tr>`;
+  const vinculo = puedeCalc ? `<div class="vinculo"><span>Cálculo del proyecto:</span><select id="o-calculo">${
+    calculos ? `<option value="">— sin vincular —</option>` + calculos.map((c) => `<option value="${esc(c.id)}" ${c.id === obra.calculo ? "selected" : ""}>${esc(c.titulo || c.id)}</option>`).join("")
+             : `<option>cargando…</option>`}</select><span class="gris">para ver cada pieza en 3D y las telas desplegadas</span></div>` : "";
+  if (puedeCalc && !calculos) cargarCalculos();
   const TIPO = { cotizado: "cotizado", referencia: "referencia", falta: "falta precio" };
   $("t-materiales").innerHTML = `<div class="costo">
       <div class="t">Costo de materiales · no incluye mano de obra, flete ni herramientas</div>
@@ -338,24 +375,19 @@ function pintarObra() {
     </div>
     ${cm.opcionales.length ? `<p class="gris" style="font-size:.82rem">Opcionales, aparte (abajo): ${cm.opcionales.map((o) => `${esc(o.opcion)} ${porMoneda(o.total)}`).join(" · ")}</p>` : ""}
     ${cm.faltan.length ? `<p style="color:var(--wip, #d6a33c);font-size:.86rem"><b>Falta conseguir precio:</b> ${cm.faltan.map((m) => esc(m.nombre)).join(" · ")}</p>` : ""}
-    <div class="desliza"><table class="t"><tr><th>Material</th><th>Cantidad</th><th>Costo</th></tr>` +
-    cm.secciones.map((x) => `<tr><td colspan="3" class="rubro">${esc(RUBRO[x.rubro] || x.rubro)}</td></tr>` +
-      x.filas.map(({ material: m, costo }) => `<tr class="${costo.tipo === "falta" ? "falta" : ""}"><td>${esc(m.nombre)}${m.especificacion ? `<div class="gris" style="font-size:.78rem">${esc(m.especificacion)}</div>` : ""}</td>
-        <td class="n">${esc(String(m.cantidad))} ${esc(m.unidad || "")}</td>
-        <td class="n">${costo.tipo === "falta" ? "" : esc(plataRedonda(costo.total, costo.moneda))}<div><span class="chip ${esc(costo.tipo)}"${costo.fuente ? ` title="${esc(costo.fuente)}"` : ""}>${esc(TIPO[costo.tipo])}</span></div></td></tr>`).join("") +
-      `<tr class="subtotal"><td>Subtotal ${esc(RUBRO[x.rubro] || x.rubro)}</td><td></td><td class="n">${porMoneda(x.total)}</td></tr>`).join("") +
-    `<tr class="subtotal"><td><b>Costo de materiales</b></td><td></td><td class="n"><b>${porMoneda(cm.total)}</b></td></tr></table></div>` +
+    ${vinculo}
+    <div class="desliza"><table class="t"><tr><th>Material</th><th>Cantidad</th><th>Costo</th><th></th></tr>` +
+    cm.secciones.map((x) => `<tr><td colspan="4" class="rubro">${esc(RUBRO[x.rubro] || x.rubro)}</td></tr>` +
+      x.filas.map(filaMat).join("") +
+      `<tr class="subtotal"><td>Subtotal ${esc(RUBRO[x.rubro] || x.rubro)}</td><td></td><td class="n">${porMoneda(x.total)}</td><td></td></tr>`).join("") +
+    `<tr class="subtotal"><td><b>Costo de materiales</b></td><td></td><td class="n"><b>${porMoneda(cm.total)}</b></td><td></td></tr></table></div>` +
     // presupuestos-5: los OPCIONALES, aparte y sin sumar al costo de materiales.
     (cm.opcionales.length ? `<h2 style="margin-top:1.2rem">Opcionales · no suman al costo de materiales</h2>
-      <div class="desliza"><table class="t"><tr><th>Material</th><th>Cantidad</th><th>Costo</th></tr>` +
-      cm.opcionales.map((o) => `<tr><td colspan="3" class="rubro">Opción ${esc(o.opcion)}</td></tr>` +
-        o.filas.map(({ material: m, costo }) => `<tr class="${costo.tipo === "falta" ? "falta" : ""}"><td>${esc(m.nombre)}${m.especificacion ? `<div class="gris" style="font-size:.78rem">${esc(m.especificacion)}</div>` : ""}</td>
-          <td class="n">${esc(String(m.cantidad))} ${esc(m.unidad || "")}</td>
-          <td class="n">${costo.tipo === "falta" ? "" : esc(plataRedonda(costo.total, costo.moneda))}<div><span class="chip ${esc(costo.tipo)}"${costo.fuente ? ` title="${esc(costo.fuente)}"` : ""}>${esc(TIPO[costo.tipo])}</span></div></td></tr>`).join("") +
-        `<tr class="subtotal"><td>Total de la opción ${esc(o.opcion)}</td><td></td><td class="n">${porMoneda(o.total)}</td></tr>`).join("") + "</table></div>" : "");
+      <div class="desliza"><table class="t"><tr><th>Material</th><th>Cantidad</th><th>Costo</th><th></th></tr>` +
+      cm.opcionales.map((o) => `<tr><td colspan="4" class="rubro">Opción ${esc(o.opcion)}</td></tr>` +
+        o.filas.map(filaMat).join("") +
+        `<tr class="subtotal"><td>Total de la opción ${esc(o.opcion)}</td><td></td><td class="n">${porMoneda(o.total)}</td><td></td></tr>`).join("") + "</table></div>" : "");
 
-  const ps = pedidos.filter((p) => p.presupuesto === obra.id);
-  const nom = (id) => (proveedores.find((p) => p.id === id) || {}).nombre || id;
   // Primero lo que contestó y no se leyó; después por la respuesta más nueva; después por estado.
   const ultima = (p) => (ultimaRespuesta(p) || {}).en || "";
   $("t-pedidos").innerHTML = ps.length ? ps.sort((a, b) => (esNueva(b, yo.uid) - esNueva(a, yo.uid))
@@ -368,17 +400,45 @@ function pintarObra() {
       <span class="material-icons" style="color:var(--dim)">chevron_right</span></div>`).join("")
     : '<div class="empty">Todavía no hay pedidos para esta obra.</div>';
 
-  const filas = comparativa(obra, pedidos, proveedores);
   const tot = totalesPorProveedor(obra, pedidos, proveedores);
   const falta = sinCotizar(obra, pedidos, proveedores);
-  $("t-comparar").innerHTML = `<p class="gris">${falta.length ? `Faltan precios para ${falta.length} de ${mats.length} materiales.` : "Todos los materiales tienen al menos un precio."}</p>
-    <div class="desliza"><table class="t"><tr><th>Material</th><th>Ofertas (por unidad)</th></tr>` +
-    filas.map((f) => `<tr><td>${esc(f.material.nombre)}<div class="gris" style="font-size:.75rem">${esc(String(f.material.cantidad))} ${esc(f.material.unidad || "")}</div></td><td>${
-      f.ofertas.length ? f.ofertas.map((o) => `<div class="${f.mejor[o.moneda] === o ? "mejor" : ""}">${esc(o.nombre)}: ${esc(plata(o.precio, o.moneda))}${o.unidad ? " / " + esc(o.unidad) : ""}${o.iva === "mas_iva" ? " + IVA" : ""}${o.comparable ? "" : " · otra unidad"}</div>`).join("")
-      : '<span class="gris">sin precio</span>'}</td></tr>`).join("") + "</table></div>" +
-    (Object.keys(tot).length ? `<h2 style="margin-top:1rem">Lo cotizado por cada proveedor</h2><div class="desliza"><table class="t"><tr><th>Proveedor</th><th>Materiales</th><th>Total</th></tr>` +
-      Object.values(tot).map((x) => `<tr><td>${esc(x.nombre)}</td><td class="n">${x.materiales}</td><td class="n">${Object.entries(x.porMoneda).map(([m, n]) => esc(plata(n, m))).join("<br>")}</td></tr>`).join("") + "</table></div>" : "");
+  $("t-materiales").insertAdjacentHTML("beforeend", `<p class="gris" style="margin-top:1rem">${falta.length ? `Faltan precios para ${falta.length} de ${mats.length} materiales.` : "Todos los materiales tienen al menos un precio."}</p>` +
+    (Object.keys(tot).length ? `<h2 style="margin-top:.6rem">Lo cotizado por cada proveedor</h2><div class="desliza"><table class="t"><tr><th>Proveedor</th><th>Materiales</th><th>Total</th></tr>` +
+      Object.values(tot).map((x) => `<tr><td>${esc(x.nombre)}</td><td class="n">${x.materiales}</td><td class="n">${Object.entries(x.porMoneda).map(([m, n]) => esc(plata(n, m))).join("<br>")}</td></tr>`).join("") + "</table></div>" : ""));
 }
+
+// presupuestos-7: el cálculo vinculado y el 3D de una pieza.
+async function cargarCalculos() {
+  calculos = [];
+  try { calculos = (await getDocs(collection(db, "calculos"))).docs.map((d) => ({ id: d.id, titulo: [d.data().nombre, d.data().cliente].filter(Boolean).join(" · ") || d.id })); } catch (e) { /* sin permiso: no hay selector que llenar */ }
+  if (obra) pintarObra();
+}
+async function abrirPieza(mid) {
+  const m = materialesDe(obra).find((x) => x.id === mid); if (!m) return;
+  $("pz-titulo").textContent = m.nombre;
+  $("pz-sub").textContent = [`${m.cantidad} ${m.unidad || ""}`.trim(), obra.titulo].filter(Boolean).join(" · ");
+  $("pz-cuerpo").innerHTML = '<div class="empty">Cargando el 3D…</div>';
+  mostrar("v-pieza");
+  try {
+    const mod = await import("./pieza3d.js");
+    if (!calcCache[obra.calculo]) {
+      const sn = await getDoc(doc(db, "calculos", obra.calculo));
+      if (!sn.exists()) throw new Error("El cálculo vinculado ya no existe: elegí otro.");
+      calcCache[obra.calculo] = sn.data().datos || {};
+    }
+    const ficha = mod.fichaPieza(calcCache[obra.calculo], piezaDe(m));
+    if (!ficha.ok) { $("pz-cuerpo").innerHTML = `<div class="empty">${esc(ficha.motivo)}</div>`; return; }
+    if (visor) visor.destruir();
+    visor = await mod.mostrar($("pz-cuerpo"), ficha);
+  } catch (e) { $("pz-cuerpo").innerHTML = `<div class="empty">${esc(CY.explicar(e))}</div>`; }
+}
+$("pz-volver").onclick = () => { if (visor) { visor.destruir(); visor = null; } mostrar("v-obra"); };
+document.addEventListener("change", async (ev) => {
+  if (ev.target.id !== "o-calculo") return;
+  const v = ev.target.value;
+  try { await updateDoc(doc(db, "presupuestos", obra.id), { calculo: v }); obra.calculo = v; } catch (e) { alert(CY.explicar(e)); }
+  pintarObra();
+});
 
 /* ── pedido ── */
 function abrirPedido(p) {
@@ -527,6 +587,7 @@ document.addEventListener("click", async (ev) => {
   const t = ev.target.closest("[data-lista]"); if (t) { listaVista = t.dataset.lista; return pintarLista(); }
   const o = ev.target.closest("[data-obra]"); if (o) { tab = "materiales"; return abrirObra(obras.find((x) => x.id === o.dataset.obra)); }
   const pv = ev.target.closest("[data-prov]"); if (pv) return abrirProv(proveedores.find((x) => x.id === pv.dataset.prov));
+  const b3 = ev.target.closest("[data-3d]"); if (b3) return abrirPieza(b3.dataset["3d"]);
   const tb = ev.target.closest("[data-tab]"); if (tb) { tab = tb.dataset.tab; return pintarObra(); }
   const pd = ev.target.closest("[data-pedido]"); if (pd) return abrirPedido(pedidos.find((x) => x.id === pd.dataset.pedido));
   if (ev.target.closest("[data-volver]")) { await cargar(); pintarLista(); mostrar("v-lista"); }
