@@ -173,6 +173,9 @@
 //   manivela, que quedaba flotando en una puerta: ahora va en el medio del primer arco libre); «Lona del techo» en
 //   paños, sin la banda ni el cordón en zigzag del cierre en cono.
 // v108 (26-nov-2026) — calculo-41 + propuesta-8: el 3D arranca con todas las capas prendidas (Mauro).
+// v109 (27-nov-2026) — geo-17 + 3d-21 + pieza3d-1 + presupuestos-7 + presupuestos-js-6 (Mauro): la pestaña Materiales junta las
+//   ofertas de cada material (sin pestaña Comparar) y un botón 3D abre la pieza con sus medidas; las telas, también desplegadas
+//   en el piso para el taller. Entra pieza3d.js.
 const VERSION = 'cy-shell-v109';
 
 // v69 · 29-oct-2026 · `nucleo.js` (nucleo-32, general:C7): CY.explicar usa la tabla

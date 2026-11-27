@@ -809,6 +809,14 @@ misma tanda.**
   trei). Por eso **no hay dintel ni «alto de la ventana» que elegir**: la ventana mide del antepecho al tope
   de los montantes. La tapa interior sólo cubre el vano (del alféizar al cabezal). El trei sigue debajo del
   alféizar y entre los montantes.
+- **El 3D de cada pieza de la lista de materiales y las telas desplegadas (`geo-17`, `3d-21`, `pieza3d-1`, `presupuestos-7`)**:
+  la pestaña Materiales de una obra junta, bajo cada material, sus ofertas por proveedor y el estado de los pedidos (ya no
+  hay pestaña Comparar). Con la obra vinculada a un cálculo (selector «Cálculo del proyecto», campo `calculo` del presupuesto,
+  sólo con el permiso de cálculos), un botón 3D abre esa pieza en el modelo del proyecto, con sus medidas. Qué pieza es un
+  material sale de `material.pieza` o, si no, del nombre (`piezaDe`, presupuestos.js); `GRUPOS_MAT` (calculo-3d.js) dice qué
+  partes del modelo son. Las telas se ven además desplegadas en el piso (`desplegados` en calculo-geo.js, `planoDe` en
+  calculo-3d.js): la lona del techo como círculo plano con la lengüeta, las capas del techo como sectores (360° × cos) y las
+  del muro como rectángulos (2π R por el alto), con radios, ángulos y bordes rotulados.
 - **El anillo del piso, de listones curvados (`geo-16`)**: en lugar del sándwich colado de 50 × 80 (`ap_tipo` 1, el
   de Christine, que sigue siendo el valor por defecto), `ap_tipo` 2 pone **tres vueltas de listón de 40 × 10** —los
   mismos de la cinta del alero—, **curvadas y coladas entre sí**: un anillo de 30 mm de grosor y 40 de alto que
@@ -835,19 +843,20 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-34` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `cy-shell-v103` |
+| `sw.js` | `VERSION` | `cy-shell-v109` |
 | `admin.html` | `PANEL` | `admin-20` |
 | `editar.html` | `EDITOR` | `editar-23` |
 | `taller.html` | `SELLO` | `andamio-3` |
 | `calculo.html` | `CY.PANEL` | `calculo-41` |
 | `capas.js` | `SELLO_CAPAS` | `capas-2` |
-| `calculo-geo.js` | `SELLO_GEO` | `geo-16` |
-| `calculo-3d.js` | `SELLO_3D` | `3d-20` |
+| `calculo-geo.js` | `SELLO_GEO` | `geo-17` |
+| `calculo-3d.js` | `SELLO_3D` | `3d-21` |
+| `pieza3d.js` | `SELLO_PIEZA3D` | `pieza3d-1` |
 | `propuesta.html` | (en el comentario) | `propuesta-8` |
 | `consultas.html` | `CY.PANEL` | `consultas-4` |
 | `consultas-ia.js` | `VERSION_CONSULTAS_IA` | `consultas-ia-2` |
-| `presupuestos.html` | `CY.PANEL` | `presupuestos-6` |
-| `presupuestos.js` | `VERSION_PRESUPUESTOS` | `presupuestos-js-5` |
+| `presupuestos.html` | `CY.PANEL` | `presupuestos-7` |
+| `presupuestos.js` | `VERSION_PRESUPUESTOS` | `presupuestos-js-6` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-4` |
 | `diagnostico.html` | `CY.PANEL` | `diagnostico-8` |
 | `idiomas.js` | `SELLO` | `idiomas-5` |

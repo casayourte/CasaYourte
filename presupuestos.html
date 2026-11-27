@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
 <link rel="icon" href="./icono-192.png">
 <!--
-  presupuestos.html — Presupuestos y proveedores. Sello: presupuestos-6 (ver CY.PANEL)
+  presupuestos.html — Presupuestos y proveedores. Sello: presupuestos-7 (ver CY.PANEL)
 
   3-nov-2026, Mauro: «una lista que sea presupuestos y proveedores contando el
   estado del pedido, lo que fue solicitado y esperando, seguir ahí la línea de
@@ -212,7 +212,7 @@ import { ESTADOS, RUBROS, MONEDAS, piezaDe, materialesDe, comparativa, totalesPo
          estadoTrasHilo, estadoTrasPrecios, leerPrecio, mailDePedido,
          ultimaRespuesta, esNueva, respuestasRecientes } from "./presupuestos.js";
 
-CY.PANEL = "presupuestos-6";
+CY.PANEL = "presupuestos-7";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 if (!await CY.conFirebase(cargarFirebase)) throw new Error("sin SDK");

@@ -28,7 +28,7 @@
 // Sin Firebase y sin DOM: lo prueba `node pruebas-presupuestos.mjs`.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const VERSION_PRESUPUESTOS = "presupuestos-js-5";
+export const VERSION_PRESUPUESTOS = "presupuestos-js-6";
 
 export const ESTADOS = [
   ["por_pedir", "Por pedir: el mail está listo y sin mandar"],
