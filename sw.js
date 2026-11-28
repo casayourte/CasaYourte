@@ -180,7 +180,10 @@
 //   llevan su `sub`: tapas interiores y exteriores, montantes de vano y sueltos, el sobrealto pieza por pieza); la pieza sale
 //   del nombre sin confundirse con lo de entre paréntesis ni con la tornillería, o se elige a mano; la lista, una fila corta
 //   que se despliega; volver del 3D deja el material a la vista; el cálculo de la obra no se cambia desde Presupuestos.
-const VERSION = 'cy-shell-v110';
+// v111 (28-nov-2026) — presupuestos-9 + presupuestos-js-8 + calculo-42 (Mauro): en Materiales, «Mostrar siempre el proveedor»,
+//   el filtro por proveedor y, con más de uno, «Usar en el presupuesto» (el elegido manda en el costo); comentarios en cada
+//   material y cada proveedor; lo que se mudó de id (`reemplazadoPor`) no se muestra y su dirección lleva a la nueva.
+const VERSION = 'cy-shell-v111';
 
 // v69 · 29-oct-2026 · `nucleo.js` (nucleo-32, general:C7): CY.explicar usa la tabla
 //   común de `errores.js` del panel (datos) y le suma sus dos causas propias.

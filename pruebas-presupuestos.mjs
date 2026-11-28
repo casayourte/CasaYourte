@@ -3,7 +3,7 @@
 import fs from "node:fs";
 import { leerPrecio, materialesDe, comparativa, totalesPorProveedor, sinCotizar,
          estadoTrasHilo, estadoTrasPrecios, mailDePedido, ESTADO_IDS, RUBRO_IDS,
-         ultimaRespuesta, esNueva, piezaDe, piezasDe, respuestasRecientes, leerRef, costoDeMateriales, MONEDAS } from "./presupuestos.js";
+         ultimaRespuesta, esNueva, piezaDe, piezasDe, proveedoresDeMaterial, nuevoComentario, comentariosDe, vigente, respuestasRecientes, leerRef, costoDeMateriales, MONEDAS } from "./presupuestos.js";
 
 let bien = 0, mal = 0;
 const ok = (n, c) => { if (c) bien++; else { mal++; console.log("  ✗ " + n); } };
@@ -161,6 +161,36 @@ console.log("8 · qué pieza del 3D es cada material (presupuestos-js-7)");
     "Bisagras de las ventanas del sobrealto", "Puerta exterior 0,80 × 2,10 m", "Barniz marítimo"].every((n) => P(n).length === 0));
   ok("la pieza elegida a mano manda (una, varias o ninguna)", igual(P("Tirantes del piso", "vigas"), ["vigas"]) && igual(P("Tirantes", "cinta,cinta_alero"), ["cinta", "cinta_alero"]) && igual(P("Tirantes", "-"), []) && igual(P("x", ["toono"]), ["toono"]));
   ok("piezaDe sigue dando la primera", piezaDe({ nombre: "Tirantes del piso" }) === "tirantes" && piezaDe({ nombre: "Tornillo" }) === null);
+}
+
+console.log("9 · el proveedor de cada material y los comentarios (presupuestos-js-8)");
+{
+  const pres = { id: "o1", materiales: {
+    a: { nombre: "Tirantes", cantidad: 10, unidad: "m", rubro: "madera" },
+    b: { nombre: "Vigas", cantidad: 4, unidad: "m", rubro: "madera", proveedor: "pv-caro" },
+    c: { nombre: "Perchas", cantidad: 2, unidad: "m", rubro: "madera", proveedor: "pv-nadie" },
+    d: { nombre: "OSB", cantidad: 3, unidad: "placa", rubro: "tableros" } } };
+  const provs = [{ id: "pv-barato", nombre: "Barato" }, { id: "pv-caro", nombre: "Caro" }, { id: "pv-nadie", nombre: "Nadie" }];
+  const peds = [
+    { id: "q1", presupuesto: "o1", proveedor: "pv-barato", estado: "cotizado", items: ["a", "b", "c"], precios: { a: { precio: 10, moneda: "BRL", unidad: "m" }, b: { precio: 20, moneda: "BRL", unidad: "m" }, c: { precio: 5, moneda: "BRL", unidad: "m" } } },
+    { id: "q2", presupuesto: "o1", proveedor: "pv-caro", estado: "cotizado", items: ["a", "b"], precios: { a: { precio: 12, moneda: "BRL", unidad: "m" }, b: { precio: 30, moneda: "BRL", unidad: "m" } } },
+    { id: "q3", presupuesto: "o1", proveedor: "pv-nadie", estado: "pedido", items: ["c", "d"] },
+    { id: "q4", presupuesto: "otra", proveedor: "pv-caro", estado: "pedido", items: ["d"] }];
+  const cm = costoDeMateriales(pres, peds, provs), fila = (id) => cm.secciones.flatMap((x) => x.filas).find((f) => f.material.id === id);
+  ok("sin elegir, el costo es el más barato y dice de quién", fila("a").costo.total === 100 && fila("a").costo.proveedor === "pv-barato" && !fila("a").costo.elegido);
+  ok("con el proveedor elegido, manda el suyo aunque sea más caro", fila("b").costo.total === 120 && fila("b").costo.proveedor === "pv-caro" && fila("b").costo.elegido === true);
+  ok("elegido sin precio: sigue la cuenta de siempre y lo avisa", fila("c").costo.total === 10 && fila("c").costo.elegidoSinPrecio === "pv-nadie");
+  const fa = comparativa(pres, peds, provs).find((f) => f.material.id === "c");
+  const lp = proveedoresDeMaterial(fa, peds, "o1");
+  ok("los proveedores de un material: los que cotizaron y los que tienen pedido sin precio, una vez cada uno", lp.map((x) => x.proveedor).join() === "pv-barato,pv-nadie" && lp[1].oferta === null && lp[1].pedido === "q3");
+  ok("un pedido de otra obra no cuenta", proveedoresDeMaterial(comparativa(pres, peds, provs).find((f) => f.material.id === "d"), peds, "o1").map((x) => x.proveedor).join() === "pv-nadie");
+  const c1 = nuevoComentario("  bien de precio  ", "Mauro", "2026-11-28T10:00:00Z");
+  ok("un comentario lleva texto, quién y cuándo; vacío no se guarda", c1.texto === "bien de precio" && c1.por === "Mauro" && c1.en && nuevoComentario("   ", "x") === null);
+  ok("los comentarios, el más nuevo arriba y sin basura", comentariosDe({ comentarios: [c1, { texto: "después", en: "2026-11-29T00:00:00Z" }, null, { texto: "" }] }).map((c) => c.texto).join("|") === "después|bien de precio" && comentariosDe({}).length === 0);
+  ok("lo reemplazado no está vigente", vigente({ id: "x" }) && !vigente({ id: "x", reemplazadoPor: "y" }));
+  const html = fs.readFileSync(new URL("./presupuestos.html", import.meta.url), "utf8");
+  ok("la página: mostrar proveedor, filtro, usar en el presupuesto y comentar", /id="o-verprov"/.test(html) && /id="o-filtroprov"/.test(html) && /data-usar-prov=/.test(html) && /data-comentar=/.test(html) && /id="pv-comentarios"/.test(html));
+  ok("la página oculta lo reemplazado y lleva la dirección vieja a la nueva", /filter\(vigente\)/.test(html) && /reemplazos\[oid\]/.test(html));
 }
 
 console.log(`\n${bien} pasadas, ${mal} fallidas`);

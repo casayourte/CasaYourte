@@ -828,6 +828,16 @@ misma tanda.**
   material (el nombre sin su explicación, la cantidad debajo); al tocarla se despliega lo largo. Volver del 3D (botón o
   «atrás» del teléfono) deja el material a la vista. **La obra es de UN cálculo**: vinculada, se muestra y no se cambia desde
   Presupuestos; sin vincular, se vincula una sola vez, con confirmación, con un cálculo que no sea de otra obra.
+- **El proveedor de cada material y los comentarios (`presupuestos-9`, `presupuestos-js-8`, `calculo-42`, 28-nov-2026, Mauro)**:
+  en Materiales, la casilla «Mostrar siempre el proveedor» (se recuerda en el teléfono) pone bajo cada material sus
+  proveedores —los que cotizaron y los que tienen un pedido sin precio— con ★ el que va al costo; el filtro «Proveedor» deja
+  sólo los materiales de uno (o los que no tienen ninguno), con lo que cotizó y sus comentarios. Con más de un proveedor, al
+  desplegar el material cada uno tiene «Usar en el presupuesto» (`materiales.<id>.proveedor`): el elegido manda en el costo
+  aunque haya uno más barato; si todavía no tiene precio, sigue el más barato y lo avisa; «Volver al más barato» lo
+  deshace. Cada material (`materiales.<id>.comentarios`) y cada proveedor (`comentarios`) tienen comentarios con quién y
+  cuándo, a la vista (💬 en la fila, la última línea en la lista de proveedores); se suma al final leyendo el documento
+  fresco, nunca se pisa. Lo que se mudó de id lleva `reemplazadoPor` y no se muestra (ni acá ni en Cálculos); la dirección
+  vieja abre la nueva.
 - **El anillo del piso, de listones curvados (`geo-16`)**: en lugar del sándwich colado de 50 × 80 (`ap_tipo` 1, el
   de Christine, que sigue siendo el valor por defecto), `ap_tipo` 2 pone **tres vueltas de listón de 40 × 10** —los
   mismos de la cinta del alero—, **curvadas y coladas entre sí**: un anillo de 30 mm de grosor y 40 de alto que
@@ -854,11 +864,11 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 |---|---|---|
 | `nucleo.js` | `CY.VERSION` | `nucleo-34` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `cy-shell-v110` |
+| `sw.js` | `VERSION` | `cy-shell-v111` |
 | `admin.html` | `PANEL` | `admin-20` |
 | `editar.html` | `EDITOR` | `editar-23` |
 | `taller.html` | `SELLO` | `andamio-3` |
-| `calculo.html` | `CY.PANEL` | `calculo-41` |
+| `calculo.html` | `CY.PANEL` | `calculo-42` |
 | `capas.js` | `SELLO_CAPAS` | `capas-2` |
 | `calculo-geo.js` | `SELLO_GEO` | `geo-17` |
 | `calculo-3d.js` | `SELLO_3D` | `3d-22` |
@@ -866,8 +876,8 @@ sirviendo el archivo nuevo o una copia vieja de la caché.
 | `propuesta.html` | (en el comentario) | `propuesta-8` |
 | `consultas.html` | `CY.PANEL` | `consultas-4` |
 | `consultas-ia.js` | `VERSION_CONSULTAS_IA` | `consultas-ia-2` |
-| `presupuestos.html` | `CY.PANEL` | `presupuestos-8` |
-| `presupuestos.js` | `VERSION_PRESUPUESTOS` | `presupuestos-js-7` |
+| `presupuestos.html` | `CY.PANEL` | `presupuestos-9` |
+| `presupuestos.js` | `VERSION_PRESUPUESTOS` | `presupuestos-js-8` |
 | `usuarios.html` | `CY.PANEL` | `usuarios-4` |
 | `diagnostico.html` | `CY.PANEL` | `diagnostico-8` |
 | `idiomas.js` | `SELLO` | `idiomas-5` |

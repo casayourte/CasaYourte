@@ -28,7 +28,7 @@
 // Sin Firebase y sin DOM: lo prueba `node pruebas-presupuestos.mjs`.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const VERSION_PRESUPUESTOS = "presupuestos-js-7";
+export const VERSION_PRESUPUESTOS = "presupuestos-js-8";
 
 export const ESTADOS = [
   ["por_pedir", "Por pedir: el mail está listo y sin mandar"],
@@ -215,11 +215,23 @@ export function leerRef(r) {
 
 export function costoDe(fila) {
   const m = fila.material, ref = leerRef(m.ref);
+  // presupuestos-js-8 (Mauro, 28-nov: «al momento de hacer un presupuesto elegir con qué proveedor se está haciendo»):
+  // si el material tiene su proveedor ELEGIDO y ése cotizó en la misma unidad, el costo es el suyo, aunque haya uno
+  // más barato. Si el elegido todavía no tiene precio, sigue la cuenta de siempre y lo dice (`elegidoSinPrecio`).
+  const pv = typeof m.proveedor === "string" ? m.proveedor : "";
+  if (pv) {
+    const o = (fila.ofertas || []).filter((x) => x.proveedor === pv && x.comparable).sort((a, b) => a.precio - b.precio)[0];
+    if (o) return { tipo: "cotizado", moneda: o.moneda, total: o.total, fuente: o.nombre, proveedor: pv, elegido: true };
+  }
+  const c = costoAuto(fila, ref);
+  return pv ? { ...c, elegidoSinPrecio: pv } : c;
+}
+function costoAuto(fila, ref) {
   const monedas = Object.keys(fila.mejor || {});
   if (monedas.length) {
     const mo = ref && monedas.includes(ref.moneda) ? ref.moneda : monedas[0];
     const o = fila.mejor[mo];
-    return { tipo: "cotizado", moneda: mo, total: o.total, fuente: o.nombre };
+    return { tipo: "cotizado", moneda: mo, total: o.total, fuente: o.nombre, proveedor: o.proveedor };
   }
   if (ref) return { tipo: "referencia", moneda: ref.moneda, total: ref.total, fuente: ref.fuente };
   return { tipo: "falta" };
@@ -321,3 +333,33 @@ export function piezasDe(m) {
 }
 // La primera pieza (o null): la forma de presupuestos-js-6.
 export function piezaDe(m) { return piezasDe(m)[0] || null; }
+
+
+// ── los proveedores de un material y los comentarios (presupuestos-js-8, 28-nov-2026, Mauro) ──
+// Los proveedores de un material en esta obra: los que le cotizaron precio y los que tienen un pedido abierto que
+// lo incluye (todavía sin precio). Cada uno una vez, con su mejor oferta comparable si la hay; ordenados por precio.
+export function proveedoresDeMaterial(fila, pedidos, presId) {
+  const m = fila.material, out = new Map();
+  for (const o of fila.ofertas || []) {
+    const x = out.get(o.proveedor);
+    if (!x || (o.comparable && (!x.oferta || !x.oferta.comparable || o.precio < x.oferta.precio))) out.set(o.proveedor, { proveedor: o.proveedor, nombre: o.nombre, oferta: o, pedido: o.pedido });
+  }
+  for (const q of pedidos || []) {
+    if (q.presupuesto !== presId || q.estado === "descartado" || !(q.items || []).includes(m.id) || out.has(q.proveedor)) continue;
+    out.set(q.proveedor, { proveedor: q.proveedor, nombre: null, oferta: null, pedido: q.id, estado: q.estado || "por_pedir" });
+  }
+  return [...out.values()].sort((a, b) => (a.oferta ? 0 : 1) - (b.oferta ? 0 : 1) || ((a.oferta && a.oferta.precio) || 0) - ((b.oferta && b.oferta.precio) || 0));
+}
+// Un comentario sobre un material o un proveedor: texto (hasta 2000), quién y cuándo. null si está vacío.
+export function nuevoComentario(texto, por, en = new Date().toISOString()) {
+  const t = String(texto || "").trim().slice(0, 2000);
+  return t ? { texto: t, por: String(por || "").slice(0, 120), en } : null;
+}
+// Los comentarios guardados, el más nuevo arriba (los que no tienen forma, afuera).
+export function comentariosDe(x) {
+  return (Array.isArray(x && x.comentarios) ? x.comentarios : []).filter((c) => c && typeof c.texto === "string" && c.texto.trim())
+    .slice().sort((a, b) => String(b.en || "").localeCompare(String(a.en || "")));
+}
+// Lo que se mudó a otro id (una obra o un pedido renombrado) no se muestra: `reemplazadoPor` dice adónde fue.
+export const vigente = (x) => !(x && typeof x.reemplazadoPor === "string" && x.reemplazadoPor);
+
