@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
 <link rel="icon" href="./icono-192.png">
 <!--
-  presupuestos.html — Presupuestos y proveedores. Sello: presupuestos-7 (ver CY.PANEL)
+  presupuestos.html — Presupuestos y proveedores. Sello: presupuestos-8 (ver CY.PANEL)
 
   3-nov-2026, Mauro: «una lista que sea presupuestos y proveedores contando el
   estado del pedido, lo que fue solicitado y esperando, seguir ahí la línea de
@@ -76,7 +76,20 @@
   .resp .snip{font-size:.82rem;color:var(--dim);margin-top:.2rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .resp.leida{opacity:.7}
   .sabemos{white-space:pre-wrap;font-size:.86rem}
-  tr.ofs td{padding-top:0;border-bottom:1px solid var(--line)}
+  tr.mat-f{cursor:pointer}
+  tr.mat-f td:first-child{padding-left:.1rem}
+  table.mats td:first-child{width:100%}
+  tr.mat-f .cant{font-family:var(--mono);font-size:.7rem;color:var(--dim);margin:.1rem 0 0 1.3rem}
+  #o-sub.plegada{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
+  #o-mas{font-size:.78rem;margin:-.3rem 0 .6rem}
+  tr.mat-f .flecha{font-size:1.05rem;vertical-align:-.22rem;color:var(--dim);transition:transform .15s}
+  tr.mat-f.abierta .flecha{transform:rotate(90deg)}
+  tr.mat-f.visto td{background:rgba(214,179,120,.18);transition:background .3s}
+  tr.mat-d td{padding-top:0;border-bottom:1px solid var(--line)}
+  tr.mat-d .largo{font-size:.84rem;margin:.1rem 0 .3rem}
+  .b3d{padding:.3rem .45rem}
+  .pz-sel{display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;font-size:.78rem;color:var(--dim);margin:.45rem 0 .2rem}
+  .pz-sel select{background:var(--ink2);color:inherit;border:1px solid var(--line);border-radius:var(--r);padding:.25rem .4rem;font:inherit;max-width:100%}
   .of{display:flex;gap:.5rem;flex-wrap:wrap;align-items:baseline;font-size:.8rem;padding:.12rem 0;cursor:pointer}
   .of .nom{min-width:6.5rem}
   .vinculo{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin:.6rem 0;font-size:.82rem}
@@ -130,6 +143,7 @@
     <button class="btn" data-volver style="margin-bottom:.8rem"><span class="material-icons">arrow_back</span> Todas las obras</button>
     <h1 id="o-titulo">—</h1>
     <p class="gris" id="o-sub"></p>
+    <a href="#" id="o-mas" class="hide">Ver la nota entera</a>
     <div class="tabs" id="tabsObra">
       <button data-tab="materiales" class="on">Materiales</button>
       <button data-tab="pedidos">Pedidos</button>
@@ -208,11 +222,14 @@ import { cargarFirebase,
          db, auth, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc,
          collection, Bytes, onAuthStateChanged, signOut } from "./firebase-init.js";
 import { CY } from "./nucleo.js";
-import { ESTADOS, RUBROS, MONEDAS, piezaDe, materialesDe, comparativa, totalesPorProveedor, sinCotizar, costoDeMateriales,
+import { ESTADOS, RUBROS, MONEDAS, piezasDe, materialesDe, comparativa, totalesPorProveedor, sinCotizar, costoDeMateriales,
          estadoTrasHilo, estadoTrasPrecios, leerPrecio, mailDePedido,
          ultimaRespuesta, esNueva, respuestasRecientes } from "./presupuestos.js";
 
-CY.PANEL = "presupuestos-7";
+import { NOMBRES_MAT } from "./calculo-geo.js";
+import { GRUPOS_MAT } from "./calculo-3d.js";
+
+CY.PANEL = "presupuestos-8";
 CY.alSalir = () => { CY.usuario = null; signOut(auth).then(() => location.replace("./admin.html")); };
 
 if (!await CY.conFirebase(cargarFirebase)) throw new Error("sin SDK");
@@ -234,6 +251,19 @@ let obras = [], proveedores = [], pedidos = [], obra = null, pedido = null, prov
 
 // presupuestos-7: el cálculo (3D) del proyecto, para ver cada pieza; sólo con el permiso de cálculos.
 let calculos = null; const calcCache = {}; let visor = null;
+const abiertos = new Set();    // presupuestos-8: los materiales desplegados
+// El nombre corto de un material: sin lo de entre paréntesis ni lo que va después de la primera coma («Vigas del piso
+// 190×40 mm, cepillado» → «Vigas del piso 190×40 mm»). El entero se ve al desplegar.
+// Se van los paréntesis largos (para qué va) y las colas de terminación o envase («, cepillado», «, rollo de …»); los
+// cortos quedan («(zócalos)», «(con ranura)»).
+const corto = (n) => {
+  const c = String(n || "").replace(/\s*\(([^)]*)\)/g, (t, x) => x.length > 18 ? "" : t)
+    .split(/,\s/).filter((x, i) => !i || !/^(cepillad|zincad|galvaniz|rollo|bobina|secad|sin tratar|de \d|\d)/i.test(x)).join(", ")
+    .replace(/\s+/g, " ").trim();
+  return c || String(n || "");
+};
+const NOMBRE_PIEZA = { ...Object.fromEntries(Object.keys(GRUPOS_MAT).map((k) => [k, typeof NOMBRES_MAT[k] === "string" ? NOMBRES_MAT[k] : k])),
+  osb_inf: "OSB de abajo", osb_sup: "OSB de arriba" };
 const VISTAS = ["v-lista", "v-prov", "v-obra", "v-pieza", "v-pedido"];
 const mostrar = (v) => { VISTAS.forEach((x) => $(x).classList.toggle("hide", x !== v)); window.scrollTo(0, 0); };
 
@@ -327,7 +357,10 @@ let tab = "materiales";
 function abrirObra(o) {
   obra = o; if (!o) return;
   $("o-titulo").textContent = o.titulo || o.id;
+  // presupuestos-8: la nota de la obra (larga: cómo se armó cada número) se pliega en dos renglones; se despliega si se pide.
   $("o-sub").textContent = o.nota || "";
+  const larga = String(o.nota || "").length > 220;
+  $("o-sub").classList.toggle("plegada", larga); $("o-mas").classList.toggle("hide", !larga); $("o-mas").textContent = "Ver la nota entera";
   pintarObra();
   mostrar("v-obra");
 }
@@ -354,15 +387,51 @@ function pintarObra() {
         .map((q) => `<div class="of gris" data-pedido="${esc(q.id)}"><span class="nom">${esc(nom(q.proveedor))}</span><span>sin precio todavía</span>${chip(q.estado || "por_pedir")}</div>`));
     return lineas.join("") || '<div class="gris" style="font-size:.78rem">Sin pedidos todavía</div>';
   };
-  const boton3d = (m) => puedeCalc && obra.calculo && piezaDe(m)
-    ? `<button class="btn" data-3d="${esc(m.id)}" title="Ver esta pieza en 3D, con sus medidas"><span class="material-icons">view_in_ar</span> 3D</button>` : "";
-  const filaMat = ({ material: m, costo }) => `<tr class="${costo.tipo === "falta" ? "falta" : ""}"><td>${esc(m.nombre)}${m.especificacion ? `<div class="gris" style="font-size:.78rem">${esc(m.especificacion)}</div>` : ""}</td>
-        <td class="n">${esc(String(m.cantidad))} ${esc(m.unidad || "")}</td>
+  // presupuestos-8 (Mauro, 28-nov: «la lista de materiales tiene que ser más simple, desplegando la explicación larga
+  // si se pide»): una fila corta por material; al tocarla se abre lo largo —el nombre entero, la especificación, las
+  // ofertas y los pedidos, y qué pieza del 3D es—. Lo abierto sigue abierto al repintar.
+  const cortos = {}, cuenta = {};
+  for (const m of mats) { cortos[m.id] = corto(m.nombre); cuenta[cortos[m.id]] = (cuenta[cortos[m.id]] || 0) + 1; }
+  for (const m of mats) if (cuenta[cortos[m.id]] > 1) {         // dos que se acortan igual: se distinguen por su paréntesis
+    const par = (String(m.nombre).match(/\(([^)]*)\)/) || [])[1];
+    if (par) cortos[m.id] += " · " + par;
+  }
+  const vinculado = puedeCalc && obra.calculo;
+  const boton3d = (m) => vinculado && piezasDe(m).length
+    ? `<button class="btn b3d" data-3d="${esc(m.id)}" title="Ver esta pieza en 3D, con sus medidas"><span class="material-icons">view_in_ar</span></button>` : "";
+  const nombrePieza = (k) => NOMBRE_PIEZA[k] || k;
+  const selPieza = (m) => {
+    if (!puedeCalc) return "";
+    const auto = piezasDe({ nombre: m.nombre }), elegida = typeof m.pieza === "string" ? m.pieza : Array.isArray(m.pieza) ? m.pieza.join(",") : "";
+    const ops = [["", "Según el nombre: " + (auto.length ? auto.map(nombrePieza).join(" + ") : "ninguna")], ["-", "Ninguna (no tiene dibujo)"],
+      ...Object.keys(GRUPOS_MAT).map((k) => [k, nombrePieza(k)])];
+    if (elegida && !ops.some(([v]) => v === elegida)) ops.push([elegida, elegida.split(",").map(nombrePieza).join(" + ")]);
+    return `<label class="pz-sel">Pieza del 3D <select data-pieza="${esc(m.id)}">${ops.map(([v, t]) =>
+      `<option value="${esc(v)}" ${v === elegida ? "selected" : ""}>${esc(t)}</option>`).join("")}</select></label>`;
+  };
+  const filaMat = ({ material: m, costo }) => {
+    const abierta = abiertos.has(m.id);
+    return `<tr class="mat-f ${costo.tipo === "falta" ? "falta" : ""} ${abierta ? "abierta" : ""}" data-fila="${esc(m.id)}">
+        <td><span class="material-icons flecha">chevron_right</span>${esc(cortos[m.id])}<div class="cant">${esc(String(m.cantidad))} ${esc(m.unidad || "")}</div></td>
         <td class="n">${costo.tipo === "falta" ? "" : esc(plataRedonda(costo.total, costo.moneda))}<div><span class="chip ${esc(costo.tipo)}"${costo.fuente ? ` title="${esc(costo.fuente)}"` : ""}>${esc(TIPO[costo.tipo])}</span></div></td>
-        <td>${boton3d(m)}</td></tr><tr class="ofs"><td colspan="4">${ofertasDe(m)}</td></tr>`;
-  const vinculo = puedeCalc ? `<div class="vinculo"><span>Cálculo del proyecto:</span><select id="o-calculo">${
-    calculos ? `<option value="">— sin vincular —</option>` + calculos.map((c) => `<option value="${esc(c.id)}" ${c.id === obra.calculo ? "selected" : ""}>${esc(c.titulo || c.id)}</option>`).join("")
-             : `<option>cargando…</option>`}</select><span class="gris">para ver cada pieza en 3D y las telas desplegadas</span></div>` : "";
+        <td>${boton3d(m)}</td></tr>
+      <tr class="mat-d ${abierta ? "" : "hide"}" data-det="${esc(m.id)}"><td colspan="3">
+        ${cortos[m.id] !== m.nombre ? `<div class="largo">${esc(m.nombre)}</div>` : ""}
+        ${m.especificacion ? `<div class="gris" style="font-size:.8rem;margin:.2rem 0">${esc(m.especificacion)}</div>` : ""}
+        ${ofertasDe(m)}${selPieza(m)}</td></tr>`;
+  };
+  // presupuestos-8 (Mauro, 28-nov: «por qué en un proyecto se puede elegir otro cálculo, para mí no tiene sentido»):
+  // la obra ES de un cálculo. Vinculada, el vínculo se muestra y no se cambia desde acá; sin vincular (las obras de
+  // antes), se vincula UNA vez, con confirmación, y sólo con un cálculo que no sea ya de otra obra.
+  const titCalc = (id) => ((calculos || []).find((c) => c.id === id) || {}).titulo || "cargando…";
+  const libres = (calculos || []).filter((c) => !obras.some((o) => o.id !== obra.id && o.calculo === c.id));
+  const vinculo = !puedeCalc ? "" : obra.calculo
+    ? `<div class="vinculo"><span class="material-icons" style="font-size:1rem">link</span><span>Cálculo del proyecto: <b>${esc(titCalc(obra.calculo))}</b></span>
+        <span class="gris">· el 3D de cada pieza sale de ahí</span></div>`
+    : `<div class="vinculo"><span>Esta obra todavía no tiene su cálculo.</span>${calculos ? `<select id="o-calculo"><option value="">Elegir su cálculo…</option>${
+        libres.map((c) => `<option value="${esc(c.id)}">${esc(c.titulo)}</option>`).join("")}</select>
+        <button class="btn" id="o-vincular" type="button">Vincular</button>` : '<span class="gris">cargando los cálculos…</span>'}
+        <span class="gris">Se vincula una sola vez: después no se cambia desde acá.</span></div>`;
   if (puedeCalc && !calculos) cargarCalculos();
   const TIPO = { cotizado: "cotizado", referencia: "referencia", falta: "falta precio" };
   $("t-materiales").innerHTML = `<div class="costo">
@@ -376,17 +445,17 @@ function pintarObra() {
     ${cm.opcionales.length ? `<p class="gris" style="font-size:.82rem">Opcionales, aparte (abajo): ${cm.opcionales.map((o) => `${esc(o.opcion)} ${porMoneda(o.total)}`).join(" · ")}</p>` : ""}
     ${cm.faltan.length ? `<p style="color:var(--wip, #d6a33c);font-size:.86rem"><b>Falta conseguir precio:</b> ${cm.faltan.map((m) => esc(m.nombre)).join(" · ")}</p>` : ""}
     ${vinculo}
-    <div class="desliza"><table class="t"><tr><th>Material</th><th>Cantidad</th><th>Costo</th><th></th></tr>` +
-    cm.secciones.map((x) => `<tr><td colspan="4" class="rubro">${esc(RUBRO[x.rubro] || x.rubro)}</td></tr>` +
+    <div class="desliza"><table class="t mats"><tr><th>Material</th><th>Costo</th><th></th></tr>` +
+    cm.secciones.map((x) => `<tr><td colspan="3" class="rubro">${esc(RUBRO[x.rubro] || x.rubro)}</td></tr>` +
       x.filas.map(filaMat).join("") +
-      `<tr class="subtotal"><td>Subtotal ${esc(RUBRO[x.rubro] || x.rubro)}</td><td></td><td class="n">${porMoneda(x.total)}</td><td></td></tr>`).join("") +
-    `<tr class="subtotal"><td><b>Costo de materiales</b></td><td></td><td class="n"><b>${porMoneda(cm.total)}</b></td><td></td></tr></table></div>` +
+      `<tr class="subtotal"><td>Subtotal ${esc(RUBRO[x.rubro] || x.rubro)}</td><td class="n">${porMoneda(x.total)}</td><td></td></tr>`).join("") +
+    `<tr class="subtotal"><td><b>Costo de materiales</b></td><td class="n"><b>${porMoneda(cm.total)}</b></td><td></td></tr></table></div>` +
     // presupuestos-5: los OPCIONALES, aparte y sin sumar al costo de materiales.
     (cm.opcionales.length ? `<h2 style="margin-top:1.2rem">Opcionales · no suman al costo de materiales</h2>
-      <div class="desliza"><table class="t"><tr><th>Material</th><th>Cantidad</th><th>Costo</th><th></th></tr>` +
-      cm.opcionales.map((o) => `<tr><td colspan="4" class="rubro">Opción ${esc(o.opcion)}</td></tr>` +
+      <div class="desliza"><table class="t mats"><tr><th>Material</th><th>Costo</th><th></th></tr>` +
+      cm.opcionales.map((o) => `<tr><td colspan="3" class="rubro">Opción ${esc(o.opcion)}</td></tr>` +
         o.filas.map(filaMat).join("") +
-        `<tr class="subtotal"><td>Total de la opción ${esc(o.opcion)}</td><td></td><td class="n">${porMoneda(o.total)}</td><td></td></tr>`).join("") + "</table></div>" : "");
+        `<tr class="subtotal"><td>Total de la opción ${esc(o.opcion)}</td><td class="n">${porMoneda(o.total)}</td><td></td></tr>`).join("") + "</table></div>" : "");
 
   // Primero lo que contestó y no se leyó; después por la respuesta más nueva; después por estado.
   const ultima = (p) => (ultimaRespuesta(p) || {}).en || "";
@@ -413,30 +482,59 @@ async function cargarCalculos() {
   try { calculos = (await getDocs(collection(db, "calculos"))).docs.map((d) => ({ id: d.id, titulo: [d.data().nombre, d.data().cliente].filter(Boolean).join(" · ") || d.id })); } catch (e) { /* sin permiso: no hay selector que llenar */ }
   if (obra) pintarObra();
 }
+// presupuestos-8 (Mauro, 28-nov: «al volver del render el scrolling tiene que seguir en el material que se estaba
+// observando»): se recuerda el material, la vuelta lo deja a la vista (y abierto); el «atrás» del teléfono vuelve igual.
+let volverA = null;
 async function abrirPieza(mid) {
   const m = materialesDe(obra).find((x) => x.id === mid); if (!m) return;
+  volverA = mid; abiertos.add(mid);
   $("pz-titulo").textContent = m.nombre;
   $("pz-sub").textContent = [`${m.cantidad} ${m.unidad || ""}`.trim(), obra.titulo].filter(Boolean).join(" · ");
   $("pz-cuerpo").innerHTML = '<div class="empty">Cargando el 3D…</div>';
   mostrar("v-pieza");
+  try { history.pushState({ pieza: mid }, ""); } catch (e) { /* sin historial: queda el botón */ }
   try {
     const mod = await import("./pieza3d.js");
     if (!calcCache[obra.calculo]) {
       const sn = await getDoc(doc(db, "calculos", obra.calculo));
-      if (!sn.exists()) throw new Error("El cálculo vinculado ya no existe: elegí otro.");
+      if (!sn.exists()) throw new Error("El cálculo vinculado a esta obra ya no existe.");
       calcCache[obra.calculo] = sn.data().datos || {};
     }
-    const ficha = mod.fichaPieza(calcCache[obra.calculo], piezaDe(m));
+    const ficha = mod.fichaPieza(calcCache[obra.calculo], piezasDe(m));
     if (!ficha.ok) { $("pz-cuerpo").innerHTML = `<div class="empty">${esc(ficha.motivo)}</div>`; return; }
     if (visor) visor.destruir();
     visor = await mod.mostrar($("pz-cuerpo"), ficha);
   } catch (e) { $("pz-cuerpo").innerHTML = `<div class="empty">${esc(CY.explicar(e))}</div>`; }
 }
-$("pz-volver").onclick = () => { if (visor) { visor.destruir(); visor = null; } mostrar("v-obra"); };
-document.addEventListener("change", async (ev) => {
-  if (ev.target.id !== "o-calculo") return;
-  const v = ev.target.value;
+function cerrarPieza() {
+  if ($("v-pieza").classList.contains("hide")) return;
+  if (visor) { visor.destruir(); visor = null; }
+  pintarObra(); mostrar("v-obra");
+  // después de que el navegador restaure lo suyo (con «atrás» pondría la posición de cuando se abrió el 3D: arriba)
+  requestAnimationFrame(() => {
+    const f = volverA && document.querySelector(`[data-fila="${CSS.escape(volverA)}"]`);
+    if (f) { f.scrollIntoView({ block: "center" }); f.classList.add("visto"); setTimeout(() => f.classList.remove("visto"), 1600); }
+  });
+}
+$("o-mas").onclick = (ev) => { ev.preventDefault(); const p = $("o-sub").classList.toggle("plegada"); $("o-mas").textContent = p ? "Ver la nota entera" : "Plegar la nota"; };
+$("o-sub").onclick = () => { if ($("o-sub").classList.contains("plegada")) $("o-mas").click(); };
+$("pz-volver").onclick = () => { cerrarPieza(); if (history.state && history.state.pieza) history.back(); };
+window.addEventListener("popstate", cerrarPieza);
+try { history.scrollRestoration = "manual"; } catch (e) { /* navegador viejo: el requestAnimationFrame alcanza */ }
+document.addEventListener("click", async (ev) => {
+  if (ev.target.id !== "o-vincular") return;
+  const v = $("o-calculo").value; if (!v) return;
+  if (!confirm(`¿Vincular esta obra con «${titCalcDe(v)}»? Después no se cambia desde acá.`)) return;
   try { await updateDoc(doc(db, "presupuestos", obra.id), { calculo: v }); obra.calculo = v; } catch (e) { alert(CY.explicar(e)); }
+  pintarObra();
+});
+const titCalcDe = (id) => ((calculos || []).find((c) => c.id === id) || {}).titulo || id;
+// La pieza elegida a mano para un material (campo `pieza` del material; vacío = según el nombre).
+document.addEventListener("change", async (ev) => {
+  const id = ev.target.dataset && ev.target.dataset.pieza; if (!id) return;
+  const v = ev.target.value;
+  try { await updateDoc(doc(db, "presupuestos", obra.id), { [`materiales.${id}.pieza`]: v }); obra.materiales[id].pieza = v; }
+  catch (e) { alert(CY.explicar(e)); }
   pintarObra();
 });
 
@@ -588,6 +686,9 @@ document.addEventListener("click", async (ev) => {
   const o = ev.target.closest("[data-obra]"); if (o) { tab = "materiales"; return abrirObra(obras.find((x) => x.id === o.dataset.obra)); }
   const pv = ev.target.closest("[data-prov]"); if (pv) return abrirProv(proveedores.find((x) => x.id === pv.dataset.prov));
   const b3 = ev.target.closest("[data-3d]"); if (b3) return abrirPieza(b3.dataset["3d"]);
+  const fm = ev.target.closest("[data-fila]");
+  if (fm) { const id = fm.dataset.fila, on = !abiertos.has(id); on ? abiertos.add(id) : abiertos.delete(id);
+    fm.classList.toggle("abierta", on); document.querySelector(`[data-det="${CSS.escape(id)}"]`).classList.toggle("hide", !on); return; }
   const tb = ev.target.closest("[data-tab]"); if (tb) { tab = tb.dataset.tab; return pintarObra(); }
   const pd = ev.target.closest("[data-pedido]"); if (pd) return abrirPedido(pedidos.find((x) => x.id === pd.dataset.pedido));
   if (ev.target.closest("[data-volver]")) { await cargar(); pintarLista(); mostrar("v-lista"); }

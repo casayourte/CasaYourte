@@ -28,7 +28,7 @@
 // Sin Firebase y sin DOM: lo prueba `node pruebas-presupuestos.mjs`.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const VERSION_PRESUPUESTOS = "presupuestos-js-6";
+export const VERSION_PRESUPUESTOS = "presupuestos-js-7";
 
 export const ESTADOS = [
   ["por_pedir", "Por pedir: el mail está listo y sin mandar"],
@@ -256,20 +256,68 @@ export function costoDeMateriales(pres, pedidos, proveedores) {
 }
 
 
-// ── la pieza del 3D que es un material (presupuestos-js-6, 27-nov-2026, Mauro) ──
-// Un material de la obra es texto libre; la pieza del cálculo (la `k` de materiales() en calculo-geo.js) sale de
-// `material.pieza` si alguien la puso, y si no, de lo que dice el nombre. Devuelve la clave o null.
+// ── la pieza del 3D que es un material (presupuestos-js-6, 27-nov-2026; rehecho en presupuestos-js-7, 28-nov-2026) ──
+// Un material de la obra es texto libre; las piezas del cálculo (las `k` de materiales() en calculo-geo.js) salen de
+// `material.pieza` si alguien la eligió (una clave, varias separadas por coma o una lista; "-" = ninguna), y si no,
+// de lo que dice el nombre. Mauro, 28-nov: «hay materiales mal referenciados al dibujo, hay dibujos que aparecen en
+// más de un material». Por eso las reglas van de lo más preciso a lo más general y cada una CONSUME lo que reconoció
+// («Tapas interiores de los montantes» es tapas, no montantes), y lo que no es una pieza del modelo (tornillos,
+// bulones, terminaciones, lo que se compra hecho) no tiene dibujo: mejor ninguno que uno equivocado.
+const SIN_DIBUJO = /^(tornillo|bulon|tuerca|arandela|clavo|barniz|aceite|pegamento|cola |sellador|manta|piso laminado|tablas? de piso|tela mosquitera|bandeira|bisagra|compas|puerta)|pestana de la ranura|tablas del techito/;
+// El sobrealto, pieza por pieza: si el nombre dice «sobrealto», sus palabras valen para SUS piezas (el cabezal es el
+// del sobrealto, no el de un vano; las ventanas, las suyas).
+const SOBREALTO = [[/solera|cabezal/, "sob_solera"], [/parante/, "sob_parantes"], [/limatesa/, "sob_limatesas"], [/marco/, "sob_marcos"],
+  [/vidrio/, "vidrio"], [/estructura/, ["sob_solera", "sob_parantes"]]];
 const REGLAS_PIEZA = [
-  [/tela.*(muro|pared)|lona.*(muro|pared)/, "tela_muro"], [/tyvek/, "tyvek"], [/algod/, "algodon"], [/freno/, "freno"],
-  [/aislaci.*muro|lana.*muro/, "aislacion_muro"], [/aislaci|lana de|corcho/, "aislacion_techo"],
-  [/lona|pvc/, "lona_techo"], [/policarb/, "policarbonato"], [/domo/, "domo"], [/vidrio/, "vidrio"],
-  [/osb|tablero/, "osb"], [/tirante/, "tirantes"], [/percha/, "perchas"], [/viga/, "vigas"], [/pilar|poste/, "pilares"],
-  [/trei/, "trei"], [/zocalo/, "zocalos"], [/triangul/, "triangulos"], [/montante/, "montantes"], [/escuadra/, "escuadras"],
-  [/toono/, "toono"], [/cable/, "cable"], [/cinta/, "cinta"], [/radial/, "radiales"], [/bulon/, "bulones"],
+  // el piso
+  [/anillo (del|de) piso|anillo laminado/, ["anillo_piso"]], [/suelos? de (los )?vanos|piso de las aberturas/, ["pisos_ab"]],
+  [/\bvigas?\b/, ["vigas"]], [/tirantes?/, ["tirantes"]], [/pilar|poste/, ["pilares"]],
+  [/(osb|tablero)[^,]*\b12 ?mm/, ["osb_inf"]], [/(osb|tablero)[^,]*\b18 ?mm/, ["osb_sup"]], [/\bosb\b|tablero/, ["osb"]],
+  // el muro (las tapas y los zócalos antes que montantes y trei)
+  [/tapas? interior/, ["tapas"]], [/tapas? exterior/, ["tapas_ext"]], [/tapas? de (los )?montantes/, ["tapas", "tapas_ext"]],
+  [/zocalo|borde del trei/, ["zocalos"]], [/anillo periferico|anillo de arriba/, ["anillo"]],
+  [/montantes? sueltos?/, ["montantes_sueltos"]], [/cabezal/, ["cabezales"]], [/montantes?/, ["montantes"]],
+  [/trei/, ["trei"]], [/ventana/, ["ventanas"]], [/vidrio/, ["ventanas"]],
+  // el techo (las cales y los triángulos antes que las perchas)
+  [/\bcales?\b|calce/, ["cal"]], [/triangulo/, ["triangulos"]], [/perchas? radial|\bradial/, ["radiales"]], [/percha/, ["perchas"]],
+  [/cinta del alero/, ["cinta_alero"]], [/doble cinta|cinta del muro|\bcinta\b/, ["cinta"]],
+  [/toono/, ["toono"]], [/cable/, ["cable"]], [/escuadra/, ["escuadras"]],
+  [/policarb/, ["policarbonato"]], [/domo/, ["domo"]],
+  // las telas
+  [/tyvek|hidrofuga/, ["tyvek"]], [/algodon/, ["algodon"]], [/freno/, ["freno"]],
+  [/(tela|lona)[^,]*(muro|pared)|tela nautica|tela acrilica/, ["tela_muro"]],
+  [/lona|pvc/, ["lona_techo"]],
 ];
-export function piezaDe(m) {
-  if (m && typeof m.pieza === "string" && m.pieza) return m.pieza;
-  const n = String((m && m.nombre) || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-  for (const [re, k] of REGLAS_PIEZA) if (re.test(n)) return k;
-  return null;
+const norma = (t) => String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+function porNombre(n) {
+  if (/sobrealto/.test(n)) {
+    const out = [];
+    for (const [re, k] of SOBREALTO) if (re.test(n)) for (const x of [].concat(k)) if (!out.includes(x)) out.push(x);
+    return out;
+  }
+  const out = [];
+  for (const [re, ks] of REGLAS_PIEZA) {
+    if (!re.test(n)) continue;
+    for (const k of ks) if (!out.includes(k)) out.push(k);
+    // lo reconocido no lo vuelve a leer otra regla: se consume hasta la próxima «y», coma o paréntesis
+    n = n.replace(new RegExp("(" + re.source + ")[^,(]*?(?= y |,|\\(|$)", "g"), " ");
+  }
+  // la aislación: del muro, del techo o de los dos (si el nombre no dice, de los dos)
+  if (/aislaci|lana de|lana pet|corcho/.test(n)) {
+    const muro = /muro|pared/.test(n), techo = /techo/.test(n);
+    if (muro || !techo) out.push("aislacion_muro");
+    if (techo || !muro) out.push("aislacion_techo");
+  }
+  return out;
 }
+export function piezasDe(m) {
+  const elegida = m && m.pieza;
+  if (Array.isArray(elegida)) return elegida.filter(Boolean);
+  if (typeof elegida === "string" && elegida) return elegida === "-" ? [] : elegida.split(",").map((x) => x.trim()).filter(Boolean);
+  const n = norma(m && m.nombre);
+  if (SIN_DIBUJO.test(n)) return [];
+  // lo de entre paréntesis es para qué va o con qué se junta («Tyvek (protege la lana de … la lona)»): no cuenta
+  return porNombre(n.replace(/\([^)]*\)/g, " "));
+}
+// La primera pieza (o null): la forma de presupuestos-js-6.
+export function piezaDe(m) { return piezasDe(m)[0] || null; }

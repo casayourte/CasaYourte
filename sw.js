@@ -176,7 +176,11 @@
 // v109 (27-nov-2026) — geo-17 + 3d-21 + pieza3d-1 + presupuestos-7 + presupuestos-js-6 (Mauro): la pestaña Materiales junta las
 //   ofertas de cada material (sin pestaña Comparar) y un botón 3D abre la pieza con sus medidas; las telas, también desplegadas
 //   en el piso para el taller. Entra pieza3d.js.
-const VERSION = 'cy-shell-v109';
+// v110 (28-nov-2026) — 3d-22 + pieza3d-2 + presupuestos-8 + presupuestos-js-7 (Mauro): cada material, SU dibujo (las piezas
+//   llevan su `sub`: tapas interiores y exteriores, montantes de vano y sueltos, el sobrealto pieza por pieza); la pieza sale
+//   del nombre sin confundirse con lo de entre paréntesis ni con la tornillería, o se elige a mano; la lista, una fila corta
+//   que se despliega; volver del 3D deja el material a la vista; el cálculo de la obra no se cambia desde Presupuestos.
+const VERSION = 'cy-shell-v110';
 
 // v69 · 29-oct-2026 · `nucleo.js` (nucleo-32, general:C7): CY.explicar usa la tabla
 //   común de `errores.js` del panel (datos) y le suma sus dos causas propias.

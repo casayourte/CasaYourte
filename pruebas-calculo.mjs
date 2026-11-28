@@ -341,7 +341,7 @@ ok("calculo.html ya no pide el cable (el doble techo no lo lleva)", !/faltan los
     return ys.has(Math.round((yP + KP.hc) * 1e6)) && ys.has(Math.round((yP + KV.hc) * 1e6)) && ys.has(tope) && ![...ys].some(y => y > Math.round((yP + KV.yBase) * 1e6) && y < Math.round((yP + KV.yBase + KV.hc) * 1e6) - 1 && false); })());
   ok("3D vanos (geo-15): el cabezal de la ventana arriba, a la altura del de la puerta", (() => { const cs = de("cabezales").filter(p => p.tipo === "malla"); if (!cs.length) return false; const v = cs[0].v; let yMax = -Infinity;
     for (let i = 1; i < v.length; i += 3) yMax = Math.max(yMax, v[i]); return cerca(yMax, yP + KP.yTope + KP.cab, 1e-6); })());
-  ok("3D vanos: tapas interiores por dentro del trei y exteriores por fuera de la lona", (() => { const v = de("tapas")[0].v; let rin = Infinity, rout = 0;
+  ok("3D vanos: tapas interiores por dentro del trei y exteriores por fuera de la lona", (() => { const v = de("tapas").flatMap(p => p.v); let rin = Infinity, rout = 0;
     for (let i = 0; i < v.length; i += 3) { const r = Math.hypot(v[i], v[i + 2]); rin = Math.min(rin, r); rout = Math.max(rout, r); }
     return rin < Cq.r_trei_int && rout > Cq.R + P.mon_nariz; })());
   ok("3D vanos (geo-15): ya no hay dinteles sueltos: arriba de cada vano va el cabezal", de("montantes").filter(p => p.tipo === "barra" && p.a[1] === p.b[1]).length === 0 || de("montantes").filter(p => p.tipo === "barra" && p.a[1] === p.b[1]).length === 1);
@@ -521,7 +521,7 @@ ok("calculo-3d.js está en el SHELL", /'\.\/calculo-3d\.js'/.test(sw));
   console.log("geo-17 · las telas desplegadas");
   ok("geo-17: el sello subió", SELLO_GEO === "geo-17");
   ok("cada tela desplegada es una parte del modelo", Object.keys(D).every(g => PARTES.some(([k]) => k === g)));
-  ok("cada parte de GRUPOS_MAT existe en el modelo", Object.values(GRUPOS_MAT).flat().every(g => PARTES.some(([k]) => k === g)));
+  ok("cada parte de GRUPOS_MAT existe en el modelo", Object.values(GRUPOS_MAT).flat().every(g => PARTES.some(([k]) => k === g.split("/")[0])));
   ok("la lona de una pieza: el círculo entero, con el cono y la lengüeta", D.lona_techo.ang === 360 && cerca(D.lona_techo.cono, Cx.lona_ang_cono, 1e-9) && cerca(D.lona_techo.rExt, Cx.lona_r_ext, 1e-9));
   ok("una capa del techo cierra 360° × cos", cerca(D.tyvek.ang, 360 * cosA, 1e-9) && cerca(D.tyvek.rExt * cosA, Cx.Rp, 1e-9));
   ok("el muro desarrollado: 2π R por el alto", cerca(D.algodon_muro.ancho, 2 * Math.PI * Cx.R, 1e-9) && D.algodon_muro.alto === P.alto && cerca(D.lona_muro.alto, P.alto + Cx.alto_piso + 0.1, 1e-9));
@@ -535,6 +535,33 @@ ok("calculo-3d.js está en el SHELL", /'\.\/calculo-3d\.js'/.test(sw));
   const sw = readFileSync(new URL("./sw.js", import.meta.url), "utf8"), pr = readFileSync(new URL("./presupuestos.html", import.meta.url), "utf8");
   ok("pieza3d.js está en el SHELL", /'\.\/pieza3d\.js'/.test(sw));
   ok("Presupuestos abre el 3D de una pieza con el cálculo vinculado, sólo con el permiso de cálculos", /import\("\.\/pieza3d\.js"\)/.test(pr) && /data-3d=/.test(pr) && /id="o-calculo"/.test(pr) && /CY\.puede\("calculo"\)/.test(pr));
+}
+
+// ── 3d-22 / pieza3d-2 (28-nov-2026, Mauro: «hay dibujos que aparecen en más de un material») ──
+{
+  const { GRUPOS_MAT, SELLO_3D } = await import("./calculo-3d.js");
+  const { fichaPieza, SELLO_PIEZA3D } = await import("./pieza3d.js");
+  console.log("3d-22 · cada material, su dibujo");
+  ok("3d-22: los sellos subieron", SELLO_3D === "3d-22" && SELLO_PIEZA3D === "pieza3d-2");
+  const firma = (k) => JSON.stringify([...GRUPOS_MAT[k]].sort());
+  const mismas = [["anillo_piso", "anillo_piso_lis"]];   // la misma pieza en sus dos formas
+  const repetidos = Object.keys(GRUPOS_MAT).filter((a, i, ks) => ks.some((b, j) => j !== i && firma(a) === firma(b) && !mismas.some((m) => m.includes(a) && m.includes(b))));
+  ok("dos materiales distintos no comparten el mismo dibujo", repetidos.length === 0, repetidos.join(", "));
+  // cada «parte/sub» tiene piezas en alguna configuración (doble con domo, simple con sobrealto y ventanas)
+  const confs = [{ ...P }, { ...P, tipo: 2, tono_tipo: 2, n_vt: 2, s_anillo: 0, sa_abiertas: 2 }];
+  const hay = new Set(confs.flatMap((Q) => piezas3d(Q, calc(Q)).piezas.flatMap((p) => [p.g, p.g + "/" + (p.sub || "")])));
+  const faltan = Object.values(GRUPOS_MAT).flat().filter((g) => !hay.has(g));
+  ok("cada pieza de GRUPOS_MAT tiene algo dibujado", faltan.length === 0, faltan.join(", "));
+  const t1 = fichaPieza({ ...P }, "tapas"), t2 = fichaPieza({ ...P }, "tapas_ext");
+  ok("tapas interiores y exteriores: dibujos distintos", t1.ok && t2.ok && t1.grupos.join() === "tapas/int" && t2.grupos.join() === "tapas/ext");
+  const cin = fichaPieza({ ...P }, ["cinta", "cinta_alero"]);
+  ok("un material de dos piezas muestra las dos", cin.ok && cin.grupos.includes("cinta") && cin.grupos.includes("cinta_alero") && cin.medidas.length === 2);
+  const sup = fichaPieza({ ...P }, "osb_sup");
+  ok("el OSB de arriba es sólo su capa, con las medidas de la lista", sup.ok && sup.grupos.join() === "osb_sup" && sup.medidas.length === 1);
+  ok("una pieza que la configuración no lleva lo dice", fichaPieza({ ...P }, "cable").ok === false);
+  const pr = readFileSync(new URL("./presupuestos.html", import.meta.url), "utf8");
+  ok("Presupuestos: el cálculo vinculado no se cambia (sólo se vincula si falta)", !/<select id="o-calculo">\$\{\s*calculos \? `<option value="">— sin vincular/.test(pr) && /obra\.calculo\s*\? `<div class="vinculo">/.test(pr) && /confirm\(/.test(pr));
+  ok("Presupuestos: al volver del 3D se vuelve al material", /scrollIntoView/.test(pr) && /volverA/.test(pr) && /popstate/.test(pr));
 }
 
 console.log(`\n${bien} bien, ${mal} mal`);

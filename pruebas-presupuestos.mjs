@@ -3,7 +3,7 @@
 import fs from "node:fs";
 import { leerPrecio, materialesDe, comparativa, totalesPorProveedor, sinCotizar,
          estadoTrasHilo, estadoTrasPrecios, mailDePedido, ESTADO_IDS, RUBRO_IDS,
-         ultimaRespuesta, esNueva, piezaDe, respuestasRecientes, leerRef, costoDeMateriales, MONEDAS } from "./presupuestos.js";
+         ultimaRespuesta, esNueva, piezaDe, piezasDe, respuestasRecientes, leerRef, costoDeMateriales, MONEDAS } from "./presupuestos.js";
 
 let bien = 0, mal = 0;
 const ok = (n, c) => { if (c) bien++; else { mal++; console.log("  ✗ " + n); } };
@@ -138,6 +138,30 @@ ok("el total no lleva los opcionales", cmO.total.BRL === 2900 && cmO.secciones.l
 ok("cada opción tiene su total", cmO.opcionales.length === 2 && cmO.opcionales[0].opcion.startsWith("A") && cmO.opcionales[0].total.BRL === 3000 && cmO.opcionales[1].total.BRL === 9700);
 ok("lo que le falta a una opción no entra en lo que falta del presupuesto", cmO.faltan.length === 0 && cmO.opcionales[1].faltan === 1);
 ok("la página pinta los opcionales aparte, diciendo que no suman", /Opcionales · no suman al costo de materiales/.test(h) && /cm\.opcionales\.map/.test(h));
+
+console.log("8 · qué pieza del 3D es cada material (presupuestos-js-7)");
+{
+  const P = (nombre, pieza) => piezasDe({ nombre, pieza });
+  const igual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  ok("tapas interiores: tapas, no montantes", igual(P("Tapas interiores de los montantes 120×20 mm, cepillado"), ["tapas"]));
+  ok("tapas exteriores: tapas_ext", igual(P("Tapas exteriores de los montantes (con ranura) 60×20 mm"), ["tapas_ext"]));
+  ok("tapas de los montantes, sin decir cuál: las dos", igual(P("Eucalipto 20×120 mm para las tapas de los montantes"), ["tapas", "tapas_ext"]));
+  ok("montantes sueltos ≠ montantes de vano", igual(P("Montantes sueltos del muro 220×40 mm"), ["montantes_sueltos"]) && igual(P("Montantes de los vanos (2 puertas y 2 ventanas) 230×40 mm"), ["montantes"]));
+  ok("los zócalos no son el trei", igual(P("Listones del borde del trei, abajo y arriba (zócalos) 40×10 mm"), ["zocalos"]) && igual(P("Listones del trei 40×20 mm"), ["trei"]));
+  ok("las cales no son perchas", igual(P("Cales (apoyo de las perchas en la cabeza del muro) 220×40 mm"), ["cal"]));
+  ok("triángulos y radiales: las dos piezas", igual(P("Triángulos de la primera capa y perchas radiales 70×30 mm"), ["triangulos", "radiales"]));
+  ok("doble cinta y cinta del alero: las dos", igual(P("Doble cinta del muro y cinta del alero 20×10 mm").sort(), ["cinta", "cinta_alero"]));
+  ok("sobrealto: solera, cabezal y parantes son del sobrealto", igual(P("Sobrealto: solera, cabezal y parantes 50×50 mm"), ["sob_solera", "sob_parantes"]));
+  ok("sobrealto: los marcos no son las ventanas del muro", igual(P("Sobrealto: marcos de las 8 ventanas 35×30 mm"), ["sob_marcos"]));
+  ok("el vidrio del sobrealto y el de las ventanas del muro, distintos", igual(P("Vidrios de las 8 ventanas del sobrealto"), ["vidrio"]) && igual(P("Vidrio liso 4 mm para las ventanas"), ["ventanas"]));
+  ok("el paréntesis no cuenta (el Tyvek no es lona ni lana)", igual(P("Tyvek (protege la lana de la condensación de la lona), rollo de 0,91 m"), ["tyvek"]));
+  ok("OSB de 12 abajo y de 18 arriba", igual(P("Placa OSB 12 mm 1,22×2,44"), ["osb_inf"]) && igual(P("Placa OSB 18 mm 1,22×2,44"), ["osb_sup"]));
+  ok("la aislación sin decir dónde: muro y techo", igual(P("Lana de PET 100 mm, rollo de 1,20 m"), ["aislacion_muro", "aislacion_techo"]));
+  ok("tornillos, bulones, bisagras y lo que se compra hecho: sin dibujo", ["Tornillo de carpintería 6 × 90 mm (trei arriba)", "Bulón M8 × 50 (cruces del trei)",
+    "Bisagras de las ventanas del sobrealto", "Puerta exterior 0,80 × 2,10 m", "Barniz marítimo"].every((n) => P(n).length === 0));
+  ok("la pieza elegida a mano manda (una, varias o ninguna)", igual(P("Tirantes del piso", "vigas"), ["vigas"]) && igual(P("Tirantes", "cinta,cinta_alero"), ["cinta", "cinta_alero"]) && igual(P("Tirantes", "-"), []) && igual(P("x", ["toono"]), ["toono"]));
+  ok("piezaDe sigue dando la primera", piezaDe({ nombre: "Tirantes del piso" }) === "tirantes" && piezaDe({ nombre: "Tornillo" }) === null);
+}
 
 console.log(`\n${bien} pasadas, ${mal} fallidas`);
 process.exit(mal ? 1 : 0);

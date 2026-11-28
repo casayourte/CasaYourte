@@ -1,4 +1,7 @@
 // calculo-3d.js — el modelo en 3D de la estructura, con las medidas del cálculo.
+// Sello: 3d-22 (28-nov-2026, Mauro: «hay dibujos que aparecen en más de un material»): cada pieza lleva su `sub` dentro de la parte
+// (montantes de vano y sueltos, tapas interiores y exteriores, el sobrealto pieza por pieza, el domo y su policarbonato) y
+// GRUPOS_MAT apunta a «parte/sub»; `solo()` deja a la vista sólo esas piezas y `encuadrarA()` lleva la cámara a su caja.
 // Sello: 3d-21 (27-nov-2026, Mauro): el 3D POR PIEZA de la lista de materiales (pieza3d.js): `GRUPOS_MAT` dice qué partes del
 // modelo es cada renglón de la lista; `planoDe` saca la TELA DESPLEGADA (para el taller) con sus medidas, y `montar` la dibuja
 // echada en el piso con rótulos y cotas (4.º parámetro `planos`); `arriba()` mira el piso desde arriba.
@@ -85,7 +88,7 @@
 // de abajo (donde apoyan los tirantes). Todo sale de calc(P): si cambia una
 // medida, cambia el modelo.
 
-export const SELLO_3D = "3d-21";
+export const SELLO_3D = "3d-22";
 import { escuadraSimple, chasis } from "./calculo-geo.js";
 export const THREE_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/+esm";
 export const ORBIT_URL = "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js/+esm";
@@ -149,17 +152,21 @@ export const GRUPOS = PARTES;   // el nombre de 3d-1
 // Qué partes del modelo es cada renglón de `materiales()` (calculo-geo.js): la clave es la `k` del renglón y los valores,
 // las claves de PARTES. Lo que no tiene dibujo (celulosa, tornillos, bisagras, compases) no está.
 export const GRUPOS_MAT = {
+  // 3d-22: «parte/sub» es sólo esa pieza de la parte (ver `sub` en piezas3d). Cada material tiene SU dibujo: dos
+  // renglones distintos no comparten uno, salvo los que son la misma pieza (el anillo del piso, en sus dos formas).
   pilares: ["pilares"], vigas: ["vigas"], tirantes: ["tirantes"], anillo_piso: ["anillo_piso"], anillo_piso_lis: ["anillo_piso"],
-  osb: ["osb_inf", "osb_sup"], trei: ["trei"], bulones: ["trei"], zocalos: ["zocalos"], anillo: ["anillo"],
-  montantes: ["montantes"], montantes_sueltos: ["montantes"], tapas: ["tapas"], tapas_ext: ["tapas"], cabezales: ["cabezales"],
-  pisos_ab: ["suelo_ab"], puertas: ["montantes", "suelo_ab"], ventanas: ["vidrios", "montantes"],
+  osb: ["osb_inf", "osb_sup"], osb_inf: ["osb_inf"], osb_sup: ["osb_sup"], trei: ["trei"], zocalos: ["zocalos"], anillo: ["anillo"],
+  montantes: ["montantes/vano"], montantes_sueltos: ["montantes/sueltos"], tapas: ["tapas/int"], tapas_ext: ["tapas/ext"], cabezales: ["cabezales"],
+  pisos_ab: ["suelo_ab"], ventanas: ["vidrios"],
   perchas: ["perchas"], cable: ["cable"], triangulos: ["triangulos"], radiales: ["radiales"], cal: ["cal"], cinta: ["cinta"],
-  cinta_alero: ["cinta_alero"], toono: ["toono"], sobrealto: ["sobrealto", "ventanas"], vidrio: ["ventanas"],
-  sob_solera: ["sobrealto"], sob_parantes: ["sobrealto"], sob_limatesas: ["sobrealto"], sob_marcos: ["ventanas"],
-  domo: ["domo"], policarbonato: ["domo"], escuadras: ["escuadras"],
+  cinta_alero: ["cinta_alero"], toono: ["toono"], sobrealto: ["sobrealto", "ventanas"], vidrio: ["ventanas/vidrio"],
+  sob_solera: ["sobrealto/solera"], sob_parantes: ["sobrealto/parantes"], sob_limatesas: ["sobrealto/limatesas"], sob_marcos: ["ventanas/marcos"],
+  techito_capas: ["sobrealto/techito"], domo: ["domo/estructura"], policarbonato: ["domo/policarbonato"], escuadras: ["escuadras"],
   lona_techo: ["lona_techo"], tela_muro: ["lona_muro"], algodon: ["algodon_techo", "algodon_muro"], freno: ["freno_techo", "freno_muro"],
   aislacion_techo: ["aislacion_techo"], aislacion_muro: ["aislacion_muro"], tyvek: ["tyvek"],
 };
+// La parte de una entrada de GRUPOS_MAT («tapas/ext» → «tapas»).
+export const parteDe = (x) => String(x).split("/")[0];
 
 // La TELA DESPLEGADA como dibujo plano (coordenadas en m, centrado), a partir de `desplegados()` de calculo-geo.js:
 // triángulos por color, cotas (segmentos) y rótulos con las medidas. Sin navegador.
@@ -330,12 +337,14 @@ export function piezas3d(P, C) {
   const conAnillo = !simple || ES.conAnillo;                 // 3d-12: la simple, con cable o con anillo
   const osbI = P.piso_tipo === 2 ? 0 : P.osb_inf;            // 3d-12: el piso de una capa
   const rad = P.ang * Math.PI / 180, tan = Math.tan(rad), cos = Math.cos(rad);
-  const barra = (g, a, b, ancho, alto, arriba, mat) => out.push({ g, tipo: "barra", a, b, ancho, alto, arriba, mat });
+  // 3d-22: `sub` separa, dentro de una parte, las piezas que son materiales distintos (montantes de vano y sueltos,
+  // tapas interiores y exteriores, el sobrealto pieza por pieza): el 3D por pieza muestra sólo ésas.
+  const barra = (g, a, b, ancho, alto, arriba, mat, sub = "") => out.push({ g, tipo: "barra", a, b, ancho, alto, arriba, mat, sub });
   const anillo = (g, r1, r2, y1, y2, mat) => out.push({ g, tipo: "anillo", r1, r2, y1, y2, mat });
   const disco = (g, r, y1, y2, mat) => out.push({ g, tipo: "disco", r, y1, y2, mat });
   // Una malla: triángulos sueltos (x, y, z, x, y, z, …). La usan las capas y
   // las piezas que no son una caja ni un anillo entero.
-  const malla = (g, mat, v) => { if (v.length) out.push({ g, tipo: "malla", mat, v }); };
+  const malla = (g, mat, v, sub = "") => { if (v.length) out.push({ g, tipo: "malla", mat, v, sub }); };
   const TAU = 2 * Math.PI;
   const norm = (a) => ((a % TAU) + TAU) % TAU;
   const dentro = (a, [a0, a1]) => norm(a - a0) <= a1 - a0;
@@ -447,7 +456,7 @@ export function piezas3d(P, C) {
     // Los sueltos, como siempre: radiales, del piso al tope.
     const deVano = new Set(mon.grupos.flatMap(g => g.montantes));
     for (const a of mon.montantes) if (!deVano.has(a))
-      barra("montantes", pol(rm, a, yPiso), pol(rm, a, yTope), P.esp_mon, anchoR, [Math.cos(a), 0, Math.sin(a)], "montante");
+      barra("montantes", pol(rm, a, yPiso), pol(rm, a, yTope), P.esp_mon, anchoR, [Math.cos(a), 0, Math.sin(a)], "montante", "sueltos");
     // Un prisma de planta convexa [[x, z], …] entre dos alturas (funciones de x y z), llevado al mundo.
     const prisma = (v, poly, top, bot, W) => {
       const T = poly.map(([x, z]) => W(x, top(x, z), z)), B = poly.map(([x, z]) => W(x, bot(x, z), z)), k = poly.length;
@@ -455,7 +464,7 @@ export function piezas3d(P, C) {
       for (let i = 0; i < k; i++) { const j = (i + 1) % k; quad(v, B[i], B[j], T[j], T[i]); }
     };
     const arcoL = (K, x0, x1, n) => Array.from({ length: n + 1 }, (_, i) => { const x = x0 + (x1 - x0) * i / n; return [x, K.zArc(x)]; });
-    const vS = [], vM = [], vC = [], vT = [];
+    const vS = [], vM = [], vC = [], vT = [], vTe = [];
     for (const g of mon.grupos) {
       const K = chasis(P, C, g), c = g.c, cs = Math.cos(c), sn = Math.sin(c), y0 = yPiso + K.yBase;
       const W = (x, y, z) => [(K.O + z) * cs - x * sn, y0 + y, (K.O + z) * sn + x * cs];   // el suelo: desde su cara de abajo
@@ -488,7 +497,7 @@ export function piezas3d(P, C) {
         const g0 = e - 0.0025, g1 = e + ME + 0.0025, L0 = g0 - 0.005, L1 = L0 + K.tapaExt, zl = MF - K.nariz, zo = zl + K.te;
         const tE30 = (x) => tope30(x, zo);
         for (const [xa, xb, za] of [[L0, g0, zl], [g0, g1, MF], [g1, L1, zl]])
-          prisma(vT, [[X(xa), za], [X(xb), za], [X(xb), zo], [X(xa), zo]], tE30, plano(hc), Wm);
+          prisma(vTe, [[X(xa), za], [X(xb), za], [X(xb), zo], [X(xa), zo]], tE30, plano(hc), Wm);
       }
       // los montantes del medio de un grupo de varias aberturas: rectos
       for (let i = 1; i < K.k; i++) {
@@ -507,10 +516,11 @@ export function piezas3d(P, C) {
         }
       }
     }
-    malla("suelo_ab", "umbral", vS); malla("montantes", "montante", vM); malla("cabezales", "montante", vC); malla("tapas", "madera", vT);
+    malla("suelo_ab", "umbral", vS); malla("montantes", "montante", vM, "vano"); malla("cabezales", "montante", vC);
+    malla("tapas", "madera", vT, "int"); malla("tapas", "madera", vTe, "ext");
     if (conDintel) for (const [a0, a1] of aberturas) {
       const yd = yAbre + P.esp_mon / 2;
-      barra("montantes", pol(rm, a0, yd), pol(rm, a1, yd), anchoR, P.esp_mon, [0, 1, 0], "montante");
+      barra("montantes", pol(rm, a0, yd), pol(rm, a1, yd), anchoR, P.esp_mon, [0, 1, 0], "montante", "vano");
     }
     // Las ventanas: el vidrio entre los montantes, del antepecho al tope (sin dintel: arriba va el cabezal).
     const vv = [];
@@ -746,7 +756,7 @@ export function piezas3d(P, C) {
     // de arriba, la de menos pendiente (dom_ang 60 = un arco de 120°).
     const phi = Math.min(Math.PI / 2, Math.max(0.2, (P.dom_ang ?? 60) * Math.PI / 180));
     const Rd = rT1 / Math.sin(phi), yc = yBase + 0.03 - Rd * Math.cos(phi);
-    anillo("domo", rT1 - 0.04, rT1, yBase, yBase + 0.03, "domo");
+    out.push({ g: "domo", tipo: "anillo", r1: rT1 - 0.04, r2: rT1, y1: yBase, y2: yBase + 0.03, mat: "domo", sub: "estructura" });
     const { aristas, caras } = geodesica(Math.max(1, Math.min(6, Math.round(P.dom_frec ?? 3))));
     const cosC = Math.cos(phi), dentroC = (p) => p[1] >= cosC - 1e-9;
     const aMundo = (p) => [p[0] * Rd, yc + p[1] * Rd, p[2] * Rd];
@@ -755,11 +765,11 @@ export function piezas3d(P, C) {
       if (!dentroC(a)) [a, b] = [b, a];
       if (!dentroC(b)) { const t = (a[1] - cosC) / (a[1] - b[1]); b = a.map((x, j) => x + (b[j] - x) * t); }
       const m = a.map((x, j) => (x + b[j]) / 2);
-      barra("domo", aMundo(a), aMundo(b), 0.03, 0.04, m, "domo");
+      barra("domo", aMundo(a), aMundo(b), 0.03, 0.04, m, "domo", "estructura");
     }
     const vd = [];
     for (const [a, b, c] of caras) if (dentroC(a) && dentroC(b) && dentroC(c)) tri(vd, aMundo(a), aMundo(b), aMundo(c));
-    malla("domo", "vidrio", vd);
+    malla("domo", "vidrio", vd, "policarbonato");
   } else {
     // EL SOBREALTO (3d-11, Mauro, 17-nov: «un techo en sobrealto en el toono
     // con un pequeño desborde y ventanas alrededor… de unos 30 cm de alto,
@@ -782,9 +792,9 @@ export function piezas3d(P, C) {
     for (let i = 0; i < n; i++) {
       const ai = TAU * i / n, am = TAU * (i + 0.5) / n;
       const nrm = [Math.cos(am), 0, Math.sin(am)], tg = [-Math.sin(am), 0, Math.cos(am)];
-      for (const yc of [y0 + e / 2, y2 + e / 2]) barra("sobrealto", V(i, rS - e / 2, yc), V(i + 1, rS - e / 2, yc), e, e, [0, 1, 0], "toono");
-      barra("sobrealto", V(i, rS - e / 2, y1), V(i, rS - e / 2, y2), e, e, [Math.cos(ai), 0, Math.sin(ai)], "toono2");
-      barra("sobrealto", [0, yR(0) + P.p_anc / 2, 0], V(i, rTe, yR(rTe) + P.p_anc / 2), P.p_alt, P.p_anc, [0, 1, 0], "toono");
+      for (const yc of [y0 + e / 2, y2 + e / 2]) barra("sobrealto", V(i, rS - e / 2, yc), V(i + 1, rS - e / 2, yc), e, e, [0, 1, 0], "toono", "solera");
+      barra("sobrealto", V(i, rS - e / 2, y1), V(i, rS - e / 2, y2), e, e, [Math.cos(ai), 0, Math.sin(ai)], "toono2", "parantes");
+      barra("sobrealto", [0, yR(0) + P.p_anc / 2, 0], V(i, rTe, yR(rTe) + P.p_anc / 2), P.p_alt, P.p_anc, [0, 1, 0], "toono", "limatesas");
       const top = (r) => yR(r) + P.p_anc + 0.003;
       tri(vt, [0, top(0), 0], V(i, rTe, top(rTe)), V(i + 1, rTe, top(rTe)));
       // La ventana: marco de 3,5 cm y vidrio, colgada del cabezal por afuera.
@@ -792,14 +802,14 @@ export function piezas3d(P, C) {
       const H0 = addv(mul(nrm, rS * cs + 0.012), [0, y2 - 0.005, 0]);
       const baja = addv([0, -Math.cos(abre), 0], mul(nrm, Math.sin(abre)));
       const Q = (s, d) => addv(H0, addv(mul(tg, s), mul(baja, d)));
-      barra("ventanas", Q(-w / 2, fr / 2), Q(w / 2, fr / 2), 0.03, fr, baja, "madera");
-      barra("ventanas", Q(-w / 2, h - fr / 2), Q(w / 2, h - fr / 2), 0.03, fr, baja, "madera");
-      for (const sx of [-1, 1]) barra("ventanas", Q(sx * (w / 2 - fr / 2), fr), Q(sx * (w / 2 - fr / 2), h - fr), 0.03, fr, tg, "madera");
+      barra("ventanas", Q(-w / 2, fr / 2), Q(w / 2, fr / 2), 0.03, fr, baja, "madera", "marcos");
+      barra("ventanas", Q(-w / 2, h - fr / 2), Q(w / 2, h - fr / 2), 0.03, fr, baja, "madera", "marcos");
+      for (const sx of [-1, 1]) barra("ventanas", Q(sx * (w / 2 - fr / 2), fr), Q(sx * (w / 2 - fr / 2), h - fr), 0.03, fr, tg, "madera", "marcos");
       quad(vv, Q(-w / 2 + fr, fr), Q(w / 2 - fr, fr), Q(w / 2 - fr, h - fr), Q(-w / 2 + fr, h - fr));
-      if (abre > 0.02) barra("ventanas", addv(mul(nrm, rS * cs), [0, y1 + 0.03, 0]), Q(w / 2 - fr, h - fr), 0.012, 0.012, [0, 1, 0], "tapa");
+      if (abre > 0.02) barra("ventanas", addv(mul(nrm, rS * cs), [0, y1 + 0.03, 0]), Q(w / 2 - fr, h - fr), 0.012, 0.012, [0, 1, 0], "tapa", "compas");
     }
-    malla("ventanas", "vidrio", vv);
-    malla("sobrealto", "lona", vt);
+    malla("ventanas", "vidrio", vv, "vidrio");
+    malla("sobrealto", "lona", vt, "techito");
     cima = yR(0) + 0.08;
   }
 
@@ -923,7 +933,7 @@ export async function montar(caja, P, C, visibles, planos = {}) {
   // Un material por parte y por color: resaltar una parte no puede tocar a otra.
   const mats = {};
   const opacidadBase = (k) => OPACIDAD[k] || 1;
-  const mat = (parte, k) => mats[parte + "|" + k] || (mats[parte + "|" + k] =
+  const mat = (parte, k) => mats[parte + "|" + k] || (mats[parte + "|" + k] =   // parte: «g» o «g/sub» (3d-22)
     Object.assign(new THREE.MeshLambertMaterial({ color: COLORES[k] || 0xcccccc,
       transparent: opacidadBase(k) < 1, opacity: opacidadBase(k), side: THREE.DoubleSide }), { userData: { k, parte } }));
   let grupos = {}, rejilla = null, resaltadas = [];
@@ -932,7 +942,7 @@ export async function montar(caja, P, C, visibles, planos = {}) {
   function aplicarResalte() {
     const hay = resaltadas.length > 0;
     for (const m of Object.values(mats)) {
-      const { k, parte } = m.userData, si = resaltadas.includes(parte);
+      const { k, parte } = m.userData, si = resaltadas.includes(parte) || resaltadas.includes(parteDe(parte));
       m.transparent = (hay && !si) || opacidadBase(k) < 1;
       m.opacity = hay && !si ? 0.1 : opacidadBase(k);
       m.depthWrite = !(hay && !si);
@@ -946,9 +956,14 @@ export async function montar(caja, P, C, visibles, planos = {}) {
     grupos = {};
     const { piezas, alto: H, suelo } = piezas3d(P, C);
     const porParteMat = {};
+    // 3d-22: dentro de cada parte, un grupo hijo por `sub` (las piezas sin sub van en el hijo "").
+    const hijo = (g, sub) => { const G = grupos[g] || (grupos[g] = new THREE.Group());
+      let h = G.children.find((c) => c.userData.sub === (sub || ""));
+      if (!h) { h = new THREE.Group(); h.userData.sub = sub || ""; G.add(h); } return h; };
+    const clave = (p) => p.g + (p.sub ? "/" + p.sub : "");
     for (const p of piezas) {
-      const g = grupos[p.g] || (grupos[p.g] = new THREE.Group());
-      if (p.tipo === "barra") { (porParteMat[p.g + "|" + p.mat] ||= []).push(p); continue; }
+      const g = hijo(p.g, p.sub);
+      if (p.tipo === "barra") { (porParteMat[clave(p) + "|" + p.mat] ||= []).push(p); continue; }
       let geo;
       if (p.tipo === "anillo" || p.tipo === "disco") {
         const sh = new THREE.Shape(); sh.absarc(0, 0, p.tipo === "disco" ? p.r : p.r2, 0, Math.PI * 2, false);
@@ -964,13 +979,13 @@ export async function montar(caja, P, C, visibles, planos = {}) {
         geo = new THREE.ExtrudeGeometry(sh, { depth: p.ancho, bevelEnabled: false });
         geo.translate(0, 0, -p.ancho / 2); geo.rotateY(-p.th);
       }
-      if (geo) g.add(new THREE.Mesh(geo, mat(p.g, p.mat)));
+      if (geo) g.add(new THREE.Mesh(geo, mat(clave(p), p.mat)));
     }
     // Las barras van en InstancedMesh (el trei solo son más de mil piezas),
     // cada una con su sección real: largo × alto × ancho en metros.
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Matrix4();
-    for (const [clave, lista] of Object.entries(porParteMat)) {
-      const [g, mk] = clave.split("|");
+    for (const [cl, lista] of Object.entries(porParteMat)) {
+      const [g, mk] = cl.split("|");
       const im = new THREE.InstancedMesh(caja1, mat(g, mk), lista.length);
       lista.forEach((p, i) => {
         const a = new THREE.Vector3(...p.a), b = new THREE.Vector3(...p.b);
@@ -981,7 +996,7 @@ export async function montar(caja, P, C, visibles, planos = {}) {
         m4.compose(a.clone().add(b).multiplyScalar(0.5), q, new THREE.Vector3(L, p.alto, p.ancho));
         im.setMatrixAt(i, m4);
       });
-      grupos[g].add(im);
+      hijo(parteDe(g), g.split("/")[1]).add(im);
     }
     for (const [k, g] of Object.entries(grupos)) { g.visible = visibles[k] !== false; esc.add(g); }
     // 3d-21: las TELAS DESPLEGADAS, echadas en el piso y centradas, con sus cotas y rótulos. Cada una es el grupo
@@ -1038,6 +1053,38 @@ export async function montar(caja, P, C, visibles, planos = {}) {
     ver(k, on) { visibles[k] = on; if (grupos[k]) grupos[k].visible = on; pide = true; },
     resaltar(partes) { resaltadas = partes || []; aplicarResalte(); pide = true; },
     encuadrar() { encuadrar(); pide = true; },
+    // 3d-22: deja a la vista SÓLO esas piezas («g» entera o «g/sub»); null vuelve a todas las de `visibles`.
+    solo(lista) {
+      for (const [k, G] of Object.entries(grupos)) {
+        if (k.startsWith("plano:")) continue;
+        if (!lista) { G.visible = visibles[k] !== false; G.children.forEach((c) => { if (c.userData.sub != null) c.visible = true; }); continue; }
+        const entera = lista.includes(k), subs = lista.filter((x) => parteDe(x) === k && x.includes("/")).map((x) => x.split("/")[1]);
+        G.visible = entera || subs.length > 0;
+        G.children.forEach((c) => { if (c.userData.sub != null) c.visible = entera || subs.includes(c.userData.sub); });
+      }
+      pide = true;
+    },
+    // 3d-22: la cámara a la caja de lo que está a la vista de esas piezas (con las instancias contadas una por una).
+    encuadrarA(lista) {
+      const caja = new THREE.Box3(), b = new THREE.Box3(), m4 = new THREE.Matrix4(), v = new THREE.Vector3();
+      const ver = (o) => { for (let p = o; p; p = p.parent) if (!p.visible) return false; return true; };
+      for (const x of lista || []) {
+        const G = grupos[parteDe(x)]; if (!G) continue;
+        G.traverse((o) => {
+          if (!o.isMesh || !ver(o)) return;
+          if (x.includes("/") && !(o.parent && o.parent.userData.sub === x.split("/")[1])) return;
+          if (o.isInstancedMesh) {
+            for (let i = 0; i < o.count; i++) { o.getMatrixAt(i, m4);
+              for (const sx of [-0.5, 0.5]) for (const sy of [-0.5, 0.5]) for (const sz of [-0.5, 0.5]) caja.expandByPoint(v.set(sx, sy, sz).applyMatrix4(m4)); }
+          } else { o.geometry.computeBoundingBox(); b.copy(o.geometry.boundingBox); caja.union(b); }
+        });
+      }
+      if (caja.isEmpty()) { encuadrar(); pide = true; return false; }
+      const c = caja.getCenter(new THREE.Vector3()), r = Math.max(0.3, caja.getSize(new THREE.Vector3()).length() / 2);
+      const d = r / Math.sin((cam.fov * Math.PI / 180) / 2) * 1.05, el = 0.55, az = Math.PI / 4;
+      cam.position.set(c.x + d * Math.cos(el) * Math.cos(az), c.y + d * Math.sin(el), c.z + d * Math.cos(el) * Math.sin(az));
+      ctl.target.copy(c); ctl.update(); pide = true; return true;
+    },
     // 3d-21: el piso visto desde arriba (la tela desplegada), a la distancia que pide su tamaño.
     arriba(tam) { const d = Math.max(2, tam) * 1.25; cam.position.set(0, medida.suelo + d, d * 0.35); ctl.target.set(0, medida.suelo, 0); ctl.update(); pide = true; },
     mirar(desde, hacia) { cam.position.set(...desde); ctl.target.set(...hacia); ctl.update(); pide = true; },
